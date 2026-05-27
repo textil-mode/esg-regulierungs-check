@@ -477,6 +477,99 @@ def published_for(reg_key: str) -> str:
     return PUBLISHED_BY_REG_KEY.get(reg_key, "—")
 
 
+# ---------------------------------------------------------------------------
+# Gekoppelte Regulierungen — deterministisch bestimmte, verbindliche Vorgaben.
+#
+# Einige Regulierungen haengen rechtlich an einer "Eltern"-Regulierung:
+#   ESRS / Taxonomie-VO / CSRD-Umsetzungsgesetz folgen der CSRD-Pflicht,
+#   die Whistleblower-RL wird in DE ueber das HinSchG umgesetzt.
+# Damit das LLM diese nicht isoliert und widerspruechlich bewertet (z. B.
+# CSRD = nein, aber ESRS = ja fuer dasselbe Unternehmen), wird der ausloesende
+# Schwellenwert EINMAL aus dem Profil berechnet und als verbindliche Vorgabe in
+# den Prompt der betroffenen Regulierungen gegeben. Quelle der Schwellen: die
+# jeweiligen `criteria` oben (CSRD post-Omnibus, HinSchG § 12).
+# ---------------------------------------------------------------------------
+
+def _fmt_eur(v) -> str:
+    try:
+        return f"{float(v or 0):,.0f}".replace(",", ".") + " EUR"
+    except (TypeError, ValueError):
+        return "0 EUR"
+
+
+def csrd_status(profile: dict) -> tuple[str, str]:
+    """CSRD-Berichtspflicht (post-Omnibus) deterministisch aus dem Profil.
+
+    Liefert (applies, Begruendung) mit applies in {ja, nein, moeglich}.
+    Grosse-Unternehmen-Test: >1000 Beschaeftigte UND (>25 Mio. Bilanzsumme
+    ODER >50 Mio. Nettoumsatz). Boersennotierung allein begruendet keine Pflicht.
+    """
+    emp = profile.get("employees") or 0
+    bs = profile.get("balance_sheet_eur") or 0
+    rev = profile.get("revenue_eur") or 0
+    group = profile.get("group_role") or ""
+    non_eu_parent = ("außerhalb EU" in group) or ("Nicht-EU" in group)
+    if emp > 1000 and (bs > 25_000_000 or rev > 50_000_000):
+        fin = "Bilanzsumme >25 Mio. EUR" if bs > 25_000_000 else "Nettoumsatz >50 Mio. EUR"
+        return "ja", (f"{emp} Beschaeftigte (>1000) und {fin} erfuellen den "
+                      f"Grosse-Unternehmen-Test der CSRD.")
+    if non_eu_parent and rev > 450_000_000:
+        return "moeglich", ("Nicht-EU-Konzern mit EU-relevantem Umsatz >450 Mio. EUR — "
+                            "CSRD-Pflicht ab 2028 moeglich, Einzelpruefung noetig.")
+    return "nein", (f"{emp} Beschaeftigte bzw. Bilanzsumme {_fmt_eur(bs)} / Umsatz {_fmt_eur(rev)} "
+                    f"liegen unter der Schwelle (>1000 Beschaeftigte UND >25 Mio. Bilanz ODER "
+                    f">50 Mio. Umsatz). Eine reine Boersennotierung begruendet post-Omnibus keine Pflicht.")
+
+
+def hinschg_status(profile: dict) -> tuple[str, str]:
+    """HinSchG-Pflicht: interne Meldestelle ab 50 Beschaeftigten im Inland."""
+    emp_de = profile.get("employees_de") or 0
+    if emp_de >= 50:
+        return "ja", (f"{emp_de} Beschaeftigte in Deutschland (>=50) — interne Meldestelle "
+                      f"nach § 12 HinSchG verpflichtend.")
+    return "nein", f"{emp_de} Beschaeftigte in Deutschland (<50) — keine Pflicht nach § 12 HinSchG."
+
+
+# child_key -> (Eltern-Label, Statusfunktion)
+_COUPLINGS: dict[str, tuple[str, object]] = {
+    "CSRD":            ("CSRD", csrd_status),
+    "CSRD_DE":         ("CSRD", csrd_status),
+    "ESRS":            ("CSRD", csrd_status),
+    "TaxonomieVO":     ("CSRD", csrd_status),
+    "HinSchG":         ("HinSchG", hinschg_status),
+    "WhistleblowerRL": ("HinSchG", hinschg_status),
+}
+
+# child_key -> erlaeuternde Beziehung (warum die Eltern-Pflicht hier bindet)
+_COUPLING_RELATION: dict[str, str] = {
+    "CSRD_DE": ("Das CSRD-Umsetzungsgesetz setzt die CSRD in deutsches Recht um; fuer in "
+                "Deutschland ansaessige Unternehmen gilt dieselbe Pflichtlage wie bei der CSRD."),
+    "ESRS": "Die ESRS gelten ausschliesslich fuer Unternehmen, die der CSRD unterliegen.",
+    "TaxonomieVO": ("Die Taxonomie-Offenlegung (Art. 8) trifft Unternehmen, die der CSRD "
+                    "unterliegen; Finanzmarktteilnehmer sind zusaetzlich eigenstaendig erfasst."),
+    "WhistleblowerRL": ("Die EU-Whistleblower-Richtlinie wird in Deutschland ueber das HinSchG "
+                        "umgesetzt; es gilt dieselbe Schwelle von 50 Beschaeftigten."),
+}
+
+
+def coupling_premise(reg_key: str, profile: dict) -> str:
+    """Verbindliche, vorberechnete Vorgabe fuer gekoppelte Regulierungen (oder '').
+
+    Wird in den LLM-Prompt eingefuegt, damit gekoppelte Regulierungen nicht
+    isoliert zu widerspruechlichen Ergebnissen kommen.
+    """
+    spec = _COUPLINGS.get(reg_key)
+    if not spec:
+        return ""
+    parent_label, status_fn = spec
+    status, rationale = status_fn(profile)
+    lines = [f"{parent_label}-Pflicht = {status.upper()}. Begruendung: {rationale}"]
+    rel = _COUPLING_RELATION.get(reg_key)
+    if rel:
+        lines.append(rel)
+    return "\n".join(lines)
+
+
 # Branchen: sprachneutrale Keys (= DE-String mit Umlauten) für DB-Persistenz.
 # Übersetzungen: siehe i18n.BRANCH_LABELS
 BRANCHES = [

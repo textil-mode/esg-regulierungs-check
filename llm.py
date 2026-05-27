@@ -18,6 +18,22 @@ import threading
 import time
 from typing import Callable
 
+from regulations import coupling_premise
+
+
+class _TruncatedJSON(ValueError):
+    """Antwort war unvollstaendig; `partial` haelt das auto-reparierte Fragment.
+
+    Subklasse von ValueError, MUSS daher vor dem generischen ValueError-Handler
+    abgefangen werden, damit eine Trunkierung einen Retry ausloest statt still
+    ein halbes Ergebnis zu liefern.
+    """
+
+    def __init__(self, partial: dict) -> None:
+        super().__init__("JSON unvollstaendig (auto-repariert)")
+        self.partial = partial
+
+
 # Eine einzige englische Basis-System-Prompt + sprachspezifische Anweisung
 # am Ende. So skaliert es sauber auf beliebig viele Sprachen.
 _SYSTEM_BASE = """You are a precise ESG compliance analyst.
@@ -32,17 +48,25 @@ CRITICAL FORMATTING:
 Schema:
 {{
   "applies": "ja" | "nein" | "moeglich",
-  "reason": "2-4 short sentences ({lang_name}), max. 80 words",
-  "passage": "Short verbatim quote from the full text (preferred) or a paraphrase with article/paragraph reference (max. 50 words, same language as reason)"
+  "reason": "...",
+  "passage": "..."
 }}
 
-Content rules:
-- "ja" (yes) only if all thresholds/criteria are clearly met.
-- "moeglich" (possible) if information is missing, special rules may apply, or thresholds are close.
-- "nein" (no) if clearly outside the scope.
-- "reason" is MANDATORY for all three cases and must concretely explain WHY the regulation applies / may apply / does not apply (referencing profile values such as headcount, revenue, sector, sites). Never leave empty.
-- Write "reason" and "passage" in {lang_name}. Keep the "applies" values exactly as ja/nein/moeglich.
-- Keep reason and passage concise so the JSON remains complete."""
+Decision rules:
+- "ja" only if all thresholds/criteria are clearly met.
+- "moeglich" if information is missing, special rules may apply, or thresholds are close.
+- "nein" if clearly outside the scope.
+- Use ONLY the thresholds, figures and conditions given in the "Applicability criteria" block and the full text. NEVER import thresholds from other regulations or from prior knowledge; if a number is given, use exactly that number.
+- If a "BINDING PRE-DETERMINED FACT" block is present, treat that fact as established truth. Base your decision on it together with this regulation's own criteria and never state anything that contradicts it.
+
+"reason" — MANDATORY in every case, written in {lang_name}, max. 60 words, and ALWAYS in exactly this two-sentence structure:
+  1. The single decisive criterion for THIS regulation together with the company's matching value (e.g. headcount, revenue, balance sheet, sector, product, group role).
+  2. The conclusion that follows (applies / does not apply / to be verified).
+  No extra sentences, no lists, no commentary. Never leave it empty.
+
+"passage" — a short verbatim quote from the full text (preferred) or a paraphrase with article/paragraph reference, max. 40 words, in {lang_name}. It MUST contain only the quote or reference — no notes, no meta commentary, no reasoning.
+
+Keep the "applies" values exactly as ja/nein/moeglich."""
 
 _LANG_NAMES = {
     "de": "German",
@@ -84,7 +108,7 @@ Relevant article/section: {article}
 
 Applicability criteria (summary):
 {criteria}
-
+{premise}
 FULL-TEXT EXTRACT (truncated):
 ---
 {fulltext}
@@ -218,10 +242,13 @@ def _extract_json(text: str) -> dict:
     # trailing commas entfernen
     snippet = re.sub(r",(\s*[]}])", r"\1", snippet)
     try:
-        return json.loads(snippet)
+        partial = json.loads(snippet)
     except json.JSONDecodeError as e:
         raise ValueError(f"kein vollständiges JSON-Objekt (auto-repair fehlgeschlagen): "
                          f"{text[start:start+200]!r} / {e}")
+    # Erfolgreich repariert, aber die Antwort war abgeschnitten: als Trunkierung
+    # signalisieren, damit _analyze_one einen sauberen Retry versuchen kann.
+    raise _TruncatedJSON(partial)
 
 
 def _normalize_applies(val: str) -> str:
@@ -383,9 +410,12 @@ def _parse_retry_after(err_str: str) -> float:
     return 0.0
 
 
-async def _analyze_one(client: LLMClient, profile_block: str, reg: dict, fulltext: str, language: str) -> dict:
+async def _analyze_one(client: LLMClient, profile_block: str, reg: dict, fulltext: str,
+                       language: str, profile: dict | None = None) -> dict:
     system = _system_prompt(language)
     fulltext_placeholder = "(full text unavailable)"
+    premise = coupling_premise(reg.get("key", ""), profile or {})
+    premise_block = f"\nBINDING PRE-DETERMINED FACT:\n{premise}\n" if premise else ""
     user_msg = _USER_TEMPLATE.format(
         profile=profile_block,
         reg_name=reg["name"],
@@ -393,6 +423,7 @@ async def _analyze_one(client: LLMClient, profile_block: str, reg: dict, fulltex
         reg_url=reg["url"],
         article=reg.get("key_article", ""),
         criteria=reg["criteria"],
+        premise=premise_block,
         fulltext=fulltext[:int(os.getenv("FULLTEXT_MAX_CHARS", "40000"))] if fulltext else fulltext_placeholder,
     )
     last_error: str | None = None
@@ -406,6 +437,16 @@ async def _analyze_one(client: LLMClient, profile_block: str, reg: dict, fulltex
             parsed = _extract_json(text)
             print(f"[llm] ok    {key}", flush=True)
             return _enrich(reg, parsed)
+        except _TruncatedJSON as e:
+            # Antwort abgeschnitten: erneut versuchen; erst beim letzten Versuch
+            # das auto-reparierte Fragment akzeptieren (besser als ein Fehler).
+            last_error = "JSON unvollstaendig (Antwort abgeschnitten)"
+            print(f"[llm] retry {key} attempt={attempt} truncated", flush=True)
+            if attempt < 5:
+                await asyncio.sleep(0.6)
+                continue
+            print(f"[llm] partial {key}: nutze auto-repariertes Fragment", flush=True)
+            return _enrich(reg, e.partial)
         except (json.JSONDecodeError, ValueError) as e:
             last_error = f"JSON-Parse: {e}"
             print(f"[llm] retry {key} attempt={attempt} json-parse: {e}", flush=True)
@@ -465,7 +506,7 @@ async def _run(profile: dict, jobs: list[tuple[dict, str]], result_cb: Callable[
     async def bound(reg: dict, fulltext: str) -> None:
         async with sem:
             await limiter.acquire()
-            res = await _analyze_one(client, profile_block, reg, fulltext, language)
+            res = await _analyze_one(client, profile_block, reg, fulltext, language, profile)
             result_cb(res)
 
     await asyncio.gather(*(bound(reg, ft) for reg, ft in jobs))

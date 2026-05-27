@@ -11,7 +11,7 @@
 - **Legacy-URL:** https://schuckert.cloud/regulierungs-check (weiterhin aktiv, selber Container)
 - **Stabiler Commit:** `d18caba` (branch `main`)
 - **Git-Tag:** `stable-2026-04-21`
-- **Stand dieses Dokuments:** 2026-04-21
+- **Stand dieses Dokuments:** 2026-05-07 (LLM-Konfig live verifiziert)
 
 > Der Flask-Container ist derselbe fuer beide Domains. Die nginx-Konfig auf
 > dem Hostinger-VPS setzt je nach Host-Header unterschiedliche
@@ -127,21 +127,36 @@ git push origin rollback-2026-04-21
 
 ## LLM-Konfiguration
 
-Aktive Konfiguration (Hostinger `docker-compose.hostinger.yml`, Environment):
+> ⚠️ **Wichtig:** Die eingecheckte `docker-compose.hostinger.yml` ist **veraltet/Dummy** (Nemotron-Free-Setup, Key liefert 401). Die echten Werte stehen nur im Hostinger-Docker-Manager-UI; die folgende Tabelle wurde am 2026-05-07 aus dem laufenden Container `esg-ki-textil-mode` per `docker exec env` gezogen.
+
+**Live aktiv** im Container `esg-ki-textil-mode` (Container `esg-regulierungs-check` macht 0 Calls, vermutlich Legacy-Spiegel):
 
 | Variable | Wert |
 |---|---|
-| `LLM_PROVIDER` | `openai` (OpenAI-kompatibles Interface) |
-| `OPENAI_BASE_URL` | `https://openrouter.ai/api/v1` (OpenRouter-Proxy) |
-| `OPENAI_MODEL` | `nvidia/nemotron-3-super-120b-a12b:free` |
-| `LLM_CONCURRENCY` | `4` |
-| `LLM_RPM` | `18` (Rate-Limit OpenRouter Free-Tier) |
-| `FULLTEXT_MAX_CHARS` | `40000` |
+| `LLM_PROVIDER` | `google` |
+| `OPENAI_MODEL` | `gemini-2.5-flash-lite` (wird im google-Pfad als Modellname genutzt) |
+| `OPENAI_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai/` (im google-Code-Pfad **ignoriert**, dort ist Base-URL hardcoded auf `…/v1beta`) |
+| `OPENAI_API_KEY` | Google-AI-Studio-Key (`AQ.…`, 53 Zeichen) — wird vom google-Pfad als Fallback gelesen, falls `GOOGLE_API_KEY` fehlt (`llm.py:315`) |
+| `LLM_CONCURRENCY` | `8` |
+| `LLM_RPM` | `150` |
+| `FULLTEXT_MAX_CHARS` | `25000` |
+| `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` | **nicht gesetzt** im Live-Container |
 
-**Weitere Keys gesetzt aber aktuell inaktiv** (stehen als Fallback bereit):
-- `ANTHROPIC_API_KEY` + `CLAUDE_MODEL=claude-sonnet-4-6` → wird genutzt wenn `LLM_PROVIDER=anthropic`
+**Tarif:** Paid-Tier (Google Billing aktiv, `serviceTier: "standard"` in der API-Response). NICHT free.
 
-Provider-Switch: Im Hostinger-Compose-YAML `LLM_PROVIDER` ändern → Bereitstellen.
+**Verifizierte Kosten** (Stand 2026-05-07, Google Cloud Billing):
+
+| Metrik | Wert |
+|---|---|
+| Gesamtkosten seit Container-Start (30.04.2026) | **0,26 €** |
+| Erfolgreiche LLM-Calls in dem Zeitraum | 858 (25 Retries, 0 Failures) |
+| ≈ Durchläufe (858 / 22 Regs) | ~39 |
+| **Kosten pro Durchlauf** | **≈ 0,7 ¢** (≈ 0,007 €) |
+| Hochrechnung 1 Jahr bei aktuellem Tempo | ~13–15 € |
+
+Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER` und Modell ändern → Bereitstellen.
+
+**Empfehlung:** in Google Cloud Billing einen Budget-Alert (z. B. 5 €/Monat) setzen, falls die Nutzung stark wächst.
 
 ---
 
@@ -149,7 +164,7 @@ Provider-Switch: Im Hostinger-Compose-YAML `LLM_PROVIDER` ändern → Bereitstel
 
 ### Regulierungen — statische Metadaten (`regulations.py`)
 
-- `REGULATIONS` — 23 Einträge mit `key`, `name`, `full_name`, `url`, `text_url`, `scope`, `criteria`, `key_article`
+- `REGULATIONS` — 22 Einträge mit `key`, `name`, `full_name`, `url`, `text_url`, `scope`, `criteria`, `key_article`
 - `GUIDELINES_BY_REG_KEY` — je Regulierung eine Liste kuratierter offizieller Leitlinien (EU-Kommission, BAFA, EFRAG, ESMA, IDW, BfJ, DRSC)
 - `PUBLISHED_BY_REG_KEY` — Veröffentlichungsdatum je Reg (OJ-Datum bzw. BGBl.-Datum), Format `DD.MM.YYYY`
 
@@ -175,7 +190,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `views.py` | Card/CSV-Renderer |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
 | `templates/dashboard.html` | Hauptseite (Stammdaten + "Jetzt prüfen" + "Regulierungsliste"-Button) |
-| `templates/regulierungsliste.html` | Tabelle aller 23 Regs + Guidelines + Stand |
+| `templates/regulierungsliste.html` | Tabelle aller 22 Regs + Guidelines + Stand |
 | `templates/login.html`, `fullscreen.html`, `analysis.html` | Auth, Fullscreen, Progress-Page |
 | `static/images/tum-logo.svg` | textil+mode-Logo |
 | `Dockerfile` | Python 3.12-slim + Gunicorn; **muss `static/` und `templates/` kopieren** |
@@ -207,5 +222,5 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 ## Offene Punkte / Ideen
 
 - Einige Guideline-URLs sind Landing-Pages (nicht direkt der Leitfaden-PDF). Feintuning später.
-- NVIDIA Nemotron Free-Tier hat harte Limits; bei Bedarf auf Claude Sonnet 4.6 umschalten (siehe LLM-Konfiguration).
+- `docker-compose.hostinger.yml` im Repo ist veraltet (Nemotron-Free, ungültiger Key) — bei Gelegenheit auf den Live-Stand (Gemini 2.5 Flash Lite) angleichen oder explizit als Dummy markieren.
 - `README.md` ist teilweise veraltet (erwähnt noch Streamlit). CLAUDE.md ist der aktuelle Stand.

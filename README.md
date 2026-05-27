@@ -75,14 +75,13 @@ Eine SQLite-Datei (`data/esg.db`) mit Tabellen:
 - `db.py` — SQLite (Schema, Migration, CRUD), bcrypt
 - `fetcher.py` — HTTP-Download von Gesetzestexten, HTML/PDF-Extraktion, Cache mit ETag
 - `llm.py` — Provider-Abstraktion (Ollama/Anthropic/OpenAI), Volltext-Prompt, Retry/429-Handling
-- `regulations.py` — 23 Regulierungen + Auswahllisten (Branchen, Rechtsformen, Produkte)
+- `regulations.py` — 22 Regulierungen + Auswahllisten (Branchen, Rechtsformen, Produkte)
 
-## Die 23 Regulierungen
+## Die 22 Regulierungen
 
 CSDDD, LkSG, EUDR, FLR, CSRD, CSRD-DE, ESRS, NFRD, CSR-RUG, Taxonomie-VO, SFDR,
 ESG-Rating-VO, Whistleblower-RL, HinSchG, Right to Repair, Oekodesign-VO, PPWR,
-Konfliktmineralien-VO, MinRohSorgG, EU-Umweltstrafrechts-RL, EmpCo, Green Claims (Entwurf),
-Omnibus I.
+Konfliktmineralien-VO, MinRohSorgG, EU-Umweltstrafrechts-RL, EmpCo, Green Claims (Entwurf).
 
 ## Hinweise
 
