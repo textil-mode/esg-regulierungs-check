@@ -9,7 +9,8 @@
   <div style="margin-bottom:18px;padding:12px 14px;background:#f6f1e3;border:1px solid #d4a017;border-radius:8px;">
     <button type="button" id="autofill-btn" class="btn"
             style="background:#d4a017;color:#1f1f1f;font-weight:700;"
-            onclick="runAutofill()">{{ t("autofill_btn", lang) }}</button>
+            onclick="runAutofill()" disabled>{{ t("autofill_btn", lang) }}</button>
+    <span id="autofill-name-hint" style="font-size:13px;color:#b71c1c;font-weight:600;margin-left:10px;">⚠ {{ t("autofill_need_name", lang) }}</span>
     <span style="font-size:13px;color:#7a6520;margin-left:10px;">{{ t("autofill_hint", lang) }}</span>
     <div id="autofill-status" style="font-size:13px;margin-top:8px;display:none;"></div>
   </div>
@@ -219,6 +220,19 @@ const AUTOFILL_I18N = {
   none:     {{ t("autofill_none", lang)|tojson }},
   error:    {{ t("autofill_error", lang)|tojson }},
 };
+
+// Button erst freigeben, wenn ein Unternehmensname eingetragen ist
+const _afNameInput = document.querySelector('input[name="name"]');
+const _afBtn = document.getElementById('autofill-btn');
+const _afNameHint = document.getElementById('autofill-name-hint');
+function updateAutofillBtn() {
+  const hasName = !!(_afNameInput.value || '').trim();
+  _afBtn.disabled = !hasName;
+  _afBtn.title = hasName ? '' : _afNameHint.textContent.trim();
+  _afNameHint.style.display = hasName ? 'none' : 'inline';
+}
+_afNameInput.addEventListener('input', updateAutofillBtn);
+updateAutofillBtn();
 
 function _setNumField(hiddenName, value) {
   const visible = document.querySelector('input[data-hidden="' + hiddenName + '"]');
