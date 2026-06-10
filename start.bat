@@ -3,11 +3,6 @@ setlocal
 
 cd /d "%~dp0"
 
-echo [Cleanup] Beende ggf. laufende Streamlit-Prozesse...
-for /f "tokens=2" %%i in ('tasklist /FI "IMAGENAME eq python.exe" /FI "WINDOWTITLE eq *streamlit*" /NH 2^>nul ^| find "python.exe"') do taskkill /PID %%i /F >nul 2>&1
-REM Fallback: jeder python.exe der Streamlit heisst
-wmic process where "name='python.exe' and commandline like '%%streamlit%%'" delete >nul 2>&1
-
 if not exist ".venv" (
     echo [Setup] Erstelle virtuelle Umgebung...
     python -m venv .venv
@@ -30,8 +25,8 @@ if not exist ".env" (
     goto :eof
 )
 
-echo [Start] Oeffne Streamlit...
-streamlit run app.py
+echo [Start] Starte Flask-App auf http://localhost:5000 ...
+python app.py
 goto :eof
 
 :error

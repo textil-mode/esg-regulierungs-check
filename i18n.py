@@ -182,12 +182,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "在 .env 中缺少 OPENAI_API_KEY(已设置 LLM_PROVIDER=openai)。",
     },
     "env_hint": {
-        "de": " Trage den Key in `esg_app/.env` ein und starte Streamlit neu.",
-        "en": " Add the key to `esg_app/.env` and restart Streamlit.",
-        "es": " Añade la clave en `esg_app/.env` y reinicia Streamlit.",
-        "fr": " Ajoutez la clé dans `esg_app/.env` et redémarrez Streamlit.",
-        "it": " Aggiungi la chiave in `esg_app/.env` e riavvia Streamlit.",
-        "zh": " 请在 `esg_app/.env` 中添加密钥并重启 Streamlit。",
+        "de": " Trage den Key in `.env` ein und starte die App neu.",
+        "en": " Add the key to `.env` and restart the app.",
+        "es": " Añade la clave en `.env` y reinicia la aplicación.",
+        "fr": " Ajoutez la clé dans `.env` et redémarrez l'application.",
+        "it": " Aggiungi la chiave in `.env` e riavvia l'applicazione.",
+        "zh": " 请在 `.env` 中添加密钥并重启应用。",
     },
 
     # Company form - Section headers

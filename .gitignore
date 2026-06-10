@@ -4,3 +4,9 @@ data/
 __pycache__/
 *.pyc
 *.pyo
+
+# Scratch-/Debug-Dateien (nie committen)
+_*.txt
+Bugreport/
+.playwright-mcp/
+.claude/
