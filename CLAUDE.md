@@ -90,7 +90,10 @@ welche Domain der Nutzer kommt.
   - Trigger: push auf `main` oder `master`
   - Baut Docker-Image aus `Dockerfile`
   - Pusht nach `ghcr.io/textil-mode/esg-regulierungs-check:latest` (seit Commit `ddb1ec4`)
-  - ⚠️ **Beim nächsten Deploy:** Hostinger-Compose-UI einmalig von `ghcr.io/textilundmode/…` auf `ghcr.io/textil-mode/…` umstellen — die Live-Container ziehen noch das alte Image.
+  - ✅ ghcr-Umzug abgeschlossen (2026-06-10): beide Live-Container laufen mit dem `textil-mode`-Image.
+  - **Deploy per SSH** (schneller als Hostinger-UI): `ssh root@187.77.88.67`, dann
+    `docker pull ghcr.io/textil-mode/esg-regulierungs-check:latest && python3 /root/esg_redeploy.py esg-ki-textil-mode 8083 && python3 /root/esg_redeploy.py esg-regulierungs-check 8082`
+    (Skript übernimmt Env/Volumes/Ports 1:1 aus dem laufenden Container). Rollback: gleiches Skript mit altem Image-Tag.
   - Dauer: typischerweise 1-2 Min (Build-Cache vorhanden)
 
 ### Deploy-Prozedur (nach Code-Änderung)
