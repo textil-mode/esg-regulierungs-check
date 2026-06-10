@@ -1,6 +1,6 @@
 # ESG-Regulierungs-Check
 
-Streamlit-Web-App, die prueft, welche ESG-/CSR-Regulierungen fuer ein Unternehmen gelten.
+Flask-Web-App, die prueft, welche ESG-/CSR-Regulierungen fuer ein Unternehmen gelten.
 **Volltext-basierte Analyse** — laedt die Originaltexte der Gesetze, cached sie lokal
 und befragt einen LLM gegen Profil + echten Gesetzestext. Ergebnis: Liste mit Begruendung,
 Zitat aus dem Volltext und direktem Link.
@@ -43,7 +43,7 @@ python -m venv .venv
 .venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 copy .env.example .env          # dann Provider-Konfig anpassen
-streamlit run app.py
+python app.py
 ```
 
 ## Bedienung
@@ -71,7 +71,7 @@ Eine SQLite-Datei (`data/esg.db`) mit Tabellen:
 
 ## Architektur
 
-- `app.py` — Streamlit UI, Login, Stammdaten, Orchestration, Ergebnistabelle
+- `app.py` — Flask-Routen, Login, Stammdaten, Analyse-Orchestrierung, PrefixMiddleware
 - `db.py` — SQLite (Schema, Migration, CRUD), bcrypt
 - `fetcher.py` — HTTP-Download von Gesetzestexten, HTML/PDF-Extraktion, Cache mit ETag
 - `llm.py` — Provider-Abstraktion (Ollama/Anthropic/OpenAI), Volltext-Prompt, Retry/429-Handling

@@ -11,7 +11,7 @@
 - **Legacy-URL:** https://schuckert.cloud/regulierungs-check (weiterhin aktiv, selber Container)
 - **Stabiler Commit:** `d18caba` (branch `main`)
 - **Git-Tag:** `stable-2026-04-21`
-- **Stand dieses Dokuments:** 2026-05-07 (LLM-Konfig live verifiziert)
+- **Stand dieses Dokuments:** 2026-06-10 (LLM-Konfig erneut live verifiziert: beide Container unverändert auf Gemini 2.5 Flash Lite; Container laufen noch mit Image aus altem Namespace `ghcr.io/textilundmode/…`)
 
 > Der Flask-Container ist derselbe fuer beide Domains. Die nginx-Konfig auf
 > dem Hostinger-VPS setzt je nach Host-Header unterschiedliche
@@ -81,11 +81,12 @@ welche Domain der Nutzer kommt.
 
 ## CI/CD
 
-- **Repo:** `textilundmode/esg-regulierungs-check` (privat)
+- **Repo:** `textil-mode/esg-regulierungs-check` (privat, Org textil-mode; umgezogen von `textilundmode`)
 - **Workflow:** `.github/workflows/docker-build.yml`
   - Trigger: push auf `main` oder `master`
   - Baut Docker-Image aus `Dockerfile`
-  - Pusht nach `ghcr.io/textilundmode/esg-regulierungs-check:latest`
+  - Pusht nach `ghcr.io/textil-mode/esg-regulierungs-check:latest` (seit Commit `ddb1ec4`)
+  - ⚠️ **Beim nächsten Deploy:** Hostinger-Compose-UI einmalig von `ghcr.io/textilundmode/…` auf `ghcr.io/textil-mode/…` umstellen — die Live-Container ziehen noch das alte Image.
   - Dauer: typischerweise 1-2 Min (Build-Cache vorhanden)
 
 ### Deploy-Prozedur (nach Code-Änderung)
@@ -93,7 +94,7 @@ welche Domain der Nutzer kommt.
 1. `git add <geänderte Dateien>` — **kein** `git add -A` (vermeidet versehentliches Einchecken von Secrets / Scratch-Dateien)
 2. `git commit -m "…"`
 3. `git push origin main`
-4. Warten auf Build-Erfolg: https://github.com/textilundmode/esg-regulierungs-check/actions
+4. Warten auf Build-Erfolg: https://github.com/textil-mode/esg-regulierungs-check/actions
 5. Hostinger → Docker Manager → Projekt `esg-regulierungs-check` → **Verwalten** → **Bereitstellen**
 6. Nach ~15 s testen: https://ki-textil-mode.de/esg/ (bzw. Legacy https://schuckert.cloud/regulierungs-check)
 
@@ -127,9 +128,9 @@ git push origin rollback-2026-04-21
 
 ## LLM-Konfiguration
 
-> ⚠️ **Wichtig:** Die eingecheckte `docker-compose.hostinger.yml` ist **veraltet/Dummy** (Nemotron-Free-Setup, Key liefert 401). Die echten Werte stehen nur im Hostinger-Docker-Manager-UI; die folgende Tabelle wurde am 2026-05-07 aus dem laufenden Container `esg-ki-textil-mode` per `docker exec env` gezogen.
+> Die eingecheckte `docker-compose.hostinger.yml` ist ein **Dummy/Vorlage** (Platzhalter statt Keys, seit 2026-06-10 strukturell am Live-Stand ausgerichtet). Die echten Werte stehen nur im Hostinger-Docker-Manager-UI; die folgende Tabelle wurde am 2026-05-07 per `docker exec env` gezogen und am **2026-06-10 erneut verifiziert** (beide Container identisch konfiguriert, unverändert).
 
-**Live aktiv** im Container `esg-ki-textil-mode` (Container `esg-regulierungs-check` macht 0 Calls, vermutlich Legacy-Spiegel):
+**Live aktiv** in den Containern `esg-ki-textil-mode` und `esg-regulierungs-check` (Legacy-Spiegel, macht kaum Calls):
 
 | Variable | Wert |
 |---|---|
@@ -222,5 +223,6 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 ## Offene Punkte / Ideen
 
 - Einige Guideline-URLs sind Landing-Pages (nicht direkt der Leitfaden-PDF). Feintuning später.
-- `docker-compose.hostinger.yml` im Repo ist veraltet (Nemotron-Free, ungültiger Key) — bei Gelegenheit auf den Live-Stand (Gemini 2.5 Flash Lite) angleichen oder explizit als Dummy markieren.
-- `README.md` ist teilweise veraltet (erwähnt noch Streamlit). CLAUDE.md ist der aktuelle Stand.
+- Beim nächsten Deploy: Hostinger-Pull-Konfig auf `ghcr.io/textil-mode/…` umstellen (siehe CI/CD).
+- Empfehlung: Budget-Alert in Google Cloud Billing setzen (z. B. 5 €/Monat).
+- ⚠️ Sicherheit: Bis 2026-06-10 lagen ein OpenRouter- und ein Anthropic-Key im Klartext in der eingecheckten `docker-compose.hostinger.yml` (und damit in der Git-History). Beide Keys sollten rotiert/widerrufen werden.
