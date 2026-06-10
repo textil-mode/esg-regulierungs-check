@@ -241,9 +241,16 @@ function _setSelect(name, value) {
   }
 }
 
+function _markRow(el) {
+  const row = el.closest('.checkbox-row') || el;
+  row.style.outline = '2px solid #d4a017';
+  row.style.outlineOffset = '2px';
+  row.style.borderRadius = '6px';
+}
+
 function _setCheckbox(name, value) {
   const cb = document.querySelector('input[type=checkbox][name="' + name + '"]');
-  if (cb) { cb.checked = !!value; }
+  if (cb) { cb.checked = !!value; _markRow(cb); }
 }
 
 async function runAutofill() {
@@ -288,7 +295,7 @@ async function runAutofill() {
     }
     if (Array.isArray(f.product_categories) && f.product_categories.length) {
       document.querySelectorAll('input[name="product_categories"]').forEach(cb => {
-        if (f.product_categories.includes(cb.value)) { cb.checked = true; }
+        if (f.product_categories.includes(cb.value)) { cb.checked = true; _markRow(cb); }
       });
       count++;
     }
@@ -301,6 +308,9 @@ async function runAutofill() {
           firstRow.querySelector('select[name^="site_type_"]').value = 'Hauptsitz';
           firstRow.querySelector('select[name^="site_location_"]').value = f.hq_location;
           cnt.value = '1';
+          firstRow.style.outline = '2px solid #d4a017';
+          firstRow.style.outlineOffset = '2px';
+          firstRow.style.borderRadius = '6px';
           count++;
         }
       }
