@@ -38,6 +38,10 @@
 | **Dunkelgraue Seitenränder** (`#2b2b2b` außerhalb des 1140px-Containers) | `templates/base.html` | ✅ |
 | **Footer-Hinweis** ("Claude Code + OpenAI Codex") unten rechts als `<details>` | `templates/base.html` | ✅ |
 | LLM-Robustheit: 60s Request-Timeout, max_tokens 3000, JSON-Auto-Repair | `llm.py` | ✅ |
+| **KI-Autofill Stammdaten** (Button "✨ KI-generiert ausfüllen": Wikipedia + Website → nur explizit belegte Felder) | `autofill.py`, `/api/autofill`, `templates/dashboard.html` | ✅ |
+| **Deterministische Ergebnisse** (seed=42 + topK=1; `_PROMPT_VERSION` in `reg_hash` invalidiert Cache bei Prompt-Änderungen) | `llm.py` | ✅ |
+| **Begründung immer in UI-Sprache** (auch bei englischem Gesetzestext), Zitat bleibt Original | `llm.py` `_SYSTEM_BASE` | ✅ |
+| **Kennzahl-Hervorhebung** in "Greifende Stelle" (Zahl+Einheit leicht rot, Passage-Box mit Gold-Rand) | `views.py` `_highlight_kennzahlen`, `base.html` | ✅ |
 | "Greifende Stelle" auf 280 Zeichen gekappt | `views.py` `_shorten_passage` | ✅ |
 | Fehler-Regulierung als rote ✕-Karte sichtbar | `views.py` `APPLIES_ORDER` + `BADGE_STYLES` | ✅ |
 | i18n (DE / EN / ES / FR / IT / ZH) | `i18n.py` | ✅ |
@@ -188,7 +192,8 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `regulations.py` | 22 Regulierungen + Guidelines-Map + Veröffentlichungsdaten + Auswahllisten |
 | `i18n.py` | Übersetzungen (6 Sprachen) |
 | `db.py` | SQLite-Schema, Migrationen, Cache-Zugriff |
-| `views.py` | Card/CSV-Renderer |
+| `views.py` | Card/CSV-Renderer (inkl. Kennzahl-Hervorhebung) |
+| `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
 | `templates/dashboard.html` | Hauptseite (Stammdaten + "Jetzt prüfen" + "Regulierungsliste"-Button) |
 | `templates/regulierungsliste.html` | Tabelle aller 22 Regs + Guidelines + Stand |

@@ -63,8 +63,9 @@ Decision rules:
   1. The single decisive criterion for THIS regulation together with the company's matching value (e.g. headcount, revenue, balance sheet, sector, product, group role).
   2. The conclusion that follows (applies / does not apply / to be verified).
   No extra sentences, no lists, no commentary. Never leave it empty.
+  LANGUAGE RULE: "reason" MUST be written entirely in {lang_name} — even if the law text, the criteria or the guidelines are in English or any other language. Translate legal terms into {lang_name}; never copy English sentences into "reason".
 
-"passage" — a short verbatim quote from the full text (preferred) or a paraphrase with article/paragraph reference, max. 40 words, in {lang_name}. It MUST contain only the quote or reference — no notes, no meta commentary, no reasoning.
+"passage" — a short verbatim quote from the full text (preferred, keep the original language of the law text) or a paraphrase in {lang_name} with article/paragraph reference, max. 40 words. It MUST contain only the quote or reference — no notes, no meta commentary, no reasoning.
 
 Keep the "applies" values exactly as ja/nein/moeglich."""
 
@@ -162,8 +163,13 @@ def profile_hash(profile: dict) -> str:
     return hashlib.sha256(json.dumps(stable, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
+# Bei Prompt-Aenderungen hochzaehlen: invalidiert den analysis_cache, damit alle
+# Nutzer einmalig frische Ergebnisse mit dem neuen Prompt bekommen.
+_PROMPT_VERSION = "v2-2026-06-10"
+
+
 def reg_hash(reg: dict) -> str:
-    return hashlib.sha256(reg["criteria"].encode()).hexdigest()[:16]
+    return hashlib.sha256(f"{reg['criteria']}|{_PROMPT_VERSION}".encode()).hexdigest()[:16]
 
 
 def _strip_fences(text: str) -> str:
@@ -361,6 +367,8 @@ class LLMClient:
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
                 "max_tokens": max_tokens,
                 "temperature": 0.0,
+                # Fester Seed: gleiche Eingabe -> gleiche Formulierung (sofern Provider unterstuetzt)
+                "seed": 42,
                 **self.extra,
             }
             if json_mode:
@@ -368,8 +376,12 @@ class LLMClient:
             try:
                 resp = await self.client.chat.completions.create(**kwargs)
             except Exception as e:  # noqa: BLE001
-                if json_mode and ("response_format" in str(e) or "json_object" in str(e)):
+                err = str(e)
+                if json_mode and ("response_format" in err or "json_object" in err):
                     kwargs.pop("response_format", None)
+                    resp = await self.client.chat.completions.create(**kwargs)
+                elif "seed" in err.lower():
+                    kwargs.pop("seed", None)
                     resp = await self.client.chat.completions.create(**kwargs)
                 else:
                     raise
@@ -382,6 +394,11 @@ class LLMClient:
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
                 "generationConfig": {
                     "temperature": 0.0,
+                    # Greedy-Sampling + fester Seed: minimiert Formulierungs-Varianz
+                    # zwischen identischen Laeufen (Gemini ist sonst auch bei temp=0
+                    # nicht deterministisch).
+                    "topK": 1,
+                    "seed": 42,
                     "maxOutputTokens": max_tokens,
                     "responseMimeType": "application/json" if json_mode else "text/plain",
                 },

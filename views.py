@@ -78,6 +78,28 @@ BADGE_STYLES = {
 
 _PASSAGE_MAX_CHARS = 280
 
+# Kennzahlen (Zahl + Einheit/Groessenwort) im Zitat leicht rot hervorheben.
+# Bewusst NUR Zahlen mit Signalwort (€, %, Mio., Beschaeftigte, …), damit
+# Artikel-/Paragraphen-Nummern (Art. 19a, § 267) NICHT markiert werden.
+_KENNZAHL_RE = re.compile(
+    r"(?:€|Euro|EUR)\s?\d[\d .,]*\d?"
+    r"(?:\s*(?:Mio\.?|Mrd\.?|Millionen|Milliarden|millions?|billions?))?"
+    r"|\d[\d .,]*\d?\s*"
+    r"(?:Mio\.?|Mrd\.?|Millionen|Milliarden|millions?|billions?)?\s*"
+    r"(?:€|Euro|EUR|%|Prozent|percent"
+    r"|Besch[aä]ftigte\w*|Mitarbeiter\w*|Mitarbeitende\w*|Arbeitnehmer\w*"
+    r"|employees?|workers?|Personen)"
+    r"|\d[\d .,]*\d\s*(?:Mio\.?|Mrd\.?|Millionen|Milliarden|millions?|billions?)",
+    re.IGNORECASE,
+)
+
+
+def _highlight_kennzahlen(escaped_text: str) -> str:
+    """Markiert Kennzahlen (Schwellenwerte) in bereits HTML-escaptem Text."""
+    return _KENNZAHL_RE.sub(
+        lambda m: f'<span class="kennzahl">{m.group(0)}</span>', escaped_text
+    )
+
 
 def _shorten_passage(text: str) -> str:
     """Kurzform fuer das 'Greifende Stelle'-Feld.
@@ -110,7 +132,7 @@ def _card_html(r: dict, lang_dict: dict) -> str:
     full = escape(r["full_name"])
     url = escape(r["url"])
     article = escape(r.get("article") or "")
-    passage = escape(_shorten_passage(r.get("passage") or ""))
+    passage = _highlight_kennzahlen(escape(_shorten_passage(r.get("passage") or "")))
     reason_raw = (r.get("reason") or "").strip()
     reason = escape(reason_raw) if reason_raw else f'<em style="color:#aaa;">{escape(lang_dict["reason_missing"])}</em>'
     nr = r.get("nr", "")

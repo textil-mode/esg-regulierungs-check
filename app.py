@@ -263,6 +263,30 @@ def save_company():
 
 
 # ---------------------------------------------------------------------------
+# KI-Autofill der Stammdaten
+# ---------------------------------------------------------------------------
+@app.route("/api/autofill", methods=["POST"])
+def autofill_api():
+    uid = _uid()
+    if not uid:
+        return Response(json.dumps({"error": "not authenticated"}), status=401,
+                        mimetype="application/json")
+    payload = request.get_json(silent=True) or {}
+    name = (payload.get("name") or "").strip()
+    if not name:
+        return Response(json.dumps({"error": "name missing"}), status=400,
+                        mimetype="application/json")
+    from autofill import research_company
+    try:
+        result = research_company(name, language=_lang())
+    except Exception as e:  # noqa: BLE001
+        import traceback
+        traceback.print_exc()
+        result = {"fields": {}, "sources": [], "error": str(e)}
+    return Response(json.dumps(result, ensure_ascii=False), mimetype="application/json")
+
+
+# ---------------------------------------------------------------------------
 # Analyse (Background-Thread + Polling)
 # ---------------------------------------------------------------------------
 # Globaler Status-Speicher pro User (einfach, reicht für Single-VPS)
