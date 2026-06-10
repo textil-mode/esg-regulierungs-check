@@ -195,7 +195,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `templates/login.html`, `fullscreen.html`, `analysis.html` | Auth, Fullscreen, Progress-Page |
 | `static/images/tum-logo.svg` | textil+mode-Logo |
 | `Dockerfile` | Python 3.12-slim + Gunicorn; **muss `static/` und `templates/` kopieren** |
-| `docker-compose.hostinger.yml` | Compose-Template (enthält API-Keys — live auf Hostinger editiert) |
+| `docker-compose.hostinger.yml` | Compose-Dummy/Vorlage (nur Platzhalter — echte Keys live im Hostinger-UI) |
 | `.github/workflows/docker-build.yml` | Build-Push nach ghcr.io |
 
 ---
@@ -212,8 +212,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 
 ## Konventionen für Claude Code
 
-- **Never commit** die `_*.txt`-Scratch-Dateien (bash-output-Captures); sie liegen im Repo-Root.
-- **Never commit** `.playwright-mcp/`, `Bugreport/`, `.claude/`.
+- Scratch-Dateien (`_*.txt`, Debug-Screenshots) und `Bugreport/`, `.playwright-mcp/`, `.claude/` sind seit 2026-06-10 in `.gitignore`; trotzdem nie manuell stagen.
 - **Nur explizit geänderte Dateien stagen**, kein `git add -A`.
 - Syntax-Check vor Commit: `./.venv/Scripts/python.exe -m py_compile app.py fetcher.py regulations.py llm.py i18n.py`.
 - Feature-Arbeit: neuer Commit, neuer Tag, wenn wieder "stabil".
