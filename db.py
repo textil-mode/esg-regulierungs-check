@@ -1,9 +1,11 @@
 """SQLite-Persistenz für User, Company und Analysen."""
 from __future__ import annotations
 
+import hashlib
 import json
+import secrets
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -69,6 +71,15 @@ def init_db() -> None:
                 result_json TEXT NOT NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS password_resets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                requested_at TEXT NOT NULL,
+                token_hash TEXT,
+                expires_at TEXT,
+                used_at TEXT,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
             CREATE TABLE IF NOT EXISTS analysis_cache (
                 user_id INTEGER NOT NULL,
                 profile_hash TEXT NOT NULL,
@@ -110,6 +121,123 @@ def verify_user(email: str, password: str) -> Optional[int]:
 def email_exists(email: str) -> bool:
     with _conn() as c:
         return c.execute("SELECT 1 FROM users WHERE email = ?", (email.lower().strip(),)).fetchone() is not None
+
+
+def get_user_by_email(email: str) -> Optional[dict]:
+    with _conn() as c:
+        row = c.execute(
+            "SELECT id, email, created_at FROM users WHERE email = ?",
+            (email.lower().strip(),),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def set_password(user_id: int, password: str) -> None:
+    """Setzt ein neues Passwort und entwertet alle offenen Reset-Links."""
+    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    now = datetime.utcnow().isoformat()
+    with _conn() as c:
+        c.execute("UPDATE users SET pw_hash = ? WHERE id = ?", (pw_hash, user_id))
+        c.execute(
+            "UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL",
+            (now, user_id),
+        )
+
+
+def check_password(user_id: int, password: str) -> bool:
+    with _conn() as c:
+        row = c.execute("SELECT pw_hash FROM users WHERE id = ?", (user_id,)).fetchone()
+    return bool(row) and bcrypt.checkpw(password.encode(), row["pw_hash"].encode())
+
+
+# ---------- Passwort-Reset ----------
+RESET_TTL_HOURS = 24
+
+
+def _token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def create_reset_request(email: str) -> bool:
+    """Legt ein Ticket an ('Passwort vergessen'). False, wenn es die E-Mail nicht gibt.
+
+    Pro Nutzer bleibt höchstens ein offenes Ticket bestehen.
+    """
+    with _conn() as c:
+        row = c.execute(
+            "SELECT id FROM users WHERE email = ?", (email.lower().strip(),)
+        ).fetchone()
+        if not row:
+            return False
+        open_ticket = c.execute(
+            "SELECT 1 FROM password_resets WHERE user_id = ? AND used_at IS NULL",
+            (row["id"],),
+        ).fetchone()
+        if not open_ticket:
+            c.execute(
+                "INSERT INTO password_resets (user_id, requested_at) VALUES (?, ?)",
+                (row["id"], datetime.utcnow().isoformat()),
+            )
+        return True
+
+
+def list_open_resets() -> list[dict]:
+    """Offene Reset-Anfragen für die Admin-Seite, neueste zuerst."""
+    with _conn() as c:
+        rows = c.execute(
+            """
+            SELECT r.id, r.user_id, r.requested_at, r.expires_at,
+                   r.token_hash IS NOT NULL AS link_issued,
+                   u.email, c.name AS company
+            FROM password_resets r
+            JOIN users u ON u.id = r.user_id
+            LEFT JOIN companies c ON c.user_id = r.user_id
+            WHERE r.used_at IS NULL
+            ORDER BY r.requested_at DESC
+            """
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def issue_reset_token(user_id: int) -> tuple[str, str]:
+    """Erzeugt einen einmaligen Reset-Token. Gibt (Klartext-Token, Ablauf-ISO) zurück.
+
+    Der Klartext wird nirgends gespeichert — nur sein SHA-256-Hash.
+    """
+    token = secrets.token_urlsafe(32)
+    now = datetime.utcnow()
+    expires = (now + timedelta(hours=RESET_TTL_HOURS)).isoformat()
+    with _conn() as c:
+        # Ältere offene Links desselben Nutzers entwerten.
+        c.execute(
+            "UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL",
+            (now.isoformat(), user_id),
+        )
+        c.execute(
+            """INSERT INTO password_resets (user_id, requested_at, token_hash, expires_at)
+               VALUES (?, ?, ?, ?)""",
+            (user_id, now.isoformat(), _token_hash(token), expires),
+        )
+    return token, expires
+
+
+def user_for_reset_token(token: str) -> Optional[dict]:
+    """Prüft einen Token. Gibt {id, email} zurück oder None (unbekannt/verbraucht/abgelaufen)."""
+    with _conn() as c:
+        row = c.execute(
+            """
+            SELECT r.id, r.expires_at, u.id AS user_id, u.email
+            FROM password_resets r
+            JOIN users u ON u.id = r.user_id
+            WHERE r.token_hash = ? AND r.used_at IS NULL
+            """,
+            (_token_hash(token),),
+        ).fetchone()
+    if not row:
+        return None
+    if datetime.utcnow().isoformat() > (row["expires_at"] or ""):
+        return None
+    return {"id": row["user_id"], "email": row["email"]}
 
 
 # ---------- Company ----------

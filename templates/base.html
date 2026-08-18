@@ -161,6 +161,10 @@
         </form>
         {% if session.get('user_id') %}
         <span style="font-size:13px;color:#888;">{{ session.get('user_email','') }}</span>
+        {% if session.get('user_email','')|lower == 'mschuckert@textil-mode.de' %}
+        <a href="{{ url_for('admin_resets') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("admin_resets_title", lang) }}</a>
+        {% endif %}
+        <a href="{{ url_for('change_password') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("pw_change_title", lang) }}</a>
         <a href="{{ url_for('logout') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("btn_logout", lang) }}</a>
         {% endif %}
       </div>

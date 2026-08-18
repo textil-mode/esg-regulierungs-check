@@ -68,6 +68,11 @@ class PrefixMiddleware:
         script_name = environ.get("HTTP_X_SCRIPT_NAME", "")
         if script_name:
             environ["SCRIPT_NAME"] = script_name
+        # Damit url_for(_external=True) hinter dem Proxy https-Links baut
+        # (gebraucht fuer den Passwort-Reset-Link).
+        proto = environ.get("HTTP_X_FORWARDED_PROTO", "")
+        if proto:
+            environ["wsgi.url_scheme"] = proto.split(",")[0].strip()
         return self.wsgi_app(environ, start_response)
 
 
@@ -148,6 +153,12 @@ def login():
                 return redirect(url_for("dashboard"))
             flash(t("err_login_failed", lang), "error")
 
+        elif action == "forgot":
+            # Bewusst immer dieselbe Meldung — sonst liesse sich abfragen,
+            # welche Adressen registriert sind.
+            db.create_reset_request(email)
+            flash(t("ok_reset_requested", lang), "success")
+
         elif action == "signup":
             pw2 = request.form.get("password2", "")
             import re
@@ -173,6 +184,93 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+
+# ---------------------------------------------------------------------------
+# Passwort: aendern, zuruecksetzen, Admin-Reset
+# ---------------------------------------------------------------------------
+ADMIN_EMAILS = {"mschuckert@textil-mode.de"}
+
+
+def _is_admin() -> bool:
+    return (session.get("user_email") or "").lower().strip() in ADMIN_EMAILS
+
+
+@app.route("/passwort-aendern", methods=["GET", "POST"])
+def change_password():
+    redir = _require_login()
+    if redir:
+        return redir
+
+    lang = _lang()
+    if request.method == "POST":
+        current = request.form.get("current_password", "")
+        pw = request.form.get("password", "")
+        pw2 = request.form.get("password2", "")
+
+        if not db.check_password(_uid(), current):
+            flash(t("err_pw_current_wrong", lang), "error")
+        elif len(pw) < 8:
+            flash(t("err_pw_short", lang), "error")
+        elif pw != pw2:
+            flash(t("err_pw_mismatch", lang), "error")
+        else:
+            db.set_password(_uid(), pw)
+            flash(t("ok_pw_changed", lang), "success")
+            return redirect(url_for("dashboard"))
+
+    return render_template("password_change.html")
+
+
+@app.route("/passwort-zuruecksetzen/<token>", methods=["GET", "POST"])
+def reset_password(token: str):
+    lang = _lang()
+    user = db.user_for_reset_token(token)
+    if not user:
+        return render_template("password_reset.html", invalid=True), 400
+
+    if request.method == "POST":
+        pw = request.form.get("password", "")
+        pw2 = request.form.get("password2", "")
+        if len(pw) < 8:
+            flash(t("err_pw_short", lang), "error")
+        elif pw != pw2:
+            flash(t("err_pw_mismatch", lang), "error")
+        else:
+            # set_password entwertet den Token gleich mit.
+            db.set_password(user["id"], pw)
+            flash(t("ok_pw_changed", lang), "success")
+            return redirect(url_for("login"))
+
+    return render_template("password_reset.html", invalid=False, email=user["email"])
+
+
+@app.route("/admin/passwort-resets", methods=["GET", "POST"])
+def admin_resets():
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+
+    lang = _lang()
+    issued = None
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip()
+        user = db.get_user_by_email(email)
+        if not user:
+            flash(t("err_user_unknown", lang), "error")
+        else:
+            token, expires = db.issue_reset_token(user["id"])
+            issued = {
+                "email": user["email"],
+                "url": url_for("reset_password", token=token, _external=True),
+                "expires": expires,
+            }
+
+    return render_template(
+        "admin_resets.html", requests=db.list_open_resets(), issued=issued
+    )
 
 
 @app.route("/set-language", methods=["POST"])
