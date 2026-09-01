@@ -41,6 +41,7 @@ from i18n import (
     t,
     t_opt,
 )
+from lawparse import build_context
 from llm import analyze_streaming, profile_hash, reg_hash
 from fetcher import fetch_law_text, fetch_url_text, get_cached_text
 from regulations import (
@@ -452,21 +453,22 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
             res = fetch_law_text(reg, language=lang)
             law_text = res.get("text") or ""
 
-            # Guidelines anhängen (mit Label), damit das LLM sie als Kontext sieht.
-            # Kurzer Timeout (8s), damit eine langsame Guideline-URL nicht die
-            # ganze Analyse blockiert. Fehler werden still uebergangen.
-            parts: list[str] = [f"=== GESETZESTEXT: {reg.get('full_name') or reg['name']} ===", law_text]
+            # Guidelines dazuladen. Kurzer Timeout (8s), damit eine langsame
+            # Guideline-URL nicht die ganze Analyse blockiert. Fehler werden
+            # still uebergangen.
+            guides: list[dict] = []
             for g in guidelines_for(reg["key"]):
                 try:
                     g_res = fetch_url_text(g["url"], language=lang, timeout=8.0)
                     g_text = (g_res.get("text") or "").strip()
                     if g_text:
-                        parts.append(f"\n=== GUIDELINE: {g['name']} ({g['url']}) ===\n{g_text}")
+                        guides.append({"name": g["name"], "url": g["url"], "text": g_text})
                 except Exception as e:  # noqa: BLE001
                     print(f"[guideline-fetch] skipped {g['url']}: {e}", flush=True)
 
-            combined = "\n".join(parts)[:max_chars]
-            texts[reg["key"]] = combined
+            # Strukturbasierte Auswahl statt Blind-Kappung: sonst landet bei
+            # EU-Rechtsakten nur die Praeambel im Kontext.
+            texts[reg["key"]] = build_context(reg, law_text, guides, max_chars)
 
         # Phase 2: LLM-Analyse
         cached_hits: list[dict] = []

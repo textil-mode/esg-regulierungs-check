@@ -102,6 +102,59 @@ def _accept_language(lang: str) -> str:
     return _ACCEPT_LANG_MAP.get(lang, "de,en;q=0.7")
 
 
+def _store_limit() -> int:
+    """Wieviel Text im Cache abgelegt wird.
+
+    Bewusst getrennt von FULLTEXT_MAX_CHARS (= Budget fuer den LLM-Kontext):
+    lawparse.build_context waehlt die relevanten Artikel erst aus dem
+    vollstaendigen Text aus. Wuerde hier schon auf das LLM-Budget gekappt,
+    fehlte der Anwendungsbereich weiterhin (EU-Rechtsakte beginnen mit
+    Erwaegungsgruenden).
+    """
+    return int(os.getenv("LAW_TEXT_MAX_CHARS", "400000"))
+
+
+# EUR-Lex liefert seit 2026 fuer Server-Clients eine AWS-WAF-Challenge
+# (HTTP 202, leerer Body). Der Volltext liegt identisch beim Amt fuer
+# Veroeffentlichungen; von dort wird er als Fallback geholt.
+_CELEX_FROM_URL = re.compile(r"CELEX[:%]?(?:3A)?([0-9][0-9A-Z\-]+)", re.I)
+_ELI_FROM_URL = re.compile(r"/eli/(dir|reg|reg_del|dec)/(\d{4})/(\d+)/oj", re.I)
+_ELI_SECTOR = {"dir": "L", "reg": "R", "reg_del": "R", "dec": "D"}
+
+
+def _celex_id(url: str) -> str | None:
+    m = _CELEX_FROM_URL.search(url)
+    if m:
+        return m.group(1).upper()
+    m = _ELI_FROM_URL.search(url)
+    if m:
+        kind, year, num = m.group(1).lower(), m.group(2), m.group(3)
+        return f"3{year}{_ELI_SECTOR.get(kind, 'R')}{int(num):04d}"
+    return None
+
+
+def _cellar_text(url: str, language: str, timeout: float) -> str:
+    """Volltext ueber publications.europa.eu (CELEX-Resource), sonst ''."""
+    celex = _celex_id(url)
+    if not celex:
+        return ""
+    three, _ = _EURLEX_LANG_MAP.get(language, ("deu", "DE"))
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/xhtml+xml",
+        "Accept-Language": three,
+    }
+    try:
+        with httpx.Client(timeout=timeout, follow_redirects=True, headers=headers) as client:
+            resp = client.get(f"http://publications.europa.eu/resource/celex/{celex}")
+        if resp.status_code >= 400:
+            return ""
+        return _extract_html(resp.text)
+    except Exception as e:  # noqa: BLE001
+        print(f"[cellar] {celex} fehlgeschlagen: {e}", flush=True)
+        return ""
+
+
 def _localized_url(url: str, lang: str) -> str:
     """EUR-Lex unterstützt /oj/<3-letter> bzw. /legal-content/<2-letter>/.
     Andere URLs (z.B. gesetze-im-internet.de) unverändert.
@@ -159,24 +212,37 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     if resp.status_code == 304 and row:
         return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False, "error": None, "status": 304}
 
+    used_fallback = False
     if resp.status_code >= 400:
-        if row:
-            return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False,
+        text = _cellar_text(url, language, 60.0)
+        used_fallback = bool(text)
+        if not text:
+            if row:
+                return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False,
+                        "error": f"HTTP {resp.status_code}", "status": resp.status_code}
+            return {"text": "", "fetched_at": None, "is_new": False,
                     "error": f"HTTP {resp.status_code}", "status": resp.status_code}
-        return {"text": "", "fetched_at": None, "is_new": False,
-                "error": f"HTTP {resp.status_code}", "status": resp.status_code}
-
-    content_type = (resp.headers.get("content-type") or "").lower()
-    if "pdf" in content_type or url.lower().endswith(".pdf"):
-        text = _extract_pdf(resp.content)
     else:
-        text = _extract_html(resp.text)
+        content_type = (resp.headers.get("content-type") or "").lower()
+        if "pdf" in content_type or url.lower().endswith(".pdf"):
+            text = _extract_pdf(resp.content)
+        else:
+            text = _extract_html(resp.text)
 
-    max_chars = int(os.getenv("FULLTEXT_MAX_CHARS", "40000"))
-    text = text[:max_chars]
+    # EUR-Lex antwortet Server-Clients mit einer WAF-Challenge (HTTP 202,
+    # leerer Body). Dann den Volltext beim Amt fuer Veroeffentlichungen holen.
+    if len(text.strip()) < 2000 and "eur-lex.europa.eu" in url:
+        alt = _cellar_text(url, language, 60.0)
+        if len(alt) > len(text):
+            text = alt
+            used_fallback = True
 
-    etag = resp.headers.get("etag") or ""
-    last_mod = resp.headers.get("last-modified") or ""
+    text = text[:_store_limit()]
+
+    # Nach einem Fallback duerfen ETag/Last-Modified der Challenge-Antwort nicht
+    # gespeichert werden — sonst quittiert EUR-Lex den naechsten Lauf mit 304.
+    etag = "" if used_fallback else (resp.headers.get("etag") or "")
+    last_mod = "" if used_fallback else (resp.headers.get("last-modified") or "")
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute(
@@ -277,8 +343,7 @@ def fetch_url_text(url: str, *, language: str = "de", force: bool = False,
     else:
         text = _extract_html(resp.text)
 
-    max_chars = int(os.getenv("FULLTEXT_MAX_CHARS", "40000"))
-    text = text[:max_chars]
+    text = text[:_store_limit()]
 
     etag = resp.headers.get("etag") or ""
     last_mod = resp.headers.get("last-modified") or ""

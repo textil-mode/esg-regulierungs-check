@@ -38,7 +38,8 @@ class _TruncatedJSON(ValueError):
 # am Ende. So skaliert es sauber auf beliebig viele Sprachen.
 _SYSTEM_BASE = """You are a precise ESG compliance analyst.
 You receive a company profile, the applicability criteria of a regulation
-and the (truncated) full text of the law.
+and an extract of the law consisting of the sections most relevant to scope
+(subject matter, scope, definitions, key articles), each preceded by its heading.
 
 CRITICAL FORMATTING:
 - Your ENTIRE response MUST be a single valid JSON object.
@@ -110,7 +111,8 @@ Relevant article/section: {article}
 Applicability criteria (summary):
 {criteria}
 {premise}
-FULL-TEXT EXTRACT (truncated):
+LAW TEXT EXTRACT (selected sections; a line "=== Art. 2 - ... ===" marks the
+source section of everything that follows it, "[…]" marks a shortened section):
 ---
 {fulltext}
 ---
@@ -165,7 +167,7 @@ def profile_hash(profile: dict) -> str:
 
 # Bei Prompt-Aenderungen hochzaehlen: invalidiert den analysis_cache, damit alle
 # Nutzer einmalig frische Ergebnisse mit dem neuen Prompt bekommen.
-_PROMPT_VERSION = "v2-2026-06-10"
+_PROMPT_VERSION = "v3-2026-09-01"
 
 
 def reg_hash(reg: dict) -> str:
