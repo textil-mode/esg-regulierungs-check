@@ -25,6 +25,10 @@ REGULATIONS = [
             "Für Unternehmen aus Drittländern: Nettoumsatz >1.500 Mio EUR in der Union. "
             "Zusätzlich erfasst: Franchise-/Lizenzmodelle mit Lizenzgebühren >75 Mio EUR und "
             "weltweitem Nettoumsatz >275 Mio EUR. "
+            "Die Schwellen müssen in ZWEI AUFEINANDERFOLGENDEN Geschäftsjahren überschritten sein "
+            "(Art. 2 Abs. 5); umgekehrt endet die Pflicht erst, wenn sie in beiden letzten "
+            "Geschäftsjahren nicht mehr erfüllt waren. Teilzeitkräfte zählen in Vollzeitäquivalenten, "
+            "Leiharbeitnehmer werden mitgezählt (Art. 2 Abs. 4). "
             "Kein größenabhängiger Phase-in mehr: die nationalen Vorschriften gelten einheitlich "
             "ab 26.07.2029, die Berichtspflicht nach Art. 16 für Geschäftsjahre ab 01.01.2030. "
             "Branche: alle."
@@ -53,8 +57,8 @@ REGULATIONS = [
         "key": "EUDR",
         "name": "EUDR",
         "full_name": "Verordnung (EU) 2023/1115 über entwaldungsfreie Lieferketten",
-        "url": "https://eur-lex.europa.eu/eli/reg/2023/1115/oj",
-        "text_url": "https://eur-lex.europa.eu/eli/reg/2023/1115/oj",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R1115",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R1115",
         "scope": "EU",
         "criteria": (
             "Gilt für alle Marktteilnehmer und Händler, die in der EU bestimmte Rohstoffe "
@@ -69,6 +73,12 @@ REGULATIONS = [
         "key": "FLR",
         "name": "FLR (Zwangsarbeitsverordnung)",
         "full_name": "Verordnung (EU) 2024/3015 - Verbot von in Zwangsarbeit hergestellten Produkten",
+        # ELI-Form bewusst beibehalten: zu 2024/3015 gibt es (Stand 09/2026)
+        # keine konsolidierte Fassung, der Ursprungsrechtsakt IST der geltende
+        # Text. Gleiches gilt fuer Right to Repair (2024/1799). Alle uebrigen
+        # EU-Quellen zeigen auf die datumslose konsolidierte CELEX-ID, sonst
+        # lieferte der Abruf dauerhaft die Ursprungsfassung — bei der EUDR waere
+        # das der Stand VOR den beiden Verschiebungen gewesen.
         "url": "https://eur-lex.europa.eu/eli/reg/2024/3015/oj",
         "text_url": "https://eur-lex.europa.eu/eli/reg/2024/3015/oj",
         "scope": "EU",
@@ -138,8 +148,8 @@ REGULATIONS = [
         "key": "NFRD",
         "name": "NFRD",
         "full_name": "Richtlinie 2014/95/EU - nichtfinanzielle Berichterstattung",
-        "url": "https://eur-lex.europa.eu/eli/dir/2014/95/oj",
-        "text_url": "https://eur-lex.europa.eu/eli/dir/2014/95/oj",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02014L0095",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02014L0095",
         "scope": "EU",
         "criteria": (
             "Vorläufer der CSRD. Ersetzt für Geschäftsjahre ab 2024 schrittweise durch CSRD. "
@@ -159,8 +169,15 @@ REGULATIONS = [
         # eingefuegt hat: § 289b HGB (Anwendungsbereich der nichtfinanziellen
         # Erklaerung).
         # url = lesbare Einzelvorschrift, text_url = HGB-Gesamtausgabe, damit
-        # alle vier vom CSR-RUG eingefuegten §§ 289b-289e im Kontext landen
-        # (sie stehen bei Zeichen ~259 000, also innerhalb LAW_TEXT_MAX_CHARS).
+        # alle vier vom CSR-RUG eingefuegten §§ 289b-289e im Kontext landen.
+        #
+        # ACHTUNG, stille Abhaengigkeit: Die HGB-Gesamtausgabe hat rund 842 000
+        # Zeichen und wird vom Fetcher auf LAW_TEXT_MAX_CHARS (Default 400 000)
+        # gekappt. § 289b steht bei Zeichen ~259 000 — der Puffer betraegt also
+        # nur rund 141 000 Zeichen. Waechst das HGB vor dieser Stelle deutlich,
+        # oder wird LAW_TEXT_MAX_CHARS gesenkt, faellt der Anwendungsbereich
+        # kommentarlos aus dem Kontext. `test_lawparse.py` prueft deshalb, dass
+        # "§ 289b" im gespeicherten Text vorkommt.
         "url": "https://www.gesetze-im-internet.de/hgb/__289b.html",
         "text_url": "https://www.gesetze-im-internet.de/hgb/BJNR002190897.html",
         "scope": "DE",
@@ -176,8 +193,8 @@ REGULATIONS = [
         "key": "TaxonomieVO",
         "name": "Taxonomie-Verordnung",
         "full_name": "Verordnung (EU) 2020/852 - Rahmen für nachhaltige Investitionen",
-        "url": "https://eur-lex.europa.eu/eli/reg/2020/852/oj",
-        "text_url": "https://eur-lex.europa.eu/eli/reg/2020/852/oj",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02020R0852",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02020R0852",
         "scope": "EU",
         "criteria": (
             "Gilt für Unternehmen, die unter die NFRD/CSRD fallen, sowie für Finanzmarktteilnehmer. "
@@ -206,8 +223,8 @@ REGULATIONS = [
         "key": "ESGRatingVO",
         "name": "ESG Rating VO",
         "full_name": "Verordnung (EU) 2024/3005 - ESG-Ratings",
-        "url": "https://eur-lex.europa.eu/eli/reg/2024/3005/oj",
-        "text_url": "https://eur-lex.europa.eu/eli/reg/2024/3005/oj",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R3005",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R3005",
         "scope": "EU",
         "criteria": (
             "Gilt für Anbieter von ESG-Ratings mit Tätigkeit in der EU. "
@@ -280,8 +297,8 @@ REGULATIONS = [
         "key": "PPWR",
         "name": "PPWR",
         "full_name": "Verordnung (EU) 2025/40 - Verpackungen und Verpackungsabfälle",
-        "url": "https://eur-lex.europa.eu/eli/reg/2025/40/oj",
-        "text_url": "https://eur-lex.europa.eu/eli/reg/2025/40/oj",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02025R0040",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02025R0040",
         "scope": "EU",
         "criteria": (
             "Gilt für Hersteller, Importeure, Händler, Fulfilment-Dienstleister und Endvertreiber von "
@@ -325,8 +342,8 @@ REGULATIONS = [
         "key": "UmweltstrafRL",
         "name": "EU Umweltstrafrechts-RL",
         "full_name": "Richtlinie (EU) 2024/1203 - strafrechtlicher Schutz der Umwelt",
-        "url": "https://eur-lex.europa.eu/eli/dir/2024/1203/oj",
-        "text_url": "https://eur-lex.europa.eu/eli/dir/2024/1203/oj",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1203",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1203",
         "scope": "EU",
         "criteria": (
             "Richtet sich primär an Mitgliedstaaten (Umsetzung ins nationale Strafrecht). "
@@ -352,7 +369,10 @@ REGULATIONS = [
     {
         "nr": 22,
         "key": "GreenClaims",
-        "name": "Green Claims Directive (Entwurf)",
+        # Kein "(Entwurf)" im Namen: der Zusatz stuende auch in der englischen
+        # und franzoesischen Tabelle auf Deutsch. Den Entwurfscharakter tragen
+        # der Status-Badge und der Stand-Hinweis, beide uebersetzt.
+        "name": "Green Claims Directive",
         "full_name": "Vorschlag Richtlinie - Begründung/Kommunikation ausdrücklicher Umweltaussagen",
         "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:52023PC0166",
         "text_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:52023PC0166",
@@ -493,7 +513,9 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     "EUDR":            "09.06.2023",
     "FLR":             "12.12.2024",
     "CSRD":            "16.12.2022",
-    "CSRD_DE":         "Entwurf 2025",
+    # Kein Veroeffentlichungsdatum — das Gesetz ist nicht verkuendet.
+    # Der Entwurfshinweis kommt uebersetzt aus i18n (siehe DRAFT_PUBLISHED).
+    "CSRD_DE":         "",
     "ESRS":            "22.12.2023",
     "NFRD":            "15.11.2014",
     "CSR-RUG":         "11.04.2017",
@@ -509,13 +531,24 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     "MinRohSorgG":     "18.12.2020",
     "UmweltstrafRL":   "30.04.2024",
     "EmpCo":           "06.03.2024",
-    "GreenClaims":     "Entwurf 22.03.2023",
+    # Datum des Kommissionsvorschlags COM(2023) 166 final.
+    "GreenClaims":     "22.03.2023",
 }
+
+# Regulierungen, deren Datum oben nur ein Entwurfsstand ist (keine Verkuendung).
+# Die Liste ersetzt die frueheren deutschen Freitexte "Entwurf 2025" /
+# "Entwurf 22.03.2023", die auch in EN/FR/ES/IT/ZH auf Deutsch erschienen.
+DRAFT_PUBLISHED: frozenset[str] = frozenset({"CSRD_DE", "GreenClaims"})
 
 
 def published_for(reg_key: str) -> str:
     """Veroeffentlichungsdatum (oder leerer Platzhalter)."""
-    return PUBLISHED_BY_REG_KEY.get(reg_key, "—")
+    return PUBLISHED_BY_REG_KEY.get(reg_key) or "—"
+
+
+def published_is_draft(reg_key: str) -> bool:
+    """True, wenn das Datum nur einen Entwurfsstand bezeichnet."""
+    return reg_key in DRAFT_PUBLISHED
 
 
 # ---------------------------------------------------------------------------
@@ -647,11 +680,19 @@ def csrd_status(profile: dict) -> tuple[str, str]:
     Schwelle nach Art. 19a Abs. 1 / Art. 29a Abs. 1 der Bilanzrichtlinie
     2013/34/EU i.d.F. der Richtlinie (EU) 2026/470: >1000 Beschaeftigte im
     Jahresdurchschnitt UND >450 Mio. EUR Nettoumsatzerloese — beide Merkmale
-    kumulativ. Die Bilanzsumme ist kein Kriterium mehr, eine Boersennotierung
-    allein begruendet keine Pflicht.
+    kumulativ. Die Bilanzsumme ist kein Kriterium mehr.
+
+    Diese Werte gelten fuer Geschaeftsjahre ab dem 01.01.2027. Fuer die
+    Geschaeftsjahre 2024 bis 2026 gilt daneben WEITER die Welle-1-Regel des
+    Art. 5 Abs. 2 UAbs. 1 lit. a RL (EU) 2022/2464 (grosse Unternehmen von
+    oeffentlichem Interesse mit >500 Beschaeftigten). Die Mitgliedstaaten
+    DUERFEN diese Unternehmen fuer 2025/2026 befreien, muessen aber nicht —
+    deshalb wird der Fall als "moeglich" ausgewiesen und nicht verneint.
     """
+    from datetime import date
     emp = profile.get("employees") or 0
     rev = profile.get("revenue_eur") or 0
+    listed = bool(profile.get("listed"))
     group = profile.get("group_role") or ""
     non_eu_parent = ("außerhalb EU" in group) or ("Nicht-EU" in group)
     if emp > 1000 and rev > 450_000_000:
@@ -664,9 +705,22 @@ def csrd_status(profile: dict) -> tuple[str, str]:
                             "Pflicht nach Art. 40a der Bilanzrichtlinie kommt in Betracht, wenn "
                             "eine EU-Tochter bzw. Zweigniederlassung mehr als 200 Mio. EUR "
                             "Nettoumsatz erzielt. Einzelpruefung noetig.")
+    # Welle 1 laeuft mit dem Geschaeftsjahr 2026 aus; Berichte dazu erscheinen
+    # noch im Laufe von 2027. Das Zeitfenster steht hier, damit die Aussage
+    # danach von selbst verschwindet statt zu veralten.
+    if listed and emp > 500 and date.today() < date(2028, 1, 1):
+        return "moeglich", (
+            f"{emp} Beschaeftigte (>500) und kapitalmarktorientiert: fuer die Geschaeftsjahre "
+            f"2024 bis 2026 kann die Welle-1-Regel (Art. 5 Abs. 2 UAbs. 1 lit. a "
+            f"RL (EU) 2022/2464) noch greifen, wenn der Mitgliedstaat die CSRD umgesetzt und "
+            f"die Befreiungsoption fuer 2025/2026 nicht gezogen hat. Fuer Geschaeftsjahre ab "
+            f"dem 01.01.2027 besteht mangels Umsatzschwelle ({_fmt_eur(rev)} <= 450 Mio. EUR) "
+            f"keine Pflicht mehr. Einzelpruefung nach Sitzstaat noetig.")
     return "nein", (f"{emp} Beschaeftigte und Nettoumsatz {_fmt_eur(rev)} erreichen nicht beide "
-                    f"Schwellen (>1000 Beschaeftigte UND >450 Mio. EUR Nettoumsatz). Bilanzsumme "
-                    f"und Boersennotierung sind nach der Omnibus-Aenderung keine Kriterien mehr.")
+                    f"Schwellen (>1000 Beschaeftigte UND >450 Mio. EUR Nettoumsatz). Fuer "
+                    f"Geschaeftsjahre ab dem 01.01.2027 sind Bilanzsumme und Boersennotierung "
+                    f"keine Kriterien mehr; die Welle-1-Regel fuer die Geschaeftsjahre 2024 bis "
+                    f"2026 greift hier mangels Kapitalmarktorientierung bzw. Groesse ebenfalls nicht.")
 
 
 def hinschg_status(profile: dict) -> tuple[str, str]:

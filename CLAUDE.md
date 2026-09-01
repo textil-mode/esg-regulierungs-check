@@ -35,7 +35,8 @@
 | Gesetzestext-Cache mit ETag / Last-Modified | `fetcher.py` `law_texts` | ✅ |
 | **Strukturbasierte Kontext-Auswahl** (Art. 1-3 + `key_article` + Schwellenwert-Abschnitte statt Blind-Kappung; Kopfzeilen `=== Art. 2 - … ===`) | `lawparse.py` `build_context`, `app.py` Phase 1 | ✅ |
 | **EUR-Lex-Fallback ueber publications.europa.eu** (EUR-Lex antwortet Server-Clients mit AWS-WAF-Challenge, HTTP 202 + leerer Body) | `fetcher.py` `_cellar_text` | ✅ |
-| **Datumslose CELEX-URLs** (`CELEX:02024L1760` statt `…-20260318`); die juengste konsolidierte Fassung wird zur Laufzeit per SPARQL aufgeloest, Fallback = Basisrechtsakt | `fetcher.py` `_latest_consolidated` | ✅ |
+| **Datumslose CELEX-URLs** (`CELEX:02024L1760` statt `…-20260318`); die juengste konsolidierte Fassung wird zur Laufzeit per SPARQL aufgeloest | `fetcher.py` `_latest_consolidated` | ✅ |
+| **Schutz vor stillem Rueckfall auf die Ursprungsfassung**: laesst sich die Konsolidierung nicht ermitteln, wird der vorhandene Cache-Text BEHALTEN statt des Basisrechtsakts; ohne Cache wird der Basisakt zwar genommen, aber in `source_status` (≤ -1000) und `source_note` markiert und auf der Admin-Seite rot ausgewiesen. Zusaetzlich Inhaltspruefung der Konsolidierungs-Kopfzeile | `fetcher.py` `_is_consolidated_text`, `source_is_base_act_fallback` | ✅ |
 | **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
 | **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
 | **Watchdog** (`python watchdog.py`): laedt alle 22 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
@@ -201,7 +202,13 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 
 ### Dynamische Daten (Cache, SQLite in `/app/data/esg.db`)
 
-- `users`, `companies`, `analyses`, `analysis_cache`, `law_texts` (Volltext + ETag + Last-Modified + fetched_at)
+> **Testlaeufe:** `ESG_DB_PATH=/pfad/zur/kopie.db` biegt `db.py` **und** `fetcher.py`
+> gemeinsam auf eine andere Datei um. Ohne diese Variable schreibt jeder Direktaufruf
+> (z. B. `python watchdog.py`) in `data/esg.db`.
+
+- `users`, `companies`, `analyses`, `analysis_cache`, `law_texts` (Volltext + ETag + Last-Modified +
+  fetched_at + `source_status` + `source_note`; `source_status ≤ -1000` = nur Ursprungsrechtsakt
+  geladen, spaetere Aenderungen fehlen)
 - `law_versions` — Historie der Gesetzestexte, eine Zeile je inhaltlich abweichender Fassung
   (`reg_key`, `language`, `text_hash` = sha256, `text`, `url`, `fetched_at`). Wird vom Fetcher
   bei jeder Aenderung fortgeschrieben; `fetcher.current_text_hash(reg_key, language)` liefert den

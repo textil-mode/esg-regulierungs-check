@@ -10,21 +10,34 @@ import io
 import os
 import re
 import sqlite3
+import time
 from datetime import datetime
 from pathlib import Path
+from typing import NamedTuple
 
 import httpx
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
 
-from db import DB_PATH
+import db as _db
 
 
 USER_AGENT = "ESG-Regulierungs-Check/1.0 (+https://localhost)"
 
+# Optionale Modul-Ueberschreibung fuer Tests (`fetcher.DB_PATH = …`).
+# None = es gilt der in db.py konfigurierte Pfad, inklusive `ESG_DB_PATH`.
+# So genuegt eine einzige Stellschraube, statt beide Module patchen zu muessen.
+DB_PATH: Path | None = None
+
+
+def _db_path() -> Path:
+    return Path(DB_PATH) if DB_PATH else Path(_db.DB_PATH)
+
 
 def _conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    path = _db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -50,6 +63,11 @@ def init_fetcher() -> None:
         cols = {row[1] for row in c.execute("PRAGMA table_info(law_texts)").fetchall()}
         if "language" not in cols:
             c.execute("ALTER TABLE law_texts ADD COLUMN language TEXT NOT NULL DEFAULT 'de'")
+        # Herkunft des Texts im Klartext (welche CELEX-Fassung, Notbehelf ja/nein).
+        # `source_status` allein kann das nicht tragen und waere fuer den
+        # Admin-Blick auch nicht lesbar.
+        if "source_note" not in cols:
+            c.execute("ALTER TABLE law_texts ADD COLUMN source_note TEXT")
         # Historie: je inhaltlich abweichender Fassung eine Zeile. `law_texts`
         # haelt nur den letzten Stand — ohne Historie waere weder erkennbar
         # NOCH belegbar, dass sich ein Gesetzestext geaendert hat.
@@ -168,7 +186,27 @@ _SPARQL_URL = "https://publications.europa.eu/webapi/rdf/sparql"
 _DATED_CELEX = re.compile(r"^0\d{4}[A-Z]\d{4}-\d{8}$")
 _UNDATED_CONSOLIDATED = re.compile(r"^0(\d{4}[A-Z]\d{4})$")
 
+# Eigener, KURZER Timeout: die Konsolidierungssuche ist eine Zusatzabfrage vor
+# dem eigentlichen Download. Mit dem 60-s-Timeout des Cellar-Abrufs koennte sie
+# Phase 1 (sequenziell ueber alle 22 Regulierungen) um Minuten verlaengern.
+_SPARQL_TIMEOUT = float(os.getenv("SPARQL_TIMEOUT", "8"))
+
+# Ergebniszustaende der Konsolidierungssuche. Bewusst nur zwei: entweder die
+# konsolidierte Fassung steht fest, oder sie steht NICHT fest.
+#
+# Ein leeres Suchergebnis gilt dabei ebenfalls als "nicht ermittelt" und NICHT
+# als "es gibt keine konsolidierte Fassung". Grund: eine `0…`-CELEX-ID existiert
+# ueberhaupt nur dann, wenn EUR-Lex eine konsolidierte Fassung fuehrt. Kommt zu
+# einer solchen ID keine Trefferzeile zurueck, hat die Abfrage versagt (z. B.
+# Drosselung des Endpunkts) — genau dieser Fall ist im Test am 01.09.2026 fuer
+# EUDR aufgetreten und haette sonst den Ursprungsrechtsakt legitimiert.
+RESOLVE_CONSOLIDATED = "consolidated"
+RESOLVE_UNRESOLVED = "unresolved"
+
 # Prozess-Cache: pro Lauf wird jede CELEX-ID hoechstens einmal aufgeloest.
+# ACHTUNG: NUR Erfolge werden gecacht. Wuerde auch `unresolved` gecacht,
+# vergiftete ein Sekunden-Ausfall des Endpunkts den Gunicorn-Worker bis zum
+# Neustart.
 _consolidated_cache: dict[str, str] = {}
 
 
@@ -178,16 +216,8 @@ def _base_act_celex(celex: str) -> str:
     return f"3{m.group(1)}" if m else celex
 
 
-def _latest_consolidated(celex: str, timeout: float) -> str:
-    """Juengste konsolidierte Fassung zu einer datumslosen `0…`-CELEX-ID.
-
-    Rueckgabe: `02024L1760-20260318`, oder der Basisrechtsakt (`32024L1760`),
-    wenn es keine konsolidierte Fassung gibt oder der Endpunkt nicht antwortet.
-    Damit bleibt der Abruf auch ohne SPARQL funktionsfaehig — nur eben auf der
-    Ursprungsfassung.
-    """
-    if celex in _consolidated_cache:
-        return _consolidated_cache[celex]
+def _sparql_latest(celex: str, timeout: float) -> str:
+    """Eine SPARQL-Abfrage; liefert die datierte CELEX-ID oder ''."""
     query = (
         "PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>\n"
         "SELECT ?celex WHERE {\n"
@@ -195,23 +225,53 @@ def _latest_consolidated(celex: str, timeout: float) -> str:
         f'  FILTER(STRSTARTS(STR(?celex), "{celex}-"))\n'
         "}\nORDER BY DESC(?celex) LIMIT 1"
     )
-    resolved = _base_act_celex(celex)
-    try:
-        with httpx.Client(timeout=timeout, follow_redirects=True,
-                          headers={"User-Agent": USER_AGENT,
-                                   "Accept": "application/sparql-results+json"}) as client:
-            resp = client.get(_SPARQL_URL, params={
-                "query": query, "format": "application/sparql-results+json"})
-        if resp.status_code < 400:
-            bindings = resp.json().get("results", {}).get("bindings", [])
-            if bindings:
-                value = (bindings[0].get("celex") or {}).get("value") or ""
-                if _DATED_CELEX.match(value):
-                    resolved = value
-    except Exception as e:  # noqa: BLE001
-        print(f"[cellar] Konsolidierungssuche {celex} fehlgeschlagen: {e}", flush=True)
-    _consolidated_cache[celex] = resolved
-    return resolved
+    with httpx.Client(timeout=timeout, follow_redirects=True,
+                      headers={"User-Agent": USER_AGENT,
+                               "Accept": "application/sparql-results+json"}) as client:
+        resp = client.get(_SPARQL_URL, params={
+            "query": query, "format": "application/sparql-results+json"})
+    if resp.status_code >= 400:
+        raise RuntimeError(f"HTTP {resp.status_code}")
+    bindings = resp.json().get("results", {}).get("bindings", [])
+    if not bindings:
+        return ""
+    value = (bindings[0].get("celex") or {}).get("value") or ""
+    return value if _DATED_CELEX.match(value) else ""
+
+
+def _latest_consolidated(celex: str, timeout: float | None = None) -> tuple[str, str]:
+    """Juengste konsolidierte Fassung zu einer datumslosen `0…`-CELEX-ID.
+
+    Rueckgabe `(celex, zustand)`:
+      * `("02024L1760-20260318", RESOLVE_CONSOLIDATED)` — Fassung steht fest.
+      * `("32024L1760", RESOLVE_UNRESOLVED)` — nicht ermittelbar. Der
+        Basisrechtsakt ist dann nur ein Notbehelf und inhaltlich womoeglich
+        falsch (bei der CSDDD z. B. die Ursprungsfassung mit 3 000 Beschaeftigten
+        und 900 Mio. EUR statt der geltenden 5 000 / 1,5 Mrd.). Der Aufrufer MUSS
+        diesen Zustand anders behandeln.
+
+    Ein zweiter Versuch faengt die haeufigste Ursache ab: der Endpunkt drosselt
+    bei mehreren Abfragen kurz hintereinander, wie sie ein Analyse- oder
+    Watchdog-Lauf ueber alle 22 Regulierungen ausloest.
+    """
+    if celex in _consolidated_cache:
+        return _consolidated_cache[celex], RESOLVE_CONSOLIDATED
+    t = timeout or _SPARQL_TIMEOUT
+    last_problem = "leeres Ergebnis"
+    for attempt in (1, 2):
+        try:
+            value = _sparql_latest(celex, t)
+        except Exception as e:  # noqa: BLE001
+            last_problem = f"{type(e).__name__}: {e}"
+            value = ""
+        if value:
+            _consolidated_cache[celex] = value
+            return value, RESOLVE_CONSOLIDATED
+        if attempt == 1:
+            time.sleep(1.5)
+    print(f"[cellar] Konsolidierungssuche {celex} ergebnislos ({last_problem}) — "
+          f"Ergebnis wird NICHT gecacht", flush=True)
+    return _base_act_celex(celex), RESOLVE_UNRESOLVED
 
 
 def _cellar_fetch(celex: str, language: str, timeout: float) -> str:
@@ -260,24 +320,71 @@ def _cellar_fetch(celex: str, language: str, timeout: float) -> str:
         return ""
 
 
-def _cellar_text(url: str, language: str, timeout: float) -> str:
-    """Volltext ueber publications.europa.eu zur CELEX-ID in `url`, sonst ''.
+class CellarResult(NamedTuple):
+    """Ergebnis eines Cellar-Abrufs samt Herkunft des Texts.
 
-    Bei datumsloser konsolidierter ID wird zuerst die juengste konsolidierte
-    Fassung versucht, danach der Basisrechtsakt — so bleibt der Abruf auch dann
-    erfolgreich, wenn zu einem Rechtsakt (noch) keine Konsolidierung vorliegt.
+    `kind` ist entscheidend fuer die Vertrauenswuerdigkeit:
+      * `RESOLVE_CONSOLIDATED` — die geltende konsolidierte Fassung.
+      * `RESOLVE_UNRESOLVED` — Basisrechtsakt als Notbehelf, weil die
+        Konsolidierung nicht ermittelt oder nicht geladen werden konnte.
+        **Inhaltlich verdaechtig — spaetere Aenderungen fehlen.**
+      * `""` — die URL nannte direkt einen Ursprungsrechtsakt (`3…`/`5…`),
+        es war also gar keine Konsolidierung angefragt.
+    """
+    text: str
+    celex: str
+    kind: str
+
+
+def _is_consolidated_text(text: str, celex: str) -> bool:
+    """Traegt der geladene Text die Kopfzeile der konsolidierten Fassung?
+
+    Konsolidierte Fassungen beginnen mit einer Kennungszeile
+    `02024L1760 — DE — 18.03.2026 — 002.001`; aeltere Konsolidierungen drucken
+    dieselbe Kennung OHNE fuehrende Null (`2014L0095 — DE — 05.12.2014`), daher
+    ist sie hier optional. Ursprungsrechtsakte beginnen dagegen mit
+    `Amtsblatt der Europaeischen Union …` und haben diese Zeile nicht.
+
+    Diese Pruefung am INHALT ist die eigentliche Absicherung: sie greift auch
+    dann, wenn die Konsolidierungssuche faelschlich einen Erfolg meldet oder
+    Cellar unter einer konsolidierten Kennung den Ursprungstext ausliefert.
+    """
+    stem = celex[1:] if celex.startswith("0") else celex
+    pattern = rf"\b0?{re.escape(stem)}\s*[—–-]\s*[A-Z]{{2}}\s*[—–-]"
+    return re.search(pattern, text[:300]) is not None
+
+
+def _cellar_text(url: str, language: str, timeout: float) -> CellarResult:
+    """Volltext ueber publications.europa.eu zur CELEX-ID in `url`.
+
+    Bei datumsloser konsolidierter ID wird die juengste konsolidierte Fassung
+    ermittelt und geladen. Der Basisrechtsakt wird nur als Rueckfallebene
+    versucht — und das Ergebnis dann als solches markiert, damit der Aufrufer
+    entscheiden kann, ob er ihn ueberhaupt akzeptieren will.
     """
     celex = _celex_id(url)
     if not celex:
-        return ""
-    candidates = [celex]
-    if _UNDATED_CONSOLIDATED.match(celex):
-        candidates = [_latest_consolidated(celex, timeout), _base_act_celex(celex)]
-    for cand in dict.fromkeys(candidates):
-        text = _cellar_fetch(cand, language, timeout)
+        return CellarResult("", "", "")
+    if not _UNDATED_CONSOLIDATED.match(celex):
+        # Die URL nennt direkt einen Ursprungsrechtsakt — dann ist er auch das
+        # Gewuenschte, es gibt nichts zu pruefen.
+        return CellarResult(_cellar_fetch(celex, language, timeout), celex, "")
+
+    resolved, state = _latest_consolidated(celex)
+    if state == RESOLVE_CONSOLIDATED:
+        text = _cellar_fetch(resolved, language, timeout)
+        if text and _is_consolidated_text(text, celex):
+            return CellarResult(text, resolved, RESOLVE_CONSOLIDATED)
         if text:
-            return text
-    return ""
+            print(f"[cellar] {resolved}: geladener Text traegt keine konsolidierte "
+                  f"Kopfzeile — als Ursprungsfassung behandelt", flush=True)
+            return CellarResult(text, resolved, RESOLVE_UNRESOLVED)
+
+    # Konsolidierung nicht ermittelbar oder nicht ladbar: Der Basisrechtsakt ist
+    # hier ausdruecklich NUR ein Notbehelf und wird als solcher markiert.
+    base = _base_act_celex(celex)
+    base_text = _cellar_fetch(base, language, timeout)
+    return CellarResult(base_text, base, RESOLVE_UNRESOLVED)
 
 
 def _localized_url(url: str, lang: str) -> str:
@@ -395,7 +502,26 @@ def _cached_result(row, status: int, error: str | None) -> dict:
         "text_hash": text_hash(text) if (text or "").strip() else None,
         "version_new": False,
         "previous_hash": None,
+        "source_note": (row["source_note"] if row and "source_note" in row.keys() else None),
     }
+
+
+# `source_status` kodiert die Herkunft des gespeicherten Texts:
+#   > 0    Primaerquelle hat geantwortet (Wert = HTTP-Status)
+#   < 0    Cellar-Fallback benutzt, Betrag = Status der Primaerantwort
+#          (z. B. -202 = WAF-Challenge von EUR-Lex)
+#   < -1000  wie oben, ABER nur der Basisrechtsakt statt der konsolidierten
+#          Fassung — inhaltlich verdaechtig. Betrag - 1000 = Primaerstatus.
+SOURCE_STATUS_BASE_ACT_OFFSET = -1000
+
+
+def source_is_base_act_fallback(source_status: int | None) -> bool:
+    """True, wenn der gespeicherte Text nur der Ursprungsrechtsakt ist.
+
+    Dann fehlen alle spaeteren Aenderungen — bei der CSDDD beispielsweise die
+    Omnibus-Schwellen. Die Admin-Seite weist solche Eintraege deutlich aus.
+    """
+    return source_status is not None and source_status <= SOURCE_STATUS_BASE_ACT_OFFSET
 
 
 def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> dict:
@@ -413,7 +539,7 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     url = _localized_url(_fetch_url(reg), language)
     with _conn() as c:
         row = c.execute(
-            "SELECT text, etag, last_modified, fetched_at FROM law_texts "
+            "SELECT text, etag, last_modified, fetched_at, source_note FROM law_texts "
             "WHERE reg_key = ? AND language = ?",
             (reg["key"], language),
         ).fetchone()
@@ -452,11 +578,32 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     # Genau ein Fallback-Versuch — Phase 1 laeuft sequenziell ueber alle 22
     # Regulierungen, ein zweiter Anlauf koennte pro Reg 60 s zusaetzlich kosten.
     used_fallback = False
+    source_note = f"Primaerquelle HTTP {resp.status_code}"
+    base_act_only = False
     if len(text.strip()) < 2000 and "eur-lex.europa.eu" in url:
-        alt = _cellar_text(url, language, 60.0)
-        if len(alt) > len(text):
-            text = alt
+        cellar = _cellar_text(url, language, 60.0)
+        if len(cellar.text) > len(text):
+            base_act_only = cellar.kind == RESOLVE_UNRESOLVED
+            if base_act_only and row and (row["text"] or "").strip():
+                # KERNENTSCHEIDUNG: Die konsolidierte Fassung liess sich nicht
+                # ermitteln, und der Ersatz waere die Ursprungsfassung — bei der
+                # CSDDD z. B. mit 3 000 Beschaeftigten / 900 Mio. EUR statt der
+                # geltenden 5 000 / 1,5 Mrd. Ein bekannter, evtl. etwas aelterer
+                # Stand ist besser als ein still falscher: Cache behalten und den
+                # Grund als Fehler melden, damit er auf der Admin-Seite auftaucht.
+                print(f"[fetch] {reg['key']}: Konsolidierung nicht aufloesbar — "
+                      f"Cache-Stand behalten statt Basisrechtsakt {cellar.celex}", flush=True)
+                return _cached_result(
+                    row, resp.status_code,
+                    f"Konsolidierte Fassung nicht ermittelbar (SPARQL); "
+                    f"Basisrechtsakt {cellar.celex} verworfen, Cache-Stand behalten",
+                )
+            text = cellar.text
             used_fallback = True
+            source_note = f"Cellar {cellar.celex}" + (
+                " (nur Basisrechtsakt — Konsolidierung nicht ermittelbar)"
+                if base_act_only else ""
+            )
 
     if resp.status_code >= 400 and not text:
         return _cached_result(row, resp.status_code, f"HTTP {resp.status_code}")
@@ -467,40 +614,45 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     # gespeichert werden — sonst quittiert EUR-Lex den naechsten Lauf mit 304.
     etag = "" if used_fallback else (resp.headers.get("etag") or "")
     last_mod = "" if used_fallback else (resp.headers.get("last-modified") or "")
-    # Negatives source_status = Text kam nicht von der Primaerquelle, sondern
-    # aus dem Fallback; der Betrag ist der Statuscode der Primaerantwort
-    # (z. B. -202 = WAF-Challenge von EUR-Lex, Text vom Amt fuer
-    # Veroeffentlichungen).
+    # Siehe Kommentar bei SOURCE_STATUS_BASE_ACT_OFFSET.
     source_status = -resp.status_code if used_fallback else resp.status_code
+    if base_act_only:
+        source_status += SOURCE_STATUS_BASE_ACT_OFFSET
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute(
             """
-            INSERT INTO law_texts (reg_key, language, url, text, etag, last_modified, fetched_at, source_status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO law_texts (reg_key, language, url, text, etag, last_modified,
+                                   fetched_at, source_status, source_note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(reg_key, language) DO UPDATE SET
                 url=excluded.url,
                 text=excluded.text,
                 etag=excluded.etag,
                 last_modified=excluded.last_modified,
                 fetched_at=excluded.fetched_at,
-                source_status=excluded.source_status
+                source_status=excluded.source_status,
+                source_note=excluded.source_note
             """,
-            (reg["key"], language, url, text, etag, last_mod, now, source_status),
+            (reg["key"], language, url, text, etag, last_mod, now, source_status, source_note),
         )
         version_new, previous_hash = _record_version(c, reg["key"], language, url, text, now)
 
-    return {"text": text, "fetched_at": now, "is_new": True, "error": None,
+    return {"text": text, "fetched_at": now, "is_new": True,
+            "error": ("Nur Basisrechtsakt geladen — spaetere Aenderungen fehlen"
+                      if base_act_only else None),
             "status": resp.status_code,
             "text_hash": text_hash(text) if text.strip() else None,
-            "version_new": version_new, "previous_hash": previous_hash}
+            "version_new": version_new, "previous_hash": previous_hash,
+            "source_note": source_note, "base_act_only": base_act_only}
 
 
 def get_cached_text(reg_key: str, language: str = "de") -> dict | None:
     init_fetcher()
     with _conn() as c:
         row = c.execute(
-            "SELECT text, fetched_at, last_modified FROM law_texts WHERE reg_key = ? AND language = ?",
+            "SELECT text, fetched_at, last_modified, source_status, source_note "
+            "FROM law_texts WHERE reg_key = ? AND language = ?",
             (reg_key, language),
         ).fetchone()
     return dict(row) if row else None

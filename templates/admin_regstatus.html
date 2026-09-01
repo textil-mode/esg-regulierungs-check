@@ -53,6 +53,15 @@
             {% if row.has_text %}
               {{ row.law_as_of }}
               <div class="reg-article">{{ t("admin_regstatus_versions", lang) }}: {{ row.versions }}</div>
+              {% if row.base_act %}
+              <div class="base-act-warn">
+                <span class="badge-status badge-base-act">⚠ {{ t("admin_regstatus_base_act", lang) }}</span>
+                <div>{{ t("admin_regstatus_base_act_hint", lang) }}</div>
+              </div>
+              {% endif %}
+              {% if row.source_note %}
+              <div class="reg-article">{{ t("admin_regstatus_source", lang) }}: {{ row.source_note }}</div>
+              {% endif %}
             {% else %}
               <span style="color:#8b1a1a;">{{ t("admin_regstatus_no_text", lang) }}</span>
             {% endif %}
@@ -96,6 +105,11 @@
     padding: 12px 14px; margin-bottom: 16px; font-size: 14px; color: #333; }
   .run-errors { margin: 6px 0 0; padding-left: 18px; color: #8b1a1a; font-size: 13px; }
   .run-hint { color: #777; font-size: 12px; margin-top: 6px; }
+  .badge-base-act { background: #fdecea; color: #8b1a1a; }
+  .base-act-warn { margin-top: 6px; font-size: 12px; color: #8b1a1a; line-height: 1.4;
+    background: #fdecea; border-left: 3px solid #8b1a1a; border-radius: 0 4px 4px 0;
+    padding: 6px 8px; }
+  .base-act-warn > div { margin-top: 4px; }
   .change-head { font-size: 12px; color: #7a6000; }
   .change-summary { margin-top: 4px; line-height: 1.45; color: #333; }
 </style>

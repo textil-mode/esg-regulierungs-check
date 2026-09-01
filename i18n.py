@@ -844,6 +844,36 @@ UI: dict[str, dict[str, str]] = {
         "de": "kein Text im Cache", "en": "no text cached", "es": "sin texto en caché",
         "fr": "aucun texte en cache", "it": "nessun testo in cache", "zh": "缓存中无文本",
     },
+    "admin_regstatus_source": {
+        "de": "Textquelle", "en": "Text source", "es": "Fuente del texto",
+        "fr": "Source du texte", "it": "Fonte del testo", "zh": "文本来源",
+    },
+    "admin_regstatus_base_act": {
+        "de": "Nur Ursprungsfassung",
+        "en": "Original version only",
+        "es": "Solo versión original",
+        "fr": "Version d'origine uniquement",
+        "it": "Solo versione originale",
+        "zh": "仅原始版本",
+    },
+    "admin_regstatus_base_act_hint": {
+        "de": "Die konsolidierte Fassung liess sich nicht ermitteln. Der gespeicherte Text ist der "
+              "Ursprungsrechtsakt — spätere Änderungen fehlen darin. Bitte erneut prüfen, bevor "
+              "Ergebnisse zu dieser Regulierung verwendet werden.",
+        "en": "The consolidated version could not be determined. The stored text is the original act — "
+              "later amendments are missing from it. Please re-check before relying on results for "
+              "this regulation.",
+        "es": "No se pudo determinar la versión consolidada. El texto almacenado es el acto original: "
+              "le faltan las modificaciones posteriores. Vuelve a comprobarlo antes de usar los "
+              "resultados de esta regulación.",
+        "fr": "La version consolidée n'a pas pu être déterminée. Le texte enregistré est l'acte "
+              "d'origine — les modifications ultérieures y manquent. Veuillez revérifier avant "
+              "d'utiliser les résultats de cette réglementation.",
+        "it": "Non è stato possibile determinare la versione consolidata. Il testo salvato è l'atto "
+              "originale: mancano le modifiche successive. Verifica di nuovo prima di usare i "
+              "risultati di questo regolamento.",
+        "zh": "无法确定合并版本。所存文本为原始法案，其中缺少后续修订。在使用该法规的结果前请重新检查。",
+    },
 }
 
 

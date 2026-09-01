@@ -14,7 +14,11 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import (
+
+# VOR den Projekt-Importen: db.py liest `ESG_DB_PATH` beim Import.
+load_dotenv(override=True)
+
+from flask import (  # noqa: E402
     Flask,
     Response,
     flash,
@@ -45,7 +49,13 @@ from i18n import (
 )
 from lawparse import build_context
 from llm import analyze_streaming, profile_hash, reg_hash
-from fetcher import fetch_law_text, fetch_url_text, get_cached_text, list_versions
+from fetcher import (  # noqa: E402
+    fetch_law_text,
+    fetch_url_text,
+    get_cached_text,
+    list_versions,
+    source_is_base_act_fallback,
+)
 from regulations import (
     BRANCHES,
     GROUP_ROLES,
@@ -57,10 +67,9 @@ from regulations import (
     application_for,
     guidelines_for,
     published_for,
+    published_is_draft,
 )
 from views import render_cards_html, render_csv
-
-load_dotenv(override=True)
 
 
 def _secret_key() -> str:
@@ -347,6 +356,11 @@ def admin_reg_status():
             "status": app_info["status"],
             "law_as_of": (cached.get("fetched_at") or "")[:10],
             "has_text": bool((cached.get("text") or "").strip()),
+            "source_note": cached.get("source_note") or "",
+            # Notbehelf-Text: nur der Ursprungsrechtsakt, spaetere Aenderungen
+            # fehlen. Muss sichtbar sein, sonst wirkt ein veralteter Stand wie
+            # ein aktueller.
+            "base_act": source_is_base_act_fallback(cached.get("source_status")),
             "versions": len(list_versions(key, lang, limit=50)),
             "change": changes.get(key),
         })
@@ -625,6 +639,9 @@ def regulations_list():
             "url": reg["url"],
             "key_article": reg.get("key_article") or "",
             "stand": published_for(reg["key"]),
+            # Uebersetztes "Entwurf" statt eines deutschen Freitexts im Datum.
+            "stand_draft": (t_status("entwurf", lang)
+                            if published_is_draft(reg["key"]) else ""),
             "guidelines": guides,
             "applies_from": app_info["applies_from"],
             "status": app_info["status"],

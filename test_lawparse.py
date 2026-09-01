@@ -1,19 +1,28 @@
-"""Tests fuer lawparse.build_context gegen echte Gesetzestexte.
+"""Tests fuer die Gesetzestext-Quellen und lawparse.build_context.
 
 Ausfuehren:  ./.venv/Scripts/python.exe test_lawparse.py
+             ./.venv/Scripts/python.exe test_lawparse.py --keep   (Cache behalten)
 
-Die Texte kommen aus einer KOPIE der lokalen DB (`data/esg.db`), die beim
-ersten Lauf unter `data/esg_lawparse_test.db` angelegt und ueber den Fetcher
-befuellt wird (`data/` steht in .gitignore). Die Produktiv-DB wird nie
-beschrieben.
+Die Test-DB `data/esg_lawparse_test.db` wird standardmaessig VERWORFEN und neu
+aufgebaut: alle 22 Quellen werden frisch geladen. Nur so faellt auf, wenn eine
+`text_url` wieder auf eine Inhaltsverzeichnis- oder Portalseite zeigt — ein
+mitgeschleppter Cache aus einem frueheren Lauf wuerde genau das verdecken.
+Ein voller Lauf dauert dadurch rund eine Minute. Mit `--keep` bleibt die Test-DB
+erhalten (schnelle Wiederholung waehrend der Entwicklung an lawparse selbst).
 
-Abnahmekriterium: fuer CSDDD, CSRD und EUDR enthaelt der gebaute Kontext den
-Anwendungsbereichs-Artikel, und die Gesamtlaenge bleibt unter dem Budget.
+Die Produktiv-DB `data/esg.db` wird nie beschrieben (`data/` steht in
+.gitignore).
+
+Abnahmekriterien:
+  * jede der 22 Quellen liefert echten Volltext (Mindestlaenge + Artikelstruktur),
+  * die fuenf reparierten Quellen liefern nachweislich den RICHTIGEN Rechtsakt,
+  * fuer CSDDD, CSRD und EUDR enthaelt der gebaute Kontext den
+    Anwendungsbereichs-Artikel, und die Gesamtlaenge bleibt unter dem Budget.
 """
 from __future__ import annotations
 
 import os
-import shutil
+import re
 import sys
 from pathlib import Path
 
@@ -24,18 +33,26 @@ TEST_DB = TEST_DIR / "esg_lawparse_test.db"
 # Live laeuft FULLTEXT_MAX_CHARS=25000 — dagegen wird getestet.
 BUDGET = 25000
 
+# Unter dieser Laenge ist es kein Gesetzestext, sondern eine Uebersichts-,
+# Inhaltsverzeichnis- oder Portalseite. Die kaputten Quellen lagen vor der
+# Reparatur bei 556 / 767 / 2 365 / 10 772 Zeichen.
+MIN_CHARS = 8000
+MIN_SECTIONS = 3
+
+KEEP_CACHE = "--keep" in sys.argv
+
 import fetcher  # noqa: E402
 import lawparse  # noqa: E402
 from regulations import REGULATIONS  # noqa: E402
 
 
 def _setup_db() -> None:
-    """Test-DB als Kopie anlegen und den Fetcher darauf umbiegen."""
+    """Test-DB frisch anlegen und den Fetcher darauf umbiegen."""
     TEST_DIR.mkdir(exist_ok=True)
-    if not TEST_DB.exists():
-        src = BASE / "data" / "esg.db"
-        if src.exists():
-            shutil.copy2(src, TEST_DB)
+    if TEST_DB.exists() and not KEEP_CACHE:
+        TEST_DB.unlink()
+    # Voller Text, nicht auf das LLM-Budget gekappt.
+    os.environ.setdefault("LAW_TEXT_MAX_CHARS", "400000")
     fetcher.DB_PATH = TEST_DB
     fetcher.init_fetcher()
 
@@ -50,9 +67,8 @@ _setup_db()
 def _law_text(reg: dict, language: str = "de") -> str:
     cached = fetcher.get_cached_text(reg["key"], language) or {}
     text = cached.get("text") or ""
-    if len(text) < 5000:
+    if len(text) < MIN_CHARS:
         # Kein brauchbarer Cache -> frisch laden (schreibt nur in die Test-DB).
-        os.environ.setdefault("LAW_TEXT_MAX_CHARS", "400000")
         text = fetcher.fetch_law_text(reg, language=language, force=True).get("text") or ""
     return text
 
@@ -153,6 +169,43 @@ def test_scope_reaches_llm() -> None:
                   f"{key}: Kernartikel Art. {a} als Abschnitt im Kontext")
 
 
+# Belege dafuer, dass die Quelle den RICHTIGEN Rechtsakt liefert — nicht nur
+# irgendeinen Text. Alle fuenf Eintraege waren vor 09/2026 defekt oder falsch.
+SOURCE_MARKERS: dict[str, list[str]] = {
+    # zeigte auf eine BAFA-Uebersichtsseite (Pressetext ohne § 1)
+    "LkSG":        ["§ 1", "Arbeitnehmer im Inland"],
+    # zeigte auf das Inhaltsverzeichnis
+    "HinSchG":     ["§ 12", "50 Beschäftigten"],
+    # zeigte auf das Inhaltsverzeichnis
+    "MinRohSorgG": ["§ 1", "Verordnung (EU) 2017/821"],
+    # zeigte auf die bgbl.de-Startseite; jetzt HGB-Gesamtausgabe.
+    # § 289b steht bei Zeichen ~259 000 — der Test sichert die Kappungsgrenze ab.
+    "CSR-RUG":     ["§ 289b", "500 Arbeitnehmer"],
+    # zeigte auf die CSRD (02022L2464) statt auf die Delegierte VO 2023/2772.
+    # Die CELEX-Kopfzeile ist der eindeutige Beleg: bei der CSRD staende dort
+    # 02022L2464.
+    "ESRS":        ["02023R2772", "ESRS 1"],
+}
+
+
+def test_sources_deliver_fulltext() -> None:
+    """Jede Quelle liefert echten Volltext — und die reparierten den richtigen."""
+    print("\n[Quellen — Volltext statt Uebersichtsseite]")
+    for reg in REGULATIONS:
+        raw = _law_text(reg)
+        n_sec = len(lawparse.parse_sections(raw))
+        check(len(raw) >= MIN_CHARS,
+              f"{reg['key']:16s} Volltext {len(raw):7d} Zeichen (>= {MIN_CHARS})")
+        check(n_sec >= MIN_SECTIONS,
+              f"{reg['key']:16s} {n_sec:3d} Abschnitte erkannt (>= {MIN_SECTIONS})")
+
+    print("\n[Quellen — richtiger Rechtsakt]")
+    for key, markers in SOURCE_MARKERS.items():
+        raw = _law_text(_reg(key))
+        for marker in markers:
+            check(marker in raw, f"{key:16s} enthaelt {marker!r}")
+
+
 def test_all_regulations_fit() -> None:
     print("\n[build_context — alle 22 Regulierungen]")
     for reg in REGULATIONS:
@@ -166,7 +219,9 @@ def test_all_regulations_fit() -> None:
 
 
 if __name__ == "__main__":
+    print(f"Test-DB: {TEST_DB} ({'behalten' if KEEP_CACHE else 'frisch aufgebaut'})")
     test_parser_basics()
+    test_sources_deliver_fulltext()
     test_scope_reaches_llm()
     test_all_regulations_fit()
     print()

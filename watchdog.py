@@ -23,11 +23,14 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
-import db
-from fetcher import fetch_law_text, version_text
-from regulations import REGULATIONS
-
+# VOR den Projekt-Importen: db.py liest `ESG_DB_PATH` beim Import. Stuende der
+# Aufruf darunter, schriebe ein Testlauf trotz gesetzter Variable in die
+# Produktiv-DB.
 load_dotenv(override=True)
+
+import db  # noqa: E402
+from fetcher import fetch_law_text, version_text  # noqa: E402
+from regulations import REGULATIONS  # noqa: E402
 
 
 # Wieviel Diff-Umgebung das LLM je Fassung sieht. Bewusst knapp: eine

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import secrets
 import sqlite3
 from datetime import datetime, timedelta
@@ -11,7 +12,20 @@ from typing import Optional
 
 import bcrypt
 
-DB_PATH = Path(__file__).parent / "data" / "esg.db"
+
+def _configured_db_path() -> Path:
+    """Ziel-Datenbank; `ESG_DB_PATH` erlaubt isolierte Laeufe.
+
+    Ohne diesen Schalter schreibt jeder Direktaufruf (z. B. `python watchdog.py`)
+    zwangslaeufig in `data/esg.db`; ein Testlauf waere nur ueber Monkey-Patching
+    von db UND fetcher moeglich — und genau das wird leicht vergessen.
+    `fetcher.py` folgt diesem Pfad automatisch, es reicht also die eine Variable.
+    """
+    override = (os.getenv("ESG_DB_PATH") or "").strip()
+    return Path(override) if override else Path(__file__).parent / "data" / "esg.db"
+
+
+DB_PATH = _configured_db_path()
 
 
 def _conn() -> sqlite3.Connection:
