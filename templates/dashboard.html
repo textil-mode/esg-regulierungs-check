@@ -243,20 +243,20 @@ function _setNumField(hiddenName, value) {
   } else {
     visible.value = Math.round(Number(value)).toLocaleString('de-DE').replace(/\./g, ' ');
   }
-  visible.style.outline = '2px solid #32AFDC';
+  visible.style.outline = '2px solid #0070C0';
 }
 
 function _setSelect(name, value) {
   const sel = document.querySelector('select[name="' + name + '"]');
   if (!sel) return;
   for (const opt of sel.options) {
-    if (opt.value === value) { sel.value = value; sel.style.outline = '2px solid #32AFDC'; return; }
+    if (opt.value === value) { sel.value = value; sel.style.outline = '2px solid #0070C0'; return; }
   }
 }
 
 function _markRow(el) {
   const row = el.closest('.checkbox-row') || el;
-  row.style.outline = '2px solid #32AFDC';
+  row.style.outline = '2px solid #0070C0';
   row.style.outlineOffset = '2px';
   row.style.borderRadius = '6px';
 }
@@ -295,7 +295,7 @@ async function runAutofill() {
     }
     const f = data.fields || {};
     let count = 0;
-    if (f.name) { nameInput.value = f.name; nameInput.style.outline = '2px solid #32AFDC'; count++; }
+    if (f.name) { nameInput.value = f.name; nameInput.style.outline = '2px solid #0070C0'; count++; }
     if (f.employees != null) { _setNumField('employees', f.employees); count++; }
     if (f.employees_de != null) { _setNumField('employees_de', f.employees_de); count++; }
     if (f.revenue_eur != null) { _setNumField('revenue_eur', f.revenue_eur); count++; }
@@ -321,7 +321,7 @@ async function runAutofill() {
           firstRow.querySelector('select[name^="site_type_"]').value = 'Hauptsitz';
           firstRow.querySelector('select[name^="site_location_"]').value = f.hq_location;
           cnt.value = '1';
-          firstRow.style.outline = '2px solid #32AFDC';
+          firstRow.style.outline = '2px solid #0070C0';
           firstRow.style.outlineOffset = '2px';
           firstRow.style.borderRadius = '6px';
           count++;

@@ -488,12 +488,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "AI 自动填写",
     },
     "autofill_hint": {
-        "de": "Sucht anhand des Unternehmensnamens auf Website und Wikipedia. Es werden nur explizit gefundene Angaben übernommen — alle KI-gefüllten Felder werden hellblau umrandet und bleiben manuell änderbar.",
-        "en": "Searches the company website and Wikipedia by company name. Only explicitly found values are filled in — all AI-filled fields get a light blue outline and stay editable.",
-        "es": "Busca en el sitio web y Wikipedia por el nombre de la empresa. Solo se rellenan datos encontrados explícitamente; los campos rellenados por la IA se marcan con un borde azul claro y siguen siendo editables.",
-        "fr": "Recherche sur le site web et Wikipédia à partir du nom de l'entreprise. Seules les valeurs trouvées explicitement sont remplies — les champs remplis par l'IA sont entourés de bleu clair et restent modifiables.",
-        "it": "Cerca sul sito web e su Wikipedia in base al nome dell'azienda. Vengono inseriti solo i dati trovati esplicitamente; i campi compilati dall'IA sono contornati in azzurro e restano modificabili.",
-        "zh": "根据公司名称搜索官网和维基百科。仅填写明确找到的信息——AI 填写的字段会以浅蓝色边框标出,且仍可手动修改。",
+        "de": "Sucht anhand des Unternehmensnamens auf Website und Wikipedia. Es werden nur explizit gefundene Angaben übernommen — alle KI-gefüllten Felder werden blau umrandet und bleiben manuell änderbar.",
+        "en": "Searches the company website and Wikipedia by company name. Only explicitly found values are filled in — all AI-filled fields get a blue outline and stay editable.",
+        "es": "Busca en el sitio web y Wikipedia por el nombre de la empresa. Solo se rellenan datos encontrados explícitamente; los campos rellenados por la IA se marcan con un borde azul y siguen siendo editables.",
+        "fr": "Recherche sur le site web et Wikipédia à partir du nom de l'entreprise. Seules les valeurs trouvées explicitement sont remplies — les champs remplis par l'IA sont entourés de bleu et restent modifiables.",
+        "it": "Cerca sul sito web e su Wikipedia in base al nome dell'azienda. Vengono inseriti solo i dati trovati esplicitamente; i campi compilati dall'IA sono contornati in blu e restano modificabili.",
+        "zh": "根据公司名称搜索官网和维基百科。仅填写明确找到的信息——AI 填写的字段会以蓝色边框标出,且仍可手动修改。",
     },
     "autofill_need_name": {
         "de": "Bitte zuerst den Unternehmensnamen eintragen.",
@@ -667,7 +667,7 @@ UI: dict[str, dict[str, str]] = {
         "zh": "#### 场所",
     },
     "sites_hint": {
-        "de": "Anzahl, Typ und Region je Standort. Weitere Zeilen legst du über „Standort hinzufügen“ an.",
+        "de": "Anzahl, Typ und Region je Standort. Weitere Zeilen legen Sie über „Standort hinzufügen“ an.",
         "en": "Count, type and region per site. Use “Add site” for more rows.",
         "es": "Cantidad, tipo y región por ubicación. Usa «Añadir ubicación» para más filas.",
         "fr": "Nombre, type et région par site. Utilisez « Ajouter un site » pour d’autres lignes.",

@@ -29,6 +29,7 @@
 <div class="section">
   <h3 style="margin-top:0;">{{ t("admin_open_requests", lang) }} ({{ requests|length }})</h3>
   {% if requests %}
+  <div style="overflow-x:auto;">
   <table class="reg-table">
     <thead>
       <tr>
@@ -47,9 +48,9 @@
       <td style="color:#5A5A5A;">{{ r.requested_at[:16].replace("T", " ") }}</td>
       <td>
         {% if r.link_issued %}
-          <span class="badge-status badge-gilt_ab">{{ t("admin_state_issued", lang) }}</span>
+          <span class="badge-status badge-reset-issued">{{ t("admin_state_issued", lang) }}</span>
         {% else %}
-          <span class="badge-status badge-rueckzug_angekuendigt">{{ t("admin_state_open", lang) }}</span>
+          <span class="badge-status badge-reset-open">{{ t("admin_state_open", lang) }}</span>
         {% endif %}
       </td>
       <td style="text-align:right;">
@@ -62,9 +63,18 @@
     {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <p style="color:#5A5A5A;margin-bottom:0;">{{ t("admin_no_requests", lang) }}</p>
   {% endif %}
+
+<style>
+  /* Eigene Zustandsfarben: die Reset-Zustaende haben nichts mit dem
+     Regulierungs-Status zu tun und sollen sich nicht mitverschieben,
+     wenn dort die Palette wechselt. */
+  .badge-reset-issued { background: #F59B23; color: #0F3750; }
+  .badge-reset-open { background: #A32020; color: #FFFFFF; }
+</style>
 </div>
 
 {% endblock %}

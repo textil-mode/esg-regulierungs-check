@@ -32,22 +32,25 @@
     h1, h2, h3, h4, h5, h6 { color: var(--tm-navy); font-family: Arial, Helvetica, sans-serif; }
     a { color: var(--tm-link); }
 
-    /* Kopfbereich: Logo links, waagerechtes Menue, Sprache/Konto rechts */
+    /* Kopfbereich: Logo links, waagerechtes Menue, Sprache/Konto rechts.
+       Schutzraum um das Logo: mindestens die Hoehe des "t+m"-Schriftzugs
+       (bei 40 px Bildhoehe rund 18 px) — daher die Innenabstaende hier. */
     .site-header {
       display: flex; align-items: center; flex-wrap: wrap;
-      gap: 12px 24px; padding: 14px 0 12px;
+      gap: 12px 24px; padding: 18px 0 16px;
     }
-    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--tm-navy); }
-    .brand img { height: 36px; width: 36px; display: block; }
-    .brand-name { font-weight: 700; font-size: 18px; letter-spacing: 0.2px; }
-    .brand-name span { color: var(--tm-green); }
+    .brand { display: inline-flex; align-items: center; text-decoration: none; padding-right: 20px; }
+    /* Originaldatei 1925x437 — nur ueber die Hoehe skalieren, nie verzerren. */
+    .brand img { height: 40px; width: auto; display: block; }
 
     .site-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 18px; }
     .site-nav a {
       color: var(--tm-navy); text-decoration: none; font-size: 14px; font-weight: 700;
       padding: 4px 0; border-bottom: 2px solid transparent; white-space: nowrap;
     }
-    .site-nav a:hover { color: var(--tm-blue); }
+    /* Hover nur ueber die Unterkante anzeigen: Hellblau als Schriftfarbe auf
+       Weiss kaeme nur auf 2,5:1 und waere schlechter lesbar als der Ruhezustand. */
+    .site-nav a:hover { border-bottom-color: var(--tm-blue); }
     .site-nav a.is-current { border-bottom-color: var(--tm-blue); }
 
     .header-meta { margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -150,6 +153,8 @@
     /* Schwellenwerte im Zitat dezent rot hinterlegen */
     .kennzahl { background: #FBE3E3; color: var(--tm-red); padding: 0 3px; font-style: normal; }
     .reg-asof { margin-top: 8px; font-size: 12px; color: var(--tm-muted); }
+    /* Platzhalter, wenn views.render_cards_html nichts anzuzeigen hat */
+    .no-results { color: var(--tm-muted); font-size: 14px; }
 
     /* Standort-Zeilen */
     .site-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: end; }
@@ -214,8 +219,8 @@
   <div class="container">
     <header class="site-header">
       <a class="brand" href="https://www.textil-mode.de" target="_blank" rel="noopener">
-        <img src="{{ url_for('static', filename='images/tum-logo.svg') }}" alt="textil+mode Logo">
-        <span class="brand-name">textil<span>+</span>mode</span>
+        <img src="{{ url_for('static', filename='images/textil-mode-logo.png') }}"
+             width="1925" height="437" alt="textil+mode">
       </a>
 
       {% if session.get('user_id') %}
