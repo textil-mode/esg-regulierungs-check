@@ -3,7 +3,7 @@
 
 <div class="section">
   <div class="progress-container" id="progress">
-    <h2 style="color:#1f4e3d;margin-bottom:16px;" id="phase-title">{{ t("step1", lang) }}</h2>
+    <h2 style="margin-bottom:16px;" id="phase-title">{{ t("step1", lang) }}</h2>
     <div class="progress-bar-outer">
       <div class="progress-bar-inner" id="bar" style="width:0%"></div>
     </div>
@@ -35,7 +35,7 @@ function poll() {
         return;
       } else if (d.phase === 'error') {
         status.textContent = '{{ t("err_analysis_start", lang) }}: ' + (d.error || '');
-        status.style.color = '#991b1b';
+        status.style.color = '#A32020';
         return;
       }
 
@@ -44,7 +44,7 @@ function poll() {
     })
     .catch(() => {
       status.textContent = '{{ t("err_analysis_start", lang) }}';
-      status.style.color = '#991b1b';
+      status.style.color = '#A32020';
     });
 }
 

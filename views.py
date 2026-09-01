@@ -70,11 +70,14 @@ I18N = {
     },
 }
 
+# textil+mode-CD: Gruen/Orange stammen aus dem Logo und sind hier bewusst
+# punktuell als Statusfarbe eingesetzt. Die Schrift steht darauf in Dunkelblau
+# (weiss waere auf #78B950 bzw. #F59B23 zu kontrastarm).
 BADGE_STYLES = {
-    "ja": ("background:#1f4e3d;color:white;", "✓"),
-    "moeglich": ("background:#d4a017;color:white;", "?"),
-    "nein": ("background:#6b6b6b;color:white;", "—"),
-    "error": ("background:#991b1b;color:white;", "✕"),
+    "ja": ("background:#78B950;color:#0F3750;", "✓"),
+    "moeglich": ("background:#F59B23;color:#0F3750;", "?"),
+    "nein": ("background:#6b6b6b;color:#ffffff;", "—"),
+    "error": ("background:#A32020;color:#ffffff;", "✕"),
 }
 
 
@@ -137,7 +140,7 @@ def _iso_to_display(value: str) -> str:
 
 def _card_html(r: dict, lang_dict: dict, language: str = "de") -> str:
     a = r["applies"]
-    bg, icon = BADGE_STYLES.get(a, ("background:#999;color:white;", "·"))
+    bg, icon = BADGE_STYLES.get(a, ("background:#6b6b6b;color:#ffffff;", "·"))
     label = lang_dict["applies_label"].get(a, a.upper())
     name = escape(r["name"])
     full = escape(r["full_name"])
@@ -149,7 +152,7 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de") -> str:
     # damit, und die 280-Zeichen-Kappung greift wieder auf den ganzen Text.
     passage = _highlight_kennzahlen(escape(_shorten_passage(r.get("passage") or "")))
     reason_raw = (r.get("reason") or "").strip()
-    reason = escape(reason_raw) if reason_raw else f'<em style="color:#aaa;">{escape(lang_dict["reason_missing"])}</em>'
+    reason = escape(reason_raw) if reason_raw else f'<em style="color:#5A5A5A;">{escape(lang_dict["reason_missing"])}</em>'
     nr = r.get("nr", "")
     as_of = _iso_to_display(r.get("law_as_of") or "")
     as_of_html = (

@@ -2,16 +2,15 @@
 {% block content %}
 
 <!-- 1. Unternehmensdaten -->
-<div class="section section-green">
+<div class="section section-box">
   <h2>{{ t("section_company_data", lang) }}</h2>
-  <p style="font-size:13px;color:#2e7d32;margin-bottom:16px;">{{ t("section_company_hint", lang) }}</p>
+  <p style="font-size:13px;color:#5A5A5A;margin-bottom:16px;">{{ t("section_company_hint", lang) }}</p>
 
-  <div style="margin-bottom:18px;padding:12px 14px;background:#f6f1e3;border:1px solid #d4a017;border-radius:8px;">
-    <button type="button" id="autofill-btn" class="btn"
-            style="background:#d4a017;color:#1f1f1f;font-weight:700;"
+  <div style="margin-bottom:18px;padding:12px 14px;background:#FFFFFF;border-left:3px solid #32AFDC;">
+    <button type="button" id="autofill-btn" class="btn btn-primary"
             onclick="runAutofill()" disabled>{{ t("autofill_btn", lang) }}</button>
-    <span id="autofill-name-hint" style="font-size:13px;color:#b71c1c;font-weight:600;margin-left:10px;">⚠ {{ t("autofill_need_name", lang) }}</span>
-    <span style="font-size:13px;color:#7a6520;margin-left:10px;">{{ t("autofill_hint", lang) }}</span>
+    <span id="autofill-name-hint" style="font-size:13px;color:#A32020;font-weight:700;margin-left:10px;">{{ t("autofill_need_name", lang) }}</span>
+    <div style="font-size:13px;color:#5A5A5A;margin-top:8px;">{{ t("autofill_hint", lang) }}</div>
     <div id="autofill-status" style="font-size:13px;margin-top:8px;display:none;"></div>
   </div>
 
@@ -85,7 +84,7 @@
 
     <!-- Produktkategorien -->
     <hr>
-    <h3 style="color:#1f4e3d;margin-bottom:8px;">{{ t("section_products", lang)|replace("#### ","") }}</h3>
+    <h3 style="margin-bottom:8px;">{{ t("section_products", lang)|replace("#### ","") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("products_hint", lang) }}</p>
     {% set existing_prods = company.get('product_categories', []) or [] %}
     <div class="grid-2 products-grid">
@@ -99,7 +98,7 @@
 
     <!-- Standorte -->
     <hr>
-    <h3 style="color:#1f4e3d;margin-bottom:8px;">{{ t("section_sites", lang)|replace("#### ","") }}</h3>
+    <h3 style="margin-bottom:8px;">{{ t("section_sites", lang)|replace("#### ","") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("sites_hint", lang) }}</p>
     <div id="sites-container">
       {% set sites = company.get('sites', []) or [{"type":"Hauptsitz","location":"Deutschland","count":0}] %}
@@ -125,7 +124,7 @@
       </div>
       {% endfor %}
     </div>
-    <button type="button" class="btn btn-sm" style="background:#e8e8e8;color:#333;margin-bottom:16px;" onclick="addSiteRow()">{{ t("site_add", lang) }}</button>
+    <button type="button" class="btn btn-sm btn-secondary" style="margin-bottom:16px;" onclick="addSiteRow()">{{ t("site_add", lang) }}</button>
 
     <hr>
     <button type="submit" class="btn btn-primary">{{ t("btn_save_master", lang) }}</button>
@@ -137,17 +136,17 @@
   <h2>{{ t("section_check_regulations", lang) }}</h2>
 
   {% if not company or not company.get('employees') %}
-    <p style="color:#888;">{{ t("info_save_first", lang) }}</p>
+    <p style="color:#5A5A5A;">{{ t("info_save_first", lang) }}</p>
   {% else %}
     <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
       <a href="{{ url_for('run_analysis_page') }}" class="btn btn-primary">{{ t("btn_run_check", lang) }}</a>
       {% if last %}
-      <span style="font-size:13px;color:#888;">{{ t("last_check", lang) }}: {{ last.created_at[:19]|replace('T',' ') }}</span>
-      <a href="{{ url_for('fullscreen') }}" target="_blank" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("btn_open_fullscreen", lang) }}</a>
-      <a href="{{ url_for('download_csv') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">📥 CSV</a>
+      <span style="font-size:13px;color:#5A5A5A;">{{ t("last_check", lang) }}: {{ last.created_at[:19]|replace('T',' ') }}</span>
+      <a href="{{ url_for('fullscreen') }}" target="_blank" class="btn btn-sm btn-secondary">{{ t("btn_open_fullscreen", lang) }}</a>
+      <a href="{{ url_for('download_csv') }}" class="btn btn-sm btn-secondary">CSV</a>
       {% endif %}
       <a href="{{ url_for('regulations_list') }}" target="_blank" rel="noopener"
-         class="btn btn-primary" style="margin-left:auto;background:#2d8262;">
+         class="btn btn-secondary" style="margin-left:auto;">
         {{ t("btn_regulations_list", lang) }}
       </a>
     </div>
@@ -244,20 +243,20 @@ function _setNumField(hiddenName, value) {
   } else {
     visible.value = Math.round(Number(value)).toLocaleString('de-DE').replace(/\./g, ' ');
   }
-  visible.style.outline = '2px solid #d4a017';
+  visible.style.outline = '2px solid #32AFDC';
 }
 
 function _setSelect(name, value) {
   const sel = document.querySelector('select[name="' + name + '"]');
   if (!sel) return;
   for (const opt of sel.options) {
-    if (opt.value === value) { sel.value = value; sel.style.outline = '2px solid #d4a017'; return; }
+    if (opt.value === value) { sel.value = value; sel.style.outline = '2px solid #32AFDC'; return; }
   }
 }
 
 function _markRow(el) {
   const row = el.closest('.checkbox-row') || el;
-  row.style.outline = '2px solid #d4a017';
+  row.style.outline = '2px solid #32AFDC';
   row.style.outlineOffset = '2px';
   row.style.borderRadius = '6px';
 }
@@ -274,13 +273,13 @@ async function runAutofill() {
   const name = (nameInput.value || '').trim();
   status.style.display = 'block';
   if (!name) {
-    status.style.color = '#b71c1c';
+    status.style.color = '#A32020';
     status.textContent = AUTOFILL_I18N.needName;
     nameInput.focus();
     return;
   }
   btn.disabled = true;
-  status.style.color = '#7a6520';
+  status.style.color = '#5A5A5A';
   status.textContent = AUTOFILL_I18N.running;
   try {
     const resp = await fetch({{ url_for('autofill_api')|tojson }}, {
@@ -290,13 +289,13 @@ async function runAutofill() {
     });
     const data = await resp.json();
     if (data.error) {
-      status.style.color = '#b71c1c';
+      status.style.color = '#A32020';
       status.textContent = AUTOFILL_I18N.error + ' ' + data.error;
       return;
     }
     const f = data.fields || {};
     let count = 0;
-    if (f.name) { nameInput.value = f.name; nameInput.style.outline = '2px solid #d4a017'; count++; }
+    if (f.name) { nameInput.value = f.name; nameInput.style.outline = '2px solid #32AFDC'; count++; }
     if (f.employees != null) { _setNumField('employees', f.employees); count++; }
     if (f.employees_de != null) { _setNumField('employees_de', f.employees_de); count++; }
     if (f.revenue_eur != null) { _setNumField('revenue_eur', f.revenue_eur); count++; }
@@ -322,7 +321,7 @@ async function runAutofill() {
           firstRow.querySelector('select[name^="site_type_"]').value = 'Hauptsitz';
           firstRow.querySelector('select[name^="site_location_"]').value = f.hq_location;
           cnt.value = '1';
-          firstRow.style.outline = '2px solid #d4a017';
+          firstRow.style.outline = '2px solid #32AFDC';
           firstRow.style.outlineOffset = '2px';
           firstRow.style.borderRadius = '6px';
           count++;
@@ -330,15 +329,15 @@ async function runAutofill() {
       }
     }
     if (count === 0) {
-      status.style.color = '#7a6520';
+      status.style.color = '#5A5A5A';
       status.textContent = AUTOFILL_I18N.none;
     } else {
-      status.style.color = '#1f4e3d';
+      status.style.color = '#0F3750';
       const links = (data.sources || []).map(u => '<a href="' + u + '" target="_blank" rel="noopener">' + new URL(u).hostname + '</a>').join(' · ');
-      status.innerHTML = '✓ ' + count + ' ' + AUTOFILL_I18N.done + ' ' + links;
+      status.innerHTML = count + ' ' + AUTOFILL_I18N.done + ' ' + links;
     }
   } catch (e) {
-    status.style.color = '#b71c1c';
+    status.style.color = '#A32020';
     status.textContent = AUTOFILL_I18N.error + ' ' + e;
   } finally {
     btn.disabled = false;

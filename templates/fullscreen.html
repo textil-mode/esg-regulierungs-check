@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 style="color:#1f4e3d;">{{ t("fullscreen_title", lang) }}</h2>
+<h2>{{ t("fullscreen_title", lang) }}</h2>
 {% if last %}
-<p style="font-size:13px;color:#888;margin-bottom:16px;">{{ t("fullscreen_status", lang) }}: {{ last.created_at[:19]|replace('T',' ') }}</p>
+<p style="font-size:13px;color:#5A5A5A;margin:6px 0 16px;">{{ t("fullscreen_status", lang) }}: {{ last.created_at[:19]|replace('T',' ') }}</p>
 {{ cards_html|safe }}
 {% else %}
 <p>{{ t("fullscreen_no_result", lang) }}</p>

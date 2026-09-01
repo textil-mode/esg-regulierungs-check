@@ -3,179 +3,256 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ t("app_title", lang)|replace("🌱 ","") }}</title>
+  <title>{{ t("app_title", lang) }}</title>
   <style>
+    /* ---------------------------------------------------------------
+       textil+mode Corporate Design
+       Grund weiss, Arial, Ueberschriften Dunkelblau, Boxen Hellgrau.
+       Gruen/Orange nur punktuell fuer Status, nie flaechig.
+       --------------------------------------------------------------- */
+    :root {
+      --tm-navy:   #0F3750;
+      --tm-blue:   #32AFDC;
+      --tm-link:   #0070C0;
+      --tm-box:    #F2F2F2;
+      --tm-green:  #78B950;
+      --tm-orange: #F59B23;
+      --tm-red:    #A32020;
+      --tm-line:   #DCDCDC;
+      --tm-muted:  #5A5A5A;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #2b2b2b; color: #222; line-height: 1.5; min-height: 100vh; }
-    .container { max-width: 1140px; margin: 0 auto; padding: 16px 24px 60px; background: #f5f6f8; min-height: 100vh; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #FFFFFF; color: #000000;
+      line-height: 1.5; min-height: 100vh;
+    }
+    .container { max-width: 1140px; margin: 0 auto; padding: 0 24px 60px; background: #FFFFFF; }
+    h1, h2, h3, h4, h5, h6 { color: var(--tm-navy); font-family: Arial, Helvetica, sans-serif; }
+    a { color: var(--tm-link); }
 
-    /* Disclaimer */
-    .disclaimer { color: #8b0000; font-style: italic; font-size: 13px; margin-bottom: 10px; }
-
-    /* Top bar: brand left, language picker right */
-    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
-    .topbar-right { display: flex; align-items: center; gap: 8px; }
-    .topbar select { padding: 4px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-
-    /* Brand (textil+mode) */
-    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #0f3851; }
+    /* Kopfbereich: Logo links, waagerechtes Menue, Sprache/Konto rechts */
+    .site-header {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 12px 24px; padding: 14px 0 12px;
+    }
+    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--tm-navy); }
     .brand img { height: 36px; width: 36px; display: block; }
     .brand-name { font-weight: 700; font-size: 18px; letter-spacing: 0.2px; }
-    .brand-name span { color: #75b84e; }
+    .brand-name span { color: var(--tm-green); }
 
-    /* Header */
-    .app-header {
-      background: linear-gradient(135deg, #0f3a2c 0%, #1f4e3d 35%, #2d8262 75%, #4caf92 100%);
-      padding: 28px 36px; border-radius: 16px; margin-bottom: 28px;
-      box-shadow: 0 8px 26px rgba(15,58,44,0.28);
-      color: white; position: relative; overflow: hidden;
+    .site-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 18px; }
+    .site-nav a {
+      color: var(--tm-navy); text-decoration: none; font-size: 14px; font-weight: 700;
+      padding: 4px 0; border-bottom: 2px solid transparent; white-space: nowrap;
     }
-    .app-header::after {
-      content: ""; position: absolute; right: -40px; top: -40px;
-      width: 200px; height: 200px;
-      background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+    .site-nav a:hover { color: var(--tm-blue); }
+    .site-nav a.is-current { border-bottom-color: var(--tm-blue); }
+
+    .header-meta { margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .header-meta select {
+      padding: 4px 8px; border: 1px solid var(--tm-line); border-radius: 4px;
+      font-family: Arial, Helvetica, sans-serif; font-size: 14px; background: #FFFFFF; color: #000000;
     }
-    .app-header h1 { font-size: 2.4em; font-weight: 800; text-shadow: 1px 2px 5px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 14px; }
-    .app-header .emoji { font-size: 1.25em; display: inline-block; animation: sway 4s ease-in-out infinite; }
-    @keyframes sway { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
-    .app-header .subtitle { color: rgba(255,255,255,0.93); font-size: 1.05em; margin-top: 6px; }
+    .header-user { font-size: 13px; color: var(--tm-muted); }
 
-    /* Flash messages */
-    .flash { padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }
-    .flash-error { background: #fde8e8; color: #991b1b; border: 1px solid #f5c6c6; }
-    .flash-success { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+    /* Einziges Marken-Schmuckelement: schmale Akzentlinie (Kante, keine Flaeche) */
+    .tm-accent { height: 4px; background: linear-gradient(90deg, #32AFDC, #78B950); }
 
-    /* Forms */
-    label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 14px; color: #333; }
+    /* Seitenkopf */
+    .page-head { padding: 24px 0 18px; }
+    .page-head h1 { font-size: 30px; line-height: 1.25; }
+    .page-head .subtitle { color: var(--tm-muted); font-size: 16px; margin-top: 6px; }
+
+    /* Hinweis (Haftungsausschluss) */
+    .disclaimer {
+      background: var(--tm-box); border-left: 3px solid var(--tm-orange);
+      padding: 8px 12px; font-size: 13px; color: #000000; margin-bottom: 20px;
+    }
+
+    /* Flash-Meldungen */
+    .flash { padding: 10px 14px; margin-bottom: 14px; font-size: 14px; border: 1px solid var(--tm-line); background: var(--tm-box); }
+    .flash-error { border-left: 3px solid var(--tm-red); color: var(--tm-red); }
+    .flash-success { border-left: 3px solid var(--tm-green); color: var(--tm-navy); }
+
+    /* Formulare */
+    label { display: block; font-weight: 700; margin-bottom: 4px; font-size: 14px; color: var(--tm-navy); }
     input[type="text"], input[type="email"], input[type="password"], input[type="number"], select {
-      width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; margin-bottom: 14px;
+      width: 100%; padding: 8px 12px; border: 1px solid #BFBFBF; border-radius: 4px;
+      font-family: Arial, Helvetica, sans-serif; font-size: 15px; margin-bottom: 14px;
+      background: #FFFFFF; color: #000000;
     }
-    input:focus, select:focus { outline: none; border-color: #2d8262; box-shadow: 0 0 0 3px rgba(45,130,98,0.15); }
-    .help-text { font-size: 12px; color: #888; margin-top: -10px; margin-bottom: 14px; }
+    input:focus, select:focus { outline: none; border-color: var(--tm-blue); box-shadow: 0 0 0 2px rgba(50,175,220,0.28); }
+    .help-text { font-size: 12px; color: var(--tm-muted); margin-top: -10px; margin-bottom: 14px; }
 
-    .btn { display: inline-block; padding: 10px 24px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.15s; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-primary { background: #1f4e3d; color: white; }
-    .btn-primary:hover { background: #2d6b55; }
-    .btn-sm { padding: 6px 14px; font-size: 13px; }
+    .btn {
+      display: inline-block; padding: 9px 22px; border: 1px solid var(--tm-navy); border-radius: 4px;
+      font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: var(--tm-navy); color: #FFFFFF; }
+    .btn-primary:hover:not(:disabled) { background: #17516F; }
+    /* Nebenaktion: Umriss-Button in Dunkelblau auf Weiss */
+    .btn-secondary { background: #FFFFFF; color: var(--tm-navy); }
+    .btn-secondary:hover:not(:disabled) { background: var(--tm-box); }
+    .btn-sm { padding: 5px 14px; font-size: 13px; }
+    /* Schalter, der wie ein Textlink aussieht (Reiterwechsel im Login) */
+    .linklike {
+      background: none; border: none; padding: 0; cursor: pointer;
+      font-family: Arial, Helvetica, sans-serif; font-size: 13px;
+      color: var(--tm-link); text-decoration: underline;
+    }
 
-    /* Grid */
+    /* Raster */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    /* Engeres Grid fuer Produktkategorien-Checkboxen */
+    /* Engeres Raster fuer Produktkategorien-Checkboxen */
     .products-grid { gap: 6px 20px; }
     .products-grid .checkbox-row { margin-bottom: 0; }
 
-    /* Section */
-    .section { background: white; padding: 24px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .section h2 { color: #1f4e3d; margin-bottom: 16px; font-size: 1.3em; }
-    .section-green { background: #e8f5e9; border: 1px solid #c8e6c9; }
-    .section-green input[type="text"], .section-green input[type="number"], .section-green select { background: white; }
-    .section-green hr { border-top-color: #c8e6c9; }
-    hr { border: none; border-top: 1px solid #e8e8e8; margin: 24px 0; }
+    /* Abschnitte */
+    .section { background: #FFFFFF; border: 1px solid var(--tm-line); padding: 22px 24px; margin-bottom: 22px; }
+    .section h2 { font-size: 20px; margin-bottom: 16px; }
+    .section-box { background: var(--tm-box); }
+    .section-box input[type="text"], .section-box input[type="number"], .section-box select { background: #FFFFFF; }
+    hr { border: none; border-top: 1px solid var(--tm-line); margin: 22px 0; }
 
-    /* Checkbox row */
+    /* Checkbox-Zeile */
     .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-    .checkbox-row input[type="checkbox"] { width: auto; margin: 0; }
-    .checkbox-row label { margin: 0; font-weight: 500; }
+    .checkbox-row input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--tm-navy); }
+    .checkbox-row label { margin: 0; font-weight: 400; color: #000000; }
 
-    /* Metrics */
+    /* Kennzahlen-Kacheln: Farbe nur als schmale Oberkante, nicht als Flaeche */
     .metrics { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-    .metric { flex: 1; min-width: 140px; padding: 16px; border-radius: 10px; text-align: center; }
-    .metric-yes { background: #e8f5e9; }
-    .metric-maybe { background: #fff8e1; }
-    .metric-no { background: #eceff1; }
-    .metric-value { font-size: 2.2em; font-weight: 800; line-height: 1; }
-    .metric-yes .metric-value { color: #1b5e20; }
-    .metric-maybe .metric-value { color: #8d6e00; }
-    .metric-no .metric-value { color: #455a64; }
-    .metric-label { font-size: 0.85em; color: #666; margin-top: 4px; }
+    .metric { flex: 1; min-width: 140px; padding: 14px 16px; text-align: center; background: var(--tm-box); border-top: 3px solid var(--tm-line); }
+    .metric-yes { border-top-color: var(--tm-green); }
+    .metric-maybe { border-top-color: var(--tm-orange); }
+    .metric-no { border-top-color: #6B6B6B; }
+    .metric-value { font-size: 34px; font-weight: 700; line-height: 1.1; color: var(--tm-navy); }
+    .metric-label { font-size: 13px; color: var(--tm-muted); margin-top: 4px; }
 
-    /* Regulation cards */
-    .reg-card { border: 1px solid #444; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; background: #2b2b2b; color: #e6e6e6; }
+    /* Regulierungskarten */
+    .reg-card { border: 1px solid var(--tm-line); padding: 14px 16px; margin-bottom: 10px; background: var(--tm-box); color: #000000; }
     .reg-card-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-    .badge { padding: 3px 12px; border-radius: 14px; font-size: 0.85em; font-weight: 700; letter-spacing: 0.5px; }
-    .reg-nr { color: #aaa; font-size: 0.85em; }
-    .reg-name { font-weight: 700; font-size: 1.05em; color: #7fc4a8; text-decoration: none; }
+    .badge { padding: 3px 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+    .reg-nr { color: var(--tm-muted); font-size: 12px; }
+    .reg-name { font-weight: 700; font-size: 16px; color: var(--tm-link); text-decoration: none; }
     .reg-name:hover { text-decoration: underline; }
-    .reg-full { color: #bbb; font-size: 0.9em; }
-    .reg-reason { margin-top: 6px; line-height: 1.5; color: #e6e6e6; }
-    .reg-passage { margin-top: 8px; line-height: 1.5; color: #ddd; background: #353535; border-left: 3px solid #d4a017; border-radius: 0 6px 6px 0; padding: 8px 12px; }
-    .kennzahl { background: rgba(220,53,69,.22); color: #ffb4ab; padding: 0 3px; border-radius: 3px; font-style: normal; }
-    .reg-asof { margin-top: 8px; font-size: 12px; color: #8f8f8f; }
+    .reg-full { color: var(--tm-muted); font-size: 13px; }
+    .reg-reason { margin-top: 6px; line-height: 1.5; color: #000000; }
+    .reg-passage {
+      margin-top: 8px; line-height: 1.5; color: #000000;
+      background: #FFFFFF; border-left: 3px solid var(--tm-blue); padding: 8px 12px;
+    }
+    /* Schwellenwerte im Zitat dezent rot hinterlegen */
+    .kennzahl { background: #FBE3E3; color: var(--tm-red); padding: 0 3px; font-style: normal; }
+    .reg-asof { margin-top: 8px; font-size: 12px; color: var(--tm-muted); }
 
-    /* Sidebar info */
-    .sidebar-info { font-size: 13px; color: #888; margin-bottom: 8px; }
-
-    /* Site rows */
+    /* Standort-Zeilen */
     .site-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: end; }
     .site-row select, .site-row input { margin-bottom: 0; }
     .site-row .site-col { flex: 3; }
     .site-row .site-count { flex: 1; }
 
-    /* Progress */
+    /* Fortschritt */
     .progress-container { text-align: center; padding: 40px 20px; }
-    .progress-bar-outer { width: 100%; height: 12px; background: #e0e0e0; border-radius: 6px; overflow: hidden; margin: 16px 0; }
-    .progress-bar-inner { height: 100%; background: linear-gradient(90deg, #1f4e3d, #4caf92); border-radius: 6px; transition: width 0.3s; }
-    .progress-status { font-size: 14px; color: #666; }
+    .progress-bar-outer { width: 100%; height: 10px; background: var(--tm-box); overflow: hidden; margin: 16px 0; }
+    .progress-bar-inner { height: 100%; background: linear-gradient(90deg, #32AFDC, #78B950); transition: width 0.3s; }
+    .progress-status { font-size: 14px; color: var(--tm-muted); }
 
-    /* Tabs */
+    /* Reiter */
     .tabs { display: flex; gap: 0; margin-bottom: 20px; }
-    .tab { padding: 10px 24px; background: #e8e8e8; border: none; cursor: pointer; font-size: 15px; font-weight: 600; color: #666; }
-    .tab:first-child { border-radius: 8px 0 0 8px; }
-    .tab:last-child { border-radius: 0 8px 8px 0; }
-    .tab.active { background: #1f4e3d; color: white; }
+    .tab {
+      padding: 10px 24px; background: var(--tm-box); border: 1px solid var(--tm-line);
+      cursor: pointer; font-family: Arial, Helvetica, sans-serif; font-size: 15px;
+      font-weight: 700; color: var(--tm-navy);
+    }
+    .tab + .tab { border-left: none; }
+    .tab.active { background: var(--tm-navy); border-color: var(--tm-navy); color: #FFFFFF; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    /* Footer */
-    .app-footer { position: relative; text-align: center; font-size: 12px; color: #888; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e8e8e8; }
-    .footer-hinweis { position: absolute; right: 0; bottom: 0; font-size: 10px; color: #999; }
-    .footer-hinweis summary { cursor: pointer; font-weight: 600; list-style: none; padding: 2px 4px; border-radius: 4px; }
+    /* Tabellen (Regulierungsliste, Admin) */
+    .reg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .reg-table th, .reg-table td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--tm-line); }
+    .reg-table th { background: var(--tm-box); color: var(--tm-navy); font-weight: 700; }
+    .reg-table tr:hover td { background: #FAFAFA; }
+    .reg-title { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 2px; }
+    .reg-article { color: var(--tm-muted); font-size: 12px; margin-top: 4px; }
+
+    /* Status-Badges: Farbflaeche aus der Palette, Text in Dunkelblau bzw. Weiss */
+    .badge-status { display: inline-block; padding: 1px 8px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .badge-in_kraft { background: var(--tm-green); color: var(--tm-navy); }
+    .badge-gilt_ab { background: var(--tm-orange); color: var(--tm-navy); }
+    .badge-entwurf { background: #6B6B6B; color: #FFFFFF; }
+    .badge-rueckzug_angekuendigt { background: var(--tm-red); color: #FFFFFF; }
+
+    /* Fusszeile */
+    .app-footer { position: relative; text-align: center; font-size: 12px; color: var(--tm-muted); margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--tm-line); }
+    .footer-hinweis { position: absolute; right: 0; bottom: 0; font-size: 10px; color: var(--tm-muted); }
+    .footer-hinweis summary { cursor: pointer; font-weight: 700; list-style: none; padding: 2px 4px; }
     .footer-hinweis summary::-webkit-details-marker { display: none; }
-    .footer-hinweis summary:hover { background: #eee; color: #555; }
+    .footer-hinweis summary:hover { background: var(--tm-box); color: var(--tm-navy); }
     .footer-hinweis-body {
       position: absolute; bottom: calc(100% + 4px); right: 0;
-      background: white; padding: 8px 12px; border: 1px solid #ddd;
-      border-radius: 6px; width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      font-size: 11px; color: #333; line-height: 1.45; text-align: left;
+      background: #FFFFFF; padding: 8px 12px; border: 1px solid var(--tm-line);
+      width: 280px; font-size: 11px; color: #000000; line-height: 1.45; text-align: left;
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 0 14px 40px; }
+      .header-meta { margin-left: 0; width: 100%; }
+      .page-head h1 { font-size: 24px; }
+      .section { padding: 16px 14px; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="disclaimer">⚠ {{ t("disclaimer", lang) }}</div>
-
-    <div class="topbar">
+    <header class="site-header">
       <a class="brand" href="https://www.textil-mode.de" target="_blank" rel="noopener">
         <img src="{{ url_for('static', filename='images/tum-logo.svg') }}" alt="textil+mode Logo">
         <span class="brand-name">textil<span>+</span>mode</span>
       </a>
-      <div class="topbar-right">
-        <form method="post" action="{{ url_for('set_language') }}" style="display:flex;gap:6px;align-items:center;">
-          <select name="language" onchange="this.form.submit()">
+
+      {% if session.get('user_id') %}
+      <nav class="site-nav">
+        <a href="{{ url_for('dashboard') }}" class="{{ 'is-current' if request.endpoint == 'dashboard' }}">{{ t("nav_check", lang) }}</a>
+        <a href="{{ url_for('regulations_list') }}" class="{{ 'is-current' if request.endpoint == 'regulations_list' }}">{{ t("btn_regulations_list", lang) }}</a>
+        {% if session.get('user_email','')|lower == 'mschuckert@textil-mode.de' %}
+        <a href="{{ url_for('admin_resets') }}" class="{{ 'is-current' if request.endpoint == 'admin_resets' }}">{{ t("admin_resets_title", lang) }}</a>
+        <a href="{{ url_for('admin_reg_status') }}" class="{{ 'is-current' if request.endpoint == 'admin_reg_status' }}">{{ t("admin_regstatus_title", lang) }}</a>
+        {% endif %}
+        <a href="{{ url_for('change_password') }}" class="{{ 'is-current' if request.endpoint == 'change_password' }}">{{ t("pw_change_title", lang) }}</a>
+        <a href="{{ url_for('logout') }}">{{ t("btn_logout", lang) }}</a>
+      </nav>
+      {% endif %}
+
+      <div class="header-meta">
+        {% if session.get('user_id') %}
+        <span class="header-user">{{ session.get('user_email','') }}</span>
+        {% endif %}
+        <form method="post" action="{{ url_for('set_language') }}">
+          <select name="language" aria-label="{{ t('language_picker_label', lang) }}" onchange="this.form.submit()">
             {% for code, name in LANGUAGES.items() %}
             <option value="{{ code }}" {{ 'selected' if code == lang else '' }}>{{ name }}</option>
             {% endfor %}
           </select>
         </form>
-        {% if session.get('user_id') %}
-        <span style="font-size:13px;color:#888;">{{ session.get('user_email','') }}</span>
-        {% if session.get('user_email','')|lower == 'mschuckert@textil-mode.de' %}
-        <a href="{{ url_for('admin_resets') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("admin_resets_title", lang) }}</a>
-        <a href="{{ url_for('admin_reg_status') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("admin_regstatus_title", lang) }}</a>
-        {% endif %}
-        <a href="{{ url_for('change_password') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("pw_change_title", lang) }}</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("btn_logout", lang) }}</a>
-        {% endif %}
       </div>
-    </div>
+    </header>
 
-    <div class="app-header">
-      <h1><span class="emoji">🌱</span>{{ t("app_title", lang)|replace("🌱 ","") }}</h1>
+    <div class="tm-accent"></div>
+
+    <div class="page-head">
+      <h1>{{ t("app_title", lang) }}</h1>
       <div class="subtitle">{{ t("app_subtitle", lang) }}</div>
     </div>
+
+    <div class="disclaimer">{{ t("disclaimer", lang) }}</div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}

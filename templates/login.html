@@ -18,7 +18,7 @@
       <button type="submit" class="btn btn-primary" style="width:100%;margin-top:6px;">{{ t("btn_login", lang) }}</button>
     </form>
     <p style="margin:12px 0 0;font-size:13px;">
-      <a href="#" onclick="switchTab('forgot');return false;">{{ t("link_forgot", lang) }}</a>
+      <button type="button" class="linklike" onclick="switchTab('forgot')">{{ t("link_forgot", lang) }}</button>
     </p>
   </div>
 </div>
@@ -27,7 +27,7 @@
 <div id="tab-forgot" class="tab-content">
   <div class="section" style="max-width:440px;">
     <h3 style="margin-top:0;">{{ t("forgot_title", lang) }}</h3>
-    <p style="font-size:13px;color:#666;">{{ t("forgot_hint", lang) }}</p>
+    <p style="font-size:13px;color:#5A5A5A;">{{ t("forgot_hint", lang) }}</p>
     <form method="post" autocomplete="off">
       <input type="hidden" name="action" value="forgot">
       <label>{{ t("email", lang) }}</label>
@@ -35,7 +35,7 @@
       <button type="submit" class="btn btn-primary" style="width:100%;margin-top:6px;">{{ t("btn_forgot", lang) }}</button>
     </form>
     <p style="margin:12px 0 0;font-size:13px;">
-      <a href="#" onclick="switchTab('login');return false;">{{ t("back_to_login", lang) }}</a>
+      <button type="button" class="linklike" onclick="switchTab('login')">{{ t("back_to_login", lang) }}</button>
     </p>
   </div>
 </div>

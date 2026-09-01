@@ -3,7 +3,7 @@
 {% block content %}
 <div class="section">
   <h2 style="margin-top:0;">{{ t("admin_regstatus_title", lang) }}</h2>
-  <p style="font-size:13px;color:#666;max-width:760px;">{{ t("admin_regstatus_hint", lang) }}</p>
+  <p style="font-size:13px;color:#5A5A5A;max-width:760px;">{{ t("admin_regstatus_hint", lang) }}</p>
 
   <div class="run-box">
     <strong>{{ t("admin_regstatus_last_run", lang) }}:</strong>
@@ -55,7 +55,7 @@
               <div class="reg-article">{{ t("admin_regstatus_versions", lang) }}: {{ row.versions }}</div>
               {% if row.base_act %}
               <div class="base-act-warn">
-                <span class="badge-status badge-base-act">⚠ {{ t("admin_regstatus_base_act", lang) }}</span>
+                <span class="badge-status badge-base-act">{{ t("admin_regstatus_base_act", lang) }}</span>
                 <div>{{ t("admin_regstatus_base_act_hint", lang) }}</div>
               </div>
               {% endif %}
@@ -63,7 +63,7 @@
               <div class="reg-article">{{ t("admin_regstatus_source", lang) }}: {{ row.source_note }}</div>
               {% endif %}
             {% else %}
-              <span style="color:#8b1a1a;">{{ t("admin_regstatus_no_text", lang) }}</span>
+              <span style="color:#A32020;">{{ t("admin_regstatus_no_text", lang) }}</span>
             {% endif %}
           </td>
           <td>
@@ -75,7 +75,7 @@
               <div class="change-summary">{{ row.change.summary }}</div>
               {% endif %}
             {% else %}
-              <span style="color:#888;">{{ t("admin_regstatus_no_changes", lang) }}</span>
+              <span style="color:#5A5A5A;">{{ t("admin_regstatus_no_changes", lang) }}</span>
             {% endif %}
           </td>
         </tr>
@@ -86,31 +86,18 @@
 </div>
 
 <style>
-  .reg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .reg-table th, .reg-table td { padding: 10px 12px; text-align: left; vertical-align: top;
-    border-bottom: 1px solid #e8e8e8; }
-  .reg-table th { background: #f1f3f5; color: #1f4e3d; font-weight: 700; }
-  .reg-title { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 2px; }
-  .reg-nr { color: #888; font-size: 12px; }
-  .reg-full { color: #555; font-size: 12px; word-break: break-all; }
-  .reg-full a { color: #1f4e3d; }
-  .reg-article { color: #888; font-size: 12px; margin-top: 4px; }
-  .badge-status { padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
-    white-space: nowrap; }
-  .badge-in_kraft { background: #e8f5e9; color: #1b5e20; }
-  .badge-gilt_ab { background: #fdf3d8; color: #7a6000; }
-  .badge-entwurf { background: #eceff1; color: #455a64; }
-  .badge-rueckzug_angekuendigt { background: #fdecea; color: #8b1a1a; }
-  .run-box { background: #f7f9f8; border: 1px solid #e2e8e5; border-radius: 8px;
-    padding: 12px 14px; margin-bottom: 16px; font-size: 14px; color: #333; }
-  .run-errors { margin: 6px 0 0; padding-left: 18px; color: #8b1a1a; font-size: 13px; }
-  .run-hint { color: #777; font-size: 12px; margin-top: 6px; }
-  .badge-base-act { background: #fdecea; color: #8b1a1a; }
-  .base-act-warn { margin-top: 6px; font-size: 12px; color: #8b1a1a; line-height: 1.4;
-    background: #fdecea; border-left: 3px solid #8b1a1a; border-radius: 0 4px 4px 0;
-    padding: 6px 8px; }
+  /* Tabellen- und Status-Badge-Stile liegen in base.html (textil+mode-CD). */
+  .reg-full { word-break: break-all; }
+  .run-box { background: #F2F2F2; border: 1px solid #DCDCDC;
+    padding: 12px 14px; margin-bottom: 16px; font-size: 14px; color: #000000; }
+  .run-errors { margin: 6px 0 0; padding-left: 18px; color: #A32020; font-size: 13px; }
+  .run-hint { color: #5A5A5A; font-size: 12px; margin-top: 6px; }
+  /* Warn-Badge: gedecktes Rot, das einzige Rot der Oberflaeche */
+  .badge-base-act { background: #A32020; color: #FFFFFF; }
+  .base-act-warn { margin-top: 6px; font-size: 12px; color: #000000; line-height: 1.4;
+    background: #FFFFFF; border-left: 3px solid #A32020; padding: 6px 8px; }
   .base-act-warn > div { margin-top: 4px; }
-  .change-head { font-size: 12px; color: #7a6000; }
-  .change-summary { margin-top: 4px; line-height: 1.45; color: #333; }
+  .change-head { font-size: 12px; color: #5A5A5A; }
+  .change-summary { margin-top: 4px; line-height: 1.45; color: #000000; }
 </style>
 {% endblock %}

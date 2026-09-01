@@ -3,14 +3,14 @@
 
 <div class="section">
   <h2 style="margin-top:0;">{{ t("admin_resets_title", lang) }}</h2>
-  <p style="font-size:13px;color:#666;max-width:640px;">{{ t("admin_resets_hint", lang) }}</p>
+  <p style="font-size:13px;color:#5A5A5A;max-width:640px;">{{ t("admin_resets_hint", lang) }}</p>
 
   {% if issued %}
-  <div style="border:2px solid #c9a227;border-radius:8px;padding:12px 14px;margin-bottom:18px;background:#fffdf5;">
-    <div style="font-weight:600;margin-bottom:6px;">{{ t("admin_link_for", lang) }} {{ issued.email }}</div>
+  <div style="background:#F2F2F2;border-left:3px solid #32AFDC;padding:12px 14px;margin-bottom:18px;">
+    <div style="font-weight:700;margin-bottom:6px;color:#0F3750;">{{ t("admin_link_for", lang) }} {{ issued.email }}</div>
     <input type="text" readonly value="{{ issued.url }}" onclick="this.select()"
-           style="width:100%;font-family:monospace;font-size:13px;padding:6px;">
-    <div style="font-size:12px;color:#666;margin-top:6px;">
+           style="width:100%;font-family:monospace;font-size:13px;padding:6px;margin-bottom:0;">
+    <div style="font-size:12px;color:#5A5A5A;margin-top:6px;">
       {{ t("admin_link_expires", lang) }} {{ issued.expires[:16].replace("T", " ") }} UTC ·
       {{ t("admin_link_once", lang) }}
     </div>
@@ -29,37 +29,41 @@
 <div class="section">
   <h3 style="margin-top:0;">{{ t("admin_open_requests", lang) }} ({{ requests|length }})</h3>
   {% if requests %}
-  <table style="width:100%;border-collapse:collapse;font-size:14px;">
-    <tr style="text-align:left;border-bottom:2px solid #ddd;">
-      <th style="padding:6px 8px;">{{ t("email", lang) }}</th>
-      <th style="padding:6px 8px;">{{ t("admin_company", lang) }}</th>
-      <th style="padding:6px 8px;">{{ t("admin_requested_at", lang) }}</th>
-      <th style="padding:6px 8px;">{{ t("admin_status", lang) }}</th>
-      <th></th>
-    </tr>
+  <table class="reg-table">
+    <thead>
+      <tr>
+        <th>{{ t("email", lang) }}</th>
+        <th>{{ t("admin_company", lang) }}</th>
+        <th>{{ t("admin_requested_at", lang) }}</th>
+        <th>{{ t("admin_status", lang) }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
     {% for r in requests %}
-    <tr style="border-bottom:1px solid #eee;">
-      <td style="padding:6px 8px;">{{ r.email }}</td>
-      <td style="padding:6px 8px;color:#666;">{{ r.company or "—" }}</td>
-      <td style="padding:6px 8px;color:#666;">{{ r.requested_at[:16].replace("T", " ") }}</td>
-      <td style="padding:6px 8px;">
+    <tr>
+      <td>{{ r.email }}</td>
+      <td style="color:#5A5A5A;">{{ r.company or "—" }}</td>
+      <td style="color:#5A5A5A;">{{ r.requested_at[:16].replace("T", " ") }}</td>
+      <td>
         {% if r.link_issued %}
-          <span style="color:#7a6000;">{{ t("admin_state_issued", lang) }}</span>
+          <span class="badge-status badge-gilt_ab">{{ t("admin_state_issued", lang) }}</span>
         {% else %}
-          <span style="color:#8b0000;">{{ t("admin_state_open", lang) }}</span>
+          <span class="badge-status badge-rueckzug_angekuendigt">{{ t("admin_state_open", lang) }}</span>
         {% endif %}
       </td>
-      <td style="padding:6px 8px;text-align:right;">
+      <td style="text-align:right;">
         <form method="post" style="display:inline;">
           <input type="hidden" name="email" value="{{ r.email }}">
-          <button type="submit" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("admin_btn_issue", lang) }}</button>
+          <button type="submit" class="btn btn-sm btn-secondary">{{ t("admin_btn_issue", lang) }}</button>
         </form>
       </td>
     </tr>
     {% endfor %}
+    </tbody>
   </table>
   {% else %}
-  <p style="color:#666;margin-bottom:0;">{{ t("admin_no_requests", lang) }}</p>
+  <p style="color:#5A5A5A;margin-bottom:0;">{{ t("admin_no_requests", lang) }}</p>
   {% endif %}
 </div>
 

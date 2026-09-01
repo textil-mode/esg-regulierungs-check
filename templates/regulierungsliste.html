@@ -52,12 +52,12 @@
                 {% endfor %}
               </ul>
             {% else %}
-              <span style="color:#888;">{{ t("no_guidelines", lang) }}</span>
+              <span style="color:#5A5A5A;">{{ t("no_guidelines", lang) }}</span>
             {% endif %}
           </td>
           <td>
             <a href="{{ row.url }}" target="_blank" rel="noopener" class="source-link">
-              {{ t("open_source", lang) }} ↗
+              {{ t("open_source", lang) }}
             </a>
             <div class="guide-stand">
               {{ t("stand_label", lang) }}: {{ row.stand }}{% if row.stand_draft %} ({{ row.stand_draft }}){% endif %}
@@ -71,31 +71,18 @@
 </div>
 
 <style>
-  .reg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .reg-table th, .reg-table td { padding: 10px 12px; text-align: left; vertical-align: top;
-    border-bottom: 1px solid #e8e8e8; }
-  .reg-table th { background: #f1f3f5; color: #1f4e3d; font-weight: 700; }
-  .reg-table tr:hover td { background: #fafcfb; }
-  .reg-title { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 2px; }
-  .reg-nr { color: #888; font-size: 12px; }
-  .reg-full { color: #555; font-size: 13px; line-height: 1.35; }
-  .reg-article { color: #888; font-size: 12px; margin-top: 4px; font-style: italic; }
-  .badge-scope { padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
-    background: #e8f5e9; color: #1b5e20; letter-spacing: 0.3px; }
+  /* Tabellen- und Status-Badge-Stile liegen in base.html (textil+mode-CD). */
+  .reg-full { line-height: 1.35; }
+  .badge-scope { display: inline-block; padding: 1px 8px; font-size: 11px; font-weight: 700;
+    background: #FFFFFF; border: 1px solid #0F3750; color: #0F3750; letter-spacing: 0.3px; }
   .guide-list { margin: 0; padding-left: 18px; }
   .guide-list li { margin-bottom: 4px; line-height: 1.4; }
-  .guide-list a { color: #1f4e3d; text-decoration: none; }
+  .guide-list a { color: #0070C0; text-decoration: none; }
   .guide-list a:hover { text-decoration: underline; }
-  .guide-stand { color: #888; font-size: 12px; }
+  .guide-stand { color: #5A5A5A; font-size: 12px; margin-top: 4px; }
   .applies-line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .applies-note { color: #666; font-size: 12px; line-height: 1.35; margin-top: 5px; }
-  .badge-status { padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
-    white-space: nowrap; }
-  .badge-in_kraft { background: #e8f5e9; color: #1b5e20; }
-  .badge-gilt_ab { background: #fdf3d8; color: #7a6000; }
-  .badge-entwurf { background: #eceff1; color: #455a64; }
-  .badge-rueckzug_angekuendigt { background: #fdecea; color: #8b1a1a; }
-  .source-link { color: #1f4e3d; font-weight: 600; text-decoration: none; }
+  .applies-note { color: #5A5A5A; font-size: 12px; line-height: 1.35; margin-top: 5px; }
+  .source-link { color: #0070C0; font-weight: 700; text-decoration: none; }
   .source-link:hover { text-decoration: underline; }
 </style>
 
