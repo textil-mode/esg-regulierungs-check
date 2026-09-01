@@ -10,6 +10,8 @@ services:
     ports:
       - "8082:8080"
     environment:
+      # Optional: ohne diesen Wert erzeugt die App einmalig data/flask_secret
+      # im Volume esg-data (ueberlebt Neustarts). Nie einen echten Key einchecken.
       - FLASK_SECRET=<im-hostinger-ui-gesetzt>
       - LLM_PROVIDER=google
       - OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/

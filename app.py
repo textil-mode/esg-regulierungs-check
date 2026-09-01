@@ -8,14 +8,17 @@ from __future__ import annotations
 import json
 import os
 import queue
+import secrets
 import threading
 from datetime import datetime
+from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import (
     Flask,
     Response,
     flash,
+    has_request_context,
     redirect,
     render_template,
     request,
@@ -23,6 +26,7 @@ from flask import (
     stream_with_context,
     url_for,
 )
+from flask.sessions import SecureCookieSessionInterface
 
 import db
 from i18n import (
@@ -54,8 +58,48 @@ from views import render_cards_html, render_csv
 
 load_dotenv(override=True)
 
+
+def _secret_key() -> str:
+    """Session-Secret aus der Umgebung, sonst persistent im Datenverzeichnis.
+
+    Ein fester Default im Code waere ratbar (Sessions faelschbar), ein bei jedem
+    Start neu gewuerfeltes Secret wuerde alle Sessions entwerten. Deshalb einmalig
+    erzeugen und in data/flask_secret ablegen — das Verzeichnis ist ein Docker-Volume
+    und steht in .gitignore/.dockerignore.
+    """
+    env_secret = (os.getenv("FLASK_SECRET") or "").strip()
+    if env_secret:
+        return env_secret
+    path = Path(__file__).parent / "data" / "flask_secret"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        try:
+            with open(path, "x", encoding="utf-8") as fh:
+                fh.write(secrets.token_urlsafe(48))
+            path.chmod(0o600)
+        except (FileExistsError, OSError):
+            pass
+    return path.read_text(encoding="utf-8").strip()
+
+
+class ProxyAwareSessionInterface(SecureCookieSessionInterface):
+    """Setzt das Secure-Flag genau dann, wenn der Request ueber https kam.
+
+    Hinter nginx wertet die PrefixMiddleware X-Forwarded-Proto aus (-> https),
+    lokal ueber http bleibt das Cookie damit nutzbar.
+    """
+
+    def get_cookie_secure(self, app: Flask) -> bool:
+        return bool(has_request_context() and request.is_secure)
+
+
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET", "esg-dev-secret-change-me")
+app.secret_key = _secret_key()
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
+app.session_interface = ProxyAwareSessionInterface()
 
 
 # Reverse-Proxy Subpath: nginx sendet X-Script-Name Header,
@@ -503,10 +547,11 @@ def analysis_status_api():
 # ---------------------------------------------------------------------------
 @app.route("/fullscreen")
 def fullscreen():
-    uid = request.args.get("uid", type=int) or _uid()
-    if not uid:
-        return "No user", 400
-    last = db.latest_analysis(uid)
+    # Kein uid-Parameter: die Ansicht zeigt ausschliesslich die eigene Analyse.
+    redir = _require_login()
+    if redir:
+        return redir
+    last = db.latest_analysis(_uid())
     if not last:
         return render_template("fullscreen.html", cards_html="", last=None)
     lang = normalize_lang(request.args.get("lang") or _lang())
