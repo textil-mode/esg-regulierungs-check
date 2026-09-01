@@ -61,6 +61,8 @@ Decision rules:
 - "moeglich" if information is missing, special rules may apply, or thresholds are close.
 - "nein" if clearly outside the scope.
 - Use ONLY the thresholds, figures and conditions given in the "Applicability criteria" block and the full text. NEVER import thresholds from other regulations or from prior knowledge; if a number is given, use exactly that number.
+- The company profile lists ONLY the characteristics that matter for THIS regulation. Never invent, assume or mention a characteristic that is not listed there (no sector, no headcount, no products unless they appear in the profile).
+- IDENTITY RULE: you are never told the company's name and MUST NOT invent or guess one. Always refer to it as "the company" (in {lang_name}), never by a name, brand or location.
 - If a "BINDING PRE-DETERMINED FACT" block is present, treat that fact as established truth. Base your decision on it together with this regulation's own criteria and never state anything that contradicts it.
 
 "reason" — MANDATORY in every case, written in {lang_name}, max. 60 words, and ALWAYS in EXACTLY two sentences — no more, no fewer — with this structure:
@@ -88,22 +90,24 @@ def _system_prompt(language: str) -> str:
     return _SYSTEM_BASE.format(lang_name=name)
 
 
-PROFILE_TEMPLATE = """COMPANY PROFILE:
-Name: {name}
-Legal form: {legal_form}
-Group structure: {group_role}
-Total employees: {employees}
-Employees in Germany: {employees_de}
-Net revenue (EUR/year): {revenue_eur}
-Balance sheet total (EUR): {balance_sheet_eur}
-Industry: {branch}
-B2C business: {b2c}
-Capital-market oriented: {listed}
-Environmental claims/labels in marketing: {env_claims}
-EU importer (places products from third countries on the EU market / first placing on the market): {eu_importer}
-Product categories: {product_categories}
-Sites:
-{sites_block}"""
+# Beschriftung je Profilfeld. Der Prompt zeigt AUSSCHLIESSLICH die
+# `relevant_fields` der jeweiligen Regulierung — siehe `_format_profile`.
+_PROFILE_LABELS: dict[str, str] = {
+    "legal_form": "Legal form",
+    "group_role": "Group structure",
+    "employees": "Total employees",
+    "employees_de": "Employees in Germany",
+    "revenue_eur": "Net revenue (EUR/year)",
+    "balance_sheet_eur": "Balance sheet total (EUR)",
+    "branch": "Industry",
+    "b2c": "B2C business",
+    "listed": "Capital-market oriented",
+    "env_claims": "Environmental claims/labels in marketing",
+    "eu_importer": ("EU importer (places products from third countries on the EU market / "
+                    "first placing on the market)"),
+    "product_categories": "Product categories",
+    "sites": "Sites",
+}
 
 _USER_TEMPLATE = """{profile}
 
@@ -123,33 +127,46 @@ source section of everything that follows it, "[…]" marks a shortened section)
 Evaluate strictly and respond as JSON per the schema."""
 
 
-def _format_profile(profile: dict) -> str:
-    sites = profile.get("sites", []) or []
-    if sites:
-        sites_block = "\n".join(
+def _render_field(field: str, value) -> str:
+    if field == "sites":
+        sites = value or []
+        if not sites:
+            return "- none -"
+        return "\n" + "\n".join(
             f"- {s.get('count', 0)}x {s.get('type', '-')} in {s.get('location', '-')}"
             for s in sites
         )
-    else:
-        sites_block = "- none -"
-    products = profile.get("product_categories") or []
-    product_block = ", ".join(products) if products else "none"
-    return PROFILE_TEMPLATE.format(
-        name=profile.get("name") or "(unnamed)",
-        legal_form=profile.get("legal_form") or "-",
-        group_role=profile.get("group_role") or "-",
-        employees=profile.get("employees") or 0,
-        employees_de=profile.get("employees_de") or 0,
-        revenue_eur=f"{(profile.get('revenue_eur') or 0):,.0f}".replace(",", "."),
-        balance_sheet_eur=f"{(profile.get('balance_sheet_eur') or 0):,.0f}".replace(",", "."),
-        branch=profile.get("branch") or "-",
-        b2c="yes" if profile.get("b2c") else "no",
-        listed="yes" if profile.get("listed") else "no",
-        env_claims="yes" if profile.get("env_claims") else "no",
-        eu_importer="yes" if profile.get("eu_importer") else "no",
-        product_categories=product_block,
-        sites_block=sites_block,
-    )
+    if field == "product_categories":
+        return ", ".join(value or []) or "none"
+    if field in _BOOL_FIELDS:
+        return "yes" if value else "no"
+    if field in _INT_FIELDS:
+        return str(int(value or 0))
+    if field in _FLOAT_FIELDS:
+        return f"{float(value or 0):,.0f}".replace(",", ".")
+    return str(value or "-")
+
+
+def _format_profile(profile: dict, reg: dict) -> str:
+    """Profilblock fuer den Prompt — nur die `relevant_fields` dieser Regulierung.
+
+    Das ist keine Sparmassnahme, sondern die Bedingung dafuer, dass der Cache
+    global sein darf: der Prompt enthaelt exakt die Felder, die auch in
+    `profile_hash` eingehen. Damit kann eine Begruendung nichts nennen, was
+    nicht im Schluessel steckt — zwei Unternehmen, die sich denselben
+    Cache-Eintrag teilen, haben in allem, was das LLM gesehen hat, denselben
+    Wert. Insbesondere steht der FIRMENNAME nirgends im Prompt (er gehoert in
+    keine `relevant_fields`), sodass keine Begruendung ihn tragen kann.
+    """
+    lines = ["COMPANY PROFILE:"]
+    for field in relevant_fields_for(reg):
+        label = _PROFILE_LABELS.get(field)
+        if not label:      # z. B. `language` — kein Profilmerkmal fuer den Prompt
+            continue
+        lines.append(f"{label}: {_render_field(field, profile.get(field))}")
+    if len(lines) == 1:
+        lines.append("(no company characteristic is relevant for this regulation)")
+    return "\n".join(lines)
 
 
 _BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer"})
@@ -191,7 +208,7 @@ def profile_hash(profile: dict, reg: dict) -> str:
 
 # Bei Prompt-Aenderungen hochzaehlen: invalidiert den analysis_cache, damit alle
 # Nutzer einmalig frische Ergebnisse mit dem neuen Prompt bekommen.
-_PROMPT_VERSION = "v4-2026-09-01"
+_PROMPT_VERSION = "v5-2026-09-01"
 
 
 def reg_hash(reg: dict, language: str, law_text_hash: str | None) -> str:
@@ -537,9 +554,10 @@ def _parse_retry_after(err_str: str) -> float:
     return 0.0
 
 
-async def _analyze_one(client: LLMClient, profile_block: str, reg: dict, fulltext: str,
+async def _analyze_one(client: LLMClient, reg: dict, fulltext: str,
                        language: str, profile: dict | None = None) -> dict:
     system = _system_prompt(language)
+    profile_block = _format_profile(profile or {}, reg)
     fulltext_placeholder = "(full text unavailable)"
     premise = coupling_premise(reg.get("key", ""), profile or {})
     premise_block = f"\nBINDING PRE-DETERMINED FACT:\n{premise}\n" if premise else ""
@@ -620,7 +638,6 @@ class RateLimiter:
 
 async def _run(profile: dict, jobs: list[tuple[dict, str]], result_cb: Callable[[dict], None]) -> None:
     client = LLMClient()
-    profile_block = _format_profile(profile)
     language = (profile.get("language") or "de").lower()
     if language not in ("de", "en", "es", "fr", "it", "zh"):
         language = "de"
@@ -633,7 +650,7 @@ async def _run(profile: dict, jobs: list[tuple[dict, str]], result_cb: Callable[
     async def bound(reg: dict, fulltext: str) -> None:
         async with sem:
             await limiter.acquire()
-            res = await _analyze_one(client, profile_block, reg, fulltext, language, profile)
+            res = await _analyze_one(client, reg, fulltext, language, profile)
             result_cb(res)
 
     await asyncio.gather(*(bound(reg, ft) for reg, ft in jobs))

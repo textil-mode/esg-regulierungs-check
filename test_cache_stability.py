@@ -125,11 +125,11 @@ def _offline_url_text(url: str, **_kw) -> dict:
 _real_analyze_one = llm._analyze_one
 
 
-async def _counting_analyze_one(client, profile_block, reg, fulltext, language, profile=None):
+async def _counting_analyze_one(client, reg, fulltext, language, profile=None):
     """Zaehlt jede Regulierung, die tatsaechlich neu formuliert wird."""
     _calls.append(reg["key"])
     if LIVE:
-        return await _real_analyze_one(client, profile_block, reg, fulltext, language, profile)
+        return await _real_analyze_one(client, reg, fulltext, language, profile)
     return {**llm._enrich(reg, {}), "applies": "nein",
             "reason": f"Platzhalter-Begruendung fuer {reg['key']}.",
             "passage": reg.get("key_article") or "-"}
@@ -216,11 +216,50 @@ def main() -> int:
 
     # --- 6. Gesetzestext nicht abrufbar -----------------------------------
     with sqlite3.connect(TEST_DB) as c:
+        saved = c.execute("SELECT text FROM law_texts WHERE reg_key = ? AND language = 'de'",
+                          (victim,)).fetchone()[0]
         c.execute("UPDATE law_texts SET text = '' WHERE reg_key = ? AND language = 'de'", (victim,))
     res6, calls6 = run(uid, PROFILE)
     check("6 Quelle nicht abrufbar: 0 neue Formulierungen", calls6 == [], str(calls6))
     check("6 Quelle nicht abrufbar: Begruendung bleibt der letzte gueltige Stand",
           res6[victim]["reason"] == res5[victim]["reason"])
+    with sqlite3.connect(TEST_DB) as c:
+        c.execute("UPDATE law_texts SET text = ? WHERE reg_key = ? AND language = 'de'",
+                  (saved, victim))
+
+    # --- 7. Zwei Nutzer: nichts von A darf bei B auftauchen ---------------
+    # Der Cache ist global, B bekommt also Karten aus A's Lauf. Genau dann darf
+    # keine dieser Karten etwas enthalten, das A von B unterscheidet.
+    uid_a, uid_b = uid, db.create_user("cachetest-b@example.invalid", "nur-fuer-den-test")
+    prof_a = {**PROFILE, "name": "Alpha Textil GmbH"}
+    prof_b = {
+        **PROFILE, "name": "Beta Mode AG",
+        # bewusst gleich, wo Kollision entstehen soll (branch, b2c, env_claims,
+        # eu_importer, product_categories, sites), verschieden bei allen Zahlen
+        "employees": 300, "employees_de": 40, "revenue_eur": 25_000_000.0,
+        "balance_sheet_eur": 9_000_000.0, "legal_form": "AG / SE",
+    }
+    res_a, _ = run(uid_a, prof_a)
+    res_b, calls_b = run(uid_b, prof_b)
+
+    shared = [k for k in res_b if k not in calls_b and k in LLM_KEYS]
+    check("7 Zwei Nutzer: B bekommt Karten aus A's Cache",
+          len(shared) > 0, f"{len(shared)} geteilt, {len(calls_b)} neu")
+    # Der Beweis: geteilt wird nur, wo A und B DENSELBEN Prompt erzeugen.
+    by_key = {r["key"]: r for r in REGULATIONS}
+    prompt_diff = [k for k in shared
+                   if llm._format_profile(prof_a, by_key[k]) != llm._format_profile(prof_b, by_key[k])]
+    check("7 Zwei Nutzer: geteilte Karten hatten identischen Prompt", not prompt_diff,
+          str(prompt_diff))
+    texts_b = " ".join(f"{r.get('reason','')} {r.get('passage','')}" for r in res_b.values())
+    texts_a = " ".join(f"{r.get('reason','')} {r.get('passage','')}" for r in res_a.values())
+    leaks = [tok for tok in ("Alpha", "Beta Mode", "Muster") if tok in texts_a + texts_b]
+    check("7 Zwei Nutzer: kein Firmenname in irgendeiner Begruendung", not leaks, str(leaks))
+    # A-spezifische Kennzahlen, die B nicht hat
+    a_only = [tok for tok in ("1.200", "1200", "900", "600.000.000") if tok in texts_b]
+    check("7 Zwei Nutzer: keine Kennzahl von A in B's Karten", not a_only, str(a_only))
+    check("7 Zwei Nutzer: kein Firmenname im Prompt",
+          not any("Alpha" in llm._format_profile(prof_a, r) for r in REGULATIONS))
 
     # --- Stichprobe --------------------------------------------------------
     print()

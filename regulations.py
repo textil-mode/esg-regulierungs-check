@@ -17,7 +17,7 @@ REGULATIONS = [
     {
         "nr": 1,
         "key": "CSDDD",
-        "relevant_fields": ["employees", "revenue_eur", "group_role", "sites"],
+        "relevant_fields": ["employees", "revenue_eur", "group_role", "legal_form", "sites"],
         "name": "CSDDD",
         "full_name": "Richtlinie (EU) 2024/1760 - Sorgfaltspflichten von Unternehmen im Hinblick auf Nachhaltigkeit",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1760",
@@ -48,7 +48,7 @@ REGULATIONS = [
     {
         "nr": 2,
         "key": "LkSG",
-        "relevant_fields": ["employees_de", "sites"],
+        "relevant_fields": ["employees_de", "sites", "group_role"],
         "name": "LkSG",
         "full_name": "Lieferkettensorgfaltspflichtengesetz",
         # Bis 09/2026 zeigten beide URLs auf die BAFA-Uebersichtsseite — ein
@@ -162,7 +162,9 @@ REGULATIONS = [
     {
         "nr": 8,
         "key": "NFRD",
-        "relevant_fields": ["employees", "listed"],
+        "relevant_fields": [
+            "employees", "revenue_eur", "balance_sheet_eur", "listed", "legal_form",
+        ],
         "name": "NFRD",
         "full_name": "Richtlinie 2014/95/EU - nichtfinanzielle Berichterstattung",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02014L0095",
@@ -178,7 +180,10 @@ REGULATIONS = [
     {
         "nr": 9,
         "key": "CSR-RUG",
-        "relevant_fields": ["employees", "listed", "sites"],
+        "relevant_fields": [
+            "employees", "employees_de", "revenue_eur", "balance_sheet_eur", "listed", "legal_form",
+            "group_role", "sites",
+        ],
         "name": "CSR-RUG",
         "full_name": "Gesetz zur Stärkung der nichtfinanziellen Berichterstattung",
         # Der BGBl.-Jahrgang 2017 liegt nur im JS-Viewer von bgbl.de und ist
@@ -256,7 +261,7 @@ REGULATIONS = [
     {
         "nr": 13,
         "key": "WhistleblowerRL",
-        "relevant_fields": ["employees_de"],
+        "relevant_fields": ["employees_de", "branch"],
         "name": "Whistleblower-Richtlinie",
         "full_name": "Richtlinie (EU) 2019/1937 - Schutz von Hinweisgebern",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937",
@@ -271,7 +276,7 @@ REGULATIONS = [
     {
         "nr": 14,
         "key": "HinSchG",
-        "relevant_fields": ["employees_de"],
+        "relevant_fields": ["employees_de", "branch"],
         "name": "HinSchG",
         "full_name": "Hinweisgeberschutzgesetz",
         # Die Verzeichnis-Seite (…/hinschg/) liefert nur das Inhaltsverzeichnis
@@ -288,7 +293,7 @@ REGULATIONS = [
     {
         "nr": 15,
         "key": "RightToRepair",
-        "relevant_fields": ["product_categories", "branch"],
+        "relevant_fields": ["product_categories", "branch", "eu_importer"],
         "name": "Right to Repair",
         "full_name": "Richtlinie (EU) 2024/1799 - Reparatur von Waren",
         "url": "https://eur-lex.europa.eu/eli/dir/2024/1799/oj",
@@ -703,8 +708,10 @@ def application_for(reg_key: str, today=None) -> dict:
 # ---------------------------------------------------------------------------
 
 _NON_EU_PARENT_MARKERS = ("außerhalb EU", "Nicht-EU")
+_SUBSIDIARY_MARKER = "Tochter"
 
-# Branchen, die Art. 8 Taxonomie-VO unabhaengig von der CSRD-Schwelle erfasst.
+# Branchen, die Art. 8 Taxonomie-VO unabhaengig von der CSRD-Schwelle erfasst;
+# dieselbe Liste traegt § 12 Abs. 3 HinSchG (bestimmte Finanzunternehmen).
 _FINANCIAL_BRANCHES = frozenset({"Finanzdienstleistungen", "Versicherungen"})
 
 
@@ -734,6 +741,13 @@ def csrd_status(profile: dict) -> tuple[str, str]:
     group = profile.get("group_role") or ""
     non_eu_parent = any(m in group for m in _NON_EU_PARENT_MARKERS)
     if emp > 1000 and rev > 450_000_000:
+        # Art. 19a Abs. 9 / 29a Abs. 8 der Bilanzrichtlinie: ein Tochter-
+        # unternehmen ist befreit, wenn es in den Konzern-Nachhaltigkeits-
+        # bericht der Mutter einbezogen ist. Die Pflicht besteht also, kann
+        # aber auf Konzernebene erfuellt werden — das muss die Begruendung
+        # sagen, sonst faellt der Vorbehalt weg, den vorher das LLM lieferte.
+        if _SUBSIDIARY_MARKER in group:
+            return "ja", "csrd_ueber_schwelle_tochter"
         return "ja", "csrd_ueber_schwelle"
     if non_eu_parent and rev > 450_000_000:
         return "moeglich", "csrd_drittland"
@@ -748,11 +762,18 @@ def csrd_status(profile: dict) -> tuple[str, str]:
 def hinschg_status(profile: dict) -> tuple[str, str]:
     """HinSchG-Pflicht: interne Meldestelle ab 50 Beschaeftigten im Inland.
 
-    Liefert (applies, fact_key) wie `csrd_status`.
+    Liefert (applies, fact_key) wie `csrd_status`. § 12 Abs. 3 HinSchG nimmt
+    bestimmte Finanzunternehmen (u. a. Wertpapierdienstleistungsunternehmen,
+    Kapitalverwaltungsgesellschaften, Versicherer) von der Beschaeftigten-
+    schwelle aus — ohne diese Ausnahme wuerde der Baustein einem kleinen
+    Finanzdienstleister hart "nein" sagen, und anders als frueher gibt es kein
+    LLM mehr, das den Sonderfall auffangen koennte.
     """
     emp_de = profile.get("employees_de") or 0
     if emp_de >= 50:
         return "ja", "hinschg_ab_50"
+    if (profile.get("branch") or "") in _FINANCIAL_BRANCHES:
+        return "moeglich", "hinschg_unter_50_finanz"
     return "nein", "hinschg_unter_50"
 
 

@@ -142,7 +142,11 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de") -> str:
     name = escape(r["name"])
     full = escape(r["full_name"])
     url = escape(r["url"])
-    article = escape(r.get("article") or "")
+    # `article` (statisches key_article) wird NICHT mehr vorangestellt: die
+    # Begruendungstexte tragen die Fundstelle seit Prompt v5 selbst, und zwar
+    # die tatsaechlich zitierte Stelle statt der pauschalen ("Art. 1, 3").
+    # Doppelnennungen wie "Art. 2 (Anwendungsbereich): Art. 2(1): …" entfielen
+    # damit, und die 280-Zeichen-Kappung greift wieder auf den ganzen Text.
     passage = _highlight_kennzahlen(escape(_shorten_passage(r.get("passage") or "")))
     reason_raw = (r.get("reason") or "").strip()
     reason = escape(reason_raw) if reason_raw else f'<em style="color:#aaa;">{escape(lang_dict["reason_missing"])}</em>'
@@ -161,7 +165,7 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de") -> str:
     <span class="reg-full">— {full}</span>
   </div>
   <div class="reg-reason"><strong>{escape(lang_dict['reason'])}:</strong> {reason}</div>
-  <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> <em>{article}{': ' if article else ''}{passage}</em></div>{as_of_html}
+  <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> <em>{passage}</em></div>{as_of_html}
 </div>"""
 
 
@@ -208,7 +212,7 @@ def render_csv(results: list[dict], language: str = "de") -> bytes:
             r["name"],
             r["full_name"],
             r.get("reason", ""),
-            f'{r.get("article","")}: {r.get("passage","")}',
+            r.get("passage", ""),
             r["url"],
         ])
     return ("\ufeff" + buf.getvalue()).encode("utf-8")

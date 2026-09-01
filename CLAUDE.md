@@ -32,6 +32,7 @@
 | Stammdaten-Frage "EU-Importeur / erstmaliges Inverkehrbringen" | `templates/dashboard.html`, `db.eu_importer` | ✅ |
 | LLM-Analyse über 22 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
+| **Datentrennung im globalen Cache** (siehe Invariante unten): der Prompt zeigt exakt die `relevant_fields` der Regulierung, der Firmenname steht nirgends darin, und der System-Prompt verbietet das Nennen eines Namens | `llm.py` `_format_profile`, `_SYSTEM_BASE` | ✅ |
 | **Deterministische Begruendungen ohne LLM** fuer die gekoppelten Regs (CSRD, CSRD_DE, ESRS, TaxonomieVO, HinSchG, WhistleblowerRL): handgeschriebene Bausteine in 6 Sprachen, 0 LLM-Calls, fuer immer byte-stabil | `regulations.py` `coupling_verdict`, `i18n.py` `coupling_texts`, `llm.py` `deterministic_result` | ✅ |
 | Gesetzestext-Cache mit ETag / Last-Modified | `fetcher.py` `law_texts` | ✅ |
 | **Strukturbasierte Kontext-Auswahl** (Art. 1-3 + `key_article` + Schwellenwert-Abschnitte statt Blind-Kappung; Kopfzeilen `=== Art. 2 - … ===`) | `lawparse.py` `build_context`, `app.py` Phase 1 | ✅ |
@@ -56,9 +57,37 @@
 | **Deterministische Ergebnisse** (seed=42 + topK=1; `_PROMPT_VERSION` in `reg_hash` invalidiert Cache bei Prompt-Änderungen) | `llm.py` | ✅ |
 | **Begründung immer in UI-Sprache** (auch bei englischem Gesetzestext), Zitat bleibt Original | `llm.py` `_SYSTEM_BASE` | ✅ |
 | **Kennzahl-Hervorhebung** in "Greifende Stelle" (Zahl+Einheit leicht rot, Passage-Box mit Gold-Rand) | `views.py` `_highlight_kennzahlen`, `base.html` | ✅ |
-| "Greifende Stelle" auf 280 Zeichen gekappt | `views.py` `_shorten_passage` | ✅ |
+| "Greifende Stelle" auf 280 Zeichen gekappt (+ " …"). Das statische `key_article` wird NICHT mehr vorangestellt — die Begruendungstexte tragen die Fundstelle seit Prompt v5 selbst, sonst stuenden zwei widerspruechliche Angaben da und die Kappung griffe nur auf den halben Text | `views.py` `_shorten_passage`, `_card_html` | ✅ |
 | Fehler-Regulierung als rote ✕-Karte sichtbar | `views.py` `APPLIES_ORDER` + `BADGE_STYLES` | ✅ |
 | i18n (DE / EN / ES / FR / IT / ZH) | `i18n.py` | ✅ |
+
+---
+
+### ⚠️ Invariante: Prompt ≡ `relevant_fields` (Datentrennung)
+
+Der `analysis_cache` ist **nutzeruebergreifend**. Damit sich zwei Unternehmen einen
+Eintrag teilen duerfen, muss gelten:
+
+> Der LLM-Prompt einer Regulierung enthaelt **genau** die Profilfelder, die auch in
+> ihren `profile_hash` eingehen — also `relevant_fields` (+ `language`).
+
+`llm._format_profile(profile, reg)` baut den Profilblock deshalb aus
+`relevant_fields_for(reg)`. Zwei Nutzer mit demselben `profile_hash` erzeugen so
+denselben Prompt; eine Begruendung kann nichts enthalten, worin sie sich
+unterscheiden. Der **Firmenname** gehoert in keine `relevant_fields` und steht
+darum nicht im Prompt; zusaetzlich verbietet `_SYSTEM_BASE` das Nennen eines Namens.
+
+Wer hier etwas aendert, muss beides zusammen aendern:
+- ein Feld in den Prompt aufnehmen → in die `relevant_fields` der Reg aufnehmen,
+- ein Feld aus den `relevant_fields` entfernen → es verschwindet aus dem Prompt.
+
+Sonst wandern Daten des Erstnutzers in die Karten aller weiteren Nutzer. Der Test
+`test_cache_stability.py` (Szenario 7) prueft das mit zwei Nutzern nach.
+
+Angenehmer Nebeneffekt: das Modell kann keine Zahl mehr aus einem fremden Feld
+importieren. Vor der Umstellung las das LLM beim LkSG „Total employees: 1200" und
+begruendete damit „1.200 Arbeitnehmer im Inland" — obwohl das Gesetz auf die
+900 Inlandsbeschaeftigten abstellt.
 
 ---
 
@@ -294,6 +323,18 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
   Fehler erneut sieht (`watchdog_runs.errors_json`). Für dauerhafte Sichtbarkeit bräuchte
   `law_texts` eine Spalte `last_error` samt Anzeige und i18n — bewusst nicht mitgemacht, weil es
   den Analyse-Pfad berührt.
+- **`reg_hash` deckt nicht alles ab, was in den Prompt geht.** Enthalten sind `criteria`,
+  `_PROMPT_VERSION`, Sprache und Gesetzesstand — nicht aber `key_article`, die
+  Guideline-Texte und `FULLTEXT_MAX_CHARS`. Ändert sich nur eines davon, bleibt die alte
+  Begründung stehen. Bewusst offen gelassen: Guidelines werden bei jedem Lauf frisch
+  geladen, ihr Hash würde den Cache oft ohne inhaltlichen Grund verwerfen. Wer `key_article`
+  oder `FULLTEXT_MAX_CHARS` ändert, zählt ersatzweise `_PROMPT_VERSION` hoch.
+- **Die Zwei-Satz-Regel hält das Modell nicht immer ein** (Gemini 2.5 Flash Lite: in
+  etwa 5 von 22 Fällen ein dritter Satz). Inhaltlich korrekt, nur stilistisch uneinheitlich;
+  die deterministischen Bausteine sind davon nicht betroffen.
+- **`analysis_cache` wächst unbegrenzt.** Je Gesetzesänderung bleibt eine alte Zeile je
+  Profil-Hash liegen (die None-Fallback-Logik lebt davon). Bei ~500 Byte pro Zeile
+  unkritisch; wenn es je stört, die ältesten Zeilen je `(reg_key, profile_hash)` kappen.
 - Einige Guideline-URLs sind Landing-Pages (nicht direkt der Leitfaden-PDF). Feintuning später.
 - Beim nächsten Deploy: Hostinger-Pull-Konfig auf `ghcr.io/textil-mode/…` umstellen (siehe CI/CD).
 - Empfehlung: Budget-Alert in Google Cloud Billing setzen (z. B. 5 €/Monat).

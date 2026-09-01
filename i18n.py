@@ -1131,27 +1131,62 @@ COUPLING_FACTS: dict[str, dict[str, str]] = {
     },
     "csrd_unter_schwelle": {
         "de": "Das Unternehmen hat {employees} Beschäftigte (Schwelle: mehr als 1.000) und "
-              "{revenue} Nettoumsatzerlöse (Schwelle: mehr als 450 Mio. EUR) und überschreitet "
-              "damit nicht beide Merkmale des Art. 19a Abs. 1 der Bilanzrichtlinie; Bilanzsumme "
-              "und Börsennotierung sind seit der Omnibus-Änderung keine Kriterien mehr.",
+              "{revenue} Nettoumsatzerlöse (Schwelle: mehr als 450 Mio. EUR); beide Merkmale des "
+              "Art. 19a Abs. 1 der Bilanzrichtlinie müssen kumulativ erfüllt sein, und mindestens "
+              "eines davon ist es nicht — Bilanzsumme und Börsennotierung zählen seit der "
+              "Omnibus-Änderung nicht mehr.",
         "en": "The company has {employees} employees (threshold: more than 1,000) and net turnover "
-              "of {revenue} (threshold: more than EUR 450 million) and therefore does not exceed "
-              "both criteria of Art. 19a(1) of the Accounting Directive; balance sheet total and "
-              "stock exchange listing are no longer criteria after the Omnibus amendment.",
+              "of {revenue} (threshold: more than EUR 450 million); both criteria of Art. 19a(1) of "
+              "the Accounting Directive have to be met cumulatively, and at least one of them is "
+              "not — balance sheet total and stock exchange listing no longer count after the "
+              "Omnibus amendment.",
         "es": "La empresa tiene {employees} empleados (umbral: más de 1.000) y una cifra neta de "
-              "negocios de {revenue} (umbral: más de 450 millones EUR), por lo que no supera ambos "
-              "criterios del art. 19 bis, apdo. 1, de la Directiva contable; el balance total y la "
-              "cotización bursátil ya no son criterios tras la modificación Ómnibus.",
+              "negocios de {revenue} (umbral: más de 450 millones EUR); ambos criterios del "
+              "art. 19 bis, apdo. 1, de la Directiva contable deben cumplirse de forma acumulativa "
+              "y al menos uno de ellos no se cumple — el balance total y la cotización bursátil ya "
+              "no cuentan tras la modificación Ómnibus.",
         "fr": "L'entreprise compte {employees} salariés (seuil : plus de 1 000) et un chiffre "
-              "d'affaires net de {revenue} (seuil : plus de 450 millions EUR) ; elle ne dépasse "
-              "donc pas les deux critères de l'art. 19 bis, par. 1, de la directive comptable, le "
-              "total du bilan et la cotation n'étant plus des critères depuis la révision Omnibus.",
+              "d'affaires net de {revenue} (seuil : plus de 450 millions EUR) ; les deux critères "
+              "de l'art. 19 bis, par. 1, de la directive comptable doivent être remplis "
+              "cumulativement et au moins l'un d'eux ne l'est pas — le total du bilan et la "
+              "cotation ne comptent plus depuis la révision Omnibus.",
         "it": "L'impresa ha {employees} dipendenti (soglia: più di 1.000) e ricavi netti di "
-              "{revenue} (soglia: più di 450 milioni di EUR) e non supera quindi entrambi i criteri "
-              "dell'art. 19 bis, par. 1, della direttiva contabile; il totale di bilancio e la "
-              "quotazione non sono più criteri dopo la modifica Omnibus.",
+              "{revenue} (soglia: più di 450 milioni di EUR); entrambi i criteri dell'art. 19 bis, "
+              "par. 1, della direttiva contabile devono essere soddisfatti cumulativamente e almeno "
+              "uno di essi non lo è — il totale di bilancio e la quotazione non contano più dopo la "
+              "modifica Omnibus.",
+        "zh": "公司有 {employees} 名员工（门槛：超过 1,000 名），净营业额为 {revenue}（门槛：超过 4.5 亿欧元）；"
+              "《会计指令》第 19a 条第 1 款的两项标准必须同时满足，而其中至少有一项未满足——经 Omnibus 修订后，"
+              "资产负债表总额和上市与否已不再计入。",
+    },
+    "csrd_ueber_schwelle_tochter": {
+        "de": "Das Unternehmen hat {employees} Beschäftigte (Schwelle: mehr als 1.000) und "
+              "{revenue} Nettoumsatzerlöse (Schwelle: mehr als 450 Mio. EUR), überschreitet damit "
+              "beide Merkmale des Art. 19a Abs. 1 der Bilanzrichtlinie und ist zugleich "
+              "Tochterunternehmen — nach Art. 19a Abs. 9 ist eine Befreiung möglich, wenn der "
+              "Konzernbericht der Mutter es einbezieht.",
+        "en": "The company has {employees} employees (threshold: more than 1,000) and net turnover "
+              "of {revenue} (threshold: more than EUR 450 million), thus exceeding both criteria of "
+              "Art. 19a(1) of the Accounting Directive, and it is a subsidiary — under Art. 19a(9) "
+              "an exemption is possible if the parent's consolidated report covers it.",
+        "es": "La empresa tiene {employees} empleados (umbral: más de 1.000) y una cifra neta de "
+              "negocios de {revenue} (umbral: más de 450 millones EUR), supera así ambos criterios "
+              "del art. 19 bis, apdo. 1, de la Directiva contable y es a la vez filial: según el "
+              "art. 19 bis, apdo. 9, cabe una exención si el informe consolidado de la matriz la "
+              "incluye.",
+        "fr": "L'entreprise compte {employees} salariés (seuil : plus de 1 000) et un chiffre "
+              "d'affaires net de {revenue} (seuil : plus de 450 millions EUR), dépasse donc les "
+              "deux critères de l'art. 19 bis, par. 1, de la directive comptable et est en même "
+              "temps une filiale : l'art. 19 bis, par. 9, permet une exemption si le rapport "
+              "consolidé de la mère la couvre.",
+        "it": "L'impresa ha {employees} dipendenti (soglia: più di 1.000) e ricavi netti di "
+              "{revenue} (soglia: più di 450 milioni di EUR), supera quindi entrambi i criteri "
+              "dell'art. 19 bis, par. 1, della direttiva contabile ed è al contempo una "
+              "controllata: l'art. 19 bis, par. 9, consente un'esenzione se la relazione "
+              "consolidata della capogruppo la include.",
         "zh": "公司有 {employees} 名员工（门槛：超过 1,000 名），净营业额为 {revenue}（门槛：超过 4.5 亿欧元），"
-              "因此未同时超过《会计指令》第 19a 条第 1 款的两项标准；经 Omnibus 修订后，资产负债表总额和上市与否不再是判定标准。",
+              "已超过《会计指令》第 19a 条第 1 款的两项标准，同时又是子公司——依第 19a 条第 9 款，"
+              "若母公司的合并报告已涵盖本公司，则可豁免。",
     },
     "csrd_drittland": {
         "de": "Die oberste Muttergesellschaft sitzt außerhalb der EU und der Nettoumsatz beträgt "
@@ -1210,6 +1245,25 @@ COUPLING_FACTS: dict[str, dict[str, str]] = {
         "it": "L'impresa occupa {employees_de} persone in Germania e raggiunge così la soglia di 50 "
               "dipendenti del § 12, comma 2, HinSchG.",
         "zh": "公司在德国雇用 {employees_de} 人，已达到《举报人保护法》第 12 条第 2 款规定的 50 人门槛。",
+    },
+    "hinschg_unter_50_finanz": {
+        "de": "Das Unternehmen beschäftigt {employees_de} Personen in Deutschland und bleibt damit "
+              "unter der Schwelle von 50 Beschäftigten, gehört aber zum Finanzsektor, den § 12 "
+              "Abs. 3 HinSchG unabhängig von der Beschäftigtenzahl erfasst.",
+        "en": "The company employs {employees_de} people in Germany and thus stays below the "
+              "threshold of 50 employees, but belongs to the financial sector, which section 12(3) "
+              "HinSchG covers irrespective of headcount.",
+        "es": "La empresa emplea a {employees_de} personas en Alemania y queda por debajo del "
+              "umbral de 50 empleados, pero pertenece al sector financiero, al que el § 12, "
+              "apdo. 3, HinSchG alcanza con independencia del número de empleados.",
+        "fr": "L'entreprise emploie {employees_de} personnes en Allemagne et reste sous le seuil de "
+              "50 salariés, mais relève du secteur financier, que le § 12, al. 3, HinSchG vise "
+              "indépendamment de l'effectif.",
+        "it": "L'impresa occupa {employees_de} persone in Germania e resta sotto la soglia di 50 "
+              "dipendenti, ma appartiene al settore finanziario, che il § 12, comma 3, HinSchG "
+              "include a prescindere dal numero di dipendenti.",
+        "zh": "公司在德国雇用 {employees_de} 人，低于 50 人门槛，但属于金融领域，"
+              "《举报人保护法》第 12 条第 3 款对该领域的适用不以员工人数为条件。",
     },
     "hinschg_unter_50": {
         "de": "Das Unternehmen beschäftigt {employees_de} Personen in Deutschland und bleibt damit "
@@ -1387,6 +1441,20 @@ COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
             "it": "Un canale di segnalazione interno ai sensi del § 12 HinSchG non è quindi obbligatorio.",
             "zh": "因此无须依《举报人保护法》第 12 条设立内部举报机构。",
         },
+        "moeglich": {
+            "de": "Ob eine interne Meldestelle einzurichten ist, hängt davon ab, ob das Unternehmen "
+                  "zu den in § 12 Abs. 3 HinSchG aufgezählten Finanzunternehmen zählt.",
+            "en": "Whether an internal reporting office is required depends on whether the company "
+                  "is one of the financial undertakings listed in section 12(3) HinSchG.",
+            "es": "Que deba crearse un canal interno de denuncias depende de si la empresa figura "
+                  "entre las entidades financieras enumeradas en el § 12, apdo. 3, HinSchG.",
+            "fr": "L'obligation de mettre en place un service de signalement interne dépend de la "
+                  "question de savoir si l'entreprise fait partie des entreprises financières "
+                  "énumérées au § 12, al. 3, HinSchG.",
+            "it": "L'obbligo di istituire un ufficio di segnalazione interno dipende dal fatto che "
+                  "l'impresa rientri tra i soggetti finanziari elencati nel § 12, comma 3, HinSchG.",
+            "zh": "是否须设立内部举报机构，取决于公司是否属于《举报人保护法》第 12 条第 3 款所列的金融企业。",
+        },
     },
     "WhistleblowerRL": {
         "ja": {
@@ -1409,6 +1477,20 @@ COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
             "fr": "L'obligation transposée par la HinSchG ne s'applique donc pas.",
             "it": "L'obbligo recepito tramite l'HinSchG non trova quindi applicazione.",
             "zh": "因此，通过《举报人保护法》转化的义务不适用。",
+        },
+        "moeglich": {
+            "de": "Ob die über das HinSchG umgesetzte Pflicht greift, hängt davon ab, ob das "
+                  "Unternehmen zu den in § 12 Abs. 3 HinSchG aufgezählten Finanzunternehmen zählt.",
+            "en": "Whether the obligation transposed via the HinSchG applies depends on whether the "
+                  "company is one of the financial undertakings listed in section 12(3) HinSchG.",
+            "es": "Que se aplique la obligación transpuesta mediante la HinSchG depende de si la "
+                  "empresa figura entre las entidades financieras del § 12, apdo. 3, HinSchG.",
+            "fr": "L'application de l'obligation transposée par la HinSchG dépend de la question de "
+                  "savoir si l'entreprise fait partie des entreprises financières du § 12, al. 3, "
+                  "HinSchG.",
+            "it": "L'applicazione dell'obbligo recepito tramite l'HinSchG dipende dal fatto che "
+                  "l'impresa rientri tra i soggetti finanziari del § 12, comma 3, HinSchG.",
+            "zh": "通过《举报人保护法》转化的义务是否适用，取决于公司是否属于该法第 12 条第 3 款所列的金融企业。",
         },
     },
 }
