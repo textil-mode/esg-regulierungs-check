@@ -37,6 +37,8 @@
 | **EUR-Lex-Fallback ueber publications.europa.eu** (EUR-Lex antwortet Server-Clients mit AWS-WAF-Challenge, HTTP 202 + leerer Body) | `fetcher.py` `_cellar_text` | ✅ |
 | **Datumslose CELEX-URLs** (`CELEX:02024L1760` statt `…-20260318`); die juengste konsolidierte Fassung wird zur Laufzeit per SPARQL aufgeloest | `fetcher.py` `_latest_consolidated` | ✅ |
 | **Schutz vor stillem Rueckfall auf die Ursprungsfassung**: laesst sich die Konsolidierung nicht ermitteln, wird der vorhandene Cache-Text BEHALTEN statt des Basisrechtsakts; ohne Cache wird der Basisakt zwar genommen, aber in `source_status` (≤ -1000) und `source_note` markiert und auf der Admin-Seite rot ausgewiesen. Zusaetzlich Inhaltspruefung der Konsolidierungs-Kopfzeile | `fetcher.py` `_is_consolidated_text`, `source_is_base_act_fallback` | ✅ |
+| **Schutz vor Datenverlust im Cache**: ein vorhandener Text wird nie durch einen leeren oder auf unter 50 % geschrumpften Abruf ersetzt (greift nur bei unveraenderter `text_url`, damit ein bewusster Quellenwechsel weiter moeglich bleibt) | `fetcher.py` `_MIN_KEEP_RATIO` | ✅ |
+| **Erstkonsolidierung ≠ Notbehelf**: ist die einzige konsolidierte Fassung auf den ABl.-Tag datiert (z. B. ESG-Rating-VO), gibt es keine spaeteren Aenderungen — der Ursprungstext ist der geltende Text, es wird nicht gewarnt | `fetcher.py` `_is_initial_consolidation` | ✅ |
 | **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
 | **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
 | **Watchdog** (`python watchdog.py`): laedt alle 22 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
@@ -280,6 +282,12 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 
 ## Offene Punkte / Ideen
 
+- **Fehlgeschlagene Aktualisierungen während eines Analyse-Laufs sind nicht dauerhaft sichtbar.**
+  `_run_analysis_bg` schreibt sie nur ins Container-Log (`[analysis] <key>: <error>`); auf
+  `/admin/regulierungs-status` erscheinen sie erst, wenn der wöchentliche Watchdog denselben
+  Fehler erneut sieht (`watchdog_runs.errors_json`). Für dauerhafte Sichtbarkeit bräuchte
+  `law_texts` eine Spalte `last_error` samt Anzeige und i18n — bewusst nicht mitgemacht, weil es
+  den Analyse-Pfad berührt.
 - Einige Guideline-URLs sind Landing-Pages (nicht direkt der Leitfaden-PDF). Feintuning später.
 - Beim nächsten Deploy: Hostinger-Pull-Konfig auf `ghcr.io/textil-mode/…` umstellen (siehe CI/CD).
 - Empfehlung: Budget-Alert in Google Cloud Billing setzen (z. B. 5 €/Monat).

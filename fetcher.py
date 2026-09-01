@@ -334,6 +334,11 @@ class CellarResult(NamedTuple):
     text: str
     celex: str
     kind: str
+    # Die vom Resolver ermittelte konsolidierte Fassung, auch wenn sie sich
+    # nicht laden liess ('' wenn die Aufloesung selbst scheiterte). Erlaubt dem
+    # Aufrufer zu unterscheiden, ob eine Konsolidierung fehlt oder nur ihre
+    # Textfassung nicht abrufbar war.
+    resolved_celex: str = ""
 
 
 def _is_consolidated_text(text: str, celex: str) -> bool:
@@ -371,20 +376,23 @@ def _cellar_text(url: str, language: str, timeout: float) -> CellarResult:
         return CellarResult(_cellar_fetch(celex, language, timeout), celex, "")
 
     resolved, state = _latest_consolidated(celex)
+    consolidated_id = resolved if state == RESOLVE_CONSOLIDATED else ""
     if state == RESOLVE_CONSOLIDATED:
         text = _cellar_fetch(resolved, language, timeout)
         if text and _is_consolidated_text(text, celex):
-            return CellarResult(text, resolved, RESOLVE_CONSOLIDATED)
+            return CellarResult(text, resolved, RESOLVE_CONSOLIDATED, consolidated_id)
         if text:
             print(f"[cellar] {resolved}: geladener Text traegt keine konsolidierte "
                   f"Kopfzeile — als Ursprungsfassung behandelt", flush=True)
-            return CellarResult(text, resolved, RESOLVE_UNRESOLVED)
+            return CellarResult(text, resolved, RESOLVE_UNRESOLVED, consolidated_id)
 
     # Konsolidierung nicht ermittelbar oder nicht ladbar: Der Basisrechtsakt ist
-    # hier ausdruecklich NUR ein Notbehelf und wird als solcher markiert.
+    # hier zunaechst nur ein Notbehelf. `resolved_celex` sagt dem Aufrufer, ob
+    # ueberhaupt eine Konsolidierung existiert — davon haengt ab, ob wirklich
+    # etwas fehlt.
     base = _base_act_celex(celex)
     base_text = _cellar_fetch(base, language, timeout)
-    return CellarResult(base_text, base, RESOLVE_UNRESOLVED)
+    return CellarResult(base_text, base, RESOLVE_UNRESOLVED, consolidated_id)
 
 
 def _localized_url(url: str, lang: str) -> str:
@@ -490,6 +498,29 @@ def version_text(reg_key: str, language: str, text_hash_value: str) -> str:
     return row["text"] if row else ""
 
 
+def _is_initial_consolidation(reg: dict, resolved_celex: str) -> bool:
+    """Ist die ermittelte Konsolidierung auf den Tag der ABl.-Veroeffentlichung datiert?
+
+    Dann gibt sie den Rechtsakt unveraendert wieder — es existieren keine
+    spaeteren Aenderungen, und der Ursprungstext ist der geltende Text. Nur so
+    laesst sich "wir vermissen Aenderungen" (echte Warnung) von "es gibt keine
+    Aenderungen" (kein Grund zur Warnung) unterscheiden.
+
+    Ohne diese Unterscheidung stuende auf der Admin-Seite dauerhaft eine
+    sachlich falsche Warnung, was den Wert aller uebrigen Warnungen zerstoert.
+    """
+    if not resolved_celex or len(resolved_celex) < 8:
+        return False
+    # Lokaler Import: `regulations` ist die Inhalts-, `fetcher` die Datenschicht.
+    # Ein Import auf Modulebene wuerde die Richtung dauerhaft festschreiben.
+    from regulations import published_for
+    published = published_for(reg.get("key", ""))
+    if not re.fullmatch(r"\d{2}\.\d{2}\.\d{4}", published or ""):
+        return False
+    d, m, y = published.split(".")
+    return resolved_celex[-8:] == f"{y}{m}{d}"
+
+
 def _cached_result(row, status: int, error: str | None) -> dict:
     """Rueckgabe aus dem Cache (304 oder Fehler mit vorhandenem Text)."""
     text = row["text"] if row else ""
@@ -513,6 +544,12 @@ def _cached_result(row, status: int, error: str | None) -> dict:
 #   < -1000  wie oben, ABER nur der Basisrechtsakt statt der konsolidierten
 #          Fassung — inhaltlich verdaechtig. Betrag - 1000 = Primaerstatus.
 SOURCE_STATUS_BASE_ACT_OFFSET = -1000
+
+# Faellt ein Abruf unter diesen Anteil des bisherigen Textumfangs, gilt er als
+# gescheitert und der Cache-Stand bleibt stehen. Echte Konsolidierungen kuerzen
+# einen Rechtsakt nie um die Haelfte; ein solcher Sprung deutet auf eine
+# Fehlerseite oder einen abgebrochenen Download hin.
+_MIN_KEEP_RATIO = 0.5
 
 
 def source_is_base_act_fallback(source_status: int | None) -> bool:
@@ -539,7 +576,7 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     url = _localized_url(_fetch_url(reg), language)
     with _conn() as c:
         row = c.execute(
-            "SELECT text, etag, last_modified, fetched_at, source_note FROM law_texts "
+            "SELECT text, url, etag, last_modified, fetched_at, source_note FROM law_texts "
             "WHERE reg_key = ? AND language = ?",
             (reg["key"], language),
         ).fetchone()
@@ -580,10 +617,25 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     used_fallback = False
     source_note = f"Primaerquelle HTTP {resp.status_code}"
     base_act_only = False
+    initial_consolidation = False
     if len(text.strip()) < 2000 and "eur-lex.europa.eu" in url:
         cellar = _cellar_text(url, language, 60.0)
         if len(cellar.text) > len(text):
             base_act_only = cellar.kind == RESOLVE_UNRESOLVED
+            if base_act_only and _is_initial_consolidation(reg, cellar.resolved_celex):
+                # Es GIBT eine konsolidierte Fassung, sie liess sich nur nicht
+                # abrufen — aber sie ist auf den Tag der Veroeffentlichung im
+                # Amtsblatt datiert. Eine solche Erstkonsolidierung gibt den
+                # Rechtsakt unveraendert wieder; spaetere Aenderungen existieren
+                # nicht. Der Ursprungstext ist damit der geltende Text, und eine
+                # Warnung "Nur Ursprungsfassung" waere sachlich falsch.
+                # (Fall ESG-Rating-VO: 02024R3005-20241212, ABl. vom 12.12.2024,
+                # Cellar liefert dafuer dauerhaft HTTP 404.)
+                base_act_only = False
+                initial_consolidation = True
+                print(f"[fetch] {reg['key']}: konsolidierte Fassung "
+                      f"{cellar.resolved_celex} nicht abrufbar, entspricht aber der "
+                      f"Erstfassung — Ursprungstext ist der geltende Text", flush=True)
             if base_act_only and row and (row["text"] or "").strip():
                 # KERNENTSCHEIDUNG: Die konsolidierte Fassung liess sich nicht
                 # ermitteln, und der Ersatz waere die Ursprungsfassung — bei der
@@ -602,13 +654,51 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
             used_fallback = True
             source_note = f"Cellar {cellar.celex}" + (
                 " (nur Basisrechtsakt — Konsolidierung nicht ermittelbar)"
-                if base_act_only else ""
+                if base_act_only else
+                f" (= Erstkonsolidierung {cellar.resolved_celex}, keine spaeteren Aenderungen)"
+                if initial_consolidation else ""
             )
 
     if resp.status_code >= 400 and not text:
         return _cached_result(row, resp.status_code, f"HTTP {resp.status_code}")
 
     text = text[:_store_limit()]
+
+    # --- Schutz vor Datenverlust ------------------------------------------
+    # Ein brauchbarer Cache-Text darf NIE durch einen leeren oder drastisch
+    # kuerzeren Abruf ersetzt werden. Ohne diese Pruefung ueberschrieb ein
+    # Doppelausfall (EUR-Lex antwortet mit der WAF-Challenge UND Cellar liefert
+    # nichts) einen vollstaendigen Gesetzestext durch einen Leerstring — ohne
+    # Fehlermeldung, weil der bisherige Schutz innerhalb des Cellar-Zweigs sass
+    # und bei leerem Cellar-Ergebnis gar nicht erreicht wurde.
+    #
+    # Die Pruefung greift nur bei UNVERAENDERTER Quelle: wurde `text_url` in
+    # regulations.py bewusst umgestellt, ist ein Groessensprung nach unten
+    # gewollt (z. B. Gesamtausgabe -> Einzelvorschrift) und wird zugelassen.
+    cached_text = (row["text"] if row else "") or ""
+    same_source = bool(row) and (row["url"] or "") == url
+    if cached_text.strip() and same_source:
+        if not text.strip():
+            print(f"[fetch] {reg['key']}: Abruf ohne Text — Cache-Stand behalten", flush=True)
+            return _cached_result(
+                row, resp.status_code,
+                "Abruf lieferte keinen Text (Primaerquelle und Fallback leer) — "
+                "bisheriger Cache-Stand behalten")
+        if len(text) < len(cached_text) * _MIN_KEEP_RATIO:
+            share = 100 * len(text) / max(len(cached_text), 1)
+            print(f"[fetch] {reg['key']}: Abruf nur {share:.0f}% des bisherigen "
+                  f"Umfangs — Cache-Stand behalten", flush=True)
+            return _cached_result(
+                row, resp.status_code,
+                f"Abruf lieferte nur {len(text)} statt bisher {len(cached_text)} Zeichen "
+                f"({share:.0f}%) — bisheriger Cache-Stand behalten. Bei absichtlicher "
+                f"Quellenaenderung den Cache-Eintrag loeschen.")
+    if not text.strip():
+        # Kein Cache vorhanden und nichts geladen: keinen Leereintrag anlegen,
+        # sonst gilt beim naechsten Lauf ein leerer Text als "Bestand".
+        return _cached_result(
+            row, resp.status_code,
+            "Abruf lieferte keinen Text (Primaerquelle und Fallback leer)")
 
     # Nach einem Fallback duerfen ETag/Last-Modified der Challenge-Antwort nicht
     # gespeichert werden — sonst quittiert EUR-Lex den naechsten Lauf mit 304.

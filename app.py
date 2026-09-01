@@ -505,6 +505,12 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
             res = fetch_law_text(reg, language=lang)
             law_text = res.get("text") or ""
             law_dates[reg["key"]] = (res.get("fetched_at") or "")[:10]
+            # Ein gescheiterter Aktualisierungsversuch bricht die Analyse nicht ab
+            # (der Cache-Text trägt sie weiter), darf aber nicht spurlos bleiben.
+            # Dauerhaft sichtbar wird so etwas erst über den Watchdog-Lauf auf
+            # /admin/regulierungs-status — siehe offener Punkt in CLAUDE.md.
+            if res.get("error"):
+                print(f"[analysis] {reg['key']}: {res['error']}", flush=True)
 
             # Guidelines dazuladen. Kurzer Timeout (8s), damit eine langsame
             # Guideline-URL nicht die ganze Analyse blockiert. Fehler werden
