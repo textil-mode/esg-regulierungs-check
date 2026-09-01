@@ -55,8 +55,22 @@ def _migrate_companies(c: sqlite3.Connection) -> None:
             c.execute(f"ALTER TABLE companies ADD COLUMN {col} {ddl}")
 
 
+def _migrate_analysis_cache(c: sqlite3.Connection) -> None:
+    """Bringt `analysis_cache` auf das globale, gesetzesstand-feste Schema.
+
+    Der alte Cache haengt am Nutzer und kennt den Gesetzesstand nicht; seine
+    Eintraege lassen sich nicht in das neue Schema uebersetzen. Sie verfallen
+    deshalb einmalig (die Ergebnisse werden beim naechsten Lauf neu erzeugt).
+    Idempotent: laeuft nur, solange eine alte Tabelle vorliegt.
+    """
+    cols = {row[1] for row in c.execute("PRAGMA table_info(analysis_cache)").fetchall()}
+    if cols and ("user_id" in cols or "text_hash" not in cols):
+        c.execute("DROP TABLE analysis_cache")
+
+
 def init_db() -> None:
     with _conn() as c:
+        _migrate_analysis_cache(c)
         c.executescript(
             """
             CREATE TABLE IF NOT EXISTS users (
@@ -103,15 +117,16 @@ def init_db() -> None:
                 changed_json TEXT NOT NULL DEFAULT '[]',
                 errors_json TEXT NOT NULL DEFAULT '[]'
             );
+            -- Nutzeruebergreifend: gleiche Ausgangslage -> gleiche Begruendung,
+            -- unabhaengig davon, wer sie zuerst angefordert hat.
             CREATE TABLE IF NOT EXISTS analysis_cache (
-                user_id INTEGER NOT NULL,
-                profile_hash TEXT NOT NULL,
                 reg_key TEXT NOT NULL,
+                profile_hash TEXT NOT NULL,
                 reg_hash TEXT NOT NULL,
+                text_hash TEXT,
                 result_json TEXT NOT NULL,
                 cached_at TEXT NOT NULL,
-                PRIMARY KEY (user_id, profile_hash, reg_key),
-                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                PRIMARY KEY (reg_key, profile_hash, reg_hash)
             );
             """
         )
@@ -344,36 +359,47 @@ def save_analysis(user_id: int, result: list[dict]) -> int:
 
 
 # ---------- Cache ----------
-def get_cache(user_id: int, profile_hash: str) -> dict[str, dict]:
+def get_cache(pairs: list[tuple[str, str]]) -> dict[tuple[str, str], list[dict]]:
+    """Cache-Zeilen zu (reg_key, profile_hash)-Paaren, je Paar neueste zuerst.
+
+    Pro Paar koennen mehrere Zeilen liegen (eine je Gesetzesstand); welche davon
+    gilt, entscheidet `llm._cache_hit`.
+    """
+    out: dict[tuple[str, str], list[dict]] = {}
     with _conn() as c:
-        rows = c.execute(
-            "SELECT reg_key, reg_hash, result_json, cached_at FROM analysis_cache "
-            "WHERE user_id = ? AND profile_hash = ?",
-            (user_id, profile_hash),
-        ).fetchall()
-    return {
-        row["reg_key"]: {
-            "reg_hash": row["reg_hash"],
-            "cached_at": row["cached_at"],
-            "result": json.loads(row["result_json"]),
-        }
-        for row in rows
-    }
+        for reg_key, profile_hash in pairs:
+            rows = c.execute(
+                "SELECT reg_hash, text_hash, result_json, cached_at FROM analysis_cache "
+                "WHERE reg_key = ? AND profile_hash = ? ORDER BY cached_at DESC",
+                (reg_key, profile_hash),
+            ).fetchall()
+            out[(reg_key, profile_hash)] = [
+                {
+                    "reg_hash": row["reg_hash"],
+                    "text_hash": row["text_hash"],
+                    "cached_at": row["cached_at"],
+                    "result": json.loads(row["result_json"]),
+                }
+                for row in rows
+            ]
+    return out
 
 
-def put_cache(user_id: int, profile_hash: str, reg_key: str, reg_hash: str, result: dict) -> None:
+def put_cache(profile_hash: str, reg_key: str, reg_hash: str, text_hash: Optional[str],
+              result: dict) -> None:
     with _conn() as c:
         c.execute(
             """
-            INSERT INTO analysis_cache (user_id, profile_hash, reg_key, reg_hash, result_json, cached_at)
+            INSERT INTO analysis_cache (reg_key, profile_hash, reg_hash, text_hash,
+                                        result_json, cached_at)
             VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(user_id, profile_hash, reg_key) DO UPDATE SET
-                reg_hash=excluded.reg_hash,
+            ON CONFLICT(reg_key, profile_hash, reg_hash) DO UPDATE SET
+                text_hash=excluded.text_hash,
                 result_json=excluded.result_json,
                 cached_at=excluded.cached_at
             """,
-            (user_id, profile_hash, reg_key, reg_hash, json.dumps(result, ensure_ascii=False),
-             datetime.utcnow().isoformat()),
+            (reg_key, profile_hash, reg_hash, text_hash,
+             json.dumps(result, ensure_ascii=False), datetime.utcnow().isoformat()),
         )
 
 

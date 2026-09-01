@@ -48,7 +48,7 @@ from i18n import (
     t_status,
 )
 from lawparse import build_context
-from llm import analyze_streaming, profile_hash, reg_hash
+from llm import analyze_streaming, plan_analysis
 from fetcher import (  # noqa: E402
     fetch_law_text,
     fetch_url_text,
@@ -491,8 +491,6 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
     """Läuft im Background-Thread. Schreibt Fortschritt in _analysis_status."""
     status = _analysis_status[uid]
     try:
-        ph = profile_hash(profile)
-        cached_map = db.get_cache(uid, ph)
         total = len(REGULATIONS)
         status.update({"phase": "texts", "done": 0, "total": total, "name": ""})
 
@@ -529,20 +527,15 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
             # EU-Rechtsakten nur die Praeambel im Kontext.
             texts[reg["key"]] = build_context(reg, law_text, guides, max_chars)
 
-        # Phase 2: LLM-Analyse
-        cached_hits: list[dict] = []
-        jobs: list[tuple[dict, str]] = []
-        for reg in REGULATIONS:
-            hit = cached_map.get(reg["key"])
-            if hit and hit.get("reg_hash") == reg_hash(reg):
-                cached_hits.append(hit["result"])
-            else:
-                jobs.append((reg, texts.get(reg["key"], "")))
+        # Phase 2: LLM-Analyse — erst NACH Phase 1 planen, damit der
+        # Gesetzesstand im Cache-Schluessel der eben geladene ist.
+        ready, todo, cache_keys = plan_analysis(profile, REGULATIONS, lang)
+        jobs = [(reg, texts.get(reg["key"], "")) for reg in todo]
 
-        status.update({"phase": "analysis", "done": len(cached_hits), "total": total,
-                        "cached": len(cached_hits), "new": len(jobs), "name": ""})
+        status.update({"phase": "analysis", "done": len(ready), "total": total,
+                        "cached": len(ready), "new": len(jobs), "name": ""})
 
-        q = analyze_streaming(profile, jobs, cached_hits)
+        q = analyze_streaming(profile, jobs, ready)
         results: list[dict] = []
         done = 0
         while True:
@@ -551,12 +544,10 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
                 break
             is_cached = item.pop("_from_cache", False)
             if not is_cached and item.get("applies") != "error":
-                rh = ""
-                for reg in REGULATIONS:
-                    if reg["key"] == item["key"]:
-                        rh = reg_hash(reg)
-                        break
-                db.put_cache(uid, ph, item["key"], rh, item)
+                key = cache_keys.get(item.get("key", ""))
+                if key:
+                    ph, rh, th = key
+                    db.put_cache(ph, item["key"], rh, th, item)
             # Erst NACH dem Cache-Schreiben setzen: der Gesetzesstand gehoert zum
             # aktuellen Lauf, nicht zum zwischengespeicherten LLM-Urteil — sonst
             # zeigte ein Cache-Treffer spaeter ein veraltetes Datum.

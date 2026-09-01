@@ -2,12 +2,22 @@
 
 Die `criteria`-Felder sind bewusst in natürlicher Sprache gehalten, damit
 Claude sie gemeinsam mit dem Unternehmensprofil auswerten kann.
+
+`relevant_fields` nennt je Regulierung die Profilfelder, die deren Bewertung
+tatsächlich tragen — Herleitung ist immer der `criteria`-Text daneben (bei den
+gekoppelten Regulierungen zusätzlich die Statusfunktion, die den Fall bestimmt).
+Nur diese Felder gehen in den Begründungs-Cache ein: ändert der Nutzer ein Feld,
+das für eine Regulierung ohne Bedeutung ist (z. B. den Firmennamen), bleibt deren
+Begründung wortgleich bestehen. `name` gehört deshalb nie dazu; `language` kommt
+über `relevant_fields_for()` automatisch hinzu, weil die Begründung in der
+UI-Sprache formuliert wird.
 """
 
 REGULATIONS = [
     {
         "nr": 1,
         "key": "CSDDD",
+        "relevant_fields": ["employees", "revenue_eur", "group_role", "sites"],
         "name": "CSDDD",
         "full_name": "Richtlinie (EU) 2024/1760 - Sorgfaltspflichten von Unternehmen im Hinblick auf Nachhaltigkeit",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1760",
@@ -38,6 +48,7 @@ REGULATIONS = [
     {
         "nr": 2,
         "key": "LkSG",
+        "relevant_fields": ["employees_de", "sites"],
         "name": "LkSG",
         "full_name": "Lieferkettensorgfaltspflichtengesetz",
         # Bis 09/2026 zeigten beide URLs auf die BAFA-Uebersichtsseite — ein
@@ -55,6 +66,7 @@ REGULATIONS = [
     {
         "nr": 3,
         "key": "EUDR",
+        "relevant_fields": ["product_categories", "eu_importer", "branch"],
         "name": "EUDR",
         "full_name": "Verordnung (EU) 2023/1115 über entwaldungsfreie Lieferketten",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R1115",
@@ -71,6 +83,7 @@ REGULATIONS = [
     {
         "nr": 4,
         "key": "FLR",
+        "relevant_fields": ["product_categories", "eu_importer", "branch"],
         "name": "FLR (Zwangsarbeitsverordnung)",
         "full_name": "Verordnung (EU) 2024/3015 - Verbot von in Zwangsarbeit hergestellten Produkten",
         # ELI-Form bewusst beibehalten: zu 2024/3015 gibt es (Stand 09/2026)
@@ -92,6 +105,7 @@ REGULATIONS = [
     {
         "nr": 5,
         "key": "CSRD",
+        "relevant_fields": ["employees", "revenue_eur", "listed", "group_role"],
         "name": "CSRD",
         "full_name": "Richtlinie (EU) 2022/2464 - Nachhaltigkeitsberichterstattung",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464",
@@ -117,6 +131,7 @@ REGULATIONS = [
     {
         "nr": 6,
         "key": "CSRD_DE",
+        "relevant_fields": ["employees", "revenue_eur", "listed", "group_role"],
         "name": "CSRD-Umsetzungsgesetz (DE)",
         "full_name": "Gesetz zur Umsetzung der Richtlinie (EU) 2022/2464",
         "url": "https://dserver.bundestag.de/btd/21/018/2101857.pdf",
@@ -130,6 +145,7 @@ REGULATIONS = [
     {
         "nr": 7,
         "key": "ESRS",
+        "relevant_fields": ["employees", "revenue_eur", "listed", "group_role"],
         "name": "ESRS",
         "full_name": "Delegierte Verordnung (EU) 2023/2772 - Nachhaltigkeitsberichterstattung (Standards)",
         # Zeigte bis 09/2026 faelschlich auf die CSRD (02022L2464); die Karte
@@ -146,6 +162,7 @@ REGULATIONS = [
     {
         "nr": 8,
         "key": "NFRD",
+        "relevant_fields": ["employees", "listed"],
         "name": "NFRD",
         "full_name": "Richtlinie 2014/95/EU - nichtfinanzielle Berichterstattung",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02014L0095",
@@ -161,6 +178,7 @@ REGULATIONS = [
     {
         "nr": 9,
         "key": "CSR-RUG",
+        "relevant_fields": ["employees", "listed", "sites"],
         "name": "CSR-RUG",
         "full_name": "Gesetz zur Stärkung der nichtfinanziellen Berichterstattung",
         # Der BGBl.-Jahrgang 2017 liegt nur im JS-Viewer von bgbl.de und ist
@@ -191,6 +209,7 @@ REGULATIONS = [
     {
         "nr": 10,
         "key": "TaxonomieVO",
+        "relevant_fields": ["employees", "revenue_eur", "listed", "group_role", "branch"],
         "name": "Taxonomie-Verordnung",
         "full_name": "Verordnung (EU) 2020/852 - Rahmen für nachhaltige Investitionen",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02020R0852",
@@ -206,6 +225,7 @@ REGULATIONS = [
     {
         "nr": 11,
         "key": "SFDR",
+        "relevant_fields": ["branch"],
         "name": "SFDR",
         "full_name": "Verordnung (EU) 2019/2088 - nachhaltigkeitsbezogene Offenlegungspflichten",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019R2088",
@@ -221,6 +241,7 @@ REGULATIONS = [
     {
         "nr": 12,
         "key": "ESGRatingVO",
+        "relevant_fields": ["branch"],
         "name": "ESG Rating VO",
         "full_name": "Verordnung (EU) 2024/3005 - ESG-Ratings",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R3005",
@@ -235,6 +256,7 @@ REGULATIONS = [
     {
         "nr": 13,
         "key": "WhistleblowerRL",
+        "relevant_fields": ["employees_de"],
         "name": "Whistleblower-Richtlinie",
         "full_name": "Richtlinie (EU) 2019/1937 - Schutz von Hinweisgebern",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937",
@@ -249,6 +271,7 @@ REGULATIONS = [
     {
         "nr": 14,
         "key": "HinSchG",
+        "relevant_fields": ["employees_de"],
         "name": "HinSchG",
         "full_name": "Hinweisgeberschutzgesetz",
         # Die Verzeichnis-Seite (…/hinschg/) liefert nur das Inhaltsverzeichnis
@@ -265,6 +288,7 @@ REGULATIONS = [
     {
         "nr": 15,
         "key": "RightToRepair",
+        "relevant_fields": ["product_categories", "branch"],
         "name": "Right to Repair",
         "full_name": "Richtlinie (EU) 2024/1799 - Reparatur von Waren",
         "url": "https://eur-lex.europa.eu/eli/dir/2024/1799/oj",
@@ -280,6 +304,7 @@ REGULATIONS = [
     {
         "nr": 16,
         "key": "Oekodesign",
+        "relevant_fields": ["product_categories", "branch", "eu_importer"],
         "name": "Ökodesign-VO",
         "full_name": "Verordnung (EU) 2024/1781 - nachhaltige Produkte (ESPR)",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1781",
@@ -295,6 +320,7 @@ REGULATIONS = [
     {
         "nr": 17,
         "key": "PPWR",
+        "relevant_fields": ["product_categories", "branch", "eu_importer"],
         "name": "PPWR",
         "full_name": "Verordnung (EU) 2025/40 - Verpackungen und Verpackungsabfälle",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02025R0040",
@@ -310,6 +336,7 @@ REGULATIONS = [
     {
         "nr": 18,
         "key": "KonfliktminVO",
+        "relevant_fields": ["product_categories", "eu_importer", "branch"],
         "name": "Konfliktmineralien-VO",
         "full_name": "Verordnung (EU) 2017/821 - Konfliktmineralien",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0821",
@@ -325,6 +352,7 @@ REGULATIONS = [
     {
         "nr": 19,
         "key": "MinRohSorgG",
+        "relevant_fields": ["product_categories", "eu_importer", "sites"],
         "name": "MinRohSorgG",
         "full_name": "Mineralische-Rohstoffe-Sorgfaltspflichtengesetz",
         # Wie beim HinSchG: die Verzeichnis-Seite liefert nur 767 Zeichen.
@@ -340,6 +368,7 @@ REGULATIONS = [
     {
         "nr": 20,
         "key": "UmweltstrafRL",
+        "relevant_fields": ["branch"],
         "name": "EU Umweltstrafrechts-RL",
         "full_name": "Richtlinie (EU) 2024/1203 - strafrechtlicher Schutz der Umwelt",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1203",
@@ -355,6 +384,7 @@ REGULATIONS = [
     {
         "nr": 21,
         "key": "EmpCo",
+        "relevant_fields": ["b2c", "env_claims"],
         "name": "EmpCo",
         "full_name": "Richtlinie (EU) 2024/825 - Stärkung der Verbraucher für den ökologischen Wandel (UWG-Umsetzung DE)",
         "url": "https://www.gesetze-im-internet.de/uwg_2004/BJNR141400004.html",
@@ -369,6 +399,7 @@ REGULATIONS = [
     {
         "nr": 22,
         "key": "GreenClaims",
+        "relevant_fields": ["b2c", "env_claims", "employees", "revenue_eur"],
         # Kein "(Entwurf)" im Namen: der Zusatz stuende auch in der englischen
         # und franzoesischen Tabelle auf Deutsch. Den Entwurfscharakter tragen
         # der Status-Badge und der Stand-Hinweis, beide uebersetzt.
@@ -661,22 +692,29 @@ def application_for(reg_key: str, today=None) -> dict:
 #   die Whistleblower-RL wird in DE ueber das HinSchG umgesetzt.
 # Damit das LLM diese nicht isoliert und widerspruechlich bewertet (z. B.
 # CSRD = nein, aber ESRS = ja fuer dasselbe Unternehmen), wird der ausloesende
-# Schwellenwert EINMAL aus dem Profil berechnet und als verbindliche Vorgabe in
-# den Prompt der betroffenen Regulierungen gegeben. Quelle der Schwellen: die
+# Schwellenwert EINMAL aus dem Profil berechnet. Quelle der Schwellen: die
 # jeweiligen `criteria` oben (CSRD post-Omnibus, HinSchG § 12).
+#
+# Weil die Entscheidung damit feststeht, formuliert das LLM diese Faelle gar
+# nicht mehr: `coupling_verdict()` liefert den Fall, `i18n.coupling_texts()`
+# den lektorierten Satz dazu (6 Sprachen). Das kostet null LLM-Calls und ist
+# fuer immer wortgleich. Nur eine Kopplung ohne hinterlegten Textbaustein
+# faellt auf das LLM zurueck — dann greift `coupling_premise()`.
 # ---------------------------------------------------------------------------
 
-def _fmt_eur(v) -> str:
-    try:
-        return f"{float(v or 0):,.0f}".replace(",", ".") + " EUR"
-    except (TypeError, ValueError):
-        return "0 EUR"
+_NON_EU_PARENT_MARKERS = ("außerhalb EU", "Nicht-EU")
+
+# Branchen, die Art. 8 Taxonomie-VO unabhaengig von der CSRD-Schwelle erfasst.
+_FINANCIAL_BRANCHES = frozenset({"Finanzdienstleistungen", "Versicherungen"})
 
 
 def csrd_status(profile: dict) -> tuple[str, str]:
     """CSRD-Berichtspflicht (post-Omnibus) deterministisch aus dem Profil.
 
-    Liefert (applies, Begruendung) mit applies in {ja, nein, moeglich}.
+    Liefert (applies, fact_key) mit applies in {ja, nein, moeglich}. `fact_key`
+    benennt den erkannten Sachverhalt und waehlt in `i18n.COUPLING_FACTS` den
+    ersten Satz der Begruendung aus — der Text selbst steht dort in allen sechs
+    Sprachen, damit dieselbe Lage immer wortgleich beschrieben wird.
     Schwelle nach Art. 19a Abs. 1 / Art. 29a Abs. 1 der Bilanzrichtlinie
     2013/34/EU i.d.F. der Richtlinie (EU) 2026/470: >1000 Beschaeftigte im
     Jahresdurchschnitt UND >450 Mio. EUR Nettoumsatzerloese — beide Merkmale
@@ -694,42 +732,28 @@ def csrd_status(profile: dict) -> tuple[str, str]:
     rev = profile.get("revenue_eur") or 0
     listed = bool(profile.get("listed"))
     group = profile.get("group_role") or ""
-    non_eu_parent = ("außerhalb EU" in group) or ("Nicht-EU" in group)
+    non_eu_parent = any(m in group for m in _NON_EU_PARENT_MARKERS)
     if emp > 1000 and rev > 450_000_000:
-        return "ja", (f"{emp} Beschaeftigte (>1000) und Nettoumsatz {_fmt_eur(rev)} "
-                      f"(>450 Mio. EUR) ueberschreiten beide Schwellen des Art. 19a Abs. 1 "
-                      f"der Bilanzrichtlinie; die neuen Werte gelten fuer Geschaeftsjahre "
-                      f"ab dem 01.01.2027.")
+        return "ja", "csrd_ueber_schwelle"
     if non_eu_parent and rev > 450_000_000:
-        return "moeglich", ("Drittland-Konzern mit EU-relevantem Umsatz >450 Mio. EUR — eine "
-                            "Pflicht nach Art. 40a der Bilanzrichtlinie kommt in Betracht, wenn "
-                            "eine EU-Tochter bzw. Zweigniederlassung mehr als 200 Mio. EUR "
-                            "Nettoumsatz erzielt. Einzelpruefung noetig.")
+        return "moeglich", "csrd_drittland"
     # Welle 1 laeuft mit dem Geschaeftsjahr 2026 aus; Berichte dazu erscheinen
     # noch im Laufe von 2027. Das Zeitfenster steht hier, damit die Aussage
     # danach von selbst verschwindet statt zu veralten.
     if listed and emp > 500 and date.today() < date(2028, 1, 1):
-        return "moeglich", (
-            f"{emp} Beschaeftigte (>500) und kapitalmarktorientiert: fuer die Geschaeftsjahre "
-            f"2024 bis 2026 kann die Welle-1-Regel (Art. 5 Abs. 2 UAbs. 1 lit. a "
-            f"RL (EU) 2022/2464) noch greifen, wenn der Mitgliedstaat die CSRD umgesetzt und "
-            f"die Befreiungsoption fuer 2025/2026 nicht gezogen hat. Fuer Geschaeftsjahre ab "
-            f"dem 01.01.2027 besteht mangels Umsatzschwelle ({_fmt_eur(rev)} <= 450 Mio. EUR) "
-            f"keine Pflicht mehr. Einzelpruefung nach Sitzstaat noetig.")
-    return "nein", (f"{emp} Beschaeftigte und Nettoumsatz {_fmt_eur(rev)} erreichen nicht beide "
-                    f"Schwellen (>1000 Beschaeftigte UND >450 Mio. EUR Nettoumsatz). Fuer "
-                    f"Geschaeftsjahre ab dem 01.01.2027 sind Bilanzsumme und Boersennotierung "
-                    f"keine Kriterien mehr; die Welle-1-Regel fuer die Geschaeftsjahre 2024 bis "
-                    f"2026 greift hier mangels Kapitalmarktorientierung bzw. Groesse ebenfalls nicht.")
+        return "moeglich", "csrd_welle1"
+    return "nein", "csrd_unter_schwelle"
 
 
 def hinschg_status(profile: dict) -> tuple[str, str]:
-    """HinSchG-Pflicht: interne Meldestelle ab 50 Beschaeftigten im Inland."""
+    """HinSchG-Pflicht: interne Meldestelle ab 50 Beschaeftigten im Inland.
+
+    Liefert (applies, fact_key) wie `csrd_status`.
+    """
     emp_de = profile.get("employees_de") or 0
     if emp_de >= 50:
-        return "ja", (f"{emp_de} Beschaeftigte in Deutschland (>=50) — interne Meldestelle "
-                      f"nach § 12 HinSchG verpflichtend.")
-    return "nein", f"{emp_de} Beschaeftigte in Deutschland (<50) — keine Pflicht nach § 12 HinSchG."
+        return "ja", "hinschg_ab_50"
+    return "nein", "hinschg_unter_50"
 
 
 # child_key -> (Eltern-Label, Statusfunktion)
@@ -754,22 +778,71 @@ _COUPLING_RELATION: dict[str, str] = {
 }
 
 
+def coupling_verdict(reg_key: str, profile: dict) -> dict | None:
+    """Deterministische Entscheidung fuer eine gekoppelte Regulierung (oder None).
+
+    Rueckgabe: {applies, fact, conclusion, values}. `fact` waehlt den ersten
+    Satz der Begruendung (Schwelle + Ist-Wert), `conclusion` den zweiten Satz
+    (Folge fuer genau diese Regulierung); beide Texte stehen in `i18n`.
+    """
+    spec = _COUPLINGS.get(reg_key)
+    if not spec:
+        return None
+    _parent_label, status_fn = spec
+    applies, fact = status_fn(profile)
+    conclusion = applies
+    if (reg_key == "TaxonomieVO" and applies == "nein"
+            and (profile.get("branch") or "") in _FINANCIAL_BRANCHES):
+        # Art. 8 erfasst Finanzmarktteilnehmer eigenstaendig — ohne diese
+        # Ausnahme wuerde die Kopplung an die CSRD sie faelschlich verneinen.
+        applies, conclusion = "moeglich", "finanzmarkt"
+    return {
+        "applies": applies,
+        "fact": fact,
+        "conclusion": conclusion,
+        "values": {
+            "employees": profile.get("employees") or 0,
+            "employees_de": profile.get("employees_de") or 0,
+            "revenue_eur": profile.get("revenue_eur") or 0,
+        },
+    }
+
+
 def coupling_premise(reg_key: str, profile: dict) -> str:
     """Verbindliche, vorberechnete Vorgabe fuer gekoppelte Regulierungen (oder '').
 
     Wird in den LLM-Prompt eingefuegt, damit gekoppelte Regulierungen nicht
-    isoliert zu widerspruechlichen Ergebnissen kommen.
+    isoliert zu widerspruechlichen Ergebnissen kommen. Greift nur noch fuer
+    Kopplungen OHNE hinterlegte Textbausteine — die uebrigen werden gar nicht
+    erst an das LLM gegeben (siehe `llm.deterministic_result`).
     """
-    spec = _COUPLINGS.get(reg_key)
-    if not spec:
+    from i18n import coupling_fact  # lokal: haelt die Importrichtung eindeutig
+
+    verdict = coupling_verdict(reg_key, profile)
+    if not verdict:
         return ""
-    parent_label, status_fn = spec
-    status, rationale = status_fn(profile)
-    lines = [f"{parent_label}-Pflicht = {status.upper()}. Begruendung: {rationale}"]
+    parent_label = _COUPLINGS[reg_key][0]
+    lines = [f"{parent_label}-Pflicht = {verdict['applies'].upper()}. "
+             f"Begruendung: {coupling_fact(verdict, 'de')}"]
     rel = _COUPLING_RELATION.get(reg_key)
     if rel:
         lines.append(rel)
     return "\n".join(lines)
+
+
+# Profilfelder, die jede Begruendung beeinflussen, unabhaengig von der Regulierung.
+_ALWAYS_RELEVANT: tuple[str, ...] = ("language",)
+
+
+def relevant_fields_for(reg: dict) -> tuple[str, ...]:
+    """Profilfelder, die das Ergebnis dieser Regulierung tragen (sortiert).
+
+    Grundlage ist `relevant_fields` der Regulierung; `language` kommt immer
+    hinzu, weil die Begruendung in der UI-Sprache formuliert wird.
+    """
+    fields = set(reg.get("relevant_fields") or ())
+    fields.update(_ALWAYS_RELEVANT)
+    return tuple(sorted(fields))
 
 
 # Branchen: sprachneutrale Keys (= DE-String mit Umlauten) für DB-Persistenz.

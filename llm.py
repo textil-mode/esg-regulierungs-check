@@ -18,7 +18,10 @@ import threading
 import time
 from typing import Callable
 
-from regulations import coupling_premise
+import db
+from fetcher import current_text_hash
+from i18n import coupling_texts, normalize_lang
+from regulations import coupling_premise, coupling_verdict, relevant_fields_for
 
 
 class _TruncatedJSON(ValueError):
@@ -60,13 +63,13 @@ Decision rules:
 - Use ONLY the thresholds, figures and conditions given in the "Applicability criteria" block and the full text. NEVER import thresholds from other regulations or from prior knowledge; if a number is given, use exactly that number.
 - If a "BINDING PRE-DETERMINED FACT" block is present, treat that fact as established truth. Base your decision on it together with this regulation's own criteria and never state anything that contradicts it.
 
-"reason" — MANDATORY in every case, written in {lang_name}, max. 60 words, and ALWAYS in exactly this two-sentence structure:
-  1. The single decisive criterion for THIS regulation together with the company's matching value (e.g. headcount, revenue, balance sheet, sector, product, group role).
-  2. The conclusion that follows (applies / does not apply / to be verified).
+"reason" — MANDATORY in every case, written in {lang_name}, max. 60 words, and ALWAYS in EXACTLY two sentences — no more, no fewer — with this structure:
+  1. The single decisive criterion for THIS regulation. This sentence MUST name BOTH the threshold or condition from the criteria AND the company's own matching value (e.g. "1,200 employees against a threshold of more than 1,000", "sector: textiles", "group role: subsidiary of a non-EU parent"). A sentence without the company's actual figure or value is wrong.
+  2. The conclusion that follows (applies / does not apply / to be verified). If "applies" is "moeglich", this sentence MUST state WHY it is open: name the profile information that is missing, or the special rule, transitional provision or exemption that could apply.
   No extra sentences, no lists, no commentary. Never leave it empty.
   LANGUAGE RULE: "reason" MUST be written entirely in {lang_name} — even if the law text, the criteria or the guidelines are in English or any other language. Translate legal terms into {lang_name}; never copy English sentences into "reason".
 
-"passage" — a short verbatim quote from the full text (preferred, keep the original language of the law text) or a paraphrase in {lang_name} with article/paragraph reference, max. 40 words. It MUST contain only the quote or reference — no notes, no meta commentary, no reasoning.
+"passage" — MUST start with the article, paragraph or section reference, followed by ": " and then a short verbatim quote from the LAW TEXT EXTRACT (preferred, keep the original language of the law text) or a paraphrase in {lang_name}; max. 40 words in total. Example shape: "Art. 2(1): ..." / "§ 1 (3): ...". Take the reference from the "=== Art. 2 - ... ===" headings of the extract — the heading above the quoted sentence is its source. Never quote from the "Applicability criteria" block, only from the law text. Apart from the reference and the quote it MUST contain nothing — no notes, no meta commentary, no reasoning.
 
 Keep the "applies" values exactly as ja/nein/moeglich."""
 
@@ -149,29 +152,59 @@ def _format_profile(profile: dict) -> str:
     )
 
 
-def profile_hash(profile: dict) -> str:
-    keys = [
-        "name", "employees", "employees_de", "revenue_eur", "balance_sheet_eur", "branch",
-        "b2c", "listed", "env_claims", "eu_importer", "legal_form", "group_role",
-        "sites", "product_categories", "language",
-    ]
-    stable = {k: profile.get(k) for k in keys}
-    stable["sites"] = sorted(
-        ({"type": s.get("type"), "location": s.get("location"), "count": s.get("count")}
-         for s in (stable["sites"] or [])),
-        key=lambda d: (d["type"] or "", d["location"] or ""),
-    )
-    stable["product_categories"] = sorted(stable["product_categories"] or [])
+_BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer"})
+_INT_FIELDS = frozenset({"employees", "employees_de"})
+_FLOAT_FIELDS = frozenset({"revenue_eur", "balance_sheet_eur"})
+
+
+def _stable_value(field: str, value):
+    """Normalisiert einen Profilwert, damit belanglose Typunterschiede
+    (0 vs. None, True vs. 1, Reihenfolge einer Liste) keinen Cache-Miss ausloesen."""
+    if field == "sites":
+        return sorted(
+            ({"type": s.get("type"), "location": s.get("location"), "count": s.get("count")}
+             for s in (value or [])),
+            key=lambda d: (d["type"] or "", d["location"] or ""),
+        )
+    if field == "product_categories":
+        return sorted(value or [])
+    if field in _BOOL_FIELDS:
+        return bool(value)
+    if field in _INT_FIELDS:
+        return int(value or 0)
+    if field in _FLOAT_FIELDS:
+        return float(value or 0)
+    return value
+
+
+def profile_hash(profile: dict, reg: dict) -> str:
+    """Profil-Schluessel fuer GENAU diese Regulierung.
+
+    Es gehen nur die Felder ein, die deren Bewertung tragen
+    (`regulations.relevant_fields_for`). Eine Aenderung an einem Feld, das fuer
+    die Regulierung ohne Bedeutung ist — etwa der Firmenname —, laesst den
+    Schluessel unveraendert; die Begruendung bleibt damit wortgleich stehen.
+    """
+    stable = {f: _stable_value(f, profile.get(f)) for f in relevant_fields_for(reg)}
     return hashlib.sha256(json.dumps(stable, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
 # Bei Prompt-Aenderungen hochzaehlen: invalidiert den analysis_cache, damit alle
 # Nutzer einmalig frische Ergebnisse mit dem neuen Prompt bekommen.
-_PROMPT_VERSION = "v3-2026-09-01"
+_PROMPT_VERSION = "v4-2026-09-01"
 
 
-def reg_hash(reg: dict) -> str:
-    return hashlib.sha256(f"{reg['criteria']}|{_PROMPT_VERSION}".encode()).hexdigest()[:16]
+def reg_hash(reg: dict, language: str, law_text_hash: str | None) -> str:
+    """Reg-Schluessel aus Kriterien, Prompt-Stand, Sprache und Gesetzesstand.
+
+    `law_text_hash` ist `fetcher.current_text_hash(reg_key, language)`: aendert
+    sich der Gesetzestext, aendert sich der Schluessel — die alte Begruendung
+    verfaellt und wird einmalig neu formuliert. Liegt kein Text vor (Quelle
+    nicht abrufbar, `None`), traegt der Schluessel den Platzhalter '-'; das
+    allein verwirft aber nichts, siehe `_cache_hit`.
+    """
+    raw = f"{reg['criteria']}|{_PROMPT_VERSION}|{language}|{law_text_hash or '-'}"
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
 def _strip_fences(text: str) -> str:
@@ -320,6 +353,81 @@ def _enrich(reg: dict, parsed: dict) -> dict:
         "reason": parsed.get("reason", ""),
         "passage": parsed.get("passage", "-"),
     }
+
+
+# ---------- Deterministische Faelle + Cache-Planung ----------
+def deterministic_result(reg: dict, profile: dict, language: str) -> dict | None:
+    """Ergebnis ohne LLM, wo die Rechtslage die Antwort bereits festlegt.
+
+    Betrifft die per Kopplung entschiedenen Regulierungen (CSRD, CSRD_DE, ESRS,
+    Taxonomie-VO, HinSchG, Whistleblower-RL). Struktur identisch zu `_enrich`.
+    None heisst: dieser Fall gehoert weiterhin dem LLM.
+    """
+    verdict = coupling_verdict(reg.get("key", ""), profile)
+    if not verdict:
+        return None
+    texts = coupling_texts(reg["key"], verdict, language)
+    if not texts:
+        return None
+    reason, passage = texts
+    return {**_enrich(reg, {}), "applies": verdict["applies"],
+            "reason": reason, "passage": passage}
+
+
+def _cache_hit(rows: list[dict], reg: dict, language: str,
+               law_text_hash: str | None, current_reg_hash: str) -> dict | None:
+    """Passender Cache-Eintrag aus den Zeilen einer Regulierung (neueste zuerst).
+
+    Normalfall: der Schluessel stimmt exakt. Liegt aktuell KEIN Gesetzestext vor
+    (`law_text_hash is None`, z. B. Quelle voruebergehend nicht erreichbar), waere
+    ein Miss die falsche Antwort: er wuerde bei jedem Lauf eine neue Begruendung
+    erzeugen — und zwar ohne Gesetzestext, also schlechter als die vorhandene.
+    Deshalb gilt dann der zuletzt gespeicherte Eintrag weiter, sofern Kriterien
+    und Prompt-Stand unveraendert sind (nachgerechnet aus seinem `text_hash`).
+    """
+    for row in rows:
+        if row.get("reg_hash") == current_reg_hash:
+            return row["result"]
+    if law_text_hash is not None:
+        return None
+    for row in rows:
+        if row.get("reg_hash") == reg_hash(reg, language, row.get("text_hash")):
+            return row["result"]
+    return None
+
+
+def plan_analysis(profile: dict, regs: list[dict], language: str
+                  ) -> tuple[list[dict], list[dict], dict[str, tuple[str, str, str | None]]]:
+    """Teilt die Regulierungen in "steht schon fest" und "muss ans LLM".
+
+    Rueckgabe:
+      ready — fertige Ergebnisse (Textbaustein oder Cache-Treffer)
+      todo  — Regulierungen, die das LLM bewerten muss
+      keys  — reg_key -> (profile_hash, reg_hash, text_hash) zum Zurueckschreiben
+    """
+    language = normalize_lang(language)
+    pending: list[tuple[dict, str, str, str | None]] = []
+    ready: list[dict] = []
+    for reg in regs:
+        fixed = deterministic_result(reg, profile, language)
+        if fixed:
+            ready.append(fixed)
+            continue
+        ph = profile_hash(profile, reg)
+        th = current_text_hash(reg["key"], language)
+        pending.append((reg, ph, reg_hash(reg, language, th), th))
+
+    cached = db.get_cache([(reg["key"], ph) for reg, ph, _rh, _th in pending])
+    todo: list[dict] = []
+    keys: dict[str, tuple[str, str, str | None]] = {}
+    for reg, ph, rh, th in pending:
+        hit = _cache_hit(cached.get((reg["key"], ph), []), reg, language, th, rh)
+        if hit is not None:
+            ready.append(hit)
+        else:
+            todo.append(reg)
+            keys[reg["key"]] = (ph, rh, th)
+    return ready, todo, keys
 
 
 # ---------- Provider-Abstraktion ----------

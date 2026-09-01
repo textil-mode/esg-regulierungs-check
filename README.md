@@ -66,7 +66,9 @@ Eine SQLite-Datei (`data/esg.db`) mit Tabellen:
 - `users` — Login (bcrypt)
 - `companies` — Stammdaten pro User
 - `analyses` — Historie der Checks
-- `analysis_cache` — (user_id, profile_hash, reg_key) → LLM-Ergebnis
+- `analysis_cache` — (reg_key, profile_hash, reg_hash) → LLM-Ergebnis; nutzeruebergreifend.
+  `profile_hash` deckt nur die fuer die jeweilige Regulierung relevanten Profilfelder ab,
+  `reg_hash` zusaetzlich den Gesetzesstand (`fetcher.current_text_hash`)
 - `law_texts` — Volltexte der Gesetze mit ETag/Last-Modified fuer inkrementelle Updates
 
 ## Architektur

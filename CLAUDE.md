@@ -31,7 +31,8 @@
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien) | `templates/dashboard.html` | ✅ |
 | Stammdaten-Frage "EU-Importeur / erstmaliges Inverkehrbringen" | `templates/dashboard.html`, `db.eu_importer` | ✅ |
 | LLM-Analyse über 22 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
-| Result-Cache (Profil-Hash + Reg-Hash → Ergebnis) | `db.py` `analysis_cache` | ✅ |
+| **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
+| **Deterministische Begruendungen ohne LLM** fuer die gekoppelten Regs (CSRD, CSRD_DE, ESRS, TaxonomieVO, HinSchG, WhistleblowerRL): handgeschriebene Bausteine in 6 Sprachen, 0 LLM-Calls, fuer immer byte-stabil | `regulations.py` `coupling_verdict`, `i18n.py` `coupling_texts`, `llm.py` `deterministic_result` | ✅ |
 | Gesetzestext-Cache mit ETag / Last-Modified | `fetcher.py` `law_texts` | ✅ |
 | **Strukturbasierte Kontext-Auswahl** (Art. 1-3 + `key_article` + Schwellenwert-Abschnitte statt Blind-Kappung; Kopfzeilen `=== Art. 2 - … ===`) | `lawparse.py` `build_context`, `app.py` Phase 1 | ✅ |
 | **EUR-Lex-Fallback ueber publications.europa.eu** (EUR-Lex antwortet Server-Clients mit AWS-WAF-Challenge, HTTP 202 + leerer Body) | `fetcher.py` `_cellar_text` | ✅ |
@@ -208,7 +209,11 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 > gemeinsam auf eine andere Datei um. Ohne diese Variable schreibt jeder Direktaufruf
 > (z. B. `python watchdog.py`) in `data/esg.db`.
 
-- `users`, `companies`, `analyses`, `analysis_cache`, `law_texts` (Volltext + ETag + Last-Modified +
+- `analysis_cache` — nutzeruebergreifend, PK `(reg_key, profile_hash, reg_hash)` + Spalte `text_hash`.
+  Der alte, nutzergebundene Cache wird beim ersten Start durch `db._migrate_analysis_cache()`
+  einmalig verworfen (die Eintraege tragen den Gesetzesstand nicht und lassen sich nicht
+  uebersetzen); der naechste Lauf erzeugt sie neu.
+- `users`, `companies`, `analyses`, `law_texts` (Volltext + ETag + Last-Modified +
   fetched_at + `source_status` + `source_note`; `source_status ≤ -1000` = nur Ursprungsrechtsakt
   geladen, spaetere Aenderungen fehlen)
 - `law_versions` — Historie der Gesetzestexte, eine Zeile je inhaltlich abweichender Fassung
@@ -230,6 +235,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `fetcher.py` | HTTP-Download von Gesetzes-/Guideline-Texten, HTML/PDF-Extraktion, ETag-Cache, EUR-Lex-Fallback |
 | `lawparse.py` | Zerlegt Gesetzestexte in Artikel-/§-/Anhang-Abschnitte und baut daraus den LLM-Kontext (Anwendungsbereich statt Praeambel) |
 | `test_lawparse.py` | Tests dazu — laufen gegen eine Kopie der DB (`data/esg_lawparse_test.db`), nie gegen `data/esg.db` |
+| `test_cache_stability.py` | Beweist die Wortstabilitaet der Begruendungen (6 Szenarien, eigene DB `data/esg_cache_test.db`). Ohne Argument mit Platzhalter statt LLM (kostenlos), mit `--live` echte Calls |
 | `regulations.py` | 22 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
 | `watchdog.py` | Wöchentlicher Aktualitäts-Wächter (Cron auf dem VPS), schreibt `watchdog_runs` |
 | `i18n.py` | Übersetzungen (6 Sprachen) |

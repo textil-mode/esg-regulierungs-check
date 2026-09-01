@@ -1093,6 +1093,466 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
 }
 
 
+# ---------- Begruendungs-Bausteine fuer gekoppelte Regulierungen ----------
+#
+# CSRD, CSRD_DE, ESRS, Taxonomie-VO, HinSchG und Whistleblower-RL werden nicht
+# vom LLM bewertet, sondern von `regulations.coupling_verdict()` entschieden.
+# Die Begruendung entsteht aus zwei Bausteinen und behaelt damit die
+# Zwei-Satz-Struktur der LLM-Antworten:
+#   Satz 1 (COUPLING_FACTS)       — Schwellenwert und der Ist-Wert des Unternehmens
+#   Satz 2 (COUPLING_CONCLUSIONS) — was daraus fuer genau diese Regulierung folgt
+# Dazu die feste Fundstelle aus COUPLING_PASSAGES. Alles handgeschrieben und in
+# allen sechs Sprachen hinterlegt: gleiche Lage -> immer derselbe Wortlaut.
+
+# Tausendertrennzeichen je Sprache (fr: geschuetztes Leerzeichen).
+_THOUSANDS_SEP: dict[str, str] = {
+    "de": ".", "en": ",", "es": ".", "fr": " ", "it": ".", "zh": ",",
+}
+
+COUPLING_FACTS: dict[str, dict[str, str]] = {
+    "csrd_ueber_schwelle": {
+        "de": "Das Unternehmen hat {employees} Beschäftigte (Schwelle: mehr als 1.000) und "
+              "{revenue} Nettoumsatzerlöse (Schwelle: mehr als 450 Mio. EUR) und überschreitet "
+              "damit beide Merkmale des Art. 19a Abs. 1 der Bilanzrichtlinie.",
+        "en": "The company has {employees} employees (threshold: more than 1,000) and net turnover "
+              "of {revenue} (threshold: more than EUR 450 million), exceeding both criteria of "
+              "Art. 19a(1) of the Accounting Directive.",
+        "es": "La empresa tiene {employees} empleados (umbral: más de 1.000) y una cifra neta de "
+              "negocios de {revenue} (umbral: más de 450 millones EUR), por lo que supera ambos "
+              "criterios del art. 19 bis, apdo. 1, de la Directiva contable.",
+        "fr": "L'entreprise compte {employees} salariés (seuil : plus de 1 000) et un chiffre "
+              "d'affaires net de {revenue} (seuil : plus de 450 millions EUR) ; elle dépasse donc "
+              "les deux critères de l'art. 19 bis, par. 1, de la directive comptable.",
+        "it": "L'impresa ha {employees} dipendenti (soglia: più di 1.000) e ricavi netti di "
+              "{revenue} (soglia: più di 450 milioni di EUR), superando entrambi i criteri "
+              "dell'art. 19 bis, par. 1, della direttiva contabile.",
+        "zh": "公司有 {employees} 名员工（门槛：超过 1,000 名），净营业额为 {revenue}（门槛：超过 4.5 亿欧元），"
+              "两项标准均已超过《会计指令》第 19a 条第 1 款的门槛。",
+    },
+    "csrd_unter_schwelle": {
+        "de": "Das Unternehmen hat {employees} Beschäftigte (Schwelle: mehr als 1.000) und "
+              "{revenue} Nettoumsatzerlöse (Schwelle: mehr als 450 Mio. EUR) und überschreitet "
+              "damit nicht beide Merkmale des Art. 19a Abs. 1 der Bilanzrichtlinie; Bilanzsumme "
+              "und Börsennotierung sind seit der Omnibus-Änderung keine Kriterien mehr.",
+        "en": "The company has {employees} employees (threshold: more than 1,000) and net turnover "
+              "of {revenue} (threshold: more than EUR 450 million) and therefore does not exceed "
+              "both criteria of Art. 19a(1) of the Accounting Directive; balance sheet total and "
+              "stock exchange listing are no longer criteria after the Omnibus amendment.",
+        "es": "La empresa tiene {employees} empleados (umbral: más de 1.000) y una cifra neta de "
+              "negocios de {revenue} (umbral: más de 450 millones EUR), por lo que no supera ambos "
+              "criterios del art. 19 bis, apdo. 1, de la Directiva contable; el balance total y la "
+              "cotización bursátil ya no son criterios tras la modificación Ómnibus.",
+        "fr": "L'entreprise compte {employees} salariés (seuil : plus de 1 000) et un chiffre "
+              "d'affaires net de {revenue} (seuil : plus de 450 millions EUR) ; elle ne dépasse "
+              "donc pas les deux critères de l'art. 19 bis, par. 1, de la directive comptable, le "
+              "total du bilan et la cotation n'étant plus des critères depuis la révision Omnibus.",
+        "it": "L'impresa ha {employees} dipendenti (soglia: più di 1.000) e ricavi netti di "
+              "{revenue} (soglia: più di 450 milioni di EUR) e non supera quindi entrambi i criteri "
+              "dell'art. 19 bis, par. 1, della direttiva contabile; il totale di bilancio e la "
+              "quotazione non sono più criteri dopo la modifica Omnibus.",
+        "zh": "公司有 {employees} 名员工（门槛：超过 1,000 名），净营业额为 {revenue}（门槛：超过 4.5 亿欧元），"
+              "因此未同时超过《会计指令》第 19a 条第 1 款的两项标准；经 Omnibus 修订后，资产负债表总额和上市与否不再是判定标准。",
+    },
+    "csrd_drittland": {
+        "de": "Die oberste Muttergesellschaft sitzt außerhalb der EU und der Nettoumsatz beträgt "
+              "{revenue} (Schwelle: mehr als 450 Mio. EUR); ob eine EU-Tochter oder "
+              "Zweigniederlassung die zusätzlich nötigen 200 Mio. EUR erreicht, geht aus dem "
+              "Profil nicht hervor.",
+        "en": "The ultimate parent is established outside the EU and net turnover is {revenue} "
+              "(threshold: more than EUR 450 million); whether an EU subsidiary or branch reaches "
+              "the additionally required EUR 200 million is not stated in the profile.",
+        "es": "La sociedad matriz última tiene su sede fuera de la UE y la cifra neta de negocios "
+              "es de {revenue} (umbral: más de 450 millones EUR); el perfil no indica si una filial "
+              "o sucursal en la UE alcanza los 200 millones EUR adicionales exigidos.",
+        "fr": "La société mère ultime est établie hors de l'UE et le chiffre d'affaires net "
+              "s'élève à {revenue} (seuil : plus de 450 millions EUR) ; le profil n'indique pas si "
+              "une filiale ou succursale de l'UE atteint les 200 millions EUR supplémentaires "
+              "requis.",
+        "it": "La capogruppo ha sede fuori dall'UE e i ricavi netti ammontano a {revenue} (soglia: "
+              "più di 450 milioni di EUR); dal profilo non risulta se una controllata o succursale "
+              "UE raggiunga i 200 milioni di EUR ulteriormente richiesti.",
+        "zh": "最终母公司设在欧盟境外，净营业额为 {revenue}（门槛：超过 4.5 亿欧元）；档案中未说明是否有欧盟子公司或分支机构"
+              "达到另需的 2 亿欧元。",
+    },
+    "csrd_welle1": {
+        "de": "Das Unternehmen ist kapitalmarktorientiert und hat {employees} Beschäftigte "
+              "(Welle-1-Schwelle: mehr als 500), erreicht mit {revenue} aber nicht die ab dem "
+              "Geschäftsjahr 2027 geltende Umsatzschwelle von 450 Mio. EUR; ob der Sitzstaat die "
+              "Befreiungsoption für 2025/2026 gezogen hat, ist offen.",
+        "en": "The company is capital-market oriented and has {employees} employees (wave 1 "
+              "threshold: more than 500), but with {revenue} it does not reach the turnover "
+              "threshold of EUR 450 million applicable from financial year 2027; whether its home "
+              "member state used the exemption option for 2025/2026 is open.",
+        "es": "La empresa cotiza en un mercado regulado y tiene {employees} empleados (umbral de la "
+              "primera ola: más de 500), pero con {revenue} no alcanza el umbral de 450 millones "
+              "EUR aplicable desde el ejercicio 2027; queda abierto si su Estado miembro ha usado "
+              "la opción de exención para 2025/2026.",
+        "fr": "L'entreprise est cotée et compte {employees} salariés (seuil de la vague 1 : plus de "
+              "500), mais avec {revenue} elle n'atteint pas le seuil de 450 millions EUR applicable "
+              "à partir de l'exercice 2027 ; la question de savoir si son État membre a utilisé "
+              "l'option d'exemption pour 2025/2026 reste ouverte.",
+        "it": "L'impresa è quotata e ha {employees} dipendenti (soglia della prima ondata: più di "
+              "500), ma con {revenue} non raggiunge la soglia di 450 milioni di EUR valida "
+              "dall'esercizio 2027; resta aperto se lo Stato membro abbia esercitato l'opzione di "
+              "esenzione per il 2025/2026.",
+        "zh": "公司为资本市场导向企业，有 {employees} 名员工（第一批门槛：超过 500 名），但 {revenue} 的营业额未达到自 2027 "
+              "财政年度起适用的 4.5 亿欧元门槛；其所在成员国是否行使了 2025/2026 年度的豁免选项尚不明确。",
+    },
+    "hinschg_ab_50": {
+        "de": "Das Unternehmen beschäftigt {employees_de} Personen in Deutschland und erreicht "
+              "damit die Schwelle von 50 Beschäftigten des § 12 Abs. 2 HinSchG.",
+        "en": "The company employs {employees_de} people in Germany and thus reaches the threshold "
+              "of 50 employees in section 12(2) HinSchG.",
+        "es": "La empresa emplea a {employees_de} personas en Alemania y alcanza así el umbral de "
+              "50 empleados del § 12, apdo. 2, HinSchG.",
+        "fr": "L'entreprise emploie {employees_de} personnes en Allemagne et atteint ainsi le seuil "
+              "de 50 salariés du § 12, al. 2, HinSchG.",
+        "it": "L'impresa occupa {employees_de} persone in Germania e raggiunge così la soglia di 50 "
+              "dipendenti del § 12, comma 2, HinSchG.",
+        "zh": "公司在德国雇用 {employees_de} 人，已达到《举报人保护法》第 12 条第 2 款规定的 50 人门槛。",
+    },
+    "hinschg_unter_50": {
+        "de": "Das Unternehmen beschäftigt {employees_de} Personen in Deutschland und bleibt damit "
+              "unter der Schwelle von 50 Beschäftigten des § 12 Abs. 2 HinSchG.",
+        "en": "The company employs {employees_de} people in Germany and thus stays below the "
+              "threshold of 50 employees in section 12(2) HinSchG.",
+        "es": "La empresa emplea a {employees_de} personas en Alemania y queda así por debajo del "
+              "umbral de 50 empleados del § 12, apdo. 2, HinSchG.",
+        "fr": "L'entreprise emploie {employees_de} personnes en Allemagne et reste ainsi sous le "
+              "seuil de 50 salariés du § 12, al. 2, HinSchG.",
+        "it": "L'impresa occupa {employees_de} persone in Germania e resta quindi sotto la soglia "
+              "di 50 dipendenti del § 12, comma 2, HinSchG.",
+        "zh": "公司在德国雇用 {employees_de} 人，低于《举报人保护法》第 12 条第 2 款规定的 50 人门槛。",
+    },
+}
+
+COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
+    "CSRD": {
+        "ja": {
+            "de": "Es besteht damit eine Berichtspflicht nach der CSRD; die neuen Schwellen gelten "
+                  "für Geschäftsjahre ab dem 01.01.2027.",
+            "en": "A reporting duty under the CSRD therefore applies; the new thresholds apply to "
+                  "financial years starting on or after 01.01.2027.",
+            "es": "Existe por tanto una obligación de informar conforme a la CSRD; los nuevos "
+                  "umbrales se aplican a ejercicios que comiencen a partir del 01.01.2027.",
+            "fr": "Une obligation de déclaration au titre de la CSRD s'applique donc ; les nouveaux "
+                  "seuils valent pour les exercices ouverts à compter du 01.01.2027.",
+            "it": "Sussiste quindi un obbligo di rendicontazione ai sensi della CSRD; le nuove "
+                  "soglie valgono per gli esercizi che iniziano dal 01.01.2027.",
+            "zh": "因此负有 CSRD 报告义务；新门槛适用于 2027 年 1 月 1 日或之后开始的财政年度。",
+        },
+        "nein": {
+            "de": "Eine Berichtspflicht nach der CSRD besteht damit nicht.",
+            "en": "There is therefore no reporting duty under the CSRD.",
+            "es": "Por tanto, no existe obligación de informar conforme a la CSRD.",
+            "fr": "Il n'existe donc pas d'obligation de déclaration au titre de la CSRD.",
+            "it": "Non sussiste quindi alcun obbligo di rendicontazione ai sensi della CSRD.",
+            "zh": "因此不负有 CSRD 报告义务。",
+        },
+        "moeglich": {
+            "de": "Die CSRD-Berichtspflicht ist deshalb im Einzelfall zu prüfen.",
+            "en": "The CSRD reporting duty therefore has to be assessed case by case.",
+            "es": "Por ello, la obligación de informar conforme a la CSRD debe examinarse caso por caso.",
+            "fr": "L'obligation de déclaration CSRD doit donc être examinée au cas par cas.",
+            "it": "L'obbligo di rendicontazione CSRD va quindi verificato caso per caso.",
+            "zh": "因此需就个案审查 CSRD 报告义务。",
+        },
+    },
+    "CSRD_DE": {
+        "ja": {
+            "de": "Das CSRD-Umsetzungsgesetz überträgt diese Pflicht in den Lagebericht nach "
+                  "§§ 289b ff. HGB-E.",
+            "en": "The German CSRD implementation act carries this duty into the management report "
+                  "under sections 289b et seq. HGB (draft).",
+            "es": "La ley alemana de transposición de la CSRD traslada esta obligación al informe "
+                  "de gestión conforme a los §§ 289b y ss. HGB (proyecto).",
+            "fr": "La loi allemande de transposition de la CSRD reporte cette obligation dans le "
+                  "rapport de gestion selon les §§ 289b et suivants HGB (projet).",
+            "it": "La legge tedesca di recepimento della CSRD trasferisce questo obbligo nella "
+                  "relazione sulla gestione ai sensi dei §§ 289b ss. HGB (progetto).",
+            "zh": "德国 CSRD 转化法将该义务纳入《商法典》第 289b 条及以下（草案）规定的管理报告。",
+        },
+        "nein": {
+            "de": "Damit greifen auch die §§ 289b ff. HGB in der Fassung des Umsetzungsgesetzes nicht.",
+            "en": "Consequently sections 289b et seq. HGB as amended by the implementation act do "
+                  "not apply either.",
+            "es": "En consecuencia, tampoco se aplican los §§ 289b y ss. HGB en la redacción de la "
+                  "ley de transposición.",
+            "fr": "Par conséquent, les §§ 289b et suivants HGB dans la version de la loi de "
+                  "transposition ne s'appliquent pas non plus.",
+            "it": "Di conseguenza non si applicano nemmeno i §§ 289b ss. HGB nella versione della "
+                  "legge di recepimento.",
+            "zh": "因此，转化法版本的《商法典》第 289b 条及以下亦不适用。",
+        },
+        "moeglich": {
+            "de": "Ob die §§ 289b ff. HGB-E greifen, folgt der noch zu klärenden CSRD-Pflicht.",
+            "en": "Whether sections 289b et seq. HGB (draft) apply follows the CSRD duty that still "
+                  "has to be clarified.",
+            "es": "Que se apliquen los §§ 289b y ss. HGB (proyecto) depende de la obligación CSRD "
+                  "aún por aclarar.",
+            "fr": "L'application des §§ 289b et suivants HGB (projet) suit l'obligation CSRD encore "
+                  "à clarifier.",
+            "it": "L'applicazione dei §§ 289b ss. HGB (progetto) segue l'obbligo CSRD ancora da "
+                  "chiarire.",
+            "zh": "《商法典》第 289b 条及以下（草案）是否适用，取决于尚待厘清的 CSRD 义务。",
+        },
+    },
+    "ESRS": {
+        "ja": {
+            "de": "Die ESRS sind damit als verbindliches Berichtsformat anzuwenden.",
+            "en": "The ESRS therefore have to be applied as the binding reporting format.",
+            "es": "Por tanto, las ESRS deben aplicarse como formato de información vinculante.",
+            "fr": "Les ESRS doivent donc être appliquées comme format de reporting contraignant.",
+            "it": "Gli ESRS devono quindi essere applicati come formato di rendicontazione vincolante.",
+            "zh": "因此必须按 ESRS 这一强制报告格式编制报告。",
+        },
+        "nein": {
+            "de": "Ohne CSRD-Pflicht sind die ESRS nicht verbindlich anzuwenden.",
+            "en": "Without a CSRD duty the ESRS are not binding.",
+            "es": "Sin obligación CSRD, las ESRS no son de aplicación obligatoria.",
+            "fr": "En l'absence d'obligation CSRD, les ESRS ne s'imposent pas.",
+            "it": "In assenza di obbligo CSRD gli ESRS non sono vincolanti.",
+            "zh": "无 CSRD 义务时，ESRS 不具强制适用性。",
+        },
+        "moeglich": {
+            "de": "Ob die ESRS anzuwenden sind, folgt der noch zu klärenden CSRD-Pflicht.",
+            "en": "Whether the ESRS apply follows the CSRD duty that still has to be clarified.",
+            "es": "Que las ESRS sean aplicables depende de la obligación CSRD aún por aclarar.",
+            "fr": "L'application des ESRS suit l'obligation CSRD encore à clarifier.",
+            "it": "L'applicazione degli ESRS segue l'obbligo CSRD ancora da chiarire.",
+            "zh": "ESRS 是否适用，取决于尚待厘清的 CSRD 义务。",
+        },
+    },
+    "TaxonomieVO": {
+        "ja": {
+            "de": "Damit greift auch die Taxonomie-Offenlegung nach Art. 8 (Anteile an Umsatz, "
+                  "CapEx und OpEx).",
+            "en": "The taxonomy disclosure under Art. 8 (shares of turnover, CapEx and OpEx) "
+                  "therefore applies as well.",
+            "es": "Por tanto, también se aplica la divulgación de taxonomía del art. 8 (porcentajes "
+                  "de volumen de negocios, CapEx y OpEx).",
+            "fr": "La publication taxonomique de l'art. 8 (part du chiffre d'affaires, des CapEx et "
+                  "des OpEx) s'applique donc également.",
+            "it": "Si applica quindi anche l'informativa sulla tassonomia dell'art. 8 (quote di "
+                  "fatturato, CapEx e OpEx).",
+            "zh": "因此还须履行第 8 条的分类法披露义务（营业额、资本支出和运营支出占比）。",
+        },
+        "nein": {
+            "de": "Ohne CSRD-Pflicht besteht keine Offenlegungspflicht nach Art. 8.",
+            "en": "Without a CSRD duty there is no disclosure obligation under Art. 8.",
+            "es": "Sin obligación CSRD no existe obligación de divulgación conforme al art. 8.",
+            "fr": "En l'absence d'obligation CSRD, aucune publication au titre de l'art. 8 n'est due.",
+            "it": "In assenza di obbligo CSRD non sussiste alcun obbligo informativo ex art. 8.",
+            "zh": "无 CSRD 义务时，不产生第 8 条的披露义务。",
+        },
+        "moeglich": {
+            "de": "Ob nach Art. 8 offenzulegen ist, folgt der noch zu klärenden CSRD-Pflicht.",
+            "en": "Whether disclosure under Art. 8 is required follows the CSRD duty that still has "
+                  "to be clarified.",
+            "es": "Que haya que divulgar conforme al art. 8 depende de la obligación CSRD aún por "
+                  "aclarar.",
+            "fr": "L'obligation de publier au titre de l'art. 8 suit l'obligation CSRD encore à "
+                  "clarifier.",
+            "it": "L'obbligo di informativa ex art. 8 segue l'obbligo CSRD ancora da chiarire.",
+            "zh": "是否须按第 8 条披露，取决于尚待厘清的 CSRD 义务。",
+        },
+        "finanzmarkt": {
+            "de": "Die Branche gehört jedoch zum Finanzsektor, den Art. 8 unabhängig von der "
+                  "CSRD-Schwelle erfasst — das ist gesondert zu prüfen.",
+            "en": "The sector is part of the financial industry, however, which Art. 8 covers "
+                  "independently of the CSRD threshold — this has to be checked separately.",
+            "es": "No obstante, el sector pertenece al ámbito financiero, que el art. 8 cubre con "
+                  "independencia del umbral CSRD; esto debe examinarse por separado.",
+            "fr": "Le secteur relève toutefois de la finance, que l'art. 8 couvre indépendamment du "
+                  "seuil CSRD — ce point doit être vérifié séparément.",
+            "it": "Il settore rientra però nella finanza, che l'art. 8 copre indipendentemente "
+                  "dalla soglia CSRD: va verificato separatamente.",
+            "zh": "但该行业属于金融领域，第 8 条对其的适用不受 CSRD 门槛限制，需另行审查。",
+        },
+    },
+    "HinSchG": {
+        "ja": {
+            "de": "Eine interne Meldestelle nach § 12 HinSchG ist damit einzurichten.",
+            "en": "An internal reporting channel under section 12 HinSchG therefore has to be set up.",
+            "es": "Debe establecerse por tanto un canal interno de denuncias conforme al § 12 HinSchG.",
+            "fr": "Un canal de signalement interne au sens du § 12 HinSchG doit donc être mis en place.",
+            "it": "Va quindi istituito un canale di segnalazione interno ai sensi del § 12 HinSchG.",
+            "zh": "因此必须依《举报人保护法》第 12 条设立内部举报机构。",
+        },
+        "nein": {
+            "de": "Eine interne Meldestelle nach § 12 HinSchG ist damit nicht verpflichtend.",
+            "en": "An internal reporting channel under section 12 HinSchG is therefore not mandatory.",
+            "es": "Por tanto, no es obligatorio un canal interno de denuncias conforme al § 12 HinSchG.",
+            "fr": "Un canal de signalement interne au sens du § 12 HinSchG n'est donc pas obligatoire.",
+            "it": "Un canale di segnalazione interno ai sensi del § 12 HinSchG non è quindi obbligatorio.",
+            "zh": "因此无须依《举报人保护法》第 12 条设立内部举报机构。",
+        },
+    },
+    "WhistleblowerRL": {
+        "ja": {
+            "de": "Die Richtlinie wirkt in Deutschland über das HinSchG; der interne Meldekanal ist "
+                  "damit einzurichten.",
+            "en": "In Germany the directive takes effect through the HinSchG; the internal "
+                  "reporting channel therefore has to be set up.",
+            "es": "En Alemania la Directiva actúa a través de la HinSchG; por tanto, debe "
+                  "establecerse el canal interno de denuncias.",
+            "fr": "En Allemagne, la directive produit ses effets via la HinSchG ; le canal de "
+                  "signalement interne doit donc être mis en place.",
+            "it": "In Germania la direttiva opera tramite l'HinSchG; il canale di segnalazione "
+                  "interno va quindi istituito.",
+            "zh": "该指令在德国通过《举报人保护法》产生效力，因此必须设立内部举报渠道。",
+        },
+        "nein": {
+            "de": "Die über das HinSchG umgesetzte Pflicht greift damit nicht.",
+            "en": "The obligation transposed via the HinSchG therefore does not apply.",
+            "es": "La obligación transpuesta mediante la HinSchG no resulta por tanto aplicable.",
+            "fr": "L'obligation transposée par la HinSchG ne s'applique donc pas.",
+            "it": "L'obbligo recepito tramite l'HinSchG non trova quindi applicazione.",
+            "zh": "因此，通过《举报人保护法》转化的义务不适用。",
+        },
+    },
+}
+
+COUPLING_PASSAGES: dict[str, dict[str, str]] = {
+    "CSRD": {
+        "de": "Art. 19a Abs. 1 der Richtlinie 2013/34/EU (i. d. F. der Richtlinie (EU) 2026/470): "
+              "große Unternehmen mit mehr als 1.000 Beschäftigten und mehr als 450 Mio. EUR "
+              "Nettoumsatzerlösen.",
+        "en": "Art. 19a(1) of Directive 2013/34/EU (as amended by Directive (EU) 2026/470): large "
+              "undertakings with more than 1,000 employees and more than EUR 450 million net turnover.",
+        "es": "Art. 19 bis, apdo. 1, de la Directiva 2013/34/UE (según la Directiva (UE) 2026/470): "
+              "grandes empresas con más de 1.000 empleados y más de 450 millones EUR de cifra neta "
+              "de negocios.",
+        "fr": "Art. 19 bis, par. 1, de la directive 2013/34/UE (telle que modifiée par la directive "
+              "(UE) 2026/470) : grandes entreprises de plus de 1 000 salariés et plus de 450 "
+              "millions EUR de chiffre d'affaires net.",
+        "it": "Art. 19 bis, par. 1, della direttiva 2013/34/UE (come modificata dalla direttiva (UE) "
+              "2026/470): grandi imprese con più di 1.000 dipendenti e oltre 450 milioni di EUR di "
+              "ricavi netti.",
+        "zh": "《指令》2013/34/EU 第 19a 条第 1 款（经指令 (EU) 2026/470 修订）：员工超过 1,000 名且净营业额超过 "
+              "4.5 亿欧元的大型企业。",
+    },
+    "CSRD_DE": {
+        "de": "§ 289b HGB in der Fassung des CSRD-Umsetzungsgesetzes (Regierungsentwurf): "
+              "Nachhaltigkeitsberichterstattung im Lagebericht nach den Schwellen der CSRD.",
+        "en": "Section 289b HGB as drafted in the CSRD implementation act (government bill): "
+              "sustainability reporting in the management report following the CSRD thresholds.",
+        "es": "§ 289b HGB en la redacción de la ley de transposición de la CSRD (proyecto del "
+              "Gobierno): información de sostenibilidad en el informe de gestión según los umbrales "
+              "de la CSRD.",
+        "fr": "§ 289b HGB dans la version de la loi de transposition de la CSRD (projet du "
+              "gouvernement) : reporting de durabilité dans le rapport de gestion selon les seuils "
+              "de la CSRD.",
+        "it": "§ 289b HGB nella versione della legge di recepimento della CSRD (disegno di legge "
+              "governativo): rendicontazione di sostenibilità nella relazione sulla gestione secondo "
+              "le soglie della CSRD.",
+        "zh": "CSRD 转化法（政府草案）版本的《商法典》第 289b 条：按 CSRD 门槛在管理报告中进行可持续发展报告。",
+    },
+    "ESRS": {
+        "de": "Art. 1 der Delegierten Verordnung (EU) 2023/2772 i. V. m. Anhang I: Standards für "
+              "die Berichterstattung nach Art. 19a und 29a der Richtlinie 2013/34/EU.",
+        "en": "Art. 1 of Delegated Regulation (EU) 2023/2772 in conjunction with Annex I: standards "
+              "for reporting under Art. 19a and 29a of Directive 2013/34/EU.",
+        "es": "Art. 1 del Reglamento Delegado (UE) 2023/2772 en relación con el anexo I: normas para "
+              "la información conforme a los arts. 19 bis y 29 bis de la Directiva 2013/34/UE.",
+        "fr": "Art. 1er du règlement délégué (UE) 2023/2772, lu avec l'annexe I : normes pour le "
+              "reporting au titre des art. 19 bis et 29 bis de la directive 2013/34/UE.",
+        "it": "Art. 1 del regolamento delegato (UE) 2023/2772 in combinato disposto con l'allegato I: "
+              "principi per la rendicontazione ex artt. 19 bis e 29 bis della direttiva 2013/34/UE.",
+        "zh": "《授权条例》(EU) 2023/2772 第 1 条结合附件一：依《指令》2013/34/EU 第 19a 条和第 29a 条报告的准则。",
+    },
+    "TaxonomieVO": {
+        "de": "Art. 8 Abs. 1 der Verordnung (EU) 2020/852: Offenlegungspflicht für Unternehmen, die "
+              "eine nichtfinanzielle Erklärung nach Art. 19a oder 29a der Richtlinie 2013/34/EU "
+              "abgeben müssen.",
+        "en": "Art. 8(1) of Regulation (EU) 2020/852: disclosure duty for undertakings required to "
+              "publish a non-financial statement under Art. 19a or 29a of Directive 2013/34/EU.",
+        "es": "Art. 8, apdo. 1, del Reglamento (UE) 2020/852: obligación de divulgación para las "
+              "empresas obligadas a presentar un estado no financiero conforme a los arts. 19 bis o "
+              "29 bis de la Directiva 2013/34/UE.",
+        "fr": "Art. 8, par. 1, du règlement (UE) 2020/852 : obligation de publication pour les "
+              "entreprises tenues de publier une déclaration non financière au titre des art. 19 bis "
+              "ou 29 bis de la directive 2013/34/UE.",
+        "it": "Art. 8, par. 1, del regolamento (UE) 2020/852: obbligo informativo per le imprese "
+              "tenute a pubblicare una dichiarazione non finanziaria ex artt. 19 bis o 29 bis della "
+              "direttiva 2013/34/UE.",
+        "zh": "《条例》(EU) 2020/852 第 8 条第 1 款：须依《指令》2013/34/EU 第 19a 条或第 29a 条提交非财务报表的企业负有披露义务。",
+    },
+    "HinSchG": {
+        "de": "§ 12 Abs. 1 und 2 HinSchG: Beschäftigungsgeber mit in der Regel mindestens 50 "
+              "Beschäftigten richten eine interne Meldestelle ein.",
+        "en": "Section 12(1) and (2) HinSchG: employers with as a rule at least 50 employees have to "
+              "set up an internal reporting office.",
+        "es": "§ 12, apdos. 1 y 2, HinSchG: los empleadores con al menos 50 empleados por regla "
+              "general deben crear un órgano interno de denuncias.",
+        "fr": "§ 12, al. 1 et 2, HinSchG : les employeurs comptant en règle générale au moins 50 "
+              "salariés mettent en place un service de signalement interne.",
+        "it": "§ 12, commi 1 e 2, HinSchG: i datori di lavoro con di regola almeno 50 dipendenti "
+              "istituiscono un ufficio di segnalazione interno.",
+        "zh": "《举报人保护法》第 12 条第 1、2 款：通常雇用至少 50 名员工的雇主须设立内部举报机构。",
+    },
+    "WhistleblowerRL": {
+        "de": "Art. 8 Abs. 3 der Richtlinie (EU) 2019/1937: juristische Personen des privaten "
+              "Sektors mit 50 oder mehr Arbeitnehmern richten interne Meldekanäle ein.",
+        "en": "Art. 8(3) of Directive (EU) 2019/1937: legal entities in the private sector with 50 "
+              "or more workers have to establish internal reporting channels.",
+        "es": "Art. 8, apdo. 3, de la Directiva (UE) 2019/1937: las entidades jurídicas del sector "
+              "privado con 50 o más trabajadores establecen canales internos de denuncia.",
+        "fr": "Art. 8, par. 3, de la directive (UE) 2019/1937 : les entités juridiques du secteur "
+              "privé comptant 50 travailleurs ou plus établissent des canaux de signalement interne.",
+        "it": "Art. 8, par. 3, della direttiva (UE) 2019/1937: i soggetti giuridici del settore "
+              "privato con 50 o più lavoratori istituiscono canali di segnalazione interni.",
+        "zh": "《指令》(EU) 2019/1937 第 8 条第 3 款：拥有 50 名及以上员工的私营部门法律实体须设立内部举报渠道。",
+    },
+}
+
+
+def fmt_int(value, lang: str = "de") -> str:
+    """Ganzzahl mit sprachueblichem Tausendertrennzeichen."""
+    try:
+        number = int(round(float(value or 0)))
+    except (TypeError, ValueError):
+        number = 0
+    return f"{number:,}".replace(",", _THOUSANDS_SEP.get(normalize_lang(lang), "."))
+
+
+def fmt_eur(value, lang: str = "de") -> str:
+    """Betrag mit Waehrungskuerzel, z. B. '450.000.000 EUR'."""
+    return f"{fmt_int(value, lang)} EUR"
+
+
+def coupling_fact(verdict: dict, lang: str = "de") -> str:
+    """Satz 1 der deterministischen Begruendung (Schwelle + Ist-Wert)."""
+    lang = normalize_lang(lang)
+    template = COUPLING_FACTS.get(verdict.get("fact", ""), {}).get(lang, "")
+    if not template:
+        return ""
+    values = verdict.get("values") or {}
+    return template.format(
+        employees=fmt_int(values.get("employees"), lang),
+        employees_de=fmt_int(values.get("employees_de"), lang),
+        revenue=fmt_eur(values.get("revenue_eur"), lang),
+    )
+
+
+def coupling_texts(reg_key: str, verdict: dict, lang: str = "de") -> tuple[str, str] | None:
+    """(Begruendung, Fundstelle) fuer eine gekoppelte Regulierung.
+
+    None, wenn fuer diesen Fall kein Baustein hinterlegt ist — dann bewertet
+    weiterhin das LLM (mit der Praemisse aus `regulations.coupling_premise`).
+    """
+    lang = normalize_lang(lang)
+    fact = coupling_fact(verdict, lang)
+    conclusion = (COUPLING_CONCLUSIONS.get(reg_key, {})
+                  .get(verdict.get("conclusion", ""), {}).get(lang, ""))
+    passage = COUPLING_PASSAGES.get(reg_key, {}).get(lang, "")
+    if not (fact and conclusion and passage):
+        return None
+    # Im Chinesischen trennt das Satzzeichen selbst, ein Leerzeichen waere falsch.
+    separator = "" if lang == "zh" else " "
+    return f"{fact}{separator}{conclusion}", passage
+
+
 # ---------- Dropdown-Optionen (Key = DE-Wert, damit DB-kompatibel) ----------
 BRANCH_LABELS: dict[str, dict[str, str]] = {
     "Land-/Forstwirtschaft, Fischerei": {
