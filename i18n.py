@@ -779,6 +779,287 @@ UI: dict[str, dict[str, str]] = {
         "it": "Nessun risultato disponibile. Clicca prima 'Verifica ora' nella pagina principale.",
         "zh": "尚无分析结果。请先在主页上点击“立即检查”。",
     },
+    # ---------- Anwendungsbeginn / Status ----------
+    "col_applies_from": {
+        "de": "Gilt ab / Status", "en": "Applies from / status",
+        "es": "Se aplica desde / estado", "fr": "S'applique à partir de / statut",
+        "it": "Si applica dal / stato", "zh": "适用起始 / 状态",
+    },
+    "law_state_of": {
+        "de": "Gesetzesstand vom", "en": "Legal text as of", "es": "Texto legal a fecha de",
+        "fr": "Texte juridique au", "it": "Testo di legge al", "zh": "法律文本截至",
+    },
+    # ---------- Admin: Regulierungsstatus ----------
+    "admin_regstatus_title": {
+        "de": "Regulierungs-Status", "en": "Regulation status", "es": "Estado de las regulaciones",
+        "fr": "État des réglementations", "it": "Stato dei regolamenti", "zh": "法规状态",
+    },
+    "admin_regstatus_hint": {
+        "de": "Gesetzesstand je Regulierung, letzter Watchdog-Lauf und erkannte Textänderungen. "
+              "Vorschläge sind KI-generiert und ändern nichts automatisch.",
+        "en": "Legal text status per regulation, last watchdog run and detected text changes. "
+              "Suggestions are AI-generated and change nothing automatically.",
+        "es": "Estado del texto legal por regulación, última ejecución del watchdog y cambios detectados. "
+              "Las sugerencias las genera la IA y no cambian nada automáticamente.",
+        "fr": "État du texte juridique par réglementation, dernière exécution du watchdog et modifications "
+              "détectées. Les suggestions sont générées par l'IA et ne modifient rien automatiquement.",
+        "it": "Stato del testo di legge per regolamento, ultima esecuzione del watchdog e modifiche rilevate. "
+              "I suggerimenti sono generati dall'IA e non modificano nulla automaticamente.",
+        "zh": "各法规的法律文本状态、最近一次监测运行及检测到的文本变更。建议由人工智能生成，不会自动更改任何内容。",
+    },
+    "admin_regstatus_last_run": {
+        "de": "Letzter Watchdog-Lauf", "en": "Last watchdog run", "es": "Última ejecución del watchdog",
+        "fr": "Dernière exécution du watchdog", "it": "Ultima esecuzione del watchdog", "zh": "最近一次监测运行",
+    },
+    "admin_regstatus_never": {
+        "de": "noch nie gelaufen", "en": "never run", "es": "nunca ejecutado",
+        "fr": "jamais exécuté", "it": "mai eseguito", "zh": "从未运行",
+    },
+    "admin_regstatus_versions": {
+        "de": "Fassungen", "en": "Versions", "es": "Versiones", "fr": "Versions",
+        "it": "Versioni", "zh": "版本数",
+    },
+    "admin_regstatus_changes": {
+        "de": "Erkannte Änderungen", "en": "Detected changes", "es": "Cambios detectados",
+        "fr": "Modifications détectées", "it": "Modifiche rilevate", "zh": "检测到的变更",
+    },
+    "admin_regstatus_no_changes": {
+        "de": "Keine Änderung erkannt.", "en": "No change detected.", "es": "Sin cambios detectados.",
+        "fr": "Aucune modification détectée.", "it": "Nessuna modifica rilevata.", "zh": "未检测到变更。",
+    },
+    "admin_regstatus_errors": {
+        "de": "Fehler im letzten Lauf", "en": "Errors in last run", "es": "Errores en la última ejecución",
+        "fr": "Erreurs lors de la dernière exécution", "it": "Errori nell'ultima esecuzione", "zh": "上次运行中的错误",
+    },
+    "admin_regstatus_run_hint": {
+        "de": "Der Watchdog wird nicht aus der Oberfläche gestartet, sondern per Cron auf dem Server "
+              "(python watchdog.py).",
+        "en": "The watchdog is not started from the interface but by cron on the server (python watchdog.py).",
+        "es": "El watchdog no se inicia desde la interfaz, sino mediante cron en el servidor (python watchdog.py).",
+        "fr": "Le watchdog n'est pas lancé depuis l'interface mais par cron sur le serveur (python watchdog.py).",
+        "it": "Il watchdog non si avvia dall'interfaccia ma tramite cron sul server (python watchdog.py).",
+        "zh": "监测程序不从界面启动，而是由服务器上的 cron 运行（python watchdog.py）。",
+    },
+    "admin_regstatus_no_text": {
+        "de": "kein Text im Cache", "en": "no text cached", "es": "sin texto en caché",
+        "fr": "aucun texte en cache", "it": "nessun testo in cache", "zh": "缓存中无文本",
+    },
+}
+
+
+# ---------- Status des Rechtsakts ----------
+# Schluessel entsprechen regulations.STATUS_* .
+STATUS_LABELS: dict[str, dict[str, str]] = {
+    "in_kraft": {
+        "de": "in Kraft", "en": "in force", "es": "en vigor",
+        "fr": "en vigueur", "it": "in vigore", "zh": "已生效",
+    },
+    "gilt_ab": {
+        "de": "gilt ab", "en": "applies from", "es": "se aplica desde",
+        "fr": "s'applique à partir du", "it": "si applica dal", "zh": "自此适用",
+    },
+    "entwurf": {
+        "de": "Entwurf", "en": "draft", "es": "proyecto",
+        "fr": "projet", "it": "progetto", "zh": "草案",
+    },
+    "rueckzug_angekuendigt": {
+        "de": "Rücknahme angekündigt", "en": "withdrawal announced", "es": "retirada anunciada",
+        "fr": "retrait annoncé", "it": "ritiro annunciato", "zh": "已宣布撤回",
+    },
+}
+
+
+# ---------- Erlaeuterungen zum Anwendungsbeginn ----------
+# Schluessel entsprechen dem Feld "note" in regulations.APPLICATION_BY_REG_KEY.
+APPLIES_NOTES: dict[str, dict[str, str]] = {
+    "csddd": {
+        "de": "Nationale Umsetzung bis 26.07.2028. Kein größenabhängiger Phase-in mehr; "
+              "die Berichtspflicht nach Art. 16 gilt für Geschäftsjahre ab 01.01.2030.",
+        "en": "National transposition by 26.07.2028. No size-based phase-in any more; the reporting "
+              "duty under Art. 16 applies to financial years starting on or after 01.01.2030.",
+        "es": "Transposición nacional hasta el 26.07.2028. Ya no hay introducción escalonada por tamaño; "
+              "la obligación de informar del art. 16 se aplica a ejercicios que comiencen desde el 01.01.2030.",
+        "fr": "Transposition nationale au plus tard le 26.07.2028. Plus d'introduction progressive selon la "
+              "taille ; l'obligation de déclaration de l'art. 16 s'applique aux exercices ouverts à compter "
+              "du 01.01.2030.",
+        "it": "Recepimento nazionale entro il 26.07.2028. Non c'è più un'introduzione graduale per dimensione; "
+              "l'obbligo di rendicontazione dell'art. 16 vale per esercizi che iniziano dal 01.01.2030.",
+        "zh": "各成员国须于 2028 年 7 月 26 日前完成转化。不再按企业规模分阶段实施；第 16 条的报告义务适用于 2030 年 1 月 1 日或之后开始的财政年度。",
+    },
+    "csrd": {
+        "de": "Die neuen Schwellen gelten für Geschäftsjahre, die am oder nach dem 01.01.2027 beginnen. "
+              "Nationale Umsetzung bis 19.03.2027. Für die Geschäftsjahre 2025 und 2026 können die "
+              "Mitgliedstaaten Unternehmen unterhalb der neuen Schwellen befreien.",
+        "en": "The new thresholds apply to financial years starting on or after 01.01.2027. National "
+              "transposition by 19.03.2027. For financial years 2025 and 2026, member states may exempt "
+              "companies below the new thresholds.",
+        "es": "Los nuevos umbrales se aplican a ejercicios que comiencen a partir del 01.01.2027. "
+              "Transposición nacional hasta el 19.03.2027. Para los ejercicios 2025 y 2026 los Estados "
+              "miembros pueden eximir a las empresas por debajo de los nuevos umbrales.",
+        "fr": "Les nouveaux seuils s'appliquent aux exercices ouverts à compter du 01.01.2027. Transposition "
+              "nationale au plus tard le 19.03.2027. Pour les exercices 2025 et 2026, les États membres "
+              "peuvent exempter les entreprises situées sous les nouveaux seuils.",
+        "it": "Le nuove soglie valgono per esercizi che iniziano dal 01.01.2027. Recepimento nazionale entro "
+              "il 19.03.2027. Per gli esercizi 2025 e 2026 gli Stati membri possono esentare le imprese sotto "
+              "le nuove soglie.",
+        "zh": "新门槛适用于 2027 年 1 月 1 日或之后开始的财政年度。各成员国须于 2027 年 3 月 19 日前完成转化。对于 2025 和 2026 财政年度，成员国可豁免低于新门槛的企业。",
+    },
+    "entwurf_de": {
+        "de": "Das deutsche Gesetzgebungsverfahren ist nicht abgeschlossen; § 289b HGB trägt weiterhin "
+              "die Fassung des CSR-RUG.",
+        "en": "The German legislative procedure is not completed; section 289b HGB still carries the "
+              "CSR-RUG wording.",
+        "es": "El procedimiento legislativo alemán no ha concluido; el § 289b HGB mantiene la redacción "
+              "del CSR-RUG.",
+        "fr": "La procédure législative allemande n'est pas achevée ; le § 289b HGB conserve la rédaction "
+              "issue du CSR-RUG.",
+        "it": "La procedura legislativa tedesca non è conclusa; il § 289b HGB conserva ancora il testo "
+              "del CSR-RUG.",
+        "zh": "德国立法程序尚未完成；《商法典》第 289b 条仍为 CSR-RUG 版本。",
+    },
+    "lksg": {
+        "de": "Seit 01.01.2024 liegt der Schwellenwert bei 1.000 Arbeitnehmern im Inland (vorher 3.000).",
+        "en": "Since 01.01.2024 the threshold is 1,000 employees in Germany (previously 3,000).",
+        "es": "Desde el 01.01.2024 el umbral es de 1.000 empleados en Alemania (antes 3.000).",
+        "fr": "Depuis le 01.01.2024, le seuil est de 1 000 salariés en Allemagne (auparavant 3 000).",
+        "it": "Dal 01.01.2024 la soglia è di 1.000 dipendenti in Germania (prima 3.000).",
+        "zh": "自 2024 年 1 月 1 日起，门槛为德国境内 1,000 名员工（此前为 3,000 名）。",
+    },
+    "eudr": {
+        "de": "Für Kleinst- und Kleinunternehmen, die am 31.12.2024 bereits als solche niedergelassen waren, "
+              "gilt die Verordnung erst ab 30.06.2027.",
+        "en": "For micro and small operators already established as such on 31.12.2024, the regulation only "
+              "applies from 30.06.2027.",
+        "es": "Para microempresas y pequeñas empresas ya establecidas como tales el 31.12.2024, el reglamento "
+              "se aplica solo a partir del 30.06.2027.",
+        "fr": "Pour les micro et petites entreprises déjà établies comme telles au 31.12.2024, le règlement ne "
+              "s'applique qu'à compter du 30.06.2027.",
+        "it": "Per le microimprese e le piccole imprese già stabilite come tali al 31.12.2024 il regolamento "
+              "si applica solo dal 30.06.2027.",
+        "zh": "对于在 2024 年 12 月 31 日已作为微型或小型经营者设立的企业，本条例自 2027 年 6 月 30 日起才适用。",
+    },
+    "flr": {
+        "de": "Einzelne Vorschriften (Aufbau von Datenbank, Leitlinien und Behördenstrukturen) gelten "
+              "bereits seit 13.12.2024.",
+        "en": "Individual provisions (database, guidelines and authority structures) have applied since "
+              "13.12.2024.",
+        "es": "Algunas disposiciones (base de datos, directrices y estructuras administrativas) se aplican "
+              "desde el 13.12.2024.",
+        "fr": "Certaines dispositions (base de données, lignes directrices et structures administratives) "
+              "s'appliquent depuis le 13.12.2024.",
+        "it": "Alcune disposizioni (banca dati, linee guida e strutture amministrative) si applicano già "
+              "dal 13.12.2024.",
+        "zh": "部分条款（数据库、指南和主管机关架构）自 2024 年 12 月 13 日起已适用。",
+    },
+    "nfrd": {
+        "de": "Durch die CSRD abgelöst; für aktuelle Prüfungen in der Regel nicht mehr maßgeblich.",
+        "en": "Superseded by the CSRD; as a rule no longer decisive for current assessments.",
+        "es": "Sustituida por la CSRD; por regla general ya no es determinante.",
+        "fr": "Remplacée par la CSRD ; en règle générale, plus déterminante aujourd'hui.",
+        "it": "Sostituita dalla CSRD; di norma non più rilevante per le valutazioni attuali.",
+        "zh": "已被 CSRD 取代；通常对当前评估不再具有决定意义。",
+    },
+    "csr_rug": {
+        "de": "Gilt erstmals für Geschäftsjahre, die nach dem 31.12.2016 beginnen; wird durch die "
+              "CSRD-Umsetzung abgelöst.",
+        "en": "First applies to financial years starting after 31.12.2016; will be superseded by the CSRD "
+              "transposition.",
+        "es": "Se aplica por primera vez a ejercicios iniciados después del 31.12.2016; será sustituida por "
+              "la transposición de la CSRD.",
+        "fr": "S'applique pour la première fois aux exercices ouverts après le 31.12.2016 ; sera remplacée "
+              "par la transposition de la CSRD.",
+        "it": "Si applica per la prima volta agli esercizi che iniziano dopo il 31.12.2016; sarà sostituita "
+              "dal recepimento della CSRD.",
+        "zh": "首次适用于 2016 年 12 月 31 日之后开始的财政年度；将被 CSRD 的转化立法取代。",
+    },
+    "taxonomie": {
+        "de": "Für die Umweltziele Klimaschutz und Anpassung seit 01.01.2022, für die übrigen vier "
+              "Umweltziele seit 01.01.2023.",
+        "en": "For the climate mitigation and adaptation objectives since 01.01.2022, for the other four "
+              "environmental objectives since 01.01.2023.",
+        "es": "Para los objetivos de mitigación y adaptación climática desde el 01.01.2022, para los otros "
+              "cuatro objetivos medioambientales desde el 01.01.2023.",
+        "fr": "Pour les objectifs d'atténuation et d'adaptation climatiques depuis le 01.01.2022, pour les "
+              "quatre autres objectifs environnementaux depuis le 01.01.2023.",
+        "it": "Per gli obiettivi di mitigazione e adattamento climatico dal 01.01.2022, per gli altri quattro "
+              "obiettivi ambientali dal 01.01.2023.",
+        "zh": "气候减缓与适应目标自 2022 年 1 月 1 日起适用，其余四项环境目标自 2023 年 1 月 1 日起适用。",
+    },
+    "whistle": {
+        "de": "Für Beschäftigungsgeber mit 50 bis 249 Beschäftigten galt die Umsetzungsfrist bis 17.12.2023. "
+              "In Deutschland wirkt die Richtlinie über das HinSchG.",
+        "en": "For employers with 50 to 249 employees the transposition deadline ran until 17.12.2023. In "
+              "Germany the directive takes effect through the HinSchG.",
+        "es": "Para empleadores con 50 a 249 empleados el plazo de transposición fue hasta el 17.12.2023. En "
+              "Alemania la directiva actúa a través de la HinSchG.",
+        "fr": "Pour les employeurs de 50 à 249 salariés, le délai de transposition courait jusqu'au "
+              "17.12.2023. En Allemagne, la directive produit ses effets via la HinSchG.",
+        "it": "Per i datori di lavoro con 50-249 dipendenti il termine di recepimento era il 17.12.2023. In "
+              "Germania la direttiva opera tramite la HinSchG.",
+        "zh": "对于拥有 50 至 249 名员工的雇主，转化期限为 2023 年 12 月 17 日。在德国，该指令通过《举报人保护法》生效。",
+    },
+    "oekodesign": {
+        "de": "Rahmenverordnung: konkrete Produktanforderungen entstehen erst durch delegierte Rechtsakte "
+              "je Produktgruppe.",
+        "en": "Framework regulation: concrete product requirements only arise from delegated acts per "
+              "product group.",
+        "es": "Reglamento marco: los requisitos concretos de producto surgen solo de actos delegados por "
+              "grupo de productos.",
+        "fr": "Règlement-cadre : les exigences produits concrètes ne naissent que des actes délégués par "
+              "groupe de produits.",
+        "it": "Regolamento quadro: i requisiti concreti di prodotto derivano solo da atti delegati per "
+              "gruppo di prodotti.",
+        "zh": "框架性条例：具体产品要求须由针对各产品组的授权法案确定。",
+    },
+    "konfliktmin": {
+        "de": "Die Kernpflichten (Sorgfaltspflichten, Prüfung, Offenlegung) gelten seit 01.01.2021.",
+        "en": "The core duties (due diligence, audit, disclosure) have applied since 01.01.2021.",
+        "es": "Las obligaciones principales (diligencia debida, auditoría, divulgación) se aplican desde "
+              "el 01.01.2021.",
+        "fr": "Les obligations principales (diligence raisonnable, audit, publication) s'appliquent depuis "
+              "le 01.01.2021.",
+        "it": "Gli obblighi principali (dovere di diligenza, verifica, informativa) si applicano dal 01.01.2021.",
+        "zh": "核心义务（尽职调查、审计、披露）自 2021 年 1 月 1 日起适用。",
+    },
+    "umweltstraf": {
+        "de": "Datum der Umsetzungsfrist für die Mitgliedstaaten. Unternehmen sind mittelbar über das "
+              "nationale Strafrecht betroffen.",
+        "en": "Date of the transposition deadline for member states. Companies are affected indirectly "
+              "through national criminal law.",
+        "es": "Fecha límite de transposición para los Estados miembros. Las empresas se ven afectadas "
+              "indirectamente a través del derecho penal nacional.",
+        "fr": "Date limite de transposition pour les États membres. Les entreprises sont concernées "
+              "indirectement via le droit pénal national.",
+        "it": "Termine di recepimento per gli Stati membri. Le imprese sono interessate indirettamente "
+              "tramite il diritto penale nazionale.",
+        "zh": "为成员国规定的转化期限。企业通过国内刑法间接受到影响。",
+    },
+    "empco": {
+        "de": "Ab diesem Tag wenden die Mitgliedstaaten die Vorschriften an; in Deutschland über das "
+              "Gesetz gegen den unlauteren Wettbewerb (UWG).",
+        "en": "From this date member states apply the rules; in Germany through the Act against Unfair "
+              "Competition (UWG).",
+        "es": "A partir de esta fecha los Estados miembros aplican las normas; en Alemania mediante la Ley "
+              "contra la competencia desleal (UWG).",
+        "fr": "À partir de cette date, les États membres appliquent les règles ; en Allemagne via la loi "
+              "contre la concurrence déloyale (UWG).",
+        "it": "Da questa data gli Stati membri applicano le norme; in Germania tramite la legge contro la "
+              "concorrenza sleale (UWG).",
+        "zh": "自该日起，各成员国开始适用相关规则；在德国通过《反不正当竞争法》(UWG) 实施。",
+    },
+    "greenclaims": {
+        "de": "Die EU-Kommission hat am 20.06.2025 angekündigt, den Vorschlag zurückzuziehen; förmlich "
+              "zurückgenommen ist er nicht. Es bestehen derzeit keine Pflichten aus diesem Entwurf.",
+        "en": "On 20.06.2025 the EU Commission announced its intention to withdraw the proposal; it has not "
+              "been formally withdrawn. No obligations currently arise from this draft.",
+        "es": "El 20.06.2025 la Comisión anunció su intención de retirar la propuesta; formalmente no ha sido "
+              "retirada. Actualmente no derivan obligaciones de este proyecto.",
+        "fr": "Le 20.06.2025, la Commission a annoncé son intention de retirer la proposition ; elle n'a pas "
+              "été formellement retirée. Aucune obligation ne découle actuellement de ce projet.",
+        "it": "Il 20.06.2025 la Commissione ha annunciato l'intenzione di ritirare la proposta; formalmente "
+              "non è stata ritirata. Da questo progetto non derivano attualmente obblighi.",
+        "zh": "欧盟委员会于 2025 年 6 月 20 日宣布拟撤回该提案，但尚未正式撤回。目前该草案不产生任何义务。",
+    },
 }
 
 
@@ -1209,6 +1490,18 @@ def t(key: str, lang: str = "de") -> str:
 def t_opt(value: str, mapping: dict[str, dict[str, str]], lang: str = "de") -> str:
     entry = mapping.get(value, {})
     return entry.get(lang) or entry.get("de") or value
+
+
+def t_status(status: str, lang: str = "de") -> str:
+    """Label fuer den Status eines Rechtsakts (in_kraft, gilt_ab, …)."""
+    return t_opt(status, STATUS_LABELS, lang)
+
+
+def t_applies_note(note_key: str, lang: str = "de") -> str:
+    """Erlaeuterung zum Anwendungsbeginn (leer, wenn kein Hinweis hinterlegt)."""
+    if not note_key:
+        return ""
+    return t_opt(note_key, APPLIES_NOTES, lang) if note_key in APPLIES_NOTES else ""
 
 
 def normalize_lang(lang: str | None) -> str:

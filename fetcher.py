@@ -5,6 +5,7 @@ wenn sich wirklich etwas geändert hat. So wird "Aktualitätscheck" billig.
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import os
 import re
@@ -49,6 +50,30 @@ def init_fetcher() -> None:
         cols = {row[1] for row in c.execute("PRAGMA table_info(law_texts)").fetchall()}
         if "language" not in cols:
             c.execute("ALTER TABLE law_texts ADD COLUMN language TEXT NOT NULL DEFAULT 'de'")
+        # Historie: je inhaltlich abweichender Fassung eine Zeile. `law_texts`
+        # haelt nur den letzten Stand — ohne Historie waere weder erkennbar
+        # NOCH belegbar, dass sich ein Gesetzestext geaendert hat.
+        c.execute(
+            """
+            CREATE TABLE IF NOT EXISTS law_versions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                reg_key TEXT NOT NULL,
+                language TEXT NOT NULL,
+                text_hash TEXT NOT NULL,
+                text TEXT NOT NULL,
+                url TEXT,
+                fetched_at TEXT NOT NULL
+            )
+            """
+        )
+        c.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_law_versions "
+            "ON law_versions (reg_key, language, text_hash)"
+        )
+        c.execute(
+            "CREATE INDEX IF NOT EXISTS ix_law_versions_recent "
+            "ON law_versions (reg_key, language, id DESC)"
+        )
 
 
 def _extract_html(html: str) -> str:
@@ -133,8 +158,64 @@ def _celex_id(url: str) -> str | None:
     return None
 
 
-def _cellar_text(url: str, language: str, timeout: float) -> str:
-    """Volltext ueber publications.europa.eu (CELEX-Resource), sonst ''.
+# Cellar loest nur zwei Formen auf: den Basisrechtsakt (`32024L1760`) und eine
+# DATIERTE konsolidierte Fassung (`02024L1760-20260318`). Eine datumslose
+# konsolidierte ID (`02024L1760`) liefert dort 404 — genau die Form, die in
+# `regulations.py` steht, damit die Quelle nicht auf einem Konsolidierungsstand
+# einfriert. Die juengste datierte Fassung wird deshalb zur Laufzeit ueber den
+# SPARQL-Endpunkt des Amts fuer Veroeffentlichungen ermittelt.
+_SPARQL_URL = "https://publications.europa.eu/webapi/rdf/sparql"
+_DATED_CELEX = re.compile(r"^0\d{4}[A-Z]\d{4}-\d{8}$")
+_UNDATED_CONSOLIDATED = re.compile(r"^0(\d{4}[A-Z]\d{4})$")
+
+# Prozess-Cache: pro Lauf wird jede CELEX-ID hoechstens einmal aufgeloest.
+_consolidated_cache: dict[str, str] = {}
+
+
+def _base_act_celex(celex: str) -> str:
+    """`02024L1760` → `32024L1760` (Basisrechtsakt, immer in Cellar vorhanden)."""
+    m = _UNDATED_CONSOLIDATED.match(celex)
+    return f"3{m.group(1)}" if m else celex
+
+
+def _latest_consolidated(celex: str, timeout: float) -> str:
+    """Juengste konsolidierte Fassung zu einer datumslosen `0…`-CELEX-ID.
+
+    Rueckgabe: `02024L1760-20260318`, oder der Basisrechtsakt (`32024L1760`),
+    wenn es keine konsolidierte Fassung gibt oder der Endpunkt nicht antwortet.
+    Damit bleibt der Abruf auch ohne SPARQL funktionsfaehig — nur eben auf der
+    Ursprungsfassung.
+    """
+    if celex in _consolidated_cache:
+        return _consolidated_cache[celex]
+    query = (
+        "PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>\n"
+        "SELECT ?celex WHERE {\n"
+        "  ?w cdm:resource_legal_id_celex ?celex .\n"
+        f'  FILTER(STRSTARTS(STR(?celex), "{celex}-"))\n'
+        "}\nORDER BY DESC(?celex) LIMIT 1"
+    )
+    resolved = _base_act_celex(celex)
+    try:
+        with httpx.Client(timeout=timeout, follow_redirects=True,
+                          headers={"User-Agent": USER_AGENT,
+                                   "Accept": "application/sparql-results+json"}) as client:
+            resp = client.get(_SPARQL_URL, params={
+                "query": query, "format": "application/sparql-results+json"})
+        if resp.status_code < 400:
+            bindings = resp.json().get("results", {}).get("bindings", [])
+            if bindings:
+                value = (bindings[0].get("celex") or {}).get("value") or ""
+                if _DATED_CELEX.match(value):
+                    resolved = value
+    except Exception as e:  # noqa: BLE001
+        print(f"[cellar] Konsolidierungssuche {celex} fehlgeschlagen: {e}", flush=True)
+    _consolidated_cache[celex] = resolved
+    return resolved
+
+
+def _cellar_fetch(celex: str, language: str, timeout: float) -> str:
+    """Volltext einer konkreten CELEX-Resource, sonst ''.
 
     Die Kette laeuft durchgehend ueber https: der 303-Redirect der
     CELEX-Resource zeigt auf eine `http://…/cellar/…`-URL, deshalb wird jeder
@@ -142,9 +223,6 @@ def _cellar_text(url: str, language: str, timeout: float) -> str:
     Gesetzestext — die Eingabe der LLM-Analyse — unverschluesselt an und waere
     unterwegs manipulierbar.
     """
-    celex = _celex_id(url)
-    if not celex:
-        return ""
     three, _ = _EURLEX_LANG_MAP.get(language, ("deu", "DE"))
     headers = {
         "User-Agent": USER_AGENT,
@@ -182,6 +260,26 @@ def _cellar_text(url: str, language: str, timeout: float) -> str:
         return ""
 
 
+def _cellar_text(url: str, language: str, timeout: float) -> str:
+    """Volltext ueber publications.europa.eu zur CELEX-ID in `url`, sonst ''.
+
+    Bei datumsloser konsolidierter ID wird zuerst die juengste konsolidierte
+    Fassung versucht, danach der Basisrechtsakt — so bleibt der Abruf auch dann
+    erfolgreich, wenn zu einem Rechtsakt (noch) keine Konsolidierung vorliegt.
+    """
+    celex = _celex_id(url)
+    if not celex:
+        return ""
+    candidates = [celex]
+    if _UNDATED_CONSOLIDATED.match(celex):
+        candidates = [_latest_consolidated(celex, timeout), _base_act_celex(celex)]
+    for cand in dict.fromkeys(candidates):
+        text = _cellar_fetch(cand, language, timeout)
+        if text:
+            return text
+    return ""
+
+
 def _localized_url(url: str, lang: str) -> str:
     """EUR-Lex unterstützt /oj/<3-letter> bzw. /legal-content/<2-letter>/.
     Andere URLs (z.B. gesetze-im-internet.de) unverändert.
@@ -206,8 +304,107 @@ def _fetch_url(reg: dict) -> str:
     return reg.get("text_url") or reg["url"]
 
 
+# ---------------------------------------------------------------------------
+# Textversionierung
+# ---------------------------------------------------------------------------
+def text_hash(text: str) -> str:
+    """SHA-256 des Gesetzestexts (Vergleichsschluessel fuer Versionen)."""
+    return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
+
+
+def current_text_hash(reg_key: str, language: str = "de") -> str | None:
+    """SHA-256 des aktuell gecachten Gesetzestexts, oder None ohne Cache.
+
+    Stabiler Schluessel fuer alles, was am Gesetzesstand haengt (z. B.
+    Cache-Invalidierung nachgelagerter Auswertungen): der Hash aendert sich
+    genau dann, wenn sich der Text inhaltlich geaendert hat. Ein leerer Text
+    (fehlgeschlagener Abruf) liefert ebenfalls None, nicht den Hash des
+    leeren Strings.
+    """
+    init_fetcher()
+    with _conn() as c:
+        row = c.execute(
+            "SELECT text FROM law_texts WHERE reg_key = ? AND language = ?",
+            (reg_key, language),
+        ).fetchone()
+    if not row or not (row["text"] or "").strip():
+        return None
+    return text_hash(row["text"])
+
+
+def _record_version(c: sqlite3.Connection, reg_key: str, language: str,
+                    url: str, text: str, fetched_at: str) -> tuple[bool, str | None]:
+    """Legt bei inhaltlicher Aenderung eine neue Version an.
+
+    Rueckgabe: (ist_neue_version, Hash der Vorgaengerversion).
+    Leere Texte werden nicht versioniert — ein gescheiterter Abruf ist keine
+    Gesetzesaenderung.
+    """
+    if not (text or "").strip():
+        return False, None
+    new_hash = text_hash(text)
+    prev = c.execute(
+        "SELECT text_hash FROM law_versions WHERE reg_key = ? AND language = ? "
+        "ORDER BY id DESC LIMIT 1",
+        (reg_key, language),
+    ).fetchone()
+    prev_hash = prev["text_hash"] if prev else None
+    if prev_hash == new_hash:
+        return False, prev_hash
+    c.execute(
+        "INSERT OR IGNORE INTO law_versions (reg_key, language, text_hash, text, url, fetched_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (reg_key, language, new_hash, text, url, fetched_at),
+    )
+    return True, prev_hash
+
+
+def list_versions(reg_key: str, language: str = "de", limit: int = 10) -> list[dict]:
+    """Versionshistorie (neueste zuerst), ohne den Volltext."""
+    init_fetcher()
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT id, text_hash, url, fetched_at, LENGTH(text) AS chars "
+            "FROM law_versions WHERE reg_key = ? AND language = ? "
+            "ORDER BY id DESC LIMIT ?",
+            (reg_key, language, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def version_text(reg_key: str, language: str, text_hash_value: str) -> str:
+    """Volltext einer bestimmten Version (leer, wenn unbekannt)."""
+    init_fetcher()
+    with _conn() as c:
+        row = c.execute(
+            "SELECT text FROM law_versions WHERE reg_key = ? AND language = ? AND text_hash = ?",
+            (reg_key, language, text_hash_value),
+        ).fetchone()
+    return row["text"] if row else ""
+
+
+def _cached_result(row, status: int, error: str | None) -> dict:
+    """Rueckgabe aus dem Cache (304 oder Fehler mit vorhandenem Text)."""
+    text = row["text"] if row else ""
+    return {
+        "text": text,
+        "fetched_at": row["fetched_at"] if row else None,
+        "is_new": False,
+        "error": error,
+        "status": status,
+        "text_hash": text_hash(text) if (text or "").strip() else None,
+        "version_new": False,
+        "previous_hash": None,
+    }
+
+
 def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> dict:
-    """Lädt den Gesetzestext und liefert {text, fetched_at, is_new, error, status}.
+    """Lädt den Gesetzestext.
+
+    Liefert {text, fetched_at, is_new, error, status, text_hash, version_new,
+    previous_hash}. `version_new` ist True, wenn der Text inhaltlich von der
+    zuletzt gespeicherten Fassung abweicht und deshalb eine neue Zeile in
+    `law_versions` entstanden ist.
 
     Nutzt ETag/Last-Modified für conditional-GET. Bei 304 wird der Cache-Text
     zurückgegeben. Bei Fehlern mit vorhandenem Cache: Cache-Text zurück + error.
@@ -232,12 +429,14 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
         with httpx.Client(timeout=30, follow_redirects=True, headers=headers) as client:
             resp = client.get(url)
     except Exception as e:  # noqa: BLE001
-        if row:
-            return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False, "error": str(e), "status": -1}
-        return {"text": "", "fetched_at": None, "is_new": False, "error": str(e), "status": -1}
+        return _cached_result(row, -1, str(e))
 
     if resp.status_code == 304 and row:
-        return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False, "error": None, "status": 304}
+        # Unveraendert laut Quelle — aber die Historie kann noch leer sein
+        # (erster Lauf nach Einfuehrung der Versionierung).
+        with _conn() as c:
+            _record_version(c, reg["key"], language, url, row["text"], row["fetched_at"])
+        return _cached_result(row, 304, None)
 
     if resp.status_code >= 400:
         text = ""
@@ -260,11 +459,7 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
             used_fallback = True
 
     if resp.status_code >= 400 and not text:
-        if row:
-            return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False,
-                    "error": f"HTTP {resp.status_code}", "status": resp.status_code}
-        return {"text": "", "fetched_at": None, "is_new": False,
-                "error": f"HTTP {resp.status_code}", "status": resp.status_code}
+        return _cached_result(row, resp.status_code, f"HTTP {resp.status_code}")
 
     text = text[:_store_limit()]
 
@@ -293,8 +488,12 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
             """,
             (reg["key"], language, url, text, etag, last_mod, now, source_status),
         )
+        version_new, previous_hash = _record_version(c, reg["key"], language, url, text, now)
 
-    return {"text": text, "fetched_at": now, "is_new": True, "error": None, "status": resp.status_code}
+    return {"text": text, "fetched_at": now, "is_new": True, "error": None,
+            "status": resp.status_code,
+            "text_hash": text_hash(text) if text.strip() else None,
+            "version_new": version_new, "previous_hash": previous_hash}
 
 
 def get_cached_text(reg_key: str, language: str = "de") -> dict | None:

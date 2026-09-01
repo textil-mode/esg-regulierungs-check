@@ -10,14 +10,24 @@ REGULATIONS = [
         "key": "CSDDD",
         "name": "CSDDD",
         "full_name": "Richtlinie (EU) 2024/1760 - Sorgfaltspflichten von Unternehmen im Hinblick auf Nachhaltigkeit",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1760-20260318",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1760-20260318",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1760",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1760",
         "scope": "EU",
+        # Stand: konsolidierte Fassung 02024L1760 vom 18.03.2026, Art. 2 und
+        # Art. 37, geaendert durch Richtlinie (EU) 2026/470 (ABl. L, 2026/470,
+        # 26.02.2026). Die frueheren Werte (>1000 MA / >450 Mio. EUR mit
+        # dreistufigem Phase-in) sind damit ueberholt.
         "criteria": (
-            "Gilt für EU-Unternehmen mit >1000 Beschäftigten UND Nettoumsatz >450 Mio EUR weltweit. "
-            "Für Nicht-EU-Unternehmen: Nettoumsatz >450 Mio EUR in der EU. "
-            "Stufenweise Einführung: ab 2027 (>5000 MA & >1500 Mio EUR), ab 2028 (>3000 MA & >900 Mio EUR), "
-            "ab 2029 (>1000 MA & >450 Mio EUR). Branche: alle."
+            "Gilt für Unternehmen, die nach dem Recht eines Mitgliedstaats gegründet wurden und im "
+            "Durchschnitt mehr als 5.000 Beschäftigte hatten UND einen weltweiten Nettoumsatz von "
+            "mehr als 1.500 Mio EUR erzielten (beide Merkmale kumulativ) — oder die oberste "
+            "Muttergesellschaft einer Gruppe sind, die diese Schwellen konsolidiert erreicht. "
+            "Für Unternehmen aus Drittländern: Nettoumsatz >1.500 Mio EUR in der Union. "
+            "Zusätzlich erfasst: Franchise-/Lizenzmodelle mit Lizenzgebühren >75 Mio EUR und "
+            "weltweitem Nettoumsatz >275 Mio EUR. "
+            "Kein größenabhängiger Phase-in mehr: die nationalen Vorschriften gelten einheitlich "
+            "ab 26.07.2029, die Berichtspflicht nach Art. 16 für Geschäftsjahre ab 01.01.2030. "
+            "Branche: alle."
         ),
         "key_article": "Art. 2 (Anwendungsbereich)",
     },
@@ -26,8 +36,10 @@ REGULATIONS = [
         "key": "LkSG",
         "name": "LkSG",
         "full_name": "Lieferkettensorgfaltspflichtengesetz",
-        "url": "https://www.bafa.de/DE/Lieferketten/Ueberblick/ueberblick_node.html",
-        "text_url": "https://www.bafa.de/DE/Lieferketten/Ueberblick/ueberblick_node.html",
+        # Bis 09/2026 zeigten beide URLs auf die BAFA-Uebersichtsseite — ein
+        # Pressetext ohne § 1. Jetzt der amtliche Volltext.
+        "url": "https://www.gesetze-im-internet.de/lksg/BJNR295910021.html",
+        "text_url": "https://www.gesetze-im-internet.de/lksg/BJNR295910021.html",
         "scope": "DE",
         "criteria": (
             "Gilt für Unternehmen mit Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigem "
@@ -72,14 +84,23 @@ REGULATIONS = [
         "key": "CSRD",
         "name": "CSRD",
         "full_name": "Richtlinie (EU) 2022/2464 - Nachhaltigkeitsberichterstattung",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464-20260318",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464-20260318",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464",
         "scope": "EU",
+        # Stand: Art. 19a Abs. 1, Art. 29a Abs. 1 und Art. 40a Abs. 1 der
+        # Bilanzrichtlinie 2013/34/EU in der konsolidierten Fassung 02013L0034
+        # (Aenderung M9 = Richtlinie (EU) 2026/470). Die Bilanzsumme ist seither
+        # KEIN Kriterium mehr; beide verbliebenen Merkmale gelten kumulativ.
         "criteria": (
-            "Nach Omnibus I (2026/470) geänderter Anwendungsbereich: Große Unternehmen mit >1000 Beschäftigten "
-            "UND Bilanzsumme >25 Mio EUR ODER Nettoumsatzerlöse >50 Mio EUR. "
-            "Börsennotierte KMU ausgenommen (nur freiwillig). Nicht-EU-Unternehmen mit >450 Mio EUR EU-Umsatz "
-            "ab 2028. Branche: alle."
+            "Nach der Omnibus-Änderung (Richtlinie (EU) 2026/470) berichtspflichtig sind Unternehmen, "
+            "bei denen am Bilanzstichtag sowohl die Grenze von 450 Mio EUR Nettoumsatzerlösen ALS AUCH "
+            "die Grenze von durchschnittlich 1.000 Beschäftigten überschritten wird (beide Merkmale "
+            "kumulativ). Für Mutterunternehmen gelten dieselben Schwellen auf konsolidierter Basis. "
+            "Die Bilanzsumme ist kein Kriterium mehr; eine Börsennotierung allein begründet keine Pflicht. "
+            "Drittland-Konzerne: EU-Nettoumsatz >450 Mio EUR in zwei aufeinanderfolgenden Geschäftsjahren "
+            "UND eine EU-Tochter bzw. Zweigniederlassung mit Nettoumsatz >200 Mio EUR. "
+            "Die neuen Schwellen gelten für Geschäftsjahre, die am oder nach dem 01.01.2027 beginnen. "
+            "Branche: alle."
         ),
         "key_article": "Art. 19a, 29a (aktualisiert)",
     },
@@ -101,8 +122,10 @@ REGULATIONS = [
         "key": "ESRS",
         "name": "ESRS",
         "full_name": "Delegierte Verordnung (EU) 2023/2772 - Nachhaltigkeitsberichterstattung (Standards)",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464-20260318",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464-20260318",
+        # Zeigte bis 09/2026 faelschlich auf die CSRD (02022L2464); die Karte
+        # zitierte deshalb CSRD-Artikel statt der ESRS.
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R2772",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R2772",
         "scope": "EU",
         "criteria": (
             "Technische Standards für die Nachhaltigkeitsberichterstattung. Gelten für alle Unternehmen, "
@@ -130,7 +153,16 @@ REGULATIONS = [
         "key": "CSR-RUG",
         "name": "CSR-RUG",
         "full_name": "Gesetz zur Stärkung der nichtfinanziellen Berichterstattung",
-        "url": "https://www.bgbl.de/",
+        # Der BGBl.-Jahrgang 2017 liegt nur im JS-Viewer von bgbl.de und ist
+        # maschinell nicht abrufbar (die alte URL lieferte die Portal-Startseite,
+        # 556 Zeichen). Stattdessen der geltende Normtext, den das CSR-RUG
+        # eingefuegt hat: § 289b HGB (Anwendungsbereich der nichtfinanziellen
+        # Erklaerung).
+        # url = lesbare Einzelvorschrift, text_url = HGB-Gesamtausgabe, damit
+        # alle vier vom CSR-RUG eingefuegten §§ 289b-289e im Kontext landen
+        # (sie stehen bei Zeichen ~259 000, also innerhalb LAW_TEXT_MAX_CHARS).
+        "url": "https://www.gesetze-im-internet.de/hgb/__289b.html",
+        "text_url": "https://www.gesetze-im-internet.de/hgb/BJNR002190897.html",
         "scope": "DE",
         "criteria": (
             "Deutsche Umsetzung der NFRD (§§ 289b ff. HGB alte Fassung). "
@@ -159,8 +191,8 @@ REGULATIONS = [
         "key": "SFDR",
         "name": "SFDR",
         "full_name": "Verordnung (EU) 2019/2088 - nachhaltigkeitsbezogene Offenlegungspflichten",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019R2088-20240109",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019R2088-20240109",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019R2088",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019R2088",
         "scope": "EU",
         "criteria": (
             "Gilt ausschließlich für Finanzmarktteilnehmer (Vermögensverwalter, Versicherer, AIFM, UCITS) "
@@ -188,8 +220,8 @@ REGULATIONS = [
         "key": "WhistleblowerRL",
         "name": "Whistleblower-Richtlinie",
         "full_name": "Richtlinie (EU) 2019/1937 - Schutz von Hinweisgebern",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937-20241230",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937-20241230",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937",
         "scope": "EU",
         "criteria": (
             "Richtet sich an Mitgliedstaaten. In DE umgesetzt durch HinSchG. "
@@ -202,7 +234,10 @@ REGULATIONS = [
         "key": "HinSchG",
         "name": "HinSchG",
         "full_name": "Hinweisgeberschutzgesetz",
-        "url": "https://www.gesetze-im-internet.de/hinschg/",
+        # Die Verzeichnis-Seite (…/hinschg/) liefert nur das Inhaltsverzeichnis
+        # (2 365 Zeichen). Der Volltext liegt auf der BJNR-Seite.
+        "url": "https://www.gesetze-im-internet.de/hinschg/BJNR08C0B0023.html",
+        "text_url": "https://www.gesetze-im-internet.de/hinschg/BJNR08C0B0023.html",
         "scope": "DE",
         "criteria": (
             "Gilt für Beschäftigungsgeber in Deutschland ab 50 Beschäftigten. "
@@ -230,8 +265,8 @@ REGULATIONS = [
         "key": "Oekodesign",
         "name": "Ökodesign-VO",
         "full_name": "Verordnung (EU) 2024/1781 - nachhaltige Produkte (ESPR)",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1781-20240628",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1781-20240628",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1781",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1781",
         "scope": "EU",
         "criteria": (
             "Gilt für Hersteller, Importeure, Händler von physischen Produkten (mit Ausnahmen wie Lebensmittel) "
@@ -260,8 +295,8 @@ REGULATIONS = [
         "key": "KonfliktminVO",
         "name": "Konfliktmineralien-VO",
         "full_name": "Verordnung (EU) 2017/821 - Konfliktmineralien",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0821-20201119",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0821-20201119",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0821",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0821",
         "scope": "EU",
         "criteria": (
             "Gilt für Unionseinführer von Zinn, Tantal, Wolfram, deren Erzen und Gold. "
@@ -275,7 +310,9 @@ REGULATIONS = [
         "key": "MinRohSorgG",
         "name": "MinRohSorgG",
         "full_name": "Mineralische-Rohstoffe-Sorgfaltspflichtengesetz",
-        "url": "https://www.gesetze-im-internet.de/minrohsorgg/",
+        # Wie beim HinSchG: die Verzeichnis-Seite liefert nur 767 Zeichen.
+        "url": "https://www.gesetze-im-internet.de/minrohsorgg/BJNR086410020.html",
+        "text_url": "https://www.gesetze-im-internet.de/minrohsorgg/BJNR086410020.html",
         "scope": "DE",
         "criteria": (
             "Deutsche Durchführung der Konfliktmineralien-VO. Gilt für Unionseinführer mit Sitz in DE "
@@ -321,8 +358,12 @@ REGULATIONS = [
         "text_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:52023PC0166",
         "scope": "EU",
         "criteria": (
-            "Entwurf (noch nicht in Kraft). Gilt nach Verabschiedung für B2C-Unternehmen mit ausdrücklichen "
-            "Umweltaussagen. Kleinstunternehmen (<10 MA & Umsatz <2 Mio EUR) ausgenommen."
+            "Entwurf, nicht in Kraft. Die EU-Kommission hat am 20.06.2025 angekündigt, den Vorschlag "
+            "zurückzuziehen; förmlich zurückgenommen ist er bislang nicht, das Verfahren ruht. "
+            "Für Unternehmen ergeben sich daraus derzeit KEINE unmittelbaren Pflichten — die Regeln zu "
+            "Umweltaussagen greifen aktuell über die EmpCo-Richtlinie (EU) 2024/825 bzw. das UWG. "
+            "Bei Verabschiedung würde sie B2C-Unternehmen mit ausdrücklichen Umweltaussagen treffen; "
+            "Kleinstunternehmen (<10 MA & Umsatz <2 Mio EUR) wären ausgenommen."
         ),
         "key_article": "Art. 1, 3",
     },
@@ -478,6 +519,108 @@ def published_for(reg_key: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Anwendungsbeginn und Status je Regulierung.
+#
+# Das Veroeffentlichungsdatum sagt nichts darueber, ab wann ein Unternehmen die
+# Pflichten tatsaechlich erfuellen muss — dafuer steht hier `applies_from`.
+# Jeder Wert wurde am 01.09.2026 am konsolidierten Volltext der Primaerquelle
+# geprueft; die Fundstelle steht als Kommentar dahinter.
+#
+# `status` wird normalerweise NICHT gepflegt, sondern aus `applies_from` gegen
+# das heutige Datum abgeleitet (`in_kraft` / `gilt_ab`) — sonst veraltet die
+# Angabe stillschweigend. Nur `entwurf` und `rueckzug_angekuendigt` lassen sich
+# nicht aus einem Datum ableiten und stehen deshalb explizit da.
+#
+# `note` verweist auf einen Schluessel in i18n.APPLIES_NOTES (6 Sprachen).
+# ---------------------------------------------------------------------------
+STATUS_IN_KRAFT = "in_kraft"
+STATUS_GILT_AB = "gilt_ab"
+STATUS_ENTWURF = "entwurf"
+STATUS_RUECKZUG = "rueckzug_angekuendigt"
+
+APPLICATION_BY_REG_KEY: dict[str, dict] = {
+    # Art. 37 Abs. 1 (kons. Fassung 02024L1760, Stand 18.03.2026, geaendert
+    # durch RL (EU) 2026/470): Umsetzung bis 26.07.2028, Anwendung ab 26.07.2029.
+    "CSDDD":           {"applies_from": "26.07.2029", "note": "csddd"},
+    # Art. 5 Abs. 1 LkSG-Artikelgesetz; § 1 Abs. 1 S. 3: ab 01.01.2024 gilt 1 000.
+    "LkSG":            {"applies_from": "01.01.2023", "note": "lksg"},
+    # Art. 38 Abs. 2/3 (kons. 02023R1115, Stand 26.12.2025).
+    "EUDR":            {"applies_from": "30.12.2026", "note": "eudr"},
+    # Art. 39 VO (EU) 2024/3015.
+    "FLR":             {"applies_from": "14.12.2027", "note": "flr"},
+    # Neue Schwellen fuer Geschaeftsjahre ab 01.01.2027 (Erwaegungsgrund zu
+    # Art. 5 Abs. 2 RL (EU) 2022/2464 i.d.F. der RL (EU) 2026/470);
+    # nationale Umsetzung bis 19.03.2027 (Art. 5 Abs. 1 RL (EU) 2026/470).
+    "CSRD":            {"applies_from": "01.01.2027", "note": "csrd"},
+    # Gesetzgebungsverfahren nicht abgeschlossen (Stand 09/2026).
+    "CSRD_DE":         {"applies_from": "", "status": STATUS_ENTWURF, "note": "entwurf_de"},
+    # Art. 2 Del. VO (EU) 2023/2772: gilt fuer Geschaeftsjahre ab 01.01.2024.
+    "ESRS":            {"applies_from": "01.01.2024"},
+    # Art. 4 Abs. 1 UAbs. 2 RL 2014/95/EU: ab dem am 01.01.2017 beginnenden GJ.
+    "NFRD":            {"applies_from": "01.01.2017", "note": "nfrd"},
+    # §§ 289b ff. HGB: erstmals fuer nach dem 31.12.2016 beginnende Geschaeftsjahre.
+    "CSR-RUG":         {"applies_from": "01.01.2017", "note": "csr_rug"},
+    # Art. 27 Abs. 2 VO (EU) 2020/852.
+    "TaxonomieVO":     {"applies_from": "01.01.2022", "note": "taxonomie"},
+    # Art. 20 Abs. 2 VO (EU) 2019/2088.
+    "SFDR":            {"applies_from": "10.03.2021"},
+    # Art. 53 VO (EU) 2024/3005.
+    "ESGRatingVO":     {"applies_from": "02.07.2026"},
+    # Art. 26 Abs. 1 RL (EU) 2019/1937 (Abs. 2: 50-249 Beschaeftigte ab 17.12.2023).
+    "WhistleblowerRL": {"applies_from": "17.12.2021", "note": "whistle"},
+    # Art. 10 Abs. 2 HinSchG-Artikelgesetz.
+    "HinSchG":         {"applies_from": "02.07.2023"},
+    # Art. 22 Abs. 1 UAbs. 3 RL (EU) 2024/1799.
+    "RightToRepair":   {"applies_from": "31.07.2026"},
+    # Art. 80 VO (EU) 2024/1781 (20. Tag nach ABl. vom 28.06.2024).
+    "Oekodesign":      {"applies_from": "18.07.2024", "note": "oekodesign"},
+    # Art. 71 VO (EU) 2025/40.
+    "PPWR":            {"applies_from": "12.08.2026"},
+    # Art. 20 Abs. 2/3 VO (EU) 2017/821.
+    "KonfliktminVO":   {"applies_from": "09.07.2017", "note": "konfliktmin"},
+    # Art. 3 MinRohSorgG-Artikelgesetz (Fussnote gesetze-im-internet.de).
+    "MinRohSorgG":     {"applies_from": "07.05.2020"},
+    # Art. 28 Abs. 1 RL (EU) 2024/1203 (Umsetzungsfrist der Mitgliedstaaten).
+    "UmweltstrafRL":   {"applies_from": "21.05.2026", "note": "umweltstraf"},
+    # Art. 4 Abs. 1 UAbs. 2 RL (EU) 2024/825.
+    "EmpCo":           {"applies_from": "27.09.2026", "note": "empco"},
+    # Kommission hat die Ruecknahme am 20.06.2025 angekuendigt, aber nicht vollzogen.
+    "GreenClaims":     {"applies_from": "", "status": STATUS_RUECKZUG, "note": "greenclaims"},
+}
+
+
+def _parse_ddmmyyyy(value: str):
+    from datetime import date
+    try:
+        d, m, y = value.split(".")
+        return date(int(y), int(m), int(d))
+    except (ValueError, AttributeError):
+        return None
+
+
+def application_for(reg_key: str, today=None) -> dict:
+    """Liefert {applies_from, status, note} fuer eine Regulierung.
+
+    `status` kommt aus dem Datum, wenn es nicht explizit hinterlegt ist:
+    liegt `applies_from` in der Zukunft, ist der Status `gilt_ab`, sonst
+    `in_kraft`. So bleibt die Angabe ohne Pflegeaufwand richtig.
+    """
+    from datetime import date
+    entry = APPLICATION_BY_REG_KEY.get(reg_key) or {}
+    applies_from = entry.get("applies_from") or ""
+    status = entry.get("status")
+    if not status:
+        parsed = _parse_ddmmyyyy(applies_from)
+        ref = today or date.today()
+        status = STATUS_GILT_AB if (parsed and parsed > ref) else STATUS_IN_KRAFT
+    return {
+        "applies_from": applies_from,
+        "status": status,
+        "note": entry.get("note") or "",
+    }
+
+
+# ---------------------------------------------------------------------------
 # Gekoppelte Regulierungen — deterministisch bestimmte, verbindliche Vorgaben.
 #
 # Einige Regulierungen haengen rechtlich an einer "Eltern"-Regulierung:
@@ -501,24 +644,29 @@ def csrd_status(profile: dict) -> tuple[str, str]:
     """CSRD-Berichtspflicht (post-Omnibus) deterministisch aus dem Profil.
 
     Liefert (applies, Begruendung) mit applies in {ja, nein, moeglich}.
-    Grosse-Unternehmen-Test: >1000 Beschaeftigte UND (>25 Mio. Bilanzsumme
-    ODER >50 Mio. Nettoumsatz). Boersennotierung allein begruendet keine Pflicht.
+    Schwelle nach Art. 19a Abs. 1 / Art. 29a Abs. 1 der Bilanzrichtlinie
+    2013/34/EU i.d.F. der Richtlinie (EU) 2026/470: >1000 Beschaeftigte im
+    Jahresdurchschnitt UND >450 Mio. EUR Nettoumsatzerloese — beide Merkmale
+    kumulativ. Die Bilanzsumme ist kein Kriterium mehr, eine Boersennotierung
+    allein begruendet keine Pflicht.
     """
     emp = profile.get("employees") or 0
-    bs = profile.get("balance_sheet_eur") or 0
     rev = profile.get("revenue_eur") or 0
     group = profile.get("group_role") or ""
     non_eu_parent = ("außerhalb EU" in group) or ("Nicht-EU" in group)
-    if emp > 1000 and (bs > 25_000_000 or rev > 50_000_000):
-        fin = "Bilanzsumme >25 Mio. EUR" if bs > 25_000_000 else "Nettoumsatz >50 Mio. EUR"
-        return "ja", (f"{emp} Beschaeftigte (>1000) und {fin} erfuellen den "
-                      f"Grosse-Unternehmen-Test der CSRD.")
+    if emp > 1000 and rev > 450_000_000:
+        return "ja", (f"{emp} Beschaeftigte (>1000) und Nettoumsatz {_fmt_eur(rev)} "
+                      f"(>450 Mio. EUR) ueberschreiten beide Schwellen des Art. 19a Abs. 1 "
+                      f"der Bilanzrichtlinie; die neuen Werte gelten fuer Geschaeftsjahre "
+                      f"ab dem 01.01.2027.")
     if non_eu_parent and rev > 450_000_000:
-        return "moeglich", ("Nicht-EU-Konzern mit EU-relevantem Umsatz >450 Mio. EUR — "
-                            "CSRD-Pflicht ab 2028 moeglich, Einzelpruefung noetig.")
-    return "nein", (f"{emp} Beschaeftigte bzw. Bilanzsumme {_fmt_eur(bs)} / Umsatz {_fmt_eur(rev)} "
-                    f"liegen unter der Schwelle (>1000 Beschaeftigte UND >25 Mio. Bilanz ODER "
-                    f">50 Mio. Umsatz). Eine reine Boersennotierung begruendet post-Omnibus keine Pflicht.")
+        return "moeglich", ("Drittland-Konzern mit EU-relevantem Umsatz >450 Mio. EUR — eine "
+                            "Pflicht nach Art. 40a der Bilanzrichtlinie kommt in Betracht, wenn "
+                            "eine EU-Tochter bzw. Zweigniederlassung mehr als 200 Mio. EUR "
+                            "Nettoumsatz erzielt. Einzelpruefung noetig.")
+    return "nein", (f"{emp} Beschaeftigte und Nettoumsatz {_fmt_eur(rev)} erreichen nicht beide "
+                    f"Schwellen (>1000 Beschaeftigte UND >450 Mio. EUR Nettoumsatz). Bilanzsumme "
+                    f"und Boersennotierung sind nach der Omnibus-Aenderung keine Kriterien mehr.")
 
 
 def hinschg_status(profile: dict) -> tuple[str, str]:

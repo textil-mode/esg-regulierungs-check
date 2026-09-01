@@ -9,6 +9,8 @@ import io
 import re
 from html import escape
 
+from i18n import t
+
 APPLIES_ORDER = {"error": 0, "ja": 1, "moeglich": 2, "nein": 3}
 
 I18N = {
@@ -124,7 +126,16 @@ def _shorten_passage(text: str) -> str:
     return cut.rstrip() + " …"
 
 
-def _card_html(r: dict, lang_dict: dict) -> str:
+def _iso_to_display(value: str) -> str:
+    """'2026-09-01T10:11:12' → '01.09.2026'; unbekanntes Format unveraendert."""
+    v = (value or "")[:10]
+    parts = v.split("-")
+    if len(parts) == 3 and all(parts):
+        return f"{parts[2]}.{parts[1]}.{parts[0]}"
+    return v
+
+
+def _card_html(r: dict, lang_dict: dict, language: str = "de") -> str:
     a = r["applies"]
     bg, icon = BADGE_STYLES.get(a, ("background:#999;color:white;", "·"))
     label = lang_dict["applies_label"].get(a, a.upper())
@@ -136,6 +147,11 @@ def _card_html(r: dict, lang_dict: dict) -> str:
     reason_raw = (r.get("reason") or "").strip()
     reason = escape(reason_raw) if reason_raw else f'<em style="color:#aaa;">{escape(lang_dict["reason_missing"])}</em>'
     nr = r.get("nr", "")
+    as_of = _iso_to_display(r.get("law_as_of") or "")
+    as_of_html = (
+        f'\n  <div class="reg-asof">{escape(t("law_state_of", language))} {escape(as_of)}</div>'
+        if as_of else ""
+    )
     return f"""
 <div class="reg-card">
   <div class="reg-card-header">
@@ -145,7 +161,7 @@ def _card_html(r: dict, lang_dict: dict) -> str:
     <span class="reg-full">— {full}</span>
   </div>
   <div class="reg-reason"><strong>{escape(lang_dict['reason'])}:</strong> {reason}</div>
-  <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> <em>{article}{': ' if article else ''}{passage}</em></div>
+  <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> <em>{article}{': ' if article else ''}{passage}</em></div>{as_of_html}
 </div>"""
 
 
@@ -171,7 +187,7 @@ def render_cards_html(results: list[dict], language: str = "de") -> str:
         return '<p class="no-results">—</p>'
 
     parts = [_metrics_html(shown, lang_dict)]
-    parts.extend(_card_html(r, lang_dict) for r in shown)
+    parts.extend(_card_html(r, lang_dict, language) for r in shown)
     return "\n".join(parts)
 
 

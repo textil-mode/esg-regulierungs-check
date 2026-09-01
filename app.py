@@ -39,11 +39,13 @@ from i18n import (
     SITE_TYPE_LABELS,
     normalize_lang,
     t,
+    t_applies_note,
     t_opt,
+    t_status,
 )
 from lawparse import build_context
 from llm import analyze_streaming, profile_hash, reg_hash
-from fetcher import fetch_law_text, fetch_url_text, get_cached_text
+from fetcher import fetch_law_text, fetch_url_text, get_cached_text, list_versions
 from regulations import (
     BRANCHES,
     GROUP_ROLES,
@@ -52,6 +54,7 @@ from regulations import (
     PRODUCT_CATEGORIES,
     REGULATIONS,
     SITE_TYPES,
+    application_for,
     guidelines_for,
     published_for,
 )
@@ -318,6 +321,40 @@ def admin_resets():
     )
 
 
+@app.route("/admin/regulierungs-status")
+def admin_reg_status():
+    """Gesetzesstand, Watchdog-Lauf und erkannte Textaenderungen je Regulierung."""
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+
+    lang = _lang()
+    changes = db.watchdog_changes_by_reg()
+    rows = []
+    for reg in REGULATIONS:
+        key = reg["key"]
+        cached = get_cached_text(key, lang) or {}
+        app_info = application_for(key)
+        rows.append({
+            "nr": reg["nr"],
+            "key": key,
+            "name": reg["name"],
+            "url": reg.get("text_url") or reg["url"],
+            "applies_from": app_info["applies_from"],
+            "status_label": t_status(app_info["status"], lang),
+            "status": app_info["status"],
+            "law_as_of": (cached.get("fetched_at") or "")[:10],
+            "has_text": bool((cached.get("text") or "").strip()),
+            "versions": len(list_versions(key, lang, limit=50)),
+            "change": changes.get(key),
+        })
+    return render_template(
+        "admin_regstatus.html", rows=rows, last_run=db.latest_watchdog_run(), lang=lang
+    )
+
+
 @app.route("/set-language", methods=["POST"])
 def set_language():
     lang = request.form.get("language", "de")
@@ -447,11 +484,13 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
 
         # Phase 1: Volltexte + Guidelines (immer Aktualität prüfen via ETag/Last-Modified)
         texts: dict[str, str] = {}
+        law_dates: dict[str, str] = {}
         max_chars = int(os.getenv("FULLTEXT_MAX_CHARS", "40000"))
         for i, reg in enumerate(REGULATIONS, 1):
             status.update({"done": i, "name": reg["name"]})
             res = fetch_law_text(reg, language=lang)
             law_text = res.get("text") or ""
+            law_dates[reg["key"]] = (res.get("fetched_at") or "")[:10]
 
             # Guidelines dazuladen. Kurzer Timeout (8s), damit eine langsame
             # Guideline-URL nicht die ganze Analyse blockiert. Fehler werden
@@ -498,6 +537,10 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
                         rh = reg_hash(reg)
                         break
                 db.put_cache(uid, ph, item["key"], rh, item)
+            # Erst NACH dem Cache-Schreiben setzen: der Gesetzesstand gehoert zum
+            # aktuellen Lauf, nicht zum zwischengespeicherten LLM-Urteil — sonst
+            # zeigte ein Cache-Treffer spaeter ein veraltetes Datum.
+            item["law_as_of"] = law_dates.get(item.get("key", ""), "")
             results.append(item)
             done += 1
             status.update({"done": done, "name": item.get("name", "-")})
@@ -572,6 +615,7 @@ def regulations_list():
     for reg in REGULATIONS:
         guides = [{"name": g["name"], "url": g["url"]}
                   for g in guidelines_for(reg["key"])]
+        app_info = application_for(reg["key"])
         rows.append({
             "nr": reg["nr"],
             "key": reg["key"],
@@ -582,6 +626,10 @@ def regulations_list():
             "key_article": reg.get("key_article") or "",
             "stand": published_for(reg["key"]),
             "guidelines": guides,
+            "applies_from": app_info["applies_from"],
+            "status": app_info["status"],
+            "status_label": t_status(app_info["status"], lang),
+            "applies_note": t_applies_note(app_info["note"], lang),
         })
     return render_template("regulierungsliste.html", rows=rows, lang=lang)
 

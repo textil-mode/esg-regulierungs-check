@@ -35,6 +35,12 @@
 | Gesetzestext-Cache mit ETag / Last-Modified | `fetcher.py` `law_texts` | ✅ |
 | **Strukturbasierte Kontext-Auswahl** (Art. 1-3 + `key_article` + Schwellenwert-Abschnitte statt Blind-Kappung; Kopfzeilen `=== Art. 2 - … ===`) | `lawparse.py` `build_context`, `app.py` Phase 1 | ✅ |
 | **EUR-Lex-Fallback ueber publications.europa.eu** (EUR-Lex antwortet Server-Clients mit AWS-WAF-Challenge, HTTP 202 + leerer Body) | `fetcher.py` `_cellar_text` | ✅ |
+| **Datumslose CELEX-URLs** (`CELEX:02024L1760` statt `…-20260318`); die juengste konsolidierte Fassung wird zur Laufzeit per SPARQL aufgeloest, Fallback = Basisrechtsakt | `fetcher.py` `_latest_consolidated` | ✅ |
+| **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
+| **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
+| **Watchdog** (`python watchdog.py`): laedt alle 22 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
+| **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
+| **"Gesetzesstand vom …"** auf jeder Ergebnis-Karte | `app.py` `law_dates`, `views.py` | ✅ |
 | CSV-Export | `/download-csv` | ✅ |
 | Fullscreen-Ansicht Ergebnisse | `/fullscreen` | ✅ |
 | **Regulierungsliste** (3-spaltig: Reg / Guidelines / Quelle+Stand) | `/regulierungsliste`, `templates/regulierungsliste.html` | ✅ |
@@ -196,6 +202,12 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 ### Dynamische Daten (Cache, SQLite in `/app/data/esg.db`)
 
 - `users`, `companies`, `analyses`, `analysis_cache`, `law_texts` (Volltext + ETag + Last-Modified + fetched_at)
+- `law_versions` — Historie der Gesetzestexte, eine Zeile je inhaltlich abweichender Fassung
+  (`reg_key`, `language`, `text_hash` = sha256, `text`, `url`, `fetched_at`). Wird vom Fetcher
+  bei jeder Aenderung fortgeschrieben; `fetcher.current_text_hash(reg_key, language)` liefert den
+  Hash des aktuellen Stands (oder `None`, wenn kein Text im Cache liegt).
+- `watchdog_runs` — je Lauf: `started_at`, `finished_at`, `language`, `checked`,
+  `changed_json` (`[{reg_key, name, previous_hash, text_hash, summary}]`), `errors_json`.
 - Guidelines werden ebenfalls in `law_texts` gespeichert mit `reg_key` = `GUIDE:<sha256-prefix>` (siehe `fetcher.py` `_guideline_key`).
 
 ---
@@ -209,7 +221,8 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `fetcher.py` | HTTP-Download von Gesetzes-/Guideline-Texten, HTML/PDF-Extraktion, ETag-Cache, EUR-Lex-Fallback |
 | `lawparse.py` | Zerlegt Gesetzestexte in Artikel-/§-/Anhang-Abschnitte und baut daraus den LLM-Kontext (Anwendungsbereich statt Praeambel) |
 | `test_lawparse.py` | Tests dazu — laufen gegen eine Kopie der DB (`data/esg_lawparse_test.db`), nie gegen `data/esg.db` |
-| `regulations.py` | 22 Regulierungen + Guidelines-Map + Veröffentlichungsdaten + Auswahllisten |
+| `regulations.py` | 22 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
+| `watchdog.py` | Wöchentlicher Aktualitäts-Wächter (Cron auf dem VPS), schreibt `watchdog_runs` |
 | `i18n.py` | Übersetzungen (6 Sprachen) |
 | `db.py` | SQLite-Schema, Migrationen, Cache-Zugriff |
 | `views.py` | Card/CSV-Renderer (inkl. Kennzahl-Hervorhebung) |
@@ -222,6 +235,20 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `Dockerfile` | Python 3.12-slim + Gunicorn; **muss `static/` und `templates/` kopieren** |
 | `docker-compose.hostinger.yml` | Compose-Dummy/Vorlage (nur Platzhalter — echte Keys live im Hostinger-UI) |
 | `.github/workflows/docker-build.yml` | Build-Push nach ghcr.io |
+
+---
+
+## Watchdog auf dem VPS einrichten (einmalig, macht der Nutzer)
+
+Woechentlich montags 03:15 Uhr, Log nach `/var/log/esg-watchdog.log`:
+
+```bash
+(crontab -l 2>/dev/null; echo '15 3 * * 1 docker exec esg-ki-textil-mode python watchdog.py >> /var/log/esg-watchdog.log 2>&1') | crontab -
+```
+
+Ergebnis danach unter https://ki-textil-mode.de/esg/admin/regulierungs-status (nur Admin-Konto).
+Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaendert hat;
+`python watchdog.py --no-llm` erfasst Aenderungen ohne Zusammenfassung.
 
 ---
 

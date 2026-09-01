@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section">
+  <h2 style="margin-top:0;">{{ t("admin_regstatus_title", lang) }}</h2>
+  <p style="font-size:13px;color:#666;max-width:760px;">{{ t("admin_regstatus_hint", lang) }}</p>
+
+  <div class="run-box">
+    <strong>{{ t("admin_regstatus_last_run", lang) }}:</strong>
+    {% if last_run %}
+      {{ (last_run.finished_at or last_run.started_at)[:16].replace("T", " ") }} UTC ·
+      {{ last_run.checked }}/{{ rows|length }} ·
+      {{ t("admin_regstatus_changes", lang) }}: {{ last_run.changed|length }} ·
+      {{ t("admin_regstatus_errors", lang) }}: {{ last_run.errors|length }}
+      {% if last_run.errors %}
+      <ul class="run-errors">
+        {% for e in last_run.errors %}
+        <li><code>{{ e.reg_key }}</code>: {{ e.error }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    {% else %}
+      {{ t("admin_regstatus_never", lang) }}
+    {% endif %}
+    <div class="run-hint">{{ t("admin_regstatus_run_hint", lang) }}</div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="reg-table">
+      <thead>
+        <tr>
+          <th style="width:22%;">{{ t("col_regulation", lang) }}</th>
+          <th style="width:16%;">{{ t("col_applies_from", lang) }}</th>
+          <th style="width:20%;">{{ t("law_state_of", lang) }}</th>
+          <th style="width:42%;">{{ t("admin_regstatus_changes", lang) }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>
+            <div class="reg-title">
+              <span class="reg-nr">Nr. {{ row.nr }}</span>
+              <strong>{{ row.name }}</strong>
+            </div>
+            <div class="reg-full"><a href="{{ row.url }}" target="_blank" rel="noopener">{{ row.url }}</a></div>
+          </td>
+          <td>
+            <span class="badge-status badge-{{ row.status }}">{{ row.status_label }}</span>
+            {% if row.applies_from %}<div style="margin-top:4px;">{{ row.applies_from }}</div>{% endif %}
+          </td>
+          <td>
+            {% if row.has_text %}
+              {{ row.law_as_of }}
+              <div class="reg-article">{{ t("admin_regstatus_versions", lang) }}: {{ row.versions }}</div>
+            {% else %}
+              <span style="color:#8b1a1a;">{{ t("admin_regstatus_no_text", lang) }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.change %}
+              <div class="change-head">{{ (row.change.run_at or "")[:10] }} ·
+                <code>{{ (row.change.previous_hash or "")[:8] }} → {{ (row.change.text_hash or "")[:8] }}</code>
+              </div>
+              {% if row.change.summary %}
+              <div class="change-summary">{{ row.change.summary }}</div>
+              {% endif %}
+            {% else %}
+              <span style="color:#888;">{{ t("admin_regstatus_no_changes", lang) }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .reg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .reg-table th, .reg-table td { padding: 10px 12px; text-align: left; vertical-align: top;
+    border-bottom: 1px solid #e8e8e8; }
+  .reg-table th { background: #f1f3f5; color: #1f4e3d; font-weight: 700; }
+  .reg-title { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 2px; }
+  .reg-nr { color: #888; font-size: 12px; }
+  .reg-full { color: #555; font-size: 12px; word-break: break-all; }
+  .reg-full a { color: #1f4e3d; }
+  .reg-article { color: #888; font-size: 12px; margin-top: 4px; }
+  .badge-status { padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
+    white-space: nowrap; }
+  .badge-in_kraft { background: #e8f5e9; color: #1b5e20; }
+  .badge-gilt_ab { background: #fdf3d8; color: #7a6000; }
+  .badge-entwurf { background: #eceff1; color: #455a64; }
+  .badge-rueckzug_angekuendigt { background: #fdecea; color: #8b1a1a; }
+  .run-box { background: #f7f9f8; border: 1px solid #e2e8e5; border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 16px; font-size: 14px; color: #333; }
+  .run-errors { margin: 6px 0 0; padding-left: 18px; color: #8b1a1a; font-size: 13px; }
+  .run-hint { color: #777; font-size: 12px; margin-top: 6px; }
+  .change-head { font-size: 12px; color: #7a6000; }
+  .change-summary { margin-top: 4px; line-height: 1.45; color: #333; }
+</style>
+{% endblock %}

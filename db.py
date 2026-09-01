@@ -80,6 +80,15 @@ def init_db() -> None:
                 used_at TEXT,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS watchdog_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                started_at TEXT NOT NULL,
+                finished_at TEXT,
+                language TEXT NOT NULL DEFAULT 'de',
+                checked INTEGER NOT NULL DEFAULT 0,
+                changed_json TEXT NOT NULL DEFAULT '[]',
+                errors_json TEXT NOT NULL DEFAULT '[]'
+            );
             CREATE TABLE IF NOT EXISTS analysis_cache (
                 user_id INTEGER NOT NULL,
                 profile_hash TEXT NOT NULL,
@@ -352,6 +361,74 @@ def put_cache(user_id: int, profile_hash: str, reg_key: str, reg_hash: str, resu
             (user_id, profile_hash, reg_key, reg_hash, json.dumps(result, ensure_ascii=False),
              datetime.utcnow().isoformat()),
         )
+
+
+# ---------- Watchdog ----------
+def start_watchdog_run(language: str = "de") -> int:
+    """Legt einen Lauf an und liefert dessen ID."""
+    init_db()
+    with _conn() as c:
+        cur = c.execute(
+            "INSERT INTO watchdog_runs (started_at, language) VALUES (?, ?)",
+            (datetime.utcnow().isoformat(), language),
+        )
+        return cur.lastrowid
+
+
+def finish_watchdog_run(run_id: int, checked: int, changed: list[dict],
+                        errors: list[dict]) -> None:
+    """Schliesst einen Lauf ab.
+
+    `changed`: [{reg_key, previous_hash, text_hash, summary}]
+    `errors`:  [{reg_key, error}]
+    """
+    with _conn() as c:
+        c.execute(
+            "UPDATE watchdog_runs SET finished_at = ?, checked = ?, changed_json = ?, "
+            "errors_json = ? WHERE id = ?",
+            (datetime.utcnow().isoformat(), checked,
+             json.dumps(changed, ensure_ascii=False),
+             json.dumps(errors, ensure_ascii=False), run_id),
+        )
+
+
+def _watchdog_row(row) -> dict:
+    return {
+        "id": row["id"],
+        "started_at": row["started_at"],
+        "finished_at": row["finished_at"],
+        "language": row["language"],
+        "checked": row["checked"],
+        "changed": json.loads(row["changed_json"] or "[]"),
+        "errors": json.loads(row["errors_json"] or "[]"),
+    }
+
+
+def latest_watchdog_run() -> Optional[dict]:
+    init_db()
+    with _conn() as c:
+        row = c.execute(
+            "SELECT * FROM watchdog_runs ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+    return _watchdog_row(row) if row else None
+
+
+def watchdog_changes_by_reg(limit_runs: int = 50) -> dict[str, dict]:
+    """Je Regulierung die zuletzt erkannte Aenderung (inkl. LLM-Zusammenfassung)."""
+    init_db()
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT id, started_at, changed_json FROM watchdog_runs "
+            "ORDER BY id DESC LIMIT ?",
+            (limit_runs,),
+        ).fetchall()
+    out: dict[str, dict] = {}
+    for row in rows:  # neueste zuerst — der erste Treffer gewinnt
+        for entry in json.loads(row["changed_json"] or "[]"):
+            key = entry.get("reg_key")
+            if key and key not in out:
+                out[key] = {**entry, "run_at": row["started_at"]}
+    return out
 
 
 def latest_analysis(user_id: int) -> Optional[dict]:

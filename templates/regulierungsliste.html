@@ -13,9 +13,10 @@
     <table class="reg-table">
       <thead>
         <tr>
-          <th style="width:28%;">{{ t("col_regulation", lang) }}</th>
-          <th style="width:42%;">{{ t("col_guidelines", lang) }}</th>
-          <th style="width:30%;">{{ t("col_link_date", lang) }}</th>
+          <th style="width:24%;">{{ t("col_regulation", lang) }}</th>
+          <th style="width:22%;">{{ t("col_applies_from", lang) }}</th>
+          <th style="width:30%;">{{ t("col_guidelines", lang) }}</th>
+          <th style="width:24%;">{{ t("col_link_date", lang) }}</th>
         </tr>
       </thead>
       <tbody>
@@ -30,6 +31,15 @@
             <div class="reg-full">{{ row.full_name }}</div>
             {% if row.key_article %}
             <div class="reg-article">{{ row.key_article }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="applies-line">
+              <span class="badge-status badge-{{ row.status }}">{{ row.status_label }}</span>
+              {% if row.applies_from %}<strong>{{ row.applies_from }}</strong>{% endif %}
+            </div>
+            {% if row.applies_note %}
+            <div class="applies-note">{{ row.applies_note }}</div>
             {% endif %}
           </td>
           <td>
@@ -75,6 +85,14 @@
   .guide-list a { color: #1f4e3d; text-decoration: none; }
   .guide-list a:hover { text-decoration: underline; }
   .guide-stand { color: #888; font-size: 12px; }
+  .applies-line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .applies-note { color: #666; font-size: 12px; line-height: 1.35; margin-top: 5px; }
+  .badge-status { padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
+    white-space: nowrap; }
+  .badge-in_kraft { background: #e8f5e9; color: #1b5e20; }
+  .badge-gilt_ab { background: #fdf3d8; color: #7a6000; }
+  .badge-entwurf { background: #eceff1; color: #455a64; }
+  .badge-rueckzug_angekuendigt { background: #fdecea; color: #8b1a1a; }
   .source-link { color: #1f4e3d; font-weight: 600; text-decoration: none; }
   .source-link:hover { text-decoration: underline; }
 </style>

@@ -103,6 +103,7 @@
     .reg-reason { margin-top: 6px; line-height: 1.5; color: #e6e6e6; }
     .reg-passage { margin-top: 8px; line-height: 1.5; color: #ddd; background: #353535; border-left: 3px solid #d4a017; border-radius: 0 6px 6px 0; padding: 8px 12px; }
     .kennzahl { background: rgba(220,53,69,.22); color: #ffb4ab; padding: 0 3px; border-radius: 3px; font-style: normal; }
+    .reg-asof { margin-top: 8px; font-size: 12px; color: #8f8f8f; }
 
     /* Sidebar info */
     .sidebar-info { font-size: 13px; color: #888; margin-bottom: 8px; }
@@ -163,6 +164,7 @@
         <span style="font-size:13px;color:#888;">{{ session.get('user_email','') }}</span>
         {% if session.get('user_email','')|lower == 'mschuckert@textil-mode.de' %}
         <a href="{{ url_for('admin_resets') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("admin_resets_title", lang) }}</a>
+        <a href="{{ url_for('admin_reg_status') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("admin_regstatus_title", lang) }}</a>
         {% endif %}
         <a href="{{ url_for('change_password') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("pw_change_title", lang) }}</a>
         <a href="{{ url_for('logout') }}" class="btn btn-sm" style="background:#e8e8e8;color:#333;">{{ t("btn_logout", lang) }}</a>
