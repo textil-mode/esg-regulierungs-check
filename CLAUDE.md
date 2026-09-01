@@ -33,6 +33,8 @@
 | LLM-Analyse über 22 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | Result-Cache (Profil-Hash + Reg-Hash → Ergebnis) | `db.py` `analysis_cache` | ✅ |
 | Gesetzestext-Cache mit ETag / Last-Modified | `fetcher.py` `law_texts` | ✅ |
+| **Strukturbasierte Kontext-Auswahl** (Art. 1-3 + `key_article` + Schwellenwert-Abschnitte statt Blind-Kappung; Kopfzeilen `=== Art. 2 - … ===`) | `lawparse.py` `build_context`, `app.py` Phase 1 | ✅ |
+| **EUR-Lex-Fallback ueber publications.europa.eu** (EUR-Lex antwortet Server-Clients mit AWS-WAF-Challenge, HTTP 202 + leerer Body) | `fetcher.py` `_cellar_text` | ✅ |
 | CSV-Export | `/download-csv` | ✅ |
 | Fullscreen-Ansicht Ergebnisse | `/fullscreen` | ✅ |
 | **Regulierungsliste** (3-spaltig: Reg / Guidelines / Quelle+Stand) | `/regulierungsliste`, `templates/regulierungsliste.html` | ✅ |
@@ -106,6 +108,17 @@ welche Domain der Nutzer kommt.
 4. Warten auf Build-Erfolg: https://github.com/textil-mode/esg-regulierungs-check/actions
 5. Hostinger → Docker Manager → Projekt `esg-regulierungs-check` → **Verwalten** → **Bereitstellen**
 6. Nach ~15 s testen: https://ki-textil-mode.de/esg/ (bzw. Legacy https://schuckert.cloud/regulierungs-check)
+
+> ⚠️ **Einmalig nach dem Deploy der strukturbasierten Extraktion: den Gesetzestext-Cache leeren.**
+> Bis dahin lagen die Texte auf `FULLTEXT_MAX_CHARS` (25.000 Zeichen) gekappt in `law_texts`.
+> Ein normaler Lauf ersetzt sie nicht zuverlaessig: wo die Quelle mit `304 Not Modified`
+> antwortet (z. B. `CSRD_DE`, Bundestags-PDF), gibt der Fetcher den alten, gekappten Text
+> zurueck und konserviert ihn dauerhaft. Deshalb je Container einmal:
+> ```bash
+> docker exec <container> python3 -c "import sqlite3; c=sqlite3.connect('/app/data/esg.db'); c.execute('DELETE FROM law_texts'); c.commit()"
+> ```
+> (`<container>` = `esg-ki-textil-mode` und `esg-regulierungs-check`.) Der naechste
+> "Jetzt pruefen"-Lauf laedt alle Texte in voller Laenge neu.
 
 > ⚠️ **Dockerfile muss `COPY static/ static/` und `COPY templates/ templates/` enthalten.** Sonst fehlen Assets im Image. Beide sind drin (Stand Tag `stable-2026-04-20`).
 
@@ -193,7 +206,9 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 |---|---|
 | `app.py` | Flask-Routen, Login, Analyse-Orchestrierung, PrefixMiddleware |
 | `llm.py` | LLM-Provider-Abstraktion (openai / ollama / anthropic / google), Prompt, Rate-Limit |
-| `fetcher.py` | HTTP-Download von Gesetzes-/Guideline-Texten, HTML/PDF-Extraktion, ETag-Cache |
+| `fetcher.py` | HTTP-Download von Gesetzes-/Guideline-Texten, HTML/PDF-Extraktion, ETag-Cache, EUR-Lex-Fallback |
+| `lawparse.py` | Zerlegt Gesetzestexte in Artikel-/§-/Anhang-Abschnitte und baut daraus den LLM-Kontext (Anwendungsbereich statt Praeambel) |
+| `test_lawparse.py` | Tests dazu — laufen gegen eine Kopie der DB (`data/esg_lawparse_test.db`), nie gegen `data/esg.db` |
 | `regulations.py` | 22 Regulierungen + Guidelines-Map + Veröffentlichungsdaten + Auswahllisten |
 | `i18n.py` | Übersetzungen (6 Sprachen) |
 | `db.py` | SQLite-Schema, Migrationen, Cache-Zugriff |

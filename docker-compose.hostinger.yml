@@ -20,6 +20,10 @@ services:
       - LLM_CONCURRENCY=8
       - LLM_RPM=150
       - FULLTEXT_MAX_CHARS=25000
+      # Cache-Groesse je Gesetzestext. Muss deutlich groesser sein als
+      # FULLTEXT_MAX_CHARS, weil lawparse.py den Anwendungsbereich erst aus
+      # dem vollstaendigen Text auswaehlt. Default im Code: 400000.
+      - LAW_TEXT_MAX_CHARS=400000
     volumes:
       - esg-data:/app/data
     restart: unless-stopped

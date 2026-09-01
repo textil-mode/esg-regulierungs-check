@@ -134,7 +134,14 @@ def _celex_id(url: str) -> str | None:
 
 
 def _cellar_text(url: str, language: str, timeout: float) -> str:
-    """Volltext ueber publications.europa.eu (CELEX-Resource), sonst ''."""
+    """Volltext ueber publications.europa.eu (CELEX-Resource), sonst ''.
+
+    Die Kette laeuft durchgehend ueber https: der 303-Redirect der
+    CELEX-Resource zeigt auf eine `http://…/cellar/…`-URL, deshalb wird jeder
+    Redirect selbst verfolgt und vorher auf https hochgestuft. Sonst kaeme der
+    Gesetzestext — die Eingabe der LLM-Analyse — unverschluesselt an und waere
+    unterwegs manipulierbar.
+    """
     celex = _celex_id(url)
     if not celex:
         return ""
@@ -144,12 +151,32 @@ def _cellar_text(url: str, language: str, timeout: float) -> str:
         "Accept": "application/xhtml+xml",
         "Accept-Language": three,
     }
+    target = f"https://publications.europa.eu/resource/celex/{celex}"
     try:
-        with httpx.Client(timeout=timeout, follow_redirects=True, headers=headers) as client:
-            resp = client.get(f"http://publications.europa.eu/resource/celex/{celex}")
+        with httpx.Client(timeout=timeout, follow_redirects=False, headers=headers) as client:
+            for _ in range(5):
+                resp = client.get(target)
+                if resp.status_code not in (301, 302, 303, 307, 308):
+                    break
+                location = resp.headers.get("location") or ""
+                if not location:
+                    return ""
+                target = str(httpx.URL(target).join(location))
+                if target.startswith("http://"):
+                    target = "https://" + target[len("http://"):]
+            else:
+                print(f"[cellar] {celex}: zu viele Redirects", flush=True)
+                return ""
         if resp.status_code >= 400:
             return ""
-        return _extract_html(resp.text)
+        content_type = (resp.headers.get("content-type") or "").lower()
+        if "pdf" in content_type or target.lower().endswith(".pdf"):
+            return _extract_pdf(resp.content)
+        if "html" in content_type or "xml" in content_type:
+            return _extract_html(resp.text)
+        # Alles andere (RDF/N-Triples/ZIP …) ist kein Gesetzestext.
+        print(f"[cellar] {celex}: unerwarteter Content-Type {content_type!r}", flush=True)
+        return ""
     except Exception as e:  # noqa: BLE001
         print(f"[cellar] {celex} fehlgeschlagen: {e}", flush=True)
         return ""
@@ -212,16 +239,8 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     if resp.status_code == 304 and row:
         return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False, "error": None, "status": 304}
 
-    used_fallback = False
     if resp.status_code >= 400:
-        text = _cellar_text(url, language, 60.0)
-        used_fallback = bool(text)
-        if not text:
-            if row:
-                return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False,
-                        "error": f"HTTP {resp.status_code}", "status": resp.status_code}
-            return {"text": "", "fetched_at": None, "is_new": False,
-                    "error": f"HTTP {resp.status_code}", "status": resp.status_code}
+        text = ""
     else:
         content_type = (resp.headers.get("content-type") or "").lower()
         if "pdf" in content_type or url.lower().endswith(".pdf"):
@@ -231,11 +250,21 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
 
     # EUR-Lex antwortet Server-Clients mit einer WAF-Challenge (HTTP 202,
     # leerer Body). Dann den Volltext beim Amt fuer Veroeffentlichungen holen.
+    # Genau ein Fallback-Versuch — Phase 1 laeuft sequenziell ueber alle 22
+    # Regulierungen, ein zweiter Anlauf koennte pro Reg 60 s zusaetzlich kosten.
+    used_fallback = False
     if len(text.strip()) < 2000 and "eur-lex.europa.eu" in url:
         alt = _cellar_text(url, language, 60.0)
         if len(alt) > len(text):
             text = alt
             used_fallback = True
+
+    if resp.status_code >= 400 and not text:
+        if row:
+            return {"text": row["text"], "fetched_at": row["fetched_at"], "is_new": False,
+                    "error": f"HTTP {resp.status_code}", "status": resp.status_code}
+        return {"text": "", "fetched_at": None, "is_new": False,
+                "error": f"HTTP {resp.status_code}", "status": resp.status_code}
 
     text = text[:_store_limit()]
 
@@ -243,6 +272,11 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     # gespeichert werden — sonst quittiert EUR-Lex den naechsten Lauf mit 304.
     etag = "" if used_fallback else (resp.headers.get("etag") or "")
     last_mod = "" if used_fallback else (resp.headers.get("last-modified") or "")
+    # Negatives source_status = Text kam nicht von der Primaerquelle, sondern
+    # aus dem Fallback; der Betrag ist der Statuscode der Primaerantwort
+    # (z. B. -202 = WAF-Challenge von EUR-Lex, Text vom Amt fuer
+    # Veroeffentlichungen).
+    source_status = -resp.status_code if used_fallback else resp.status_code
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute(
@@ -257,7 +291,7 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
                 fetched_at=excluded.fetched_at,
                 source_status=excluded.source_status
             """,
-            (reg["key"], language, url, text, etag, last_mod, now, resp.status_code),
+            (reg["key"], language, url, text, etag, last_mod, now, source_status),
         )
 
     return {"text": text, "fetched_at": now, "is_new": True, "error": None, "status": resp.status_code}

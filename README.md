@@ -87,5 +87,10 @@ Konfliktmineralien-VO, MinRohSorgG, EU-Umweltstrafrechts-RL, EmpCo, Green Claims
 
 - Die Analyse ist eine **qualifizierte Einschaetzung**, keine Rechtsberatung.
 - Bei Regulierungen mit PDF-Quelle (CSRD-DE) ist die Textextraktion naeherungsweise.
-- `FULLTEXT_MAX_CHARS` in `.env` kuerzt den an den LLM geschickten Text. Senken
-  bei knappem Kontext-Fenster (z.B. Ollama mit kleinem `num_ctx`).
+- `FULLTEXT_MAX_CHARS` in `.env` ist das Budget fuer den an den LLM geschickten
+  Auszug. Senken bei knappem Kontext-Fenster (z.B. Ollama mit kleinem `num_ctx`).
+- `LAW_TEXT_MAX_CHARS` (Default 400000) begrenzt, wieviel Text der Fetcher je
+  Gesetz im Cache ablegt. Muss deutlich groesser bleiben als
+  `FULLTEXT_MAX_CHARS`: `lawparse.py` waehlt Anwendungsbereich und Kernartikel
+  erst aus dem vollstaendigen Text aus. Zu klein gesetzt, ist der Text schon vor
+  der Auswahl abgeschnitten und es bleiben nur die Erwaegungsgruende uebrig.

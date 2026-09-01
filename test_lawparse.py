@@ -40,6 +40,13 @@ def _setup_db() -> None:
     fetcher.init_fetcher()
 
 
+# Beim Import ausfuehren, nicht erst unter __main__: sonst wuerde ein
+# versehentlicher pytest-Lauf (die Datei heisst test_*) mit fetcher.DB_PATH auf
+# data/esg.db laufen und _law_text() per force=True in die echte lokale DB
+# schreiben.
+_setup_db()
+
+
 def _law_text(reg: dict, language: str = "de") -> str:
     cached = fetcher.get_cached_text(reg["key"], language) or {}
     text = cached.get("text") or ""
@@ -159,7 +166,6 @@ def test_all_regulations_fit() -> None:
 
 
 if __name__ == "__main__":
-    _setup_db()
     test_parser_basics()
     test_scope_reaches_llm()
     test_all_regulations_fit()
