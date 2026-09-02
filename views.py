@@ -9,7 +9,10 @@ import io
 import re
 from html import escape
 
-from i18n import t
+from deadlines import deadline_for
+from i18n import t, t_deadline_note, t_first_step, t_status, t_threshold_hint
+from regulations import application_for, first_steps_for, first_steps_link
+from thresholds import near_thresholds
 
 APPLIES_ORDER = {"error": 0, "ja": 1, "moeglich": 2, "nein": 3}
 
@@ -138,7 +141,75 @@ def _iso_to_display(value: str) -> str:
     return v
 
 
-def _card_html(r: dict, lang_dict: dict, language: str = "de") -> str:
+# ---------------------------------------------------------------------------
+# Handlungsplan-Bausteine: Frist, erste Schritte, Schwellen-Naehe.
+#
+# Alle drei entstehen HIER, zur Renderzeit, aus dem Profil und aus statischen
+# Tabellen — nicht im Analyse-Lauf. Sie gehen deshalb weder in den
+# Begruendungs-Cache (`analysis_cache`) noch in das gespeicherte Ergebnis ein
+# und koennen keine Neuformulierung ausloesen.
+# ---------------------------------------------------------------------------
+
+# Frist und erste Schritte helfen nur, wo die Regulierung auch greifen kann.
+_PLAN_APPLIES = {"ja", "moeglich"}
+
+
+def _deadline_html(reg_key: str, profile: dict, language: str) -> str:
+    """Block 'Gilt ab' fuer genau dieses Unternehmen."""
+    info = deadline_for(reg_key, profile)
+    if not info:
+        return ""
+    date_text = info.get("gilt_ab") or ""
+    if not date_text:
+        # Kein bestimmbares Datum: den Status zeigen statt eines erfundenen
+        # Termins (Entwurf, angekuendigte Ruecknahme, Drittland-Sonderregime).
+        status = application_for(reg_key)["status"]
+        date_text = t_status(status, language) if status in ("entwurf", "rueckzug_angekuendigt") \
+            else t("deadline_open", language)
+    note = t_deadline_note(info.get("hinweis") or "", language)
+    note_html = f'\n    <div class="reg-deadline-note">{escape(note)}</div>' if note else ""
+    return (f'\n  <div class="reg-deadline">'
+            f'<strong>{escape(t("deadline_label", language))}:</strong> '
+            f'{escape(date_text)}{note_html}\n  </div>')
+
+
+def _steps_html(reg_key: str, language: str) -> str:
+    """Aufklappbarer Block 'Erste Schritte' inkl. weiterfuehrender Leitlinie."""
+    steps = [t_first_step(key, language) for key in first_steps_for(reg_key)]
+    steps = [s for s in steps if s]
+    if not steps:
+        return ""
+    items = "".join(f"<li>{escape(s)}</li>" for s in steps)
+    guide = first_steps_link(reg_key)
+    guide_html = ""
+    if guide:
+        guide_html = (
+            f'<div class="reg-steps-link">{escape(t("first_steps_link", language))}: '
+            f'<a href="{escape(guide["url"])}" target="_blank" rel="noopener">'
+            f'{escape(guide["name"])}</a></div>'
+        )
+    return (f'\n  <details class="reg-steps">'
+            f'<summary>{escape(t("first_steps_label", language))}</summary>'
+            f'<ul class="reg-steps-list">{items}</ul>{guide_html}</details>')
+
+
+def _thresholds_html(profile: dict, language: str) -> str:
+    """Dezenter Abschnitt 'Naehe zu Schwellenwerten' unter den Metriken."""
+    hints = [t_threshold_hint(h, language) for h in near_thresholds(profile)]
+    hints = [h for h in hints if h]
+    if not hints:
+        return ""
+    items = "".join(f"<li>{escape(h)}</li>" for h in hints)
+    return f"""
+<div class="threshold-box">
+  <div class="threshold-title">{escape(t('thresholds_title', language))}</div>
+  <p class="threshold-intro">{escape(t('thresholds_intro', language))}</p>
+  <ul class="threshold-list">{items}</ul>
+</div>"""
+
+
+def _card_html(r: dict, lang_dict: dict, language: str = "de",
+               profile: dict | None = None) -> str:
     a = r["applies"]
     bg, icon = BADGE_STYLES.get(a, ("background:#6b6b6b;color:#ffffff;", "·"))
     label = lang_dict["applies_label"].get(a, a.upper())
@@ -159,6 +230,11 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de") -> str:
         f'\n  <div class="reg-asof">{escape(t("law_state_of", language))} {escape(as_of)}</div>'
         if as_of else ""
     )
+    # Handlungsplan nur, wo die Regulierung greifen kann und das Profil vorliegt.
+    reg_key = r.get("key") or ""
+    plan_html = ""
+    if profile and reg_key and a in _PLAN_APPLIES:
+        plan_html = _deadline_html(reg_key, profile, language) + _steps_html(reg_key, language)
     return f"""
 <div class="reg-card">
   <div class="reg-card-header">
@@ -167,7 +243,7 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de") -> str:
     <a href="{url}" target="_blank" rel="noopener" class="reg-name">{name}</a>
     <span class="reg-full">— {full}</span>
   </div>
-  <div class="reg-reason"><strong>{escape(lang_dict['reason'])}:</strong> {reason}</div>
+  <div class="reg-reason"><strong>{escape(lang_dict['reason'])}:</strong> {reason}</div>{plan_html}
   <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> <em>{passage}</em></div>{as_of_html}
 </div>"""
 
@@ -184,8 +260,13 @@ def _metrics_html(shown: list[dict], lang_dict: dict) -> str:
 </div>"""
 
 
-def render_cards_html(results: list[dict], language: str = "de") -> str:
-    """Generiert das komplette Ergebnis-HTML (Metriken + Karten)."""
+def render_cards_html(results: list[dict], language: str = "de",
+                      profile: dict | None = None) -> str:
+    """Generiert das komplette Ergebnis-HTML (Metriken + Karten).
+
+    `profile` ist das Unternehmensprofil. Fehlt es, entfallen Fristen, erste
+    Schritte und Schwellen-Hinweise — die Karten sehen dann aus wie vorher.
+    """
     lang_dict = I18N.get(language, I18N["de"])
     shown = [r for r in results if (r.get("applies") or "").lower() in APPLIES_ORDER]
     shown.sort(key=lambda r: (APPLIES_ORDER.get((r.get("applies") or "").lower(), 9), r["nr"]))
@@ -194,11 +275,36 @@ def render_cards_html(results: list[dict], language: str = "de") -> str:
         return '<p class="no-results">—</p>'
 
     parts = [_metrics_html(shown, lang_dict)]
-    parts.extend(_card_html(r, lang_dict, language) for r in shown)
+    if profile:
+        threshold_html = _thresholds_html(profile, language)
+        if threshold_html:
+            parts.append(threshold_html)
+    parts.extend(_card_html(r, lang_dict, language, profile) for r in shown)
     return "\n".join(parts)
 
 
-def render_csv(results: list[dict], language: str = "de") -> bytes:
+def _csv_deadline(reg_key: str, applies: str, profile: dict | None,
+                  language: str) -> str:
+    """Wert der Spalte 'Gilt ab' — leer, wo die Regulierung nicht greift.
+
+    Bei applies = nein waere ein Datum irrefuehrend: es gaebe einen Termin vor,
+    den es fuer dieses Unternehmen nicht gibt.
+    """
+    if not (profile and reg_key and applies in _PLAN_APPLIES):
+        return ""
+    info = deadline_for(reg_key, profile)
+    if not info:
+        return ""
+    if info.get("gilt_ab"):
+        return info["gilt_ab"]
+    status = application_for(reg_key)["status"]
+    if status in ("entwurf", "rueckzug_angekuendigt"):
+        return t_status(status, language)
+    return t("deadline_open", language)
+
+
+def render_csv(results: list[dict], language: str = "de",
+               profile: dict | None = None) -> bytes:
     """Generiert CSV als UTF-8-BOM-Bytes."""
     lang_dict = I18N.get(language, I18N["de"])
     shown = [r for r in results if (r.get("applies") or "").lower() in APPLIES_ORDER]
@@ -207,6 +313,7 @@ def render_csv(results: list[dict], language: str = "de") -> bytes:
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(["Status", "Nr.", "Regulierung", "Bezeichnung",
+                     t("csv_deadline", language),
                      lang_dict["reason"], lang_dict["passage"], "URL"])
     for r in shown:
         writer.writerow([
@@ -214,6 +321,7 @@ def render_csv(results: list[dict], language: str = "de") -> bytes:
             r["nr"],
             r["name"],
             r["full_name"],
+            _csv_deadline(r.get("key") or "", r["applies"], profile, language),
             r.get("reason", ""),
             r.get("passage", ""),
             r["url"],

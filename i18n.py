@@ -875,6 +875,46 @@ UI: dict[str, dict[str, str]] = {
               "risultati di questo regolamento.",
         "zh": "无法确定合并版本。所存文本为原始法案，其中缺少后续修订。在使用该法规的结果前请重新检查。",
     },
+    # Handlungsplan: Fristen, erste Schritte, Schwellen-Naehe
+    "deadline_label": {
+        "de": "Gilt ab", "en": "Applies from", "es": "Se aplica desde",
+        "fr": "S'applique à partir du", "it": "Si applica dal", "zh": "自此适用",
+    },
+    "deadline_open": {
+        "de": "aus den Angaben nicht bestimmbar",
+        "en": "cannot be determined from the data provided",
+        "es": "no determinable con los datos indicados",
+        "fr": "non déterminable à partir des données fournies",
+        "it": "non determinabile in base ai dati forniti",
+        "zh": "无法根据所填数据确定",
+    },
+    "first_steps_label": {
+        "de": "Erste Schritte", "en": "First steps", "es": "Primeros pasos",
+        "fr": "Premières étapes", "it": "Primi passi", "zh": "第一步",
+    },
+    "first_steps_link": {
+        "de": "Weiterführende Leitlinie", "en": "Further guidance",
+        "es": "Directriz complementaria", "fr": "Ligne directrice complémentaire",
+        "it": "Linee guida di approfondimento", "zh": "延伸指南",
+    },
+    "thresholds_title": {
+        "de": "Nähe zu Schwellenwerten", "en": "Proximity to thresholds",
+        "es": "Proximidad a los umbrales", "fr": "Proximité des seuils",
+        "it": "Vicinanza alle soglie", "zh": "接近门槛值",
+    },
+    "thresholds_intro": {
+        "de": "Die folgenden Schwellen liegen weniger als 20 Prozent von den Angaben dieses "
+              "Unternehmens entfernt.",
+        "en": "The following thresholds are less than 20 percent away from this company's figures.",
+        "es": "Los siguientes umbrales están a menos del 20 por ciento de las cifras de esta empresa.",
+        "fr": "Les seuils suivants se situent à moins de 20 pour cent des données de cette entreprise.",
+        "it": "Le soglie seguenti distano meno del 20 per cento dai dati di questa impresa.",
+        "zh": "以下门槛值与该企业的数据相差不到 20%。",
+    },
+    "csv_deadline": {
+        "de": "Gilt ab", "en": "Applies from", "es": "Se aplica desde",
+        "fr": "S'applique à partir du", "it": "Si applica dal", "zh": "自此适用",
+    },
 }
 
 
@@ -1090,6 +1130,1235 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
         "it": "Il 20.06.2025 la Commissione ha annunciato l'intenzione di ritirare la proposta; formalmente "
               "non è stata ritirata. Da questo progetto non derivano attualmente obblighi.",
         "zh": "欧盟委员会于 2025 年 6 月 20 日宣布拟撤回该提案，但尚未正式撤回。目前该草案不产生任何义务。",
+    },
+}
+
+
+# ---------- Erlaeuterungen zum unternehmensbezogenen Anwendungsbeginn ----------
+# Schluessel entsprechen dem Feld "hinweis" aus `deadlines.deadline_for()`.
+# Aufgeloest wird ueber `t_deadline_note()`: erst hier, dann in APPLIES_NOTES
+# (fuer Regulierungen ohne Staffelung wird der Normhinweis durchgereicht).
+DEADLINE_NOTES: dict[str, dict[str, str]] = {
+    "lksg_stufe_3000": {
+        "de": "Ab 3.000 Arbeitnehmern im Inland galt das Gesetz bereits seit dem 01.01.2023 "
+              "(§ 1 Abs. 1 Satz 3 LkSG).",
+        "en": "From 3,000 employees in Germany the act already applied from 01.01.2023 "
+              "(section 1(1) sentence 3 LkSG).",
+        "es": "A partir de 3.000 empleados en Alemania la ley ya se aplicaba desde el 01.01.2023 "
+              "(§ 1, apdo. 1, frase 3 LkSG).",
+        "fr": "À partir de 3 000 salariés en Allemagne, la loi s'appliquait déjà depuis le 01.01.2023 "
+              "(§ 1, al. 1, phrase 3 LkSG).",
+        "it": "Con almeno 3.000 dipendenti in Germania la legge si applicava già dal 01.01.2023 "
+              "(§ 1, c. 1, per. 3 LkSG).",
+        "zh": "德国境内员工达 3,000 人的企业，自 2023 年 1 月 1 日起即已适用（《供应链尽职调查法》第 1 条第 1 款第 3 句）。",
+    },
+    "lksg_stufe_1000": {
+        "de": "Die Schwelle von 1.000 Arbeitnehmern im Inland gilt seit dem 01.01.2024 "
+              "(§ 1 Abs. 1 Satz 3 LkSG); davor lag sie bei 3.000.",
+        "en": "The threshold of 1,000 employees in Germany has applied since 01.01.2024 "
+              "(section 1(1) sentence 3 LkSG); before that it was 3,000.",
+        "es": "El umbral de 1.000 empleados en Alemania se aplica desde el 01.01.2024 "
+              "(§ 1, apdo. 1, frase 3 LkSG); antes era de 3.000.",
+        "fr": "Le seuil de 1 000 salariés en Allemagne s'applique depuis le 01.01.2024 "
+              "(§ 1, al. 1, phrase 3 LkSG) ; il était auparavant de 3 000.",
+        "it": "La soglia di 1.000 dipendenti in Germania vale dal 01.01.2024 "
+              "(§ 1, c. 1, per. 3 LkSG); in precedenza era di 3.000.",
+        "zh": "德国境内 1,000 名员工的门槛自 2024 年 1 月 1 日起适用（《供应链尽职调查法》第 1 条第 1 款第 3 句），此前为 3,000 人。",
+    },
+    "csrd_welle1": {
+        "de": "Als großes Unternehmen von öffentlichem Interesse mit mehr als 500 Beschäftigten "
+              "gehört das Unternehmen zur ersten Welle und berichtet seit dem Geschäftsjahr 2024. "
+              "Ob der nationale Gesetzgeber für die Geschäftsjahre 2025 und 2026 befreit, ist zu prüfen.",
+        "en": "As a large public-interest entity with more than 500 employees the company belongs to "
+              "the first wave and has reported since financial year 2024. Whether the national "
+              "legislator grants an exemption for financial years 2025 and 2026 needs to be checked.",
+        "es": "Como entidad grande de interés público con más de 500 empleados, la empresa pertenece a "
+              "la primera ola e informa desde el ejercicio 2024. Debe comprobarse si el legislador "
+              "nacional concede una exención para los ejercicios 2025 y 2026.",
+        "fr": "En tant que grande entité d'intérêt public de plus de 500 salariés, l'entreprise relève "
+              "de la première vague et publie depuis l'exercice 2024. Il convient de vérifier si le "
+              "législateur national accorde une exemption pour les exercices 2025 et 2026.",
+        "it": "In quanto grande ente di interesse pubblico con più di 500 dipendenti, l'impresa "
+              "appartiene alla prima ondata e rendiconta dall'esercizio 2024. Occorre verificare se il "
+              "legislatore nazionale concede un'esenzione per gli esercizi 2025 e 2026.",
+        "zh": "作为员工超过 500 人的大型公众利益实体，该企业属于第一批，自 2024 财政年度起报告。须核实本国立法者是否对 2025 和 2026 财政年度给予豁免。",
+    },
+    "csrd_drittland": {
+        "de": "Für Drittland-Konzerne gilt der eigenständige Anwendungsbeginn des Art. 40a der "
+              "Bilanzrichtlinie. Er hängt vom Aufbau der Gruppe ab und ist für den konkreten Fall "
+              "zu prüfen.",
+        "en": "Third-country groups fall under the separate start date of Art. 40a of the Accounting "
+              "Directive. It depends on the group structure and has to be checked for the individual case.",
+        "es": "Para los grupos de terceros países rige la fecha de aplicación específica del art. 40a de "
+              "la Directiva contable. Depende de la estructura del grupo y debe comprobarse caso por caso.",
+        "fr": "Pour les groupes de pays tiers s'applique la date d'entrée en application distincte de "
+              "l'art. 40a de la directive comptable. Elle dépend de la structure du groupe et doit être "
+              "vérifiée au cas par cas.",
+        "it": "Per i gruppi di paesi terzi vale la data di applicazione autonoma dell'art. 40a della "
+              "direttiva contabile. Dipende dalla struttura del gruppo e va verificata caso per caso.",
+        "zh": "第三国集团适用《会计指令》第 40a 条单独规定的适用起始日，具体取决于集团结构，须逐案核实。",
+    },
+    "csrd_neue_schwellen": {
+        "de": "Erstes Geschäftsjahr, das am oder nach dem 01.01.2027 beginnt; der Bericht erscheint "
+              "im Folgejahr. Nationale Umsetzung bis 19.03.2027.",
+        "en": "First financial year beginning on or after 01.01.2027; the report is published in the "
+              "following year. National transposition by 19.03.2027.",
+        "es": "Primer ejercicio que comience a partir del 01.01.2027; el informe se publica al año "
+              "siguiente. Transposición nacional hasta el 19.03.2027.",
+        "fr": "Premier exercice ouvert à compter du 01.01.2027 ; le rapport paraît l'année suivante. "
+              "Transposition nationale au plus tard le 19.03.2027.",
+        "it": "Primo esercizio che inizia dal 01.01.2027; la relazione è pubblicata l'anno successivo. "
+              "Recepimento nazionale entro il 19.03.2027.",
+        "zh": "自 2027 年 1 月 1 日或之后开始的第一个财政年度；报告于次年发布。各成员国须于 2027 年 3 月 19 日前完成转化。",
+    },
+    "esrs_folgt_csrd": {
+        "de": "Die Standards sind mit dem ersten CSRD-pflichtigen Geschäftsjahr dieses Unternehmens "
+              "anzuwenden; ein eigener früherer Anwendungsbeginn besteht nicht.",
+        "en": "The standards apply from this company's first CSRD reporting year; there is no separate, "
+              "earlier start date.",
+        "es": "Las normas se aplican desde el primer ejercicio con obligación CSRD de esta empresa; no "
+              "existe una fecha de inicio propia anterior.",
+        "fr": "Les normes s'appliquent à compter du premier exercice soumis à la CSRD pour cette "
+              "entreprise ; il n'existe pas de date de début distincte antérieure.",
+        "it": "Gli standard si applicano dal primo esercizio soggetto a CSRD di questa impresa; non "
+              "esiste una data di avvio autonoma anteriore.",
+        "zh": "该标准自本企业首个负有 CSRD 报告义务的财政年度起适用，不存在单独的更早适用日。",
+    },
+    "taxonomie_folgt_csrd": {
+        "de": "Die Offenlegung nach Art. 8 knüpft an die Berichtspflicht an und beginnt mit dem "
+              "ersten CSRD-pflichtigen Geschäftsjahr dieses Unternehmens.",
+        "en": "Disclosure under Art. 8 follows the reporting obligation and starts with this company's "
+              "first CSRD reporting year.",
+        "es": "La divulgación del art. 8 se vincula a la obligación de informar y comienza con el primer "
+              "ejercicio con obligación CSRD de esta empresa.",
+        "fr": "La publication au titre de l'art. 8 suit l'obligation de reporting et commence avec le "
+              "premier exercice soumis à la CSRD pour cette entreprise.",
+        "it": "L'informativa ex art. 8 segue l'obbligo di rendicontazione e inizia con il primo esercizio "
+              "soggetto a CSRD di questa impresa.",
+        "zh": "第 8 条的披露义务依附于报告义务，自本企业首个负有 CSRD 报告义务的财政年度起开始。",
+    },
+    "taxonomie_finanz": {
+        "de": "Für Finanzmarktteilnehmer gilt die Verordnung eigenständig: seit 01.01.2022 für "
+              "Klimaschutz und Anpassung, seit 01.01.2023 für die übrigen vier Umweltziele.",
+        "en": "For financial market participants the regulation applies in its own right: since "
+              "01.01.2022 for climate mitigation and adaptation, since 01.01.2023 for the other four "
+              "environmental objectives.",
+        "es": "Para los participantes en los mercados financieros el reglamento se aplica de forma "
+              "autónoma: desde el 01.01.2022 para mitigación y adaptación climática, desde el 01.01.2023 "
+              "para los otros cuatro objetivos medioambientales.",
+        "fr": "Pour les acteurs des marchés financiers, le règlement s'applique de façon autonome : "
+              "depuis le 01.01.2022 pour l'atténuation et l'adaptation climatiques, depuis le 01.01.2023 "
+              "pour les quatre autres objectifs environnementaux.",
+        "it": "Per i partecipanti ai mercati finanziari il regolamento si applica in modo autonomo: dal "
+              "01.01.2022 per mitigazione e adattamento climatico, dal 01.01.2023 per gli altri quattro "
+              "obiettivi ambientali.",
+        "zh": "对金融市场参与者，本条例独立适用：气候减缓与适应目标自 2022 年 1 月 1 日起，其余四项环境目标自 2023 年 1 月 1 日起。",
+    },
+    "hinschg_ab_250": {
+        "de": "Beschäftigungsgeber mit mindestens 250 Beschäftigten mussten die interne Meldestelle "
+              "mit Inkrafttreten des Gesetzes einrichten (§ 42 HinSchG).",
+        "en": "Employers with at least 250 employees had to set up the internal reporting channel when "
+              "the act entered into force (section 42 HinSchG).",
+        "es": "Los empleadores con al menos 250 empleados debían crear el canal interno de denuncia al "
+              "entrar en vigor la ley (§ 42 HinSchG).",
+        "fr": "Les employeurs d'au moins 250 salariés devaient mettre en place le canal de signalement "
+              "interne dès l'entrée en vigueur de la loi (§ 42 HinSchG).",
+        "it": "I datori di lavoro con almeno 250 dipendenti dovevano istituire il canale di segnalazione "
+              "interno all'entrata in vigore della legge (§ 42 HinSchG).",
+        "zh": "员工至少 250 人的雇主须在该法生效时即设立内部举报渠道（《举报人保护法》第 42 条）。",
+    },
+    "hinschg_ab_50": {
+        "de": "Für Beschäftigungsgeber mit 50 bis 249 Beschäftigten gilt die Pflicht zur internen "
+              "Meldestelle erst seit dem 17.12.2023 (§ 42 HinSchG).",
+        "en": "For employers with 50 to 249 employees the duty to set up an internal reporting channel "
+              "has only applied since 17.12.2023 (section 42 HinSchG).",
+        "es": "Para empleadores con 50 a 249 empleados la obligación de canal interno rige solo desde el "
+              "17.12.2023 (§ 42 HinSchG).",
+        "fr": "Pour les employeurs de 50 à 249 salariés, l'obligation de canal interne ne s'applique que "
+              "depuis le 17.12.2023 (§ 42 HinSchG).",
+        "it": "Per i datori di lavoro con 50-249 dipendenti l'obbligo del canale interno vale solo dal "
+              "17.12.2023 (§ 42 HinSchG).",
+        "zh": "对拥有 50 至 249 名员工的雇主，设立内部举报渠道的义务自 2023 年 12 月 17 日起才适用（《举报人保护法》第 42 条）。",
+    },
+    "whistle_ab_250": {
+        "de": "Umsetzungsfrist für Einrichtungen ab 250 Beschäftigten (Art. 26 Abs. 1). In Deutschland "
+              "wirkt die Richtlinie über das HinSchG.",
+        "en": "Transposition deadline for entities with 250 or more workers (Art. 26(1)). In Germany the "
+              "directive takes effect through the HinSchG.",
+        "es": "Plazo de transposición para entidades con 250 o más trabajadores (art. 26, apdo. 1). En "
+              "Alemania la directiva actúa a través de la HinSchG.",
+        "fr": "Délai de transposition pour les entités d'au moins 250 travailleurs (art. 26, § 1). En "
+              "Allemagne, la directive produit ses effets via la HinSchG.",
+        "it": "Termine di recepimento per i soggetti con almeno 250 lavoratori (art. 26, c. 1). In "
+              "Germania la direttiva opera tramite la HinSchG.",
+        "zh": "适用于员工 250 人及以上实体的转化期限（第 26 条第 1 款）。在德国，该指令通过《举报人保护法》生效。",
+    },
+    "whistle_ab_50": {
+        "de": "Für Einrichtungen mit 50 bis 249 Beschäftigten lief die Umsetzungsfrist bis zum "
+              "17.12.2023 (Art. 26 Abs. 2). In Deutschland wirkt die Richtlinie über das HinSchG.",
+        "en": "For entities with 50 to 249 workers the transposition deadline ran until 17.12.2023 "
+              "(Art. 26(2)). In Germany the directive takes effect through the HinSchG.",
+        "es": "Para entidades con 50 a 249 trabajadores el plazo de transposición fue hasta el 17.12.2023 "
+              "(art. 26, apdo. 2). En Alemania la directiva actúa a través de la HinSchG.",
+        "fr": "Pour les entités de 50 à 249 travailleurs, le délai de transposition courait jusqu'au "
+              "17.12.2023 (art. 26, § 2). En Allemagne, la directive produit ses effets via la HinSchG.",
+        "it": "Per i soggetti con 50-249 lavoratori il termine di recepimento era il 17.12.2023 "
+              "(art. 26, c. 2). In Germania la direttiva opera tramite la HinSchG.",
+        "zh": "对拥有 50 至 249 名工作人员的实体，转化期限为 2023 年 12 月 17 日（第 26 条第 2 款）。在德国，该指令通过《举报人保护法》生效。",
+    },
+    "eudr_klein": {
+        "de": "Spätere Frist für Kleinst- und Kleinunternehmen, die am 31.12.2024 bereits als solche "
+              "niedergelassen waren (Art. 38 Abs. 3). Ob das Unternehmen darunter fällt, hängt auch an "
+              "der Bilanzsumme und ist zu prüfen.",
+        "en": "Later deadline for micro and small operators already established as such on 31.12.2024 "
+              "(Art. 38(3)). Whether the company qualifies also depends on its balance sheet total and "
+              "has to be checked.",
+        "es": "Plazo posterior para microempresas y pequeñas empresas ya establecidas como tales el "
+              "31.12.2024 (art. 38, apdo. 3). Si la empresa entra en esa categoría depende también del "
+              "balance total y debe comprobarse.",
+        "fr": "Délai plus tardif pour les micro et petites entreprises déjà établies comme telles au "
+              "31.12.2024 (art. 38, § 3). L'appartenance à cette catégorie dépend aussi du total du "
+              "bilan et doit être vérifiée.",
+        "it": "Termine posticipato per le microimprese e le piccole imprese già stabilite come tali al "
+              "31.12.2024 (art. 38, c. 3). L'appartenenza a tale categoria dipende anche dal totale di "
+              "bilancio e va verificata.",
+        "zh": "对在 2024 年 12 月 31 日已作为微型或小型经营者设立的企业适用较晚期限（第 38 条第 3 款）。是否属于该类别还取决于资产负债表总额，须另行核实。",
+    },
+}
+
+
+# ---------- Hinweise zur Schwellen-Naehe ----------
+# Schluessel entsprechen `thresholds.near_thresholds()`. Platzhalter wie bei
+# COUPLING_FACTS: {employees}, {employees_de}, {revenue}.
+THRESHOLD_HINTS: dict[str, dict[str, str]] = {
+    "lksg_knapp_darunter": {
+        "de": "Mit {employees_de} Beschäftigten in Deutschland liegt das Unternehmen dicht unter der "
+              "LkSG-Schwelle. Ab 1.000 Arbeitnehmern im Inland würde zusätzlich das "
+              "Lieferkettensorgfaltspflichtengesetz greifen.",
+        "en": "With {employees_de} employees in Germany the company is just below the LkSG threshold. "
+              "From 1,000 employees in Germany the German Supply Chain Due Diligence Act would apply "
+              "in addition.",
+        "es": "Con {employees_de} empleados en Alemania la empresa está justo por debajo del umbral de "
+              "la LkSG. A partir de 1.000 empleados en Alemania se aplicaría además la Ley alemana de "
+              "diligencia debida en las cadenas de suministro.",
+        "fr": "Avec {employees_de} salariés en Allemagne, l'entreprise se situe juste sous le seuil de "
+              "la LkSG. À partir de 1 000 salariés en Allemagne, la loi allemande sur le devoir de "
+              "vigilance s'appliquerait en plus.",
+        "it": "Con {employees_de} dipendenti in Germania l'impresa è appena sotto la soglia della LkSG. "
+              "Da 1.000 dipendenti in Germania si applicherebbe in aggiunta la legge tedesca sul dovere "
+              "di diligenza nelle catene di fornitura.",
+        "zh": "该企业在德国有 {employees_de} 名员工，略低于《供应链尽职调查法》门槛。德国境内员工达到 1,000 人时，还将适用该法。",
+    },
+    "lksg_knapp_darueber": {
+        "de": "Mit {employees_de} Beschäftigten in Deutschland liegt das Unternehmen nur knapp über der "
+              "LkSG-Schwelle von 1.000 Arbeitnehmern. Die Pflicht entfällt erst, wenn die Schwelle im "
+              "vorangegangenen Kalenderjahr nicht mehr erreicht wurde.",
+        "en": "With {employees_de} employees in Germany the company is only just above the LkSG "
+              "threshold of 1,000. The obligation ends only once the threshold was no longer reached in "
+              "the preceding calendar year.",
+        "es": "Con {employees_de} empleados en Alemania la empresa está apenas por encima del umbral de "
+              "1.000 de la LkSG. La obligación decae solo cuando el umbral ya no se alcanzó en el año "
+              "natural anterior.",
+        "fr": "Avec {employees_de} salariés en Allemagne, l'entreprise dépasse à peine le seuil de 1 000 "
+              "de la LkSG. L'obligation ne cesse que lorsque le seuil n'a plus été atteint au cours de "
+              "l'année civile précédente.",
+        "it": "Con {employees_de} dipendenti in Germania l'impresa supera di poco la soglia di 1.000 "
+              "della LkSG. L'obbligo decade solo quando la soglia non è più stata raggiunta nell'anno "
+              "solare precedente.",
+        "zh": "该企业在德国有 {employees_de} 名员工，仅略高于《供应链尽职调查法》1,000 人的门槛。只有在上一日历年度不再达到该门槛时，义务才会终止。",
+    },
+    "hinschg_knapp_darunter": {
+        "de": "Mit {employees_de} Beschäftigten in Deutschland liegt das Unternehmen dicht unter der "
+              "Schwelle des HinSchG. Ab 50 Beschäftigten wäre eine interne Meldestelle einzurichten.",
+        "en": "With {employees_de} employees in Germany the company is just below the HinSchG threshold. "
+              "From 50 employees an internal reporting channel would have to be set up.",
+        "es": "Con {employees_de} empleados en Alemania la empresa está justo por debajo del umbral de "
+              "la HinSchG. A partir de 50 empleados habría que crear un canal interno de denuncia.",
+        "fr": "Avec {employees_de} salariés en Allemagne, l'entreprise se situe juste sous le seuil de "
+              "la HinSchG. À partir de 50 salariés, un canal de signalement interne devrait être créé.",
+        "it": "Con {employees_de} dipendenti in Germania l'impresa è appena sotto la soglia della "
+              "HinSchG. Da 50 dipendenti occorrerebbe istituire un canale di segnalazione interno.",
+        "zh": "该企业在德国有 {employees_de} 名员工，略低于《举报人保护法》门槛。达到 50 名员工时须设立内部举报渠道。",
+    },
+    "hinschg_knapp_darueber": {
+        "de": "Mit {employees_de} Beschäftigten in Deutschland liegt das Unternehmen nur knapp über der "
+              "Schwelle von 50 Beschäftigten; die interne Meldestelle ist damit verpflichtend.",
+        "en": "With {employees_de} employees in Germany the company is only just above the threshold of "
+              "50; the internal reporting channel is therefore mandatory.",
+        "es": "Con {employees_de} empleados en Alemania la empresa está apenas por encima del umbral de "
+              "50; el canal interno de denuncia es por tanto obligatorio.",
+        "fr": "Avec {employees_de} salariés en Allemagne, l'entreprise dépasse à peine le seuil de 50 ; "
+              "le canal de signalement interne est donc obligatoire.",
+        "it": "Con {employees_de} dipendenti in Germania l'impresa supera di poco la soglia di 50; il "
+              "canale di segnalazione interno è quindi obbligatorio.",
+        "zh": "该企业在德国有 {employees_de} 名员工，仅略高于 50 人门槛，因此必须设立内部举报渠道。",
+    },
+    "csrd_knapp_darunter": {
+        "de": "Das Unternehmen liegt mit {employees} Beschäftigten und {revenue} Nettoumsatzerlösen "
+              "dicht an den CSRD-Schwellen. Werden mehr als 1.000 Beschäftigte UND mehr als "
+              "450 Mio. EUR Umsatz erreicht, käme die Nachhaltigkeitsberichterstattung hinzu.",
+        "en": "With {employees} employees and net turnover of {revenue} the company is close to the CSRD "
+              "thresholds. If more than 1,000 employees AND more than EUR 450 million turnover are "
+              "reached, sustainability reporting would apply in addition.",
+        "es": "Con {employees} empleados y {revenue} de cifra de negocios neta la empresa está cerca de "
+              "los umbrales de la CSRD. Si se superan 1.000 empleados Y 450 millones EUR de cifra de "
+              "negocios, se añadiría la información sobre sostenibilidad.",
+        "fr": "Avec {employees} salariés et un chiffre d'affaires net de {revenue}, l'entreprise est "
+              "proche des seuils de la CSRD. Au-delà de 1 000 salariés ET de 450 millions EUR de chiffre "
+              "d'affaires, le reporting de durabilité s'ajouterait.",
+        "it": "Con {employees} dipendenti e ricavi netti di {revenue} l'impresa è vicina alle soglie "
+              "della CSRD. Superando 1.000 dipendenti E 450 milioni di EUR di ricavi, si aggiungerebbe "
+              "la rendicontazione di sostenibilità.",
+        "zh": "该企业有 {employees} 名员工、净营业额 {revenue}，接近 CSRD 门槛。若员工超过 1,000 人且营业额超过 4.5 亿欧元，将另需履行可持续发展报告义务。",
+    },
+    "csrd_knapp_darueber": {
+        "de": "Das Unternehmen überschreitet die CSRD-Schwellen ({employees} Beschäftigte, {revenue} "
+              "Nettoumsatzerlöse) nur knapp. Maßgeblich ist der Bilanzstichtag; ein Rückgang kann die "
+              "Pflicht wieder entfallen lassen.",
+        "en": "The company exceeds the CSRD thresholds ({employees} employees, {revenue} net turnover) "
+              "only narrowly. The balance sheet date is decisive; a decline can end the obligation again.",
+        "es": "La empresa supera los umbrales de la CSRD ({employees} empleados, {revenue} de cifra de "
+              "negocios neta) solo por poco. Es determinante la fecha de cierre del balance; un descenso "
+              "puede hacer decaer la obligación.",
+        "fr": "L'entreprise ne dépasse que de peu les seuils de la CSRD ({employees} salariés, {revenue} "
+              "de chiffre d'affaires net). La date de clôture fait foi ; une baisse peut faire disparaître "
+              "l'obligation.",
+        "it": "L'impresa supera di poco le soglie della CSRD ({employees} dipendenti, {revenue} di ricavi "
+              "netti). Fa fede la data di chiusura del bilancio; una diminuzione può far venire meno "
+              "l'obbligo.",
+        "zh": "该企业仅略微超过 CSRD 门槛（{employees} 名员工、净营业额 {revenue}）。以资产负债表日为准；数值回落可能使义务再次消失。",
+    },
+    "csddd_knapp_darunter": {
+        "de": "Das Unternehmen liegt mit {employees} Beschäftigten und {revenue} Nettoumsatz dicht an "
+              "den CSDDD-Schwellen. Werden mehr als 5.000 Beschäftigte UND mehr als 1.500 Mio. EUR "
+              "weltweiter Nettoumsatz erreicht, käme die Sorgfaltspflichtenrichtlinie hinzu.",
+        "en": "With {employees} employees and net turnover of {revenue} the company is close to the CSDDD "
+              "thresholds. If more than 5,000 employees AND more than EUR 1,500 million worldwide net "
+              "turnover are reached, the due diligence directive would apply in addition.",
+        "es": "Con {employees} empleados y {revenue} de cifra de negocios neta la empresa está cerca de "
+              "los umbrales de la CSDDD. Si se superan 5.000 empleados Y 1.500 millones EUR de cifra de "
+              "negocios mundial, se añadiría la directiva de diligencia debida.",
+        "fr": "Avec {employees} salariés et un chiffre d'affaires net de {revenue}, l'entreprise est "
+              "proche des seuils de la CSDDD. Au-delà de 5 000 salariés ET de 1 500 millions EUR de "
+              "chiffre d'affaires mondial, la directive sur le devoir de vigilance s'ajouterait.",
+        "it": "Con {employees} dipendenti e ricavi netti di {revenue} l'impresa è vicina alle soglie della "
+              "CSDDD. Superando 5.000 dipendenti E 1.500 milioni di EUR di ricavi netti mondiali, si "
+              "aggiungerebbe la direttiva sul dovere di diligenza.",
+        "zh": "该企业有 {employees} 名员工、净营业额 {revenue}，接近 CSDDD 门槛。若员工超过 5,000 人且全球净营业额超过 15 亿欧元，将另需适用尽职调查指令。",
+    },
+    "csddd_knapp_darueber": {
+        "de": "Das Unternehmen überschreitet die CSDDD-Schwellen ({employees} Beschäftigte, {revenue} "
+              "Nettoumsatz) nur knapp. Maßgeblich sind zwei aufeinanderfolgende Geschäftsjahre "
+              "(Art. 2 Abs. 5).",
+        "en": "The company exceeds the CSDDD thresholds ({employees} employees, {revenue} net turnover) "
+              "only narrowly. Two consecutive financial years are decisive (Art. 2(5)).",
+        "es": "La empresa supera los umbrales de la CSDDD ({employees} empleados, {revenue} de cifra de "
+              "negocios) solo por poco. Son determinantes dos ejercicios consecutivos (art. 2, apdo. 5).",
+        "fr": "L'entreprise ne dépasse que de peu les seuils de la CSDDD ({employees} salariés, {revenue} "
+              "de chiffre d'affaires). Deux exercices consécutifs font foi (art. 2, § 5).",
+        "it": "L'impresa supera di poco le soglie della CSDDD ({employees} dipendenti, {revenue} di "
+              "ricavi). Fanno fede due esercizi consecutivi (art. 2, c. 5).",
+        "zh": "该企业仅略微超过 CSDDD 门槛（{employees} 名员工、净营业额 {revenue}）。以连续两个财政年度为准（第 2 条第 5 款）。",
+    },
+}
+
+
+# ---------- Erste Schritte je Regulierung ----------
+# Schluessel entsprechen `regulations.FIRST_STEPS_BY_REG_KEY`. Kuratiert und
+# handgeschrieben, NICHT vom LLM erzeugt; die Fundstelle steht jeweils im Text.
+# Der weiterfuehrende Link kommt aus GUIDELINES_BY_REG_KEY.
+FIRST_STEPS: dict[str, dict[str, str]] = {
+    # --- CSDDD ---
+    "csddd_1": {
+        "de": "Sorgfaltspflichten in die Unternehmenspolitik einbetten und ein Konzept samt "
+              "Verhaltenskodex verabschieden (Art. 5, 7).",
+        "en": "Embed due diligence in company policy and adopt a policy including a code of conduct "
+              "(Art. 5, 7).",
+        "es": "Integrar la diligencia debida en la política de la empresa y adoptar una política con "
+              "código de conducta (art. 5, 7).",
+        "fr": "Intégrer le devoir de vigilance dans la politique de l'entreprise et adopter une "
+              "politique assortie d'un code de conduite (art. 5, 7).",
+        "it": "Integrare il dovere di diligenza nelle politiche aziendali e adottare una policy con "
+              "codice di condotta (art. 5, 7).",
+        "zh": "将尽职调查纳入企业政策，并制定含行为准则的方针（第 5、7 条）。",
+    },
+    "csddd_2": {
+        "de": "Tatsächliche und potenzielle negative Auswirkungen in der eigenen Tätigkeitskette "
+              "ermitteln und nach Schwere und Eintrittswahrscheinlichkeit priorisieren (Art. 8, 9).",
+        "en": "Identify actual and potential adverse impacts in the chain of activities and prioritise "
+              "them by severity and likelihood (Art. 8, 9).",
+        "es": "Identificar los impactos adversos reales y potenciales en la cadena de actividades y "
+              "priorizarlos según gravedad y probabilidad (art. 8, 9).",
+        "fr": "Identifier les incidences négatives réelles et potentielles dans la chaîne d'activités et "
+              "les hiérarchiser selon leur gravité et leur probabilité (art. 8, 9).",
+        "it": "Individuare gli impatti negativi effettivi e potenziali nella catena di attività e "
+              "classificarli per gravità e probabilità (art. 8, 9).",
+        "zh": "识别自身活动链中实际与潜在的负面影响，并按严重性和发生可能性排序（第 8、9 条）。",
+    },
+    "csddd_3": {
+        "de": "Melde- und Beschwerdeverfahren einrichten, das auch Betroffenen außerhalb des "
+              "Unternehmens offensteht (Art. 14).",
+        "en": "Set up a notification and complaints procedure that is also open to affected persons "
+              "outside the company (Art. 14).",
+        "es": "Establecer un procedimiento de notificación y reclamación abierto también a las personas "
+              "afectadas ajenas a la empresa (art. 14).",
+        "fr": "Mettre en place une procédure de signalement et de plainte ouverte aussi aux personnes "
+              "concernées extérieures à l'entreprise (art. 14).",
+        "it": "Istituire una procedura di segnalazione e reclamo aperta anche alle persone interessate "
+              "esterne all'impresa (art. 14).",
+        "zh": "建立通报和申诉程序，并向企业外部的受影响人员开放（第 14 条）。",
+    },
+    "csddd_4": {
+        "de": "Klimaübergangsplan zur Begrenzung der Erwärmung auf 1,5 °C vorbereiten (Art. 22).",
+        "en": "Prepare a climate transition plan aligned with limiting warming to 1.5 °C (Art. 22).",
+        "es": "Preparar un plan de transición climática para limitar el calentamiento a 1,5 °C (art. 22).",
+        "fr": "Préparer un plan de transition climatique visant à limiter le réchauffement à 1,5 °C "
+              "(art. 22).",
+        "it": "Predisporre un piano di transizione climatica per limitare il riscaldamento a 1,5 °C "
+              "(art. 22).",
+        "zh": "编制将升温控制在 1.5 °C 以内的气候转型计划（第 22 条）。",
+    },
+    # --- LkSG ---
+    "lksg_1": {
+        "de": "Zuständigkeit festlegen: Menschenrechtsbeauftragten benennen und das Risikomanagement "
+              "in die Abläufe einbetten (§ 4).",
+        "en": "Assign responsibility: appoint a human rights officer and embed risk management in "
+              "business processes (section 4).",
+        "es": "Definir responsabilidades: nombrar un responsable de derechos humanos e integrar la "
+              "gestión de riesgos en los procesos (§ 4).",
+        "fr": "Définir les responsabilités : désigner un responsable des droits humains et intégrer la "
+              "gestion des risques dans les processus (§ 4).",
+        "it": "Definire le responsabilità: nominare un responsabile per i diritti umani e integrare la "
+              "gestione dei rischi nei processi (§ 4).",
+        "zh": "明确职责：任命人权事务专员，并将风险管理嵌入业务流程（第 4 条）。",
+    },
+    "lksg_2": {
+        "de": "Jährliche und anlassbezogene Risikoanalyse für den eigenen Geschäftsbereich und die "
+              "unmittelbaren Zulieferer durchführen (§ 5).",
+        "en": "Carry out an annual and ad hoc risk analysis for the company's own operations and its "
+              "direct suppliers (section 5).",
+        "es": "Realizar un análisis de riesgos anual y ad hoc para el propio ámbito de negocio y los "
+              "proveedores directos (§ 5).",
+        "fr": "Réaliser une analyse de risques annuelle et ponctuelle pour son propre domaine d'activité "
+              "et ses fournisseurs directs (§ 5).",
+        "it": "Effettuare un'analisi dei rischi annuale e ad hoc per il proprio ambito aziendale e i "
+              "fornitori diretti (§ 5).",
+        "zh": "对自身经营范围和直接供应商开展年度及触发式风险分析（第 5 条）。",
+    },
+    "lksg_3": {
+        "de": "Grundsatzerklärung zur Menschenrechtsstrategie verabschieden und Präventionsmaßnahmen "
+              "im eigenen Geschäftsbereich und gegenüber Zulieferern verankern (§ 6).",
+        "en": "Adopt a policy statement on the human rights strategy and anchor preventive measures "
+              "internally and towards suppliers (section 6).",
+        "es": "Adoptar una declaración de principios sobre la estrategia de derechos humanos y anclar "
+              "medidas preventivas internamente y frente a los proveedores (§ 6).",
+        "fr": "Adopter une déclaration de principe sur la stratégie en matière de droits humains et "
+              "ancrer des mesures de prévention en interne et auprès des fournisseurs (§ 6).",
+        "it": "Adottare una dichiarazione di principio sulla strategia per i diritti umani e radicare "
+              "misure preventive internamente e verso i fornitori (§ 6).",
+        "zh": "通过人权战略原则声明，并在自身经营范围内及对供应商落实预防措施（第 6 条）。",
+    },
+    "lksg_4": {
+        "de": "Beschwerdeverfahren einrichten, die Umsetzung fortlaufend dokumentieren und den "
+              "Jahresbericht beim BAFA einreichen (§§ 8, 10).",
+        "en": "Set up a complaints procedure, document implementation continuously and file the annual "
+              "report with BAFA (sections 8, 10).",
+        "es": "Establecer un procedimiento de reclamación, documentar la aplicación de forma continua y "
+              "presentar el informe anual ante la BAFA (§§ 8, 10).",
+        "fr": "Mettre en place une procédure de plainte, documenter la mise en œuvre en continu et "
+              "déposer le rapport annuel auprès de la BAFA (§§ 8, 10).",
+        "it": "Istituire una procedura di reclamo, documentare l'attuazione in modo continuativo e "
+              "presentare la relazione annuale alla BAFA (§§ 8, 10).",
+        "zh": "建立申诉程序，持续记录落实情况，并向联邦经济和出口管制局提交年度报告（第 8、10 条）。",
+    },
+    # --- EUDR ---
+    "eudr_1": {
+        "de": "Prüfen, welche Erzeugnisse unter Anhang I fallen und ob das Unternehmen als "
+              "Marktteilnehmer oder als Händler auftritt (Art. 2, 4, 5).",
+        "en": "Check which products fall under Annex I and whether the company acts as an operator or "
+              "as a trader (Art. 2, 4, 5).",
+        "es": "Comprobar qué productos entran en el anexo I y si la empresa actúa como operador o como "
+              "comerciante (art. 2, 4, 5).",
+        "fr": "Vérifier quels produits relèvent de l'annexe I et si l'entreprise agit en tant "
+              "qu'opérateur ou que commerçant (art. 2, 4, 5).",
+        "it": "Verificare quali prodotti rientrano nell'allegato I e se l'impresa opera come operatore o "
+              "come commerciante (art. 2, 4, 5).",
+        "zh": "确认哪些产品属于附件一范围，以及企业是作为经营者还是贸易商（第 2、4、5 条）。",
+    },
+    "eudr_2": {
+        "de": "Von den Lieferanten Geolokalisationsdaten der Erzeugungsflächen und Angaben zur "
+              "Rechtmäßigkeit der Erzeugung einholen (Art. 9).",
+        "en": "Obtain geolocation data of the plots of production and evidence of legal production from "
+              "suppliers (Art. 9).",
+        "es": "Obtener de los proveedores los datos de geolocalización de las parcelas de producción y "
+              "pruebas de la legalidad de la producción (art. 9).",
+        "fr": "Obtenir des fournisseurs les données de géolocalisation des parcelles de production et "
+              "les preuves de la légalité de la production (art. 9).",
+        "it": "Ottenere dai fornitori i dati di geolocalizzazione degli appezzamenti di produzione e le "
+              "prove della legalità della produzione (art. 9).",
+        "zh": "向供应商获取生产地块的地理位置数据及生产合法性证明（第 9 条）。",
+    },
+    "eudr_3": {
+        "de": "Risikobewertung und Risikominderung dokumentieren; solange kein vernachlässigbares "
+              "Risiko besteht, darf die Ware nicht in Verkehr gebracht werden (Art. 10, 11).",
+        "en": "Document risk assessment and risk mitigation; as long as the risk is not negligible the "
+              "goods must not be placed on the market (Art. 10, 11).",
+        "es": "Documentar la evaluación y la reducción del riesgo; mientras el riesgo no sea "
+              "insignificante, la mercancía no puede comercializarse (art. 10, 11).",
+        "fr": "Documenter l'évaluation et l'atténuation des risques ; tant que le risque n'est pas "
+              "négligeable, la marchandise ne peut pas être mise sur le marché (art. 10, 11).",
+        "it": "Documentare la valutazione e l'attenuazione del rischio; finché il rischio non è "
+              "trascurabile la merce non può essere immessa sul mercato (art. 10, 11).",
+        "zh": "记录风险评估与风险缓解措施；风险未达到可忽略水平前，不得将货物投放市场（第 10、11 条）。",
+    },
+    "eudr_4": {
+        "de": "Sorgfaltserklärung vor dem Inverkehrbringen im Informationssystem der Kommission "
+              "abgeben (Art. 4, 33).",
+        "en": "Submit the due diligence statement in the Commission's information system before placing "
+              "goods on the market (Art. 4, 33).",
+        "es": "Presentar la declaración de diligencia debida en el sistema de información de la Comisión "
+              "antes de la comercialización (art. 4, 33).",
+        "fr": "Déposer la déclaration de diligence raisonnable dans le système d'information de la "
+              "Commission avant la mise sur le marché (art. 4, 33).",
+        "it": "Presentare la dichiarazione di dovuta diligenza nel sistema informativo della Commissione "
+              "prima dell'immissione sul mercato (art. 4, 33).",
+        "zh": "在投放市场前于欧盟委员会信息系统提交尽职调查声明（第 4、33 条）。",
+    },
+    # --- FLR (Zwangsarbeitsverordnung) ---
+    "flr_1": {
+        "de": "Produkte und Vorstufen aus Regionen mit erhöhtem Zwangsarbeitsrisiko identifizieren; "
+              "die Verordnung begründet keine eigene Sorgfaltspflicht, verbietet aber das "
+              "Inverkehrbringen (Art. 3).",
+        "en": "Identify products and inputs from regions with an elevated forced labour risk; the "
+              "regulation creates no due diligence duty of its own but prohibits placing such goods on "
+              "the market (Art. 3).",
+        "es": "Identificar productos e insumos procedentes de regiones con mayor riesgo de trabajo "
+              "forzoso; el reglamento no crea un deber de diligencia propio, pero prohíbe su "
+              "comercialización (art. 3).",
+        "fr": "Identifier les produits et intrants provenant de régions à risque élevé de travail forcé ; "
+              "le règlement ne crée pas d'obligation de vigilance propre mais interdit la mise sur le "
+              "marché (art. 3).",
+        "it": "Individuare prodotti e semilavorati provenienti da regioni ad alto rischio di lavoro "
+              "forzato; il regolamento non crea un obbligo di diligenza autonomo ma vieta l'immissione "
+              "sul mercato (art. 3).",
+        "zh": "识别来自强迫劳动高风险地区的产品和上游投入；该条例不设立独立的尽职调查义务，但禁止相关产品投放市场（第 3 条）。",
+    },
+    "flr_2": {
+        "de": "Die Datenbank und die Leitlinien der Kommission zu Risikogebieten und -produkten "
+              "auswerten (Art. 8, 11).",
+        "en": "Evaluate the Commission's database and guidelines on risk areas and products (Art. 8, 11).",
+        "es": "Analizar la base de datos y las directrices de la Comisión sobre zonas y productos de "
+              "riesgo (art. 8, 11).",
+        "fr": "Exploiter la base de données et les lignes directrices de la Commission sur les zones et "
+              "produits à risque (art. 8, 11).",
+        "it": "Analizzare la banca dati e le linee guida della Commissione su aree e prodotti a rischio "
+              "(art. 8, 11).",
+        "zh": "研判欧盟委员会关于风险地区和风险产品的数据库与指南（第 8、11 条）。",
+    },
+    "flr_3": {
+        "de": "Nachweise zur Lieferkette so vorhalten, dass Auskunftsersuchen der Behörden fristgerecht "
+              "beantwortet werden können (Art. 17).",
+        "en": "Keep supply chain evidence ready so that authorities' requests for information can be "
+              "answered within the deadline (Art. 17).",
+        "es": "Mantener disponibles las pruebas de la cadena de suministro para responder en plazo a "
+              "los requerimientos de las autoridades (art. 17).",
+        "fr": "Conserver les preuves relatives à la chaîne d'approvisionnement afin de répondre dans les "
+              "délais aux demandes des autorités (art. 17).",
+        "it": "Tenere pronte le prove sulla catena di fornitura per rispondere nei termini alle richieste "
+              "delle autorità (art. 17).",
+        "zh": "备妥供应链证明材料，以便在期限内回应主管机关的问询（第 17 条）。",
+    },
+    # --- CSRD ---
+    "csrd_1": {
+        "de": "Doppelte Wesentlichkeitsanalyse durchführen: Auswirkungen des Unternehmens und "
+              "finanzielle Risiken gleichermaßen bewerten (ESRS 1, Kapitel 3).",
+        "en": "Carry out a double materiality assessment: evaluate the company's impacts and its "
+              "financial risks alike (ESRS 1, chapter 3).",
+        "es": "Realizar un análisis de doble materialidad: evaluar por igual los impactos de la empresa "
+              "y los riesgos financieros (ESRS 1, capítulo 3).",
+        "fr": "Réaliser une analyse de double matérialité : évaluer à parts égales les incidences de "
+              "l'entreprise et les risques financiers (ESRS 1, chapitre 3).",
+        "it": "Effettuare un'analisi di doppia materialità: valutare allo stesso modo gli impatti "
+              "dell'impresa e i rischi finanziari (ESRS 1, capitolo 3).",
+        "zh": "开展双重重要性分析：同等评估企业的影响与财务风险（ESRS 1 第 3 章）。",
+    },
+    "csrd_2": {
+        "de": "Datenerhebung entlang der wesentlichen ESRS-Datenpunkte aufbauen und Zuständigkeiten, "
+              "Quellen und Systeme festlegen.",
+        "en": "Build data collection along the material ESRS data points and define responsibilities, "
+              "sources and systems.",
+        "es": "Construir la recogida de datos siguiendo los puntos de datos ESRS materiales y definir "
+              "responsabilidades, fuentes y sistemas.",
+        "fr": "Mettre en place la collecte de données selon les points de données ESRS matériels et "
+              "définir responsabilités, sources et systèmes.",
+        "it": "Impostare la raccolta dati lungo i data point ESRS materiali e definire responsabilità, "
+              "fonti e sistemi.",
+        "zh": "围绕重要的 ESRS 数据点建立数据采集，明确职责、数据来源与系统。",
+    },
+    "csrd_3": {
+        "de": "Prüfbereitschaft herstellen: Die Nachhaltigkeitsberichterstattung wird mit begrenzter "
+              "Sicherheit geprüft (Art. 34 Bilanzrichtlinie).",
+        "en": "Prepare for assurance: sustainability reporting is subject to limited assurance (Art. 34 "
+              "of the Accounting Directive).",
+        "es": "Prepararse para la verificación: la información de sostenibilidad se verifica con "
+              "seguridad limitada (art. 34 de la Directiva contable).",
+        "fr": "Se préparer à l'assurance : le reporting de durabilité fait l'objet d'une assurance "
+              "limitée (art. 34 de la directive comptable).",
+        "it": "Prepararsi all'attestazione: la rendicontazione di sostenibilità è soggetta ad assurance "
+              "limitata (art. 34 della direttiva contabile).",
+        "zh": "做好鉴证准备：可持续发展报告须接受有限保证鉴证（《会计指令》第 34 条）。",
+    },
+    "csrd_4": {
+        "de": "Bericht als eigenen Abschnitt des Lageberichts erstellen und im einheitlichen "
+              "elektronischen Berichtsformat auszeichnen (Art. 29d).",
+        "en": "Produce the report as a dedicated section of the management report and tag it in the "
+              "single electronic reporting format (Art. 29d).",
+        "es": "Elaborar el informe como sección propia del informe de gestión y etiquetarlo en el "
+              "formato electrónico único (art. 29d).",
+        "fr": "Établir le rapport comme section distincte du rapport de gestion et le baliser au format "
+              "électronique unique (art. 29d).",
+        "it": "Redigere la relazione come sezione autonoma della relazione sulla gestione e marcarla nel "
+              "formato elettronico unico (art. 29d).",
+        "zh": "将报告作为管理报告的独立章节编制，并按统一电子报告格式进行标记（第 29d 条）。",
+    },
+    # --- CSRD-Umsetzungsgesetz (DE) ---
+    "csrd_de_1": {
+        "de": "Verfahren beobachten: Bis zur Verkündung gilt § 289b HGB in der Fassung des CSR-RUG.",
+        "en": "Monitor the legislative procedure: until promulgation, section 289b HGB applies in its "
+              "CSR-RUG wording.",
+        "es": "Seguir el procedimiento legislativo: hasta la promulgación rige el § 289b HGB en la "
+              "redacción del CSR-RUG.",
+        "fr": "Suivre la procédure législative : jusqu'à la promulgation, le § 289b HGB s'applique dans "
+              "sa rédaction issue du CSR-RUG.",
+        "it": "Seguire l'iter legislativo: fino alla promulgazione vale il § 289b HGB nella formulazione "
+              "del CSR-RUG.",
+        "zh": "关注立法进程：在公布之前，《商法典》第 289b 条仍适用 CSR-RUG 版本。",
+    },
+    "csrd_de_2": {
+        "de": "Vorarbeiten an den ESRS ausrichten — der Entwurf übernimmt die europäischen Standards "
+              "unverändert.",
+        "en": "Align preparatory work with the ESRS — the draft adopts the European standards unchanged.",
+        "es": "Orientar los trabajos preparatorios a los ESRS: el proyecto adopta sin cambios las normas "
+              "europeas.",
+        "fr": "Orienter les travaux préparatoires sur les ESRS : le projet reprend les normes "
+              "européennes sans modification.",
+        "it": "Orientare i lavori preparatori agli ESRS: la bozza recepisce senza modifiche gli standard "
+              "europei.",
+        "zh": "前期准备工作以 ESRS 为准——草案原样采纳欧洲标准。",
+    },
+    "csrd_de_3": {
+        "de": "Prüfungsmandat frühzeitig klären (Abschlussprüfer oder unabhängiger Erbringer von "
+              "Bestätigungsleistungen).",
+        "en": "Clarify the assurance mandate early (statutory auditor or independent assurance services "
+              "provider).",
+        "es": "Aclarar pronto el mandato de verificación (auditor legal o proveedor independiente de "
+              "servicios de aseguramiento).",
+        "fr": "Clarifier rapidement le mandat d'assurance (commissaire aux comptes ou prestataire "
+              "indépendant de services d'assurance).",
+        "it": "Chiarire per tempo il mandato di assurance (revisore legale o fornitore indipendente di "
+              "servizi di attestazione).",
+        "zh": "尽早明确鉴证委托对象（法定审计师或独立鉴证服务提供者）。",
+    },
+    # --- ESRS ---
+    "esrs_1": {
+        "de": "Nach der Wesentlichkeitsanalyse festlegen, welche themenbezogenen Standards (E1–E5, "
+              "S1–S4, G1) zu berichten sind (ESRS 1).",
+        "en": "After the materiality assessment, determine which topical standards (E1–E5, S1–S4, G1) "
+              "have to be reported (ESRS 1).",
+        "es": "Tras el análisis de materialidad, determinar qué normas temáticas (E1–E5, S1–S4, G1) "
+              "deben reportarse (ESRS 1).",
+        "fr": "Après l'analyse de matérialité, déterminer quelles normes thématiques (E1–E5, S1–S4, G1) "
+              "doivent être publiées (ESRS 1).",
+        "it": "Dopo l'analisi di materialità, stabilire quali standard tematici (E1–E5, S1–S4, G1) vanno "
+              "rendicontati (ESRS 1).",
+        "zh": "在完成重要性分析后，确定需要报告哪些主题标准（E1–E5、S1–S4、G1）（ESRS 1）。",
+    },
+    "esrs_2": {
+        "de": "Die allgemeinen Angaben nach ESRS 2 sind unabhängig von der Wesentlichkeit immer zu "
+              "berichten.",
+        "en": "The general disclosures under ESRS 2 must always be reported, irrespective of materiality.",
+        "es": "La información general del ESRS 2 debe reportarse siempre, con independencia de la "
+              "materialidad.",
+        "fr": "Les informations générales de l'ESRS 2 doivent toujours être publiées, indépendamment de "
+              "la matérialité.",
+        "it": "Le informazioni generali dell'ESRS 2 vanno sempre rendicontate, a prescindere dalla "
+              "materialità.",
+        "zh": "ESRS 2 规定的一般披露事项无论重要性如何均须报告。",
+    },
+    "esrs_3": {
+        "de": "Lückenanalyse gegen die Datenpunktliste erstellen und interne Kontrollen für die "
+              "Datenqualität einrichten.",
+        "en": "Perform a gap analysis against the data point list and set up internal controls for data "
+              "quality.",
+        "es": "Elaborar un análisis de brechas frente a la lista de puntos de datos y establecer "
+              "controles internos de calidad de datos.",
+        "fr": "Réaliser une analyse des écarts par rapport à la liste des points de données et mettre en "
+              "place des contrôles internes de qualité des données.",
+        "it": "Effettuare una gap analysis rispetto all'elenco dei data point e istituire controlli "
+              "interni sulla qualità dei dati.",
+        "zh": "对照数据点清单开展差距分析，并建立数据质量内部控制。",
+    },
+    # --- NFRD ---
+    "nfrd_1": {
+        "de": "Prüfen, ob für zurückliegende Geschäftsjahre noch eine nichtfinanzielle Erklärung "
+              "offen ist.",
+        "en": "Check whether a non-financial statement is still outstanding for past financial years.",
+        "es": "Comprobar si queda pendiente un estado no financiero de ejercicios anteriores.",
+        "fr": "Vérifier si une déclaration non financière reste due pour des exercices antérieurs.",
+        "it": "Verificare se resta da presentare una dichiarazione non finanziaria per esercizi passati.",
+        "zh": "核查以往财政年度是否仍有未提交的非财务报表。",
+    },
+    "nfrd_2": {
+        "de": "Umstellung auf die Berichterstattung nach CSRD und ESRS planen; die NFRD ist dadurch "
+              "abgelöst.",
+        "en": "Plan the switch to reporting under CSRD and ESRS; the NFRD has been superseded by them.",
+        "es": "Planificar el cambio a la información según CSRD y ESRS; la NFRD queda sustituida.",
+        "fr": "Planifier le passage au reporting selon la CSRD et les ESRS ; la NFRD est remplacée.",
+        "it": "Pianificare il passaggio alla rendicontazione secondo CSRD ed ESRS; la NFRD è superata.",
+        "zh": "规划向 CSRD 与 ESRS 报告体系的过渡；NFRD 已被取代。",
+    },
+    # --- CSR-RUG ---
+    "csr_rug_1": {
+        "de": "Prüfen, ob für das laufende Geschäftsjahr noch eine nichtfinanzielle Erklärung nach "
+              "§ 289b HGB abzugeben ist.",
+        "en": "Check whether a non-financial statement under section 289b HGB is still due for the "
+              "current financial year.",
+        "es": "Comprobar si para el ejercicio en curso sigue siendo obligatorio un estado no financiero "
+              "según el § 289b HGB.",
+        "fr": "Vérifier si une déclaration non financière au titre du § 289b HGB est encore due pour "
+              "l'exercice en cours.",
+        "it": "Verificare se per l'esercizio in corso sia ancora dovuta una dichiarazione non finanziaria "
+              "ai sensi del § 289b HGB.",
+        "zh": "核查本财政年度是否仍须依《商法典》第 289b 条提交非财务报表。",
+    },
+    "csr_rug_2": {
+        "de": "Rahmenwerk benennen und die Prüfung durch den Aufsichtsrat sicherstellen "
+              "(§ 171 Abs. 1 Satz 4 AktG).",
+        "en": "Name the framework used and ensure the supervisory board's review (section 171(1) "
+              "sentence 4 AktG).",
+        "es": "Indicar el marco utilizado y asegurar el examen por el consejo de vigilancia "
+              "(§ 171, apdo. 1, frase 4 AktG).",
+        "fr": "Indiquer le référentiel utilisé et assurer l'examen par le conseil de surveillance "
+              "(§ 171, al. 1, phrase 4 AktG).",
+        "it": "Indicare il framework utilizzato e garantire l'esame da parte del consiglio di "
+              "sorveglianza (§ 171, c. 1, per. 4 AktG).",
+        "zh": "说明所采用的框架，并确保监事会进行审查（《股份公司法》第 171 条第 1 款第 4 句）。",
+    },
+    "csr_rug_3": {
+        "de": "Übergang auf die CSRD-Berichterstattung planen.",
+        "en": "Plan the transition to CSRD reporting.",
+        "es": "Planificar la transición a la información según la CSRD.",
+        "fr": "Planifier la transition vers le reporting CSRD.",
+        "it": "Pianificare la transizione alla rendicontazione CSRD.",
+        "zh": "规划向 CSRD 报告体系的过渡。",
+    },
+    # --- Taxonomie-Verordnung ---
+    "taxonomie_1": {
+        "de": "Wirtschaftstätigkeiten den delegierten Rechtsakten zuordnen und die taxonomiefähigen "
+              "Anteile bestimmen.",
+        "en": "Map economic activities to the delegated acts and determine the taxonomy-eligible shares.",
+        "es": "Asignar las actividades económicas a los actos delegados y determinar las proporciones "
+              "elegibles según la taxonomía.",
+        "fr": "Rattacher les activités économiques aux actes délégués et déterminer les parts éligibles "
+              "à la taxinomie.",
+        "it": "Ricondurre le attività economiche agli atti delegati e determinare le quote ammissibili "
+              "alla tassonomia.",
+        "zh": "将经济活动对应到授权法案，确定符合分类目录条件的比例。",
+    },
+    "taxonomie_2": {
+        "de": "Für taxonomiefähige Tätigkeiten die technischen Bewertungskriterien, die Vermeidung "
+              "erheblicher Beeinträchtigungen und den Mindestschutz prüfen (Art. 3, 18).",
+        "en": "For taxonomy-eligible activities, check the technical screening criteria, do-no-"
+              "significant-harm and the minimum safeguards (Art. 3, 18).",
+        "es": "Para las actividades elegibles, comprobar los criterios técnicos de selección, el "
+              "principio de no causar perjuicio significativo y las garantías mínimas (art. 3, 18).",
+        "fr": "Pour les activités éligibles, vérifier les critères d'examen technique, l'absence de "
+              "préjudice important et les garanties minimales (art. 3, 18).",
+        "it": "Per le attività ammissibili, verificare i criteri di vaglio tecnico, il principio DNSH e "
+              "le garanzie minime (art. 3, 18).",
+        "zh": "对符合条件的活动，核查技术筛选标准、无重大损害原则及最低保障要求（第 3、18 条）。",
+    },
+    "taxonomie_3": {
+        "de": "Umsatz-, CapEx- und OpEx-Anteile nach der Delegierten Verordnung (EU) 2021/2178 "
+              "ermitteln und in den vorgeschriebenen Meldebögen ausweisen (Art. 8).",
+        "en": "Determine turnover, CapEx and OpEx shares under Delegated Regulation (EU) 2021/2178 and "
+              "present them in the prescribed templates (Art. 8).",
+        "es": "Determinar las proporciones de cifra de negocios, CapEx y OpEx según el Reglamento "
+              "Delegado (UE) 2021/2178 y presentarlas en las plantillas prescritas (art. 8).",
+        "fr": "Déterminer les parts de chiffre d'affaires, de CapEx et d'OpEx selon le règlement délégué "
+              "(UE) 2021/2178 et les présenter dans les modèles prescrits (art. 8).",
+        "it": "Determinare le quote di fatturato, CapEx e OpEx secondo il regolamento delegato (UE) "
+              "2021/2178 e riportarle nei modelli prescritti (art. 8).",
+        "zh": "依据授权条例 (EU) 2021/2178 计算营业额、资本性支出和运营支出的比例，并在规定表格中披露（第 8 条）。",
+    },
+    # --- SFDR ---
+    "sfdr_1": {
+        "de": "Finanzprodukte einstufen und die Angaben nach Art. 6, 8 oder 9 festlegen.",
+        "en": "Classify financial products and determine the disclosures under Art. 6, 8 or 9.",
+        "es": "Clasificar los productos financieros y definir la información según los art. 6, 8 o 9.",
+        "fr": "Classer les produits financiers et définir les informations au titre des art. 6, 8 ou 9.",
+        "it": "Classificare i prodotti finanziari e definire le informazioni ai sensi degli art. 6, 8 o 9.",
+        "zh": "对金融产品进行分类，并确定第 6、8 或 9 条项下的披露内容。",
+    },
+    "sfdr_2": {
+        "de": "Strategien zur Einbeziehung von Nachhaltigkeitsrisiken und die Vergütungspolitik auf "
+              "der Website offenlegen (Art. 3, 5).",
+        "en": "Publish policies on the integration of sustainability risks and the remuneration policy "
+              "on the website (Art. 3, 5).",
+        "es": "Publicar en la web las políticas de integración de riesgos de sostenibilidad y la "
+              "política de remuneración (art. 3, 5).",
+        "fr": "Publier sur le site web les politiques d'intégration des risques de durabilité et la "
+              "politique de rémunération (art. 3, 5).",
+        "it": "Pubblicare sul sito le politiche di integrazione dei rischi di sostenibilità e la "
+              "politica di remunerazione (art. 3, 5).",
+        "zh": "在网站上披露可持续性风险纳入策略及薪酬政策（第 3、5 条）。",
+    },
+    "sfdr_3": {
+        "de": "Erklärung zu den wichtigsten nachteiligen Nachhaltigkeitsauswirkungen abgeben oder das "
+              "Unterlassen begründen (Art. 4).",
+        "en": "Publish a statement on principal adverse sustainability impacts or explain why not "
+              "(Art. 4).",
+        "es": "Publicar una declaración sobre las principales incidencias adversas en materia de "
+              "sostenibilidad o explicar por qué no (art. 4).",
+        "fr": "Publier une déclaration sur les principales incidences négatives en matière de durabilité "
+              "ou expliquer son abstention (art. 4).",
+        "it": "Pubblicare una dichiarazione sui principali effetti negativi per la sostenibilità o "
+              "spiegarne la mancanza (art. 4).",
+        "zh": "发布主要不利可持续性影响声明，或说明不发布的理由（第 4 条）。",
+    },
+    # --- ESG-Rating-Verordnung ---
+    "esgrating_1": {
+        "de": "Prüfen, ob eigene Bewertungen als ESG-Rating im Sinne des Art. 3 gelten; bewertete "
+              "Unternehmen selbst sind nicht erfasst.",
+        "en": "Check whether your own assessments qualify as ESG ratings under Art. 3; rated companies "
+              "themselves are not covered.",
+        "es": "Comprobar si las propias valoraciones constituyen una calificación ESG conforme al art. 3; "
+              "las empresas calificadas no están sujetas.",
+        "fr": "Vérifier si vos propres évaluations constituent une notation ESG au sens de l'art. 3 ; "
+              "les entreprises notées ne sont pas visées.",
+        "it": "Verificare se le proprie valutazioni costituiscono un rating ESG ai sensi dell'art. 3; le "
+              "imprese valutate non rientrano nell'ambito.",
+        "zh": "核查自身评估是否构成第 3 条所指的 ESG 评级；被评级企业本身不在适用范围内。",
+    },
+    "esgrating_2": {
+        "de": "Zulassung bei der ESMA vorbereiten und die organisatorischen Anforderungen an "
+              "Unabhängigkeit und Interessenkonflikte umsetzen (Art. 4 ff., Anhang III).",
+        "en": "Prepare authorisation by ESMA and implement the organisational requirements on "
+              "independence and conflicts of interest (Art. 4 et seq., Annex III).",
+        "es": "Preparar la autorización ante la ESMA e implantar los requisitos organizativos de "
+              "independencia y conflictos de interés (art. 4 y ss., anexo III).",
+        "fr": "Préparer l'agrément auprès de l'AEMF et mettre en œuvre les exigences organisationnelles "
+              "d'indépendance et de conflits d'intérêts (art. 4 et suiv., annexe III).",
+        "it": "Preparare l'autorizzazione presso l'ESMA e attuare i requisiti organizzativi su "
+              "indipendenza e conflitti di interesse (art. 4 ss., allegato III).",
+        "zh": "准备向 ESMA 申请授权，并落实关于独立性和利益冲突的组织性要求（第 4 条及以下、附件三）。",
+    },
+    "esgrating_3": {
+        "de": "Methoden, Modelle und Grundannahmen offenlegen und laufend aktuell halten (Anhang I).",
+        "en": "Disclose methodologies, models and key assumptions and keep them up to date (Annex I).",
+        "es": "Divulgar metodologías, modelos e hipótesis fundamentales y mantenerlos actualizados "
+              "(anexo I).",
+        "fr": "Publier les méthodologies, modèles et hypothèses clés et les tenir à jour (annexe I).",
+        "it": "Divulgare metodologie, modelli e ipotesi di base e mantenerli aggiornati (allegato I).",
+        "zh": "披露方法论、模型和基本假设，并持续保持更新（附件一）。",
+    },
+    # --- Whistleblower-Richtlinie ---
+    "whistle_1": {
+        "de": "In Deutschland wirkt die Richtlinie über das HinSchG; dessen Pflichten erfüllen.",
+        "en": "In Germany the directive takes effect through the HinSchG; comply with its obligations.",
+        "es": "En Alemania la directiva actúa a través de la HinSchG; cumplir sus obligaciones.",
+        "fr": "En Allemagne, la directive produit ses effets via la HinSchG ; en respecter les "
+              "obligations.",
+        "it": "In Germania la direttiva opera tramite la HinSchG; adempiere ai relativi obblighi.",
+        "zh": "在德国，该指令通过《举报人保护法》生效；应履行该法规定的义务。",
+    },
+    "whistle_2": {
+        "de": "Für Standorte in anderen Mitgliedstaaten die jeweilige nationale Umsetzung prüfen; "
+              "konzernweite Meldestellen sind nicht überall zulässig.",
+        "en": "For sites in other member states, check the respective national transposition; "
+              "group-wide reporting channels are not permitted everywhere.",
+        "es": "Para centros en otros Estados miembros, comprobar la transposición nacional respectiva; "
+              "los canales de denuncia a nivel de grupo no se admiten en todas partes.",
+        "fr": "Pour les sites situés dans d'autres États membres, vérifier la transposition nationale "
+              "concernée ; les canaux de signalement à l'échelle du groupe ne sont pas admis partout.",
+        "it": "Per le sedi in altri Stati membri verificare il rispettivo recepimento nazionale; i "
+              "canali di segnalazione di gruppo non sono ammessi ovunque.",
+        "zh": "对位于其他成员国的经营场所，须核查当地的转化立法；集团层面的统一举报渠道并非在各国均获允许。",
+    },
+    "whistle_3": {
+        "de": "Meldekanäle so ausgestalten, dass der Eingang binnen sieben Tagen bestätigt und binnen "
+              "drei Monaten zurückgemeldet wird (Art. 9).",
+        "en": "Design reporting channels so that receipt is acknowledged within seven days and feedback "
+              "is given within three months (Art. 9).",
+        "es": "Configurar los canales de denuncia de modo que se acuse recibo en siete días y se dé "
+              "respuesta en tres meses (art. 9).",
+        "fr": "Concevoir les canaux de signalement de sorte que la réception soit accusée sous sept "
+              "jours et un retour donné sous trois mois (art. 9).",
+        "it": "Configurare i canali di segnalazione in modo da confermare la ricezione entro sette "
+              "giorni e dare riscontro entro tre mesi (art. 9).",
+        "zh": "设置举报渠道，确保七日内确认收到、三个月内给予反馈（第 9 条）。",
+    },
+    # --- HinSchG ---
+    "hinschg_1": {
+        "de": "Interne Meldestelle einrichten und die dafür zuständige Person oder Organisationseinheit "
+              "benennen (§§ 12, 15).",
+        "en": "Set up an internal reporting office and appoint the responsible person or unit "
+              "(sections 12, 15).",
+        "es": "Crear un canal interno de denuncia y designar a la persona o unidad responsable "
+              "(§§ 12, 15).",
+        "fr": "Mettre en place un canal de signalement interne et désigner la personne ou l'unité "
+              "responsable (§§ 12, 15).",
+        "it": "Istituire un canale di segnalazione interno e designare la persona o l'unità responsabile "
+              "(§§ 12, 15).",
+        "zh": "设立内部举报机构，并指定负责人员或部门（第 12、15 条）。",
+    },
+    "hinschg_2": {
+        "de": "Meldeweg in mündlicher Form und in Textform bereitstellen; auf Wunsch ist eine "
+              "persönliche Zusammenkunft zu ermöglichen (§ 16).",
+        "en": "Provide a reporting channel in oral and in written form; on request a personal meeting "
+              "must be made possible (section 16).",
+        "es": "Ofrecer una vía de denuncia oral y por escrito; a petición debe posibilitarse una reunión "
+              "presencial (§ 16).",
+        "fr": "Proposer un canal de signalement oral et écrit ; sur demande, une rencontre en personne "
+              "doit être possible (§ 16).",
+        "it": "Offrire un canale di segnalazione in forma orale e scritta; su richiesta va garantito un "
+              "incontro di persona (§ 16).",
+        "zh": "提供口头和书面举报途径；应请求须安排当面会谈（第 16 条）。",
+    },
+    "hinschg_3": {
+        "de": "Fristen einhalten: Eingangsbestätigung binnen sieben Tagen, Rückmeldung binnen drei "
+              "Monaten (§ 17).",
+        "en": "Observe the deadlines: acknowledge receipt within seven days, give feedback within three "
+              "months (section 17).",
+        "es": "Cumplir los plazos: acuse de recibo en siete días, respuesta en tres meses (§ 17).",
+        "fr": "Respecter les délais : accusé de réception sous sept jours, retour sous trois mois "
+              "(§ 17).",
+        "it": "Rispettare i termini: conferma di ricezione entro sette giorni, riscontro entro tre mesi "
+              "(§ 17).",
+        "zh": "遵守时限：七日内确认收到，三个月内给予反馈（第 17 条）。",
+    },
+    "hinschg_4": {
+        "de": "Vertraulichkeit der Identität sichern und Meldungen dokumentieren; Verstöße sind "
+              "bußgeldbewehrt (§§ 8, 11, 40).",
+        "en": "Safeguard the confidentiality of identities and document reports; breaches carry fines "
+              "(sections 8, 11, 40).",
+        "es": "Garantizar la confidencialidad de la identidad y documentar las denuncias; las "
+              "infracciones conllevan multas (§§ 8, 11, 40).",
+        "fr": "Garantir la confidentialité de l'identité et documenter les signalements ; les "
+              "manquements sont passibles d'amendes (§§ 8, 11, 40).",
+        "it": "Garantire la riservatezza dell'identità e documentare le segnalazioni; le violazioni sono "
+              "sanzionate (§§ 8, 11, 40).",
+        "zh": "确保举报人身份保密并记录举报事项；违反规定将被处以罚款（第 8、11、40 条）。",
+    },
+    # --- Right to Repair ---
+    "r2r_1": {
+        "de": "Prüfen, ob eigene Produkte unter die in Anhang II genannten Warenkategorien fallen.",
+        "en": "Check whether your products fall under the goods categories listed in Annex II.",
+        "es": "Comprobar si los propios productos entran en las categorías de bienes del anexo II.",
+        "fr": "Vérifier si vos produits relèvent des catégories de biens énumérées à l'annexe II.",
+        "it": "Verificare se i propri prodotti rientrano nelle categorie di beni elencate nell'allegato II.",
+        "zh": "核查自有产品是否属于附件二所列商品类别。",
+    },
+    "r2r_2": {
+        "de": "Reparatur innerhalb angemessener Frist und zu angemessenem Preis organisieren und ein "
+              "europäisches Reparaturformular bereitstellen (Art. 5, 4).",
+        "en": "Organise repair within a reasonable time and at a reasonable price and provide the "
+              "European repair information form (Art. 5, 4).",
+        "es": "Organizar la reparación en un plazo y a un precio razonables y facilitar el formulario "
+              "europeo de información sobre reparación (art. 5, 4).",
+        "fr": "Organiser la réparation dans un délai et à un prix raisonnables et fournir le formulaire "
+              "européen d'information sur la réparation (art. 5, 4).",
+        "it": "Organizzare la riparazione entro un termine e a un prezzo ragionevoli e fornire il modulo "
+              "europeo di informazioni sulla riparazione (art. 5, 4).",
+        "zh": "在合理期限内以合理价格安排维修，并提供欧洲维修信息表（第 5、4 条）。",
+    },
+    "r2r_3": {
+        "de": "Ersatzteile und Reparaturinformationen zugänglich machen; Klauseln, die unabhängige "
+              "Reparatur behindern, sind unzulässig (Art. 5).",
+        "en": "Make spare parts and repair information available; clauses that impede independent "
+              "repair are not permitted (Art. 5).",
+        "es": "Poner a disposición piezas de repuesto e información de reparación; las cláusulas que "
+              "impiden la reparación independiente son inadmisibles (art. 5).",
+        "fr": "Rendre accessibles les pièces détachées et les informations de réparation ; les clauses "
+              "entravant la réparation indépendante sont interdites (art. 5).",
+        "it": "Rendere disponibili pezzi di ricambio e informazioni sulla riparazione; le clausole che "
+              "ostacolano la riparazione indipendente non sono ammesse (art. 5).",
+        "zh": "提供备件和维修信息；妨碍独立维修的条款不予允许（第 5 条）。",
+    },
+    # --- Oekodesign-Verordnung (ESPR) ---
+    "oekodesign_1": {
+        "de": "Den Arbeitsplan der Kommission verfolgen: Konkrete Anforderungen entstehen erst durch "
+              "delegierte Rechtsakte je Produktgruppe (Art. 4).",
+        "en": "Follow the Commission's working plan: concrete requirements only arise from delegated "
+              "acts per product group (Art. 4).",
+        "es": "Seguir el plan de trabajo de la Comisión: los requisitos concretos solo surgen de actos "
+              "delegados por grupo de productos (art. 4).",
+        "fr": "Suivre le plan de travail de la Commission : les exigences concrètes ne naissent que des "
+              "actes délégués par groupe de produits (art. 4).",
+        "it": "Seguire il piano di lavoro della Commissione: i requisiti concreti derivano solo da atti "
+              "delegati per gruppo di prodotti (art. 4).",
+        "zh": "关注欧盟委员会的工作计划：具体要求须由针对各产品组的授权法案确定（第 4 条）。",
+    },
+    "oekodesign_2": {
+        "de": "Auf den digitalen Produktpass vorbereiten: Produkt- und Materialdaten je Modell, Charge "
+              "oder Artikel strukturiert vorhalten (Art. 9 ff.).",
+        "en": "Prepare for the digital product passport: keep product and material data structured per "
+              "model, batch or item (Art. 9 et seq.).",
+        "es": "Prepararse para el pasaporte digital de producto: mantener datos de producto y material "
+              "estructurados por modelo, lote o artículo (art. 9 y ss.).",
+        "fr": "Se préparer au passeport numérique de produit : tenir des données produit et matériaux "
+              "structurées par modèle, lot ou article (art. 9 et suiv.).",
+        "it": "Prepararsi al passaporto digitale di prodotto: mantenere dati di prodotto e materiali "
+              "strutturati per modello, lotto o articolo (art. 9 ss.).",
+        "zh": "为数字产品护照做准备：按型号、批次或单品结构化保存产品与材料数据（第 9 条及以下）。",
+    },
+    "oekodesign_3": {
+        "de": "Umgang mit unverkauften Verbrauchsgütern klären: Offenlegungspflicht über vernichtete "
+              "Waren, für Textilien und Schuhe gilt ein Vernichtungsverbot (Art. 24, 25).",
+        "en": "Clarify the handling of unsold consumer products: destroyed goods must be disclosed, and "
+              "for textiles and footwear destruction is prohibited (Art. 24, 25).",
+        "es": "Aclarar el tratamiento de productos de consumo no vendidos: obligación de informar sobre "
+              "bienes destruidos; para textiles y calzado rige la prohibición de destrucción (art. 24, 25).",
+        "fr": "Clarifier le traitement des produits de consommation invendus : obligation de publier les "
+              "biens détruits ; pour les textiles et chaussures, la destruction est interdite (art. 24, 25).",
+        "it": "Chiarire la gestione dei beni di consumo invenduti: obbligo di informativa sui beni "
+              "distrutti; per tessili e calzature vige il divieto di distruzione (art. 24, 25).",
+        "zh": "明确未售出消费品的处置方式：须披露被销毁商品，纺织品和鞋类适用销毁禁令（第 24、25 条）。",
+    },
+    # --- PPWR ---
+    "ppwr_1": {
+        "de": "Verpackungsportfolio erfassen und gegen die Anforderungen an Recyclingfähigkeit und "
+              "Verpackungsminimierung prüfen (Art. 6, 10).",
+        "en": "Take stock of the packaging portfolio and check it against the recyclability and "
+              "packaging minimisation requirements (Art. 6, 10).",
+        "es": "Inventariar la cartera de envases y contrastarla con los requisitos de reciclabilidad y "
+              "minimización (art. 6, 10).",
+        "fr": "Recenser le portefeuille d'emballages et le confronter aux exigences de recyclabilité et "
+              "de minimisation (art. 6, 10).",
+        "it": "Censire il portafoglio imballaggi e verificarlo rispetto ai requisiti di riciclabilità e "
+              "minimizzazione (art. 6, 10).",
+        "zh": "梳理包装组合，并对照可回收性和包装最小化要求进行核查（第 6、10 条）。",
+    },
+    "ppwr_2": {
+        "de": "Konformitätsbewertung, EU-Konformitätserklärung und Kennzeichnung der Verpackungen "
+              "vorbereiten (Art. 11, 12, 38).",
+        "en": "Prepare conformity assessment, the EU declaration of conformity and packaging labelling "
+              "(Art. 11, 12, 38).",
+        "es": "Preparar la evaluación de conformidad, la declaración UE de conformidad y el etiquetado "
+              "de los envases (art. 11, 12, 38).",
+        "fr": "Préparer l'évaluation de conformité, la déclaration UE de conformité et l'étiquetage des "
+              "emballages (art. 11, 12, 38).",
+        "it": "Predisporre la valutazione di conformità, la dichiarazione UE di conformità e "
+              "l'etichettatura degli imballaggi (art. 11, 12, 38).",
+        "zh": "准备符合性评估、欧盟符合性声明及包装标识（第 11、12、38 条）。",
+    },
+    "ppwr_3": {
+        "de": "Registrierung und erweiterte Herstellerverantwortung je Mitgliedstaat klären, in dem "
+              "Verpackungen erstmals bereitgestellt werden (Art. 44 f.).",
+        "en": "Clarify registration and extended producer responsibility in each member state where "
+              "packaging is first made available (Art. 44 et seq.).",
+        "es": "Aclarar el registro y la responsabilidad ampliada del productor en cada Estado miembro "
+              "donde se ponga por primera vez a disposición el envase (art. 44 y ss.).",
+        "fr": "Clarifier l'enregistrement et la responsabilité élargie du producteur dans chaque État "
+              "membre où l'emballage est mis à disposition pour la première fois (art. 44 et suiv.).",
+        "it": "Chiarire registrazione e responsabilità estesa del produttore in ogni Stato membro in cui "
+              "l'imballaggio è messo a disposizione per la prima volta (art. 44 ss.).",
+        "zh": "在首次提供包装的每个成员国明确注册登记与生产者延伸责任（第 44 条及以下）。",
+    },
+    # --- Konfliktmineralien-VO ---
+    "konfliktmin_1": {
+        "de": "Prüfen, ob die eingeführten Mengen die Schwellen in Anhang I überschreiten; darunter "
+              "greifen die Pflichten nicht.",
+        "en": "Check whether the imported volumes exceed the thresholds in Annex I; below them the "
+              "obligations do not apply.",
+        "es": "Comprobar si los volúmenes importados superan los umbrales del anexo I; por debajo no se "
+              "aplican las obligaciones.",
+        "fr": "Vérifier si les volumes importés dépassent les seuils de l'annexe I ; en deçà, les "
+              "obligations ne s'appliquent pas.",
+        "it": "Verificare se i volumi importati superano le soglie dell'allegato I; al di sotto gli "
+              "obblighi non si applicano.",
+        "zh": "核查进口数量是否超过附件一的门槛；未超过则不适用相关义务。",
+    },
+    "konfliktmin_2": {
+        "de": "Managementsystem nach dem OECD-Leitfaden einrichten und die Lieferkette bis zur "
+              "Schmelze oder Raffinerie offenlegen (Art. 4, 5).",
+        "en": "Set up a management system in line with the OECD guidance and disclose the supply chain "
+              "up to the smelter or refiner (Art. 4, 5).",
+        "es": "Establecer un sistema de gestión conforme a la guía de la OCDE y revelar la cadena de "
+              "suministro hasta la fundición o refinería (art. 4, 5).",
+        "fr": "Mettre en place un système de gestion conforme au guide de l'OCDE et divulguer la chaîne "
+              "d'approvisionnement jusqu'à la fonderie ou l'affinerie (art. 4, 5).",
+        "it": "Istituire un sistema di gestione conforme alla guida OCSE e divulgare la catena di "
+              "fornitura fino alla fonderia o raffineria (art. 4, 5).",
+        "zh": "按照经合组织指南建立管理体系，并披露至冶炼厂或精炼厂的供应链（第 4、5 条）。",
+    },
+    "konfliktmin_3": {
+        "de": "Unabhängige Prüfung durch Dritte veranlassen und jährlich über die Sorgfaltspflichten "
+              "berichten (Art. 6, 7).",
+        "en": "Commission an independent third-party audit and report annually on due diligence "
+              "(Art. 6, 7).",
+        "es": "Encargar una auditoría independiente por terceros e informar anualmente sobre la "
+              "diligencia debida (art. 6, 7).",
+        "fr": "Faire réaliser un audit indépendant par un tiers et rendre compte annuellement du devoir "
+              "de diligence (art. 6, 7).",
+        "it": "Commissionare un audit indipendente di terzi e riferire annualmente sul dovere di "
+              "diligenza (art. 6, 7).",
+        "zh": "委托第三方开展独立审计，并每年就尽职调查情况报告（第 6、7 条）。",
+    },
+    # --- MinRohSorgG ---
+    "minroh_1": {
+        "de": "Prüfen, ob das Unternehmen Unionseinführer mit Sitz in Deutschland ist und die "
+              "Mengenschwellen der Verordnung (EU) 2017/821 überschreitet (§ 1).",
+        "en": "Check whether the company is a Union importer established in Germany and exceeds the "
+              "volume thresholds of Regulation (EU) 2017/821 (section 1).",
+        "es": "Comprobar si la empresa es importador de la Unión con sede en Alemania y supera los "
+              "umbrales de volumen del Reglamento (UE) 2017/821 (§ 1).",
+        "fr": "Vérifier si l'entreprise est un importateur de l'Union établi en Allemagne et dépasse les "
+              "seuils de volume du règlement (UE) 2017/821 (§ 1).",
+        "it": "Verificare se l'impresa è un importatore dell'Unione con sede in Germania e supera le "
+              "soglie di volume del regolamento (UE) 2017/821 (§ 1).",
+        "zh": "核查企业是否为设在德国的欧盟进口商，且超过条例 (EU) 2017/821 的数量门槛（第 1 条）。",
+    },
+    "minroh_2": {
+        "de": "Nachweise über die Erfüllung der Sorgfaltspflichten für die Kontrolle durch die BAFA "
+              "bereithalten (§§ 4, 5).",
+        "en": "Keep evidence of compliance with the due diligence obligations ready for BAFA's "
+              "inspection (sections 4, 5).",
+        "es": "Mantener disponibles las pruebas del cumplimiento de las obligaciones de diligencia "
+              "debida para el control de la BAFA (§§ 4, 5).",
+        "fr": "Tenir à disposition les preuves du respect des obligations de diligence pour le contrôle "
+              "de la BAFA (§§ 4, 5).",
+        "it": "Tenere a disposizione le prove dell'adempimento degli obblighi di diligenza per il "
+              "controllo della BAFA (§§ 4, 5).",
+        "zh": "备妥履行尽职调查义务的证明材料，以供联邦经济和出口管制局检查（第 4、5 条）。",
+    },
+    "minroh_3": {
+        "de": "Fristen und Mitwirkungspflichten gegenüber der BAFA einhalten; Verstöße sind "
+              "bußgeldbewehrt (§ 8).",
+        "en": "Observe deadlines and duties to cooperate with BAFA; breaches carry fines (section 8).",
+        "es": "Cumplir los plazos y deberes de colaboración ante la BAFA; las infracciones conllevan "
+              "multas (§ 8).",
+        "fr": "Respecter les délais et obligations de coopération envers la BAFA ; les manquements sont "
+              "passibles d'amendes (§ 8).",
+        "it": "Rispettare termini e obblighi di collaborazione verso la BAFA; le violazioni sono "
+              "sanzionate (§ 8).",
+        "zh": "遵守对联邦经济和出口管制局的时限和配合义务；违反规定将被处以罚款（第 8 条）。",
+    },
+    # --- EU-Umweltstrafrechts-Richtlinie ---
+    "umweltstraf_1": {
+        "de": "Umweltrechtliche Genehmigungen und Betreiberpflichten auf Aktualität prüfen; ohne "
+              "Genehmigung ausgeführte Tätigkeiten sind der Kern der Straftatbestände (Art. 3).",
+        "en": "Check environmental permits and operator duties for currency; activities carried out "
+              "without a permit are at the core of the criminal offences (Art. 3).",
+        "es": "Comprobar la vigencia de las autorizaciones ambientales y las obligaciones del operador; "
+              "las actividades sin autorización son el núcleo de los tipos penales (art. 3).",
+        "fr": "Vérifier l'actualité des autorisations environnementales et des obligations d'exploitant ; "
+              "les activités menées sans autorisation sont au cœur des infractions (art. 3).",
+        "it": "Verificare l'attualità delle autorizzazioni ambientali e degli obblighi del gestore; le "
+              "attività svolte senza autorizzazione sono il nucleo delle fattispecie penali (art. 3).",
+        "zh": "核查环境许可与经营者义务是否仍然有效；未经许可开展的活动是相关刑事罪名的核心（第 3 条）。",
+    },
+    "umweltstraf_2": {
+        "de": "Compliance-Organisation und Aufsicht so aufstellen, dass eine Haftung der juristischen "
+              "Person wegen mangelnder Überwachung vermieden wird (Art. 6).",
+        "en": "Set up compliance and oversight so as to avoid liability of the legal person for lack of "
+              "supervision (Art. 6).",
+        "es": "Configurar el cumplimiento y la supervisión para evitar la responsabilidad de la persona "
+              "jurídica por falta de vigilancia (art. 6).",
+        "fr": "Organiser la conformité et la surveillance de manière à éviter la responsabilité de la "
+              "personne morale pour défaut de contrôle (art. 6).",
+        "it": "Impostare compliance e vigilanza in modo da evitare la responsabilità della persona "
+              "giuridica per carenza di controllo (art. 6).",
+        "zh": "健全合规与监督机制，以避免法人因监督不力而承担责任（第 6 条）。",
+    },
+    "umweltstraf_3": {
+        "de": "Die nationale Umsetzung verfolgen; in Deutschland wirkt die Richtlinie über die "
+              "Umweltstraftatbestände der §§ 324 ff. StGB.",
+        "en": "Follow the national transposition; in Germany the directive takes effect through the "
+              "environmental offences in sections 324 et seq. of the Criminal Code.",
+        "es": "Seguir la transposición nacional; en Alemania la directiva actúa a través de los delitos "
+              "ambientales de los §§ 324 y ss. del Código Penal.",
+        "fr": "Suivre la transposition nationale ; en Allemagne, la directive produit ses effets via les "
+              "infractions environnementales des §§ 324 et suiv. du code pénal.",
+        "it": "Seguire il recepimento nazionale; in Germania la direttiva opera tramite i reati "
+              "ambientali dei §§ 324 ss. del codice penale.",
+        "zh": "关注本国转化立法；在德国，该指令通过《刑法典》第 324 条及以下的环境犯罪条款生效。",
+    },
+    # --- EmpCo (UWG) ---
+    "empco_1": {
+        "de": "Werbeaussagen inventarisieren: Pauschale Umweltaussagen ohne Nachweis und "
+              "Klimaneutralitätsaussagen, die allein auf Kompensation beruhen, sind unzulässig.",
+        "en": "Take stock of advertising claims: generic environmental claims without evidence and "
+              "carbon-neutrality claims based solely on offsetting are not permitted.",
+        "es": "Inventariar las afirmaciones publicitarias: las alegaciones ambientales genéricas sin "
+              "pruebas y las de neutralidad climática basadas solo en compensación son inadmisibles.",
+        "fr": "Recenser les allégations publicitaires : les allégations environnementales génériques non "
+              "étayées et celles de neutralité carbone fondées uniquement sur la compensation sont "
+              "interdites.",
+        "it": "Censire le affermazioni pubblicitarie: le asserzioni ambientali generiche non provate e "
+              "quelle di neutralità climatica basate solo su compensazione non sono ammesse.",
+        "zh": "梳理广告宣称：无证据的笼统环保宣称，以及仅依靠碳抵消的气候中和宣称，均不被允许。",
+    },
+    "empco_2": {
+        "de": "Nachhaltigkeitssiegel nur noch verwenden, wenn sie auf einem zertifizierten System "
+              "beruhen oder von staatlichen Stellen stammen.",
+        "en": "Use sustainability labels only if they are based on a certification scheme or come from "
+              "public authorities.",
+        "es": "Utilizar sellos de sostenibilidad solo si se basan en un sistema de certificación o "
+              "proceden de autoridades públicas.",
+        "fr": "N'utiliser des labels de durabilité que s'ils reposent sur un système de certification ou "
+              "émanent d'autorités publiques.",
+        "it": "Utilizzare marchi di sostenibilità solo se basati su un sistema di certificazione o "
+              "provenienti da autorità pubbliche.",
+        "zh": "仅在可持续性标签基于认证体系或由公共机构颁发时方可使用。",
+    },
+    "empco_3": {
+        "de": "Angaben zu Haltbarkeit, Reparierbarkeit und Software-Updates prüfen; das Verschweigen "
+              "bekannter Einschränkungen ist irreführend.",
+        "en": "Review statements on durability, reparability and software updates; withholding known "
+              "limitations is misleading.",
+        "es": "Revisar las indicaciones sobre durabilidad, reparabilidad y actualizaciones de software; "
+              "ocultar limitaciones conocidas es engañoso.",
+        "fr": "Vérifier les indications sur la durabilité, la réparabilité et les mises à jour "
+              "logicielles ; taire des limitations connues est trompeur.",
+        "it": "Verificare le indicazioni su durabilità, riparabilità e aggiornamenti software; tacere "
+              "limitazioni note è ingannevole.",
+        "zh": "核查关于耐用性、可维修性和软件更新的说明；隐瞒已知限制构成误导。",
+    },
+    "empco_4": {
+        "de": "Für jede Umweltaussage einen Beleg dokumentieren und die Belege aktuell halten.",
+        "en": "Document evidence for every environmental claim and keep it up to date.",
+        "es": "Documentar pruebas para cada alegación ambiental y mantenerlas actualizadas.",
+        "fr": "Documenter une preuve pour chaque allégation environnementale et la tenir à jour.",
+        "it": "Documentare una prova per ogni asserzione ambientale e mantenerla aggiornata.",
+        "zh": "为每一项环保宣称留存证据，并保持证据持续更新。",
+    },
+    # --- Green Claims (Entwurf) ---
+    "greenclaims_1": {
+        "de": "Aus dem Entwurf ergeben sich derzeit keine Pflichten; das Verfahren ruht seit der "
+              "angekündigten Rücknahme und ist nur zu beobachten.",
+        "en": "The draft currently creates no obligations; the procedure has been dormant since the "
+              "announced withdrawal and merely needs to be monitored.",
+        "es": "El proyecto no genera actualmente obligaciones; el procedimiento está paralizado desde la "
+              "retirada anunciada y solo debe seguirse.",
+        "fr": "Le projet ne crée actuellement aucune obligation ; la procédure est suspendue depuis le "
+              "retrait annoncé et doit seulement être suivie.",
+        "it": "Dalla bozza non derivano attualmente obblighi; la procedura è sospesa dal ritiro "
+              "annunciato e va solo monitorata.",
+        "zh": "该草案目前不产生任何义务；自宣布拟撤回后程序处于停滞状态，只需持续关注。",
+    },
+    "greenclaims_2": {
+        "de": "Umweltaussagen bereits heute nach der EmpCo-Richtlinie beziehungsweise dem UWG belegen — "
+              "diese Regeln gelten unabhängig vom Entwurf.",
+        "en": "Substantiate environmental claims already today under the EmpCo Directive or the German "
+              "UWG — those rules apply irrespective of the draft.",
+        "es": "Fundamentar ya hoy las alegaciones ambientales conforme a la Directiva EmpCo o la UWG "
+              "alemana: esas reglas se aplican con independencia del proyecto.",
+        "fr": "Étayer dès aujourd'hui les allégations environnementales au titre de la directive EmpCo "
+              "ou de l'UWG allemande : ces règles s'appliquent indépendamment du projet.",
+        "it": "Documentare già oggi le asserzioni ambientali secondo la direttiva EmpCo o la UWG tedesca: "
+              "tali regole valgono a prescindere dalla bozza.",
+        "zh": "现在即应依据 EmpCo 指令或德国《反不正当竞争法》为环保宣称提供依据——这些规则与该草案无关，独立适用。",
     },
 }
 
@@ -2075,6 +3344,38 @@ def t_applies_note(note_key: str, lang: str = "de") -> str:
     if not note_key:
         return ""
     return t_opt(note_key, APPLIES_NOTES, lang) if note_key in APPLIES_NOTES else ""
+
+
+def t_deadline_note(note_key: str, lang: str = "de") -> str:
+    """Erlaeuterung zum unternehmensbezogenen Anwendungsbeginn.
+
+    Erst `DEADLINE_NOTES` (Staffelung fuer dieses Unternehmen), sonst der
+    allgemeine Normhinweis aus `APPLIES_NOTES`. Leer, wenn nichts hinterlegt ist.
+    """
+    if not note_key:
+        return ""
+    if note_key in DEADLINE_NOTES:
+        return t_opt(note_key, DEADLINE_NOTES, lang)
+    return t_applies_note(note_key, lang)
+
+
+def t_first_step(step_key: str, lang: str = "de") -> str:
+    """Ein kuratierter erster Schritt (leer, wenn der Schluessel unbekannt ist)."""
+    return t_opt(step_key, FIRST_STEPS, lang) if step_key in FIRST_STEPS else ""
+
+
+def t_threshold_hint(hint: dict, lang: str = "de") -> str:
+    """Hinweis zur Schwellen-Naehe aus `thresholds.near_thresholds()`."""
+    lang = normalize_lang(lang)
+    template = THRESHOLD_HINTS.get(hint.get("key", ""), {}).get(lang, "")
+    if not template:
+        return ""
+    values = hint.get("values") or {}
+    return template.format(
+        employees=fmt_int(values.get("employees"), lang),
+        employees_de=fmt_int(values.get("employees_de"), lang),
+        revenue=fmt_eur(values.get("revenue_eur"), lang),
+    )
 
 
 def normalize_lang(lang: str | None) -> str:

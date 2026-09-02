@@ -153,6 +153,37 @@
     /* Schwellenwerte im Zitat dezent rot hinterlegen */
     .kennzahl { background: #FBE3E3; color: var(--tm-red); padding: 0 3px; font-style: normal; }
     .reg-asof { margin-top: 8px; font-size: 12px; color: var(--tm-muted); }
+
+    /* Handlungsplan auf der Karte: Frist + aufklappbare erste Schritte */
+    .reg-deadline {
+      margin-top: 8px; padding: 8px 12px; background: #FFFFFF;
+      border-left: 3px solid var(--tm-navy); line-height: 1.5; color: #000000;
+    }
+    .reg-deadline strong { color: var(--tm-navy); }
+    .reg-deadline-note { margin-top: 4px; font-size: 12px; color: var(--tm-muted); }
+    .reg-steps { margin-top: 8px; }
+    .reg-steps > summary {
+      cursor: pointer; list-style: none; display: inline-block;
+      font-size: 13px; font-weight: 700; color: var(--tm-link);
+      padding: 2px 0; border-bottom: 1px solid transparent;
+    }
+    .reg-steps > summary::-webkit-details-marker { display: none; }
+    .reg-steps > summary::before { content: "+ "; }
+    .reg-steps[open] > summary::before { content: "– "; }
+    .reg-steps > summary:hover { border-bottom-color: var(--tm-link); }
+    .reg-steps-list { margin: 8px 0 0 18px; }
+    .reg-steps-list li { margin-bottom: 5px; line-height: 1.5; }
+    .reg-steps-link { margin-top: 8px; font-size: 12px; color: var(--tm-muted); }
+
+    /* Schwellen-Naehe: dezenter Abschnitt unter den Metriken */
+    .threshold-box {
+      background: var(--tm-box); border-left: 3px solid var(--tm-blue);
+      padding: 12px 16px; margin-bottom: 20px; color: #000000;
+    }
+    .threshold-title { font-weight: 700; color: var(--tm-navy); font-size: 15px; }
+    .threshold-intro { font-size: 12px; color: var(--tm-muted); margin-top: 2px; }
+    .threshold-list { margin: 8px 0 0 18px; font-size: 14px; }
+    .threshold-list li { margin-bottom: 5px; line-height: 1.5; }
     /* Platzhalter, wenn views.render_cards_html nichts anzuzeigen hat */
     .no-results { color: var(--tm-muted); font-size: 14px; }
 

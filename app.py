@@ -393,7 +393,7 @@ def dashboard():
 
     cards_html = ""
     if last:
-        cards_html = render_cards_html(last["result"], lang)
+        cards_html = render_cards_html(last["result"], lang, profile=company)
 
     return render_template(
         "dashboard.html",
@@ -607,11 +607,14 @@ def fullscreen():
     redir = _require_login()
     if redir:
         return redir
-    last = db.latest_analysis(_uid())
+    uid = _uid()
+    last = db.latest_analysis(uid)
     if not last:
         return render_template("fullscreen.html", cards_html="", last=None)
     lang = normalize_lang(request.args.get("lang") or _lang())
-    cards_html = render_cards_html(last["result"], lang)
+    # Fristen und Schwellen-Hinweise brauchen das Profil; sie entstehen zur
+    # Renderzeit und beruehren den Begruendungs-Cache nicht.
+    cards_html = render_cards_html(last["result"], lang, profile=db.get_company(uid))
     return render_template("fullscreen.html", cards_html=cards_html, last=last, lang=lang)
 
 
@@ -657,7 +660,7 @@ def download_csv():
     if not last:
         return "No results", 404
     lang = _lang()
-    csv_bytes = render_csv(last["result"], lang)
+    csv_bytes = render_csv(last["result"], lang, profile=db.get_company(uid))
     fname = f"esg_analyse_{datetime.now():%Y%m%d_%H%M}.csv"
     return Response(
         csv_bytes,

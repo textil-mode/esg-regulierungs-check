@@ -537,6 +537,57 @@ def guidelines_for(reg_key: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Erste Schritte je Regulierung — statisch, kuratiert, kein LLM.
+#
+# Zwei bis vier Stichpunkte, die beschreiben, womit ein erfasstes Unternehmen
+# anfaengt. Hergeleitet aus dem Gesetzestext (Fundstelle steht jeweils im
+# uebersetzten Text) und den kuratierten Guidelines; NICHT aus einer
+# LLM-Antwort. Hier stehen nur die Schluessel — die Texte liegen in sechs
+# Sprachen in `i18n.FIRST_STEPS`, wie bei allen anderen Inhalten der App.
+#
+# Der weiterfuehrende Link kommt aus GUIDELINES_BY_REG_KEY oben, damit es
+# keine zweite, unabhaengig veraltende Linkliste gibt (`first_steps_link`).
+#
+# Diese Struktur wird zur Renderzeit gelesen und geht in keinen Cache ein.
+# ---------------------------------------------------------------------------
+FIRST_STEPS_BY_REG_KEY: dict[str, list[str]] = {
+    "CSDDD": ["csddd_1", "csddd_2", "csddd_3", "csddd_4"],
+    "LkSG": ["lksg_1", "lksg_2", "lksg_3", "lksg_4"],
+    "EUDR": ["eudr_1", "eudr_2", "eudr_3", "eudr_4"],
+    "FLR": ["flr_1", "flr_2", "flr_3"],
+    "CSRD": ["csrd_1", "csrd_2", "csrd_3", "csrd_4"],
+    "CSRD_DE": ["csrd_de_1", "csrd_de_2", "csrd_de_3"],
+    "ESRS": ["esrs_1", "esrs_2", "esrs_3"],
+    "NFRD": ["nfrd_1", "nfrd_2"],
+    "CSR-RUG": ["csr_rug_1", "csr_rug_2", "csr_rug_3"],
+    "TaxonomieVO": ["taxonomie_1", "taxonomie_2", "taxonomie_3"],
+    "SFDR": ["sfdr_1", "sfdr_2", "sfdr_3"],
+    "ESGRatingVO": ["esgrating_1", "esgrating_2", "esgrating_3"],
+    "WhistleblowerRL": ["whistle_1", "whistle_2", "whistle_3"],
+    "HinSchG": ["hinschg_1", "hinschg_2", "hinschg_3", "hinschg_4"],
+    "RightToRepair": ["r2r_1", "r2r_2", "r2r_3"],
+    "Oekodesign": ["oekodesign_1", "oekodesign_2", "oekodesign_3"],
+    "PPWR": ["ppwr_1", "ppwr_2", "ppwr_3"],
+    "KonfliktminVO": ["konfliktmin_1", "konfliktmin_2", "konfliktmin_3"],
+    "MinRohSorgG": ["minroh_1", "minroh_2", "minroh_3"],
+    "UmweltstrafRL": ["umweltstraf_1", "umweltstraf_2", "umweltstraf_3"],
+    "EmpCo": ["empco_1", "empco_2", "empco_3", "empco_4"],
+    "GreenClaims": ["greenclaims_1", "greenclaims_2"],
+}
+
+
+def first_steps_for(reg_key: str) -> list[str]:
+    """Schluessel der ersten Schritte (Texte kommen aus `i18n.FIRST_STEPS`)."""
+    return FIRST_STEPS_BY_REG_KEY.get(reg_key, [])
+
+
+def first_steps_link(reg_key: str) -> dict | None:
+    """Weiterfuehrende Leitlinie zu den ersten Schritten (oder None)."""
+    guides = guidelines_for(reg_key)
+    return guides[0] if guides else None
+
+
+# ---------------------------------------------------------------------------
 # Veroeffentlichungsdatum je Regulierung (statisch gepflegt).
 #
 # Fuer EU-Verordnungen/Richtlinien das Datum der Veroeffentlichung im
