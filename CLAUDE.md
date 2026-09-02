@@ -26,6 +26,7 @@
 | Feature | Ort | Status |
 |---|---|---|
 | Login / Registrierung (bcrypt, SQLite) | `app.py`, `db.py` | ✅ |
+| **Bremse gegen Passwort-Durchprobieren** (5 Fehlversuche je Konto+IP in 15 min mit sich verdoppelnder Wartezeit, zusätzlich 30/Stunde je IP; persistent in `login_attempts`) — siehe eigenen Abschnitt unten | `db.py` `begin_login_attempt`, `app.py` `/login` | ✅ |
 | **Passwort ändern** (eingeloggt, altes PW nötig) | `/passwort-aendern`, `templates/password_change.html` | ✅ |
 | **Passwort vergessen → Admin-Reset-Link** (kein Mailversand; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert) | `/admin/passwort-resets`, `db.password_resets` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien) | `templates/dashboard.html` | ✅ |
@@ -274,6 +275,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `deadlines.py` | Leitet je Regulierung und Profil den fuer DIESES Unternehmen geltenden Anwendungsbeginn ab (Phase-in-Stufen); rein deterministisch, kein LLM |
 | `thresholds.py` | Erkennt Naehe zu Schwellenwerten (±20 %) fuer die "Was waere wenn"-Hinweise |
 | `test_deadlines.py` | Tests zu beidem plus CSR-RUG-Regel; ohne DB, Netz und LLM |
+| `test_login_throttle.py` | Tests zur Login-Bremse und zum Zeitgleichlauf beider Fehlerpfade (16 Blöcke, eigene DB `data/esg_login_test.db`, kein Netz, kein LLM) |
 | `views.py` | Card/CSV-Renderer (Kennzahl-Hervorhebung, "Gilt ab", "Erste Schritte", Schwellen-Hinweise) |
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
@@ -284,6 +286,54 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `Dockerfile` | Python 3.12-slim + Gunicorn; **muss `static/` und `templates/` kopieren** |
 | `docker-compose.hostinger.yml` | Compose-Dummy/Vorlage (nur Platzhalter — echte Keys live im Hostinger-UI) |
 | `.github/workflows/docker-build.yml` | Build-Push nach ghcr.io |
+
+---
+
+## Login-Bremse — Betrieb und Notausgang
+
+Gegen Passwort-Durchprobieren greifen zwei Bremsen (Schwellen und Begründung
+stehen als Kommentar in `db.py`, Abschnitt „Login-Bremse"):
+
+| Bremse | Schwelle | Sperre |
+|---|---|---|
+| je **(Konto, Quell-IP)** | 5 Fehlversuche / 15 min | 60 s, verdoppelnd, Deckel 15 min |
+| je **Quell-IP** (alle Konten) | 30 Fehlversuche / 60 min | 15 min ab dem letzten Versuch |
+
+Wichtig für das Verständnis: Die Kontobremse hängt **am Paar (Konto, IP)**, nicht
+am Konto allein. Sonst könnte jemand ein fremdes Konto — insbesondere das
+Admin-Konto — durch Dauerbeschuss aussperren. So sperrt ein Angreifer nur seine
+eigene Adresse; der Inhaber kommt von seiner Adresse weiter hinein.
+
+Die Quell-IP kommt hinter nginx aus **`X-Real-IP`** (nginx setzt den Header
+selbst). `X-Forwarded-For` dient nur als Rückfall, und dann zählt der **letzte**
+Eintrag: die nginx-Konfig nutzt `$proxy_add_x_forwarded_for`, hängt die echte
+Adresse also hinten an und lässt vom Client mitgeschickte Werte vorne stehen.
+Beide Header werden nur ausgewertet, wenn die Gegenstelle im privaten Netz sitzt
+— über den direkt offenen Port sind sie wirkungslos.
+
+Gezählt wird persistent in der Tabelle `login_attempts`; ein Container-Neustart
+hebt eine laufende Sperre also **nicht** auf. Einträge älter als 3 Stunden
+räumt die App selbst weg.
+
+**Notausgang, wenn niemand mehr hineinkommt:**
+
+```bash
+docker exec esg-ki-textil-mode python -m db unlock mschuckert@textil-mode.de
+```
+
+Das löscht alle Fehlversuch-Einträge dieses Kontos (über alle Adressen) und gibt
+aus, wie viele es waren. Die IP-Bremse bleibt davon unberührt — wer auch die
+lösen muss, leert `login_attempts` ganz:
+
+```bash
+docker exec esg-ki-textil-mode python3 -c "import sqlite3; c=sqlite3.connect('/app/data/esg.db'); c.execute('DELETE FROM login_attempts'); c.commit()"
+```
+
+**Restrisiko, bewusst getragen:** Wer über viele Adressen verfügt (Botnetz),
+umgeht die Kontobremse, weil je Adresse nur vier Versuche anfallen. Gegen ihn
+wirkt allein die IP-Bremse mit 30 Versuchen je Stunde und Adresse. Der Preis
+einer kontoweiten Sperre wäre die Verfügbarkeit des Kontos — und die wiegt hier
+schwerer.
 
 ---
 
@@ -315,7 +365,7 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 
 - Scratch-Dateien (`_*.txt`, Debug-Screenshots) und `Bugreport/`, `.playwright-mcp/`, `.claude/` sind seit 2026-06-10 in `.gitignore`; trotzdem nie manuell stagen.
 - **Nur explizit geänderte Dateien stagen**, kein `git add -A`.
-- Syntax-Check vor Commit: `./.venv/Scripts/python.exe -m py_compile app.py fetcher.py regulations.py llm.py i18n.py`.
+- Syntax-Check vor Commit: `./.venv/Scripts/python.exe -m py_compile app.py db.py fetcher.py regulations.py llm.py i18n.py views.py`.
 - Feature-Arbeit: neuer Commit, neuer Tag, wenn wieder "stabil".
 
 ---

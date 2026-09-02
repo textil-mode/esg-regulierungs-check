@@ -173,30 +173,47 @@ def _is_trusted_proxy(value: str) -> bool:
 
 
 def _client_ip() -> str:
-    """Quell-IP des Anfragenden — hinter nginx aus `X-Forwarded-For`.
+    """Quell-IP des Anfragenden — hinter nginx aus den Proxy-Headern.
 
-    Defensiv ausgewertet: Der Header zaehlt nur, wenn die Verbindung
-    tatsaechlich von einem Proxy kommt, also die Gegenstelle im lokalen bzw.
-    privaten Netz sitzt (dort laeuft nginx bzw. das Docker-Gateway). Wer die
-    Anwendung am offenen Port direkt aus dem Internet anspricht, hat eine
-    oeffentliche Gegenstelle — sein `X-Forwarded-For` wird ignoriert, sonst
-    liesse sich die IP-Bremse mit einem frei erfundenen Header umgehen.
-    Verwendet wird ausschliesslich der **erste** Eintrag; alles dahinter hat
-    der Client selbst geschrieben.
+    Zwei Sicherungen, beide noetig:
+
+    1. **Vertrauen nur der eigenen Gegenstelle.** Die Header zaehlen nur, wenn
+       die Verbindung tatsaechlich von einem Proxy kommt, die Gegenstelle also
+       im lokalen bzw. privaten Netz sitzt (dort laeuft nginx bzw. das
+       Docker-Gateway). Wer die Anwendung am offenen Port direkt aus dem
+       Internet anspricht, hat eine oeffentliche Gegenstelle — seine Header
+       werden ignoriert.
+    2. **Den richtigen Eintrag nehmen.** Die nginx-Konfig auf dem VPS setzt
+       `X-Real-IP $remote_addr` und `X-Forwarded-For $proxy_add_x_forwarded_for`.
+       `X-Real-IP` schreibt nginx selbst und ueberschreibt dabei einen vom
+       Client mitgeschickten Wert — deshalb hat er Vorrang.
+       `$proxy_add_x_forwarded_for` haengt die echte Adresse dagegen HINTEN an
+       und laesst alles, was der Client vorne hineingeschrieben hat, stehen.
+       Der erste Eintrag ist dort also frei erfunden: damit liessen sich
+       Sperren umgehen (rotierende Fantasie-Adressen) und, schlimmer, fremde
+       Adressen gezielt sperren. Aus `X-Forwarded-For` wird darum der
+       **letzte** Eintrag genommen, und nur als Rueckfall.
     """
     remote = (request.remote_addr or "").strip()
-    if _is_trusted_proxy(remote):
-        first = (request.headers.get("X-Forwarded-For") or "").split(",")[0]
-        forwarded = _valid_ip(first)
-        if forwarded:
-            return forwarded
+    if not _is_trusted_proxy(remote):
+        return _valid_ip(remote) or "unknown"
+
+    real = _valid_ip(request.headers.get("X-Real-IP") or "")
+    if real:
+        return real
+    forwarded = (request.headers.get("X-Forwarded-For") or "").split(",")
+    for eintrag in reversed(forwarded):
+        candidate = _valid_ip(eintrag)
+        if candidate:
+            return candidate
     return _valid_ip(remote) or "unknown"
 
 
 def _locked_message(seconds: int, lang: str) -> str:
     """Sperrhinweis — bewusst ohne Aussage darueber, ob es das Konto gibt."""
     minutes = max(1, -(-seconds // 60))
-    return t("err_login_locked", lang).format(minutes=minutes)
+    key = "err_login_locked_one" if minutes == 1 else "err_login_locked"
+    return t(key, lang).format(minutes=minutes)
 
 
 def _provider_info() -> tuple[str, str]:
@@ -248,23 +265,27 @@ def login():
         pw = request.form.get("password", "")
 
         if action == "login":
-            # Bremse gegen Passwort-Durchprobieren: je Konto UND je Quell-IP
-            # (Schwellen und Begruendung in db.py). Waehrend einer Sperre wird
-            # das Passwort gar nicht erst geprueft — dadurch faellt kein neuer
-            # Fehlversuch an und die Sperre verlaengert sich nicht selbst.
+            # Bremse gegen Passwort-Durchprobieren: je (Konto, Quell-IP) und
+            # je Quell-IP (Schwellen und Begruendung in db.py). Pruefen und
+            # Verbuchen passieren in einer Transaktion, sonst schluepfen bei
+            # 8 Gunicorn-Threads waehrend des bcrypt-Laufs mehrere Versuche
+            # gleichzeitig durch. Waehrend einer Sperre wird das Passwort gar
+            # nicht erst geprueft.
             ip = _client_ip()
-            blocked = db.login_block_seconds(email, ip)
+            blocked = db.begin_login_attempt(email, ip)
             if blocked:
                 flash(_locked_message(blocked, lang), "error")
                 status = 429
             else:
                 uid = db.verify_user(email, pw)
                 if uid:
-                    db.clear_login_failures(email)
+                    # Raeumt den eben verbuchten Versuch und alle frueheren
+                    # dieser Adresse weg — die Sperre einer fremden Adresse
+                    # (Angreifer) bleibt bestehen.
+                    db.clear_login_failures(email, ip)
                     session["user_id"] = uid
                     session["user_email"] = email
                     return redirect(url_for("dashboard"))
-                db.record_login_failure(email, ip)
                 flash(t("err_login_failed", lang), "error")
 
         elif action == "forgot":
@@ -341,15 +362,19 @@ def reset_password(token: str):
     lang = _lang()
     # Der Token hat 256 Bit Zufall und ist nicht erratbar — hier geht es nicht
     # ums Durchprobieren, sondern darum, dass ein unangemeldeter Endpunkt nicht
-    # beliebig oft angeklopft werden kann (jeder Versuch kostet eine DB-Abfrage).
-    # Gueltige Token zaehlen nie mit, legitime Nutzer merken davon nichts.
-    ip = _client_ip()
-    if db.reset_token_block_seconds(ip):
-        return render_template("password_reset.html", invalid=True), 429
+    # beliebig oft beklopft werden kann. Deshalb ZUERST den Token pruefen: wer
+    # einen gueltigen Link hat, kommt immer durch, auch wenn jemand anderes
+    # hinter derselben Adresse (Firmen-NAT, Mobilfunk) gerade ungueltige Token
+    # verbraucht hat. Gezaehlt werden nur ungueltige Versuche.
     user = db.user_for_reset_token(token)
     if not user:
-        db.record_reset_token_failure(ip)
-        return render_template("password_reset.html", invalid=True), 400
+        ip = _client_ip()
+        blocked = db.reset_token_block_seconds(ip)
+        if not blocked:
+            db.record_reset_token_failure(ip)
+        return render_template("password_reset.html", invalid=True), (
+            429 if blocked else 400
+        )
 
     if request.method == "POST":
         pw = request.form.get("password", "")

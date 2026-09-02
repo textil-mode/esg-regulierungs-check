@@ -118,6 +118,10 @@ def init_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_login_attempts_lookup
                 ON login_attempts (scope, subject, attempted_at);
+            -- Eigener Index fuers Aufraeumen: der Lookup-Index oben beginnt mit
+            -- `scope` und hilft einer reinen Altersabfrage nicht.
+            CREATE INDEX IF NOT EXISTS idx_login_attempts_age
+                ON login_attempts (attempted_at);
             CREATE TABLE IF NOT EXISTS watchdog_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 started_at TEXT NOT NULL,
@@ -142,15 +146,17 @@ def init_db() -> None:
         )
         _migrate_companies(c)
         # Altlasten der Login-Bremse wegraeumen (idempotent).
-        c.execute(
-            "DELETE FROM login_attempts WHERE attempted_at < ?",
-            ((datetime.utcnow() - timedelta(hours=ATTEMPT_KEEP_HOURS)).isoformat(),),
-        )
+        _prune(c)
 
 
 # ---------- Users ----------
+# Kostenfaktor fuer bcrypt. An EINER Stelle definiert, damit der Dummy-Hash
+# unten nicht zurueckbleibt, wenn er je erhoeht wird (siehe _DUMMY_PW_HASH).
+BCRYPT_ROUNDS = 12
+
+
 def create_user(email: str, password: str) -> int:
-    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(BCRYPT_ROUNDS)).decode()
     with _conn() as c:
         cur = c.execute(
             "INSERT INTO users (email, pw_hash, created_at) VALUES (?, ?, ?)",
@@ -159,12 +165,18 @@ def create_user(email: str, password: str) -> int:
         return cur.lastrowid
 
 
-# bcrypt-Hash eines zufaelligen, nirgends verwendeten Geheimnisses (Kostenfaktor 12,
-# identisch zu `bcrypt.gensalt()`). Er dient ausschliesslich dazu, den Pfad
-# "Adresse unbekannt" genauso lange rechnen zu lassen wie den Pfad
-# "Adresse bekannt, Passwort falsch". Ohne das verraet die Antwortzeit
-# (0,012 s gegen 0,27 s, Faktor 20), welche Adressen registriert sind.
+# bcrypt-Hash eines zufaelligen, nirgends verwendeten Geheimnisses. Er dient
+# ausschliesslich dazu, den Pfad "Adresse unbekannt" genauso lange rechnen zu
+# lassen wie den Pfad "Adresse bekannt, Passwort falsch". Ohne das verraet die
+# Antwortzeit (0,012 s gegen 0,27 s, Faktor 91), welche Adressen registriert sind.
+#
+# Der Kostenfaktor MUSS zu BCRYPT_ROUNDS passen, sonst rechnen beide Pfade
+# wieder unterschiedlich lang und H4 waere still zurueck. Stimmt er nicht,
+# wird der Dummy beim Start einmalig passend neu erzeugt (kostet ~0,25 s).
+# `test_login_throttle.py` prueft den Gleichlauf zusaetzlich nach.
 _DUMMY_PW_HASH = b"$2b$12$LOmoH0iusZ8izgFMaVdbsu5Qm6ftN2eop5FNIcwQRFRYVbhxWFbdG"
+if not _DUMMY_PW_HASH.startswith(b"$2b$%02d$" % BCRYPT_ROUNDS):
+    _DUMMY_PW_HASH = bcrypt.hashpw(secrets.token_bytes(32), bcrypt.gensalt(BCRYPT_ROUNDS))
 
 
 def verify_user(email: str, password: str) -> Optional[int]:
@@ -198,7 +210,7 @@ def get_user_by_email(email: str) -> Optional[dict]:
 
 def set_password(user_id: int, password: str) -> None:
     """Setzt ein neues Passwort und entwertet alle offenen Reset-Links."""
-    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(BCRYPT_ROUNDS)).decode()
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute("UPDATE users SET pw_hash = ? WHERE id = ?", (pw_hash, user_id))
@@ -215,13 +227,29 @@ def check_password(user_id: int, password: str) -> bool:
 
 
 # ---------- Login-Bremse (Brute-Force) ----------
-# Zwei unabhaengige Bremsen, weil jede allein umgehbar waere:
-#  * je Konto — sonst probiert ein Angreifer ein Konto beliebig oft durch;
-#  * je Quell-IP — sonst verteilt ein Botnetz die Versuche auf viele Konten.
+# Zwei Bremsen, weil jede allein umgehbar waere:
+#  * je (Konto, Quell-IP) — bremst das Durchprobieren eines Kontos;
+#  * je Quell-IP ueber alle Konten — sonst klappert jemand von einer Adresse
+#    aus viele Konten mit je vier Versuchen ab.
+#
+# Warum das Paar (Konto, IP) und NICHT das Konto allein: Eine kontoweite Sperre
+# ist eine Waffe gegen den rechtmaessigen Inhaber. Nachgestellt wurde, dass rund
+# 29 Versuche je Stunde — unterhalb der IP-Schwelle — ein Konto dauerhaft
+# gesperrt halten; beim Admin-Konto haette das auch den Admin-Bereich zugesperrt,
+# ohne Weg zurueck ausser einer Shell im Container. Mit der Bindung an die IP
+# sperrt sich ein Angreifer nur selbst aus, waehrend der Inhaber von seiner
+# eigenen Adresse unbehelligt hineinkommt.
+#
+# Restrisiko, bewusst getragen: Wer ueber viele Adressen verfuegt (Botnetz),
+# umgeht die Kontobremse, weil je Adresse nur vier Versuche anfallen. Gegen ihn
+# wirkt allein die IP-Bremse, die den Durchsatz je Adresse auf 30/Stunde deckelt
+# — dieselbe Grenze gilt dann aber auch fuer jedes andere Ziel. Der Preis waere
+# die Verfuegbarkeit des Kontos, und die wiegt hier schwerer.
+#
 # Bewusst KEINE dauerhafte Sperre: die Fenster gleiten, nach Ruhe loest sich
-# die Sperre von selbst. Sonst koennte jemand fremde Nutzer gezielt aussperren,
-# indem er deren Adresse mit falschen Passwoertern beschiesst.
-LOGIN_FAIL_WINDOW_MIN = 15   # Beobachtungsfenster je Konto
+# die Sperre von selbst. Zusaetzlich gibt es einen Notausgang von aussen:
+#   docker exec <container> python -m db unlock <email>
+LOGIN_FAIL_WINDOW_MIN = 15   # Beobachtungsfenster je (Konto, IP)
 LOGIN_FAIL_MAX = 5           # Fehlversuche in diesem Fenster, dann Sperre
 LOGIN_BLOCK_BASE_SEC = 60    # erste Sperre; verdoppelt sich je weiterem Fehlversuch
 LOGIN_BLOCK_MAX_SEC = 900    # Deckel: 15 Minuten
@@ -231,8 +259,11 @@ LOGIN_IP_MAX = 30            # Fehlversuche je Stunde und IP
 LOGIN_IP_BLOCK_SEC = 900     # danach 15 Minuten Ruhe ab dem letzten Versuch
 
 # Der Reset-Token hat 256 Bit Zufall und ist praktisch nicht erratbar; diese
-# Bremse verhindert deshalb kein Durchprobieren, sondern nur das kostenlose
-# Hammern eines unangemeldeten Endpunkts (DB-Last). Gueltige Token zaehlen nie mit.
+# Bremse verhindert deshalb kein Durchprobieren, sondern deckelt nur, wie oft
+# ein unangemeldeter Endpunkt von einer Adresse aus beklopft werden kann.
+# Der Aufrufer prueft den Token ZUERST — ein gueltiger Link laesst sich also
+# auch dann einloesen, wenn jemand anderes hinter derselben Adresse gerade
+# ungueltige Token verbraucht hat.
 RESET_IP_WINDOW_MIN = 60
 RESET_IP_MAX = 20
 RESET_IP_BLOCK_SEC = 900
@@ -278,66 +309,127 @@ def _record_attempt(c: sqlite3.Connection, scope: str, subject: str) -> None:
     )
 
 
+def _prune(c: sqlite3.Connection) -> None:
+    """Abgelaufene Fehlversuche wegraeumen.
+
+    Nutzt `idx_login_attempts_age`; ohne diesen Index waere es bei jedem
+    Fehlversuch ein Volltabellenscan (der Lookup-Index beginnt mit `scope`
+    und greift bei einer reinen Altersabfrage nicht).
+    """
+    cutoff = (datetime.utcnow() - timedelta(hours=ATTEMPT_KEEP_HOURS)).isoformat()
+    c.execute("DELETE FROM login_attempts WHERE attempted_at < ?", (cutoff,))
+
+
 def prune_login_attempts() -> None:
     """Raeumt abgelaufene Fehlversuche weg (idempotent, jederzeit aufrufbar)."""
-    cutoff = (datetime.utcnow() - timedelta(hours=ATTEMPT_KEEP_HOURS)).isoformat()
     with _conn() as c:
-        c.execute("DELETE FROM login_attempts WHERE attempted_at < ?", (cutoff,))
+        _prune(c)
 
 
-def login_block_seconds(email: str, ip: str) -> int:
-    """Restliche Sperrzeit in Sekunden; 0 = Anmeldeversuch erlaubt.
+def _account_subject(email: str, ip: str) -> str:
+    """Schluessel der Kontobremse: Konto UND Quell-IP (siehe Kopfkommentar)."""
+    return "{}|{}".format((email or "").lower().strip(), ip or "")
 
-    Wichtig: waehrend einer Sperre wird kein Fehlversuch gezaehlt (der Aufrufer
-    prueft das Passwort gar nicht erst). Sonst wuerde sich die Sperre durch
-    blosses Weiterklopfen endlos selbst verlaengern.
-    """
-    subject = (email or "").lower().strip()
-    with _conn() as c:
-        remaining = 0
-        if subject:
-            n, last = _attempt_stats(c, "account", subject, LOGIN_FAIL_WINDOW_MIN)
-            if n >= LOGIN_FAIL_MAX:
-                # Exponent gedeckelt, damit ein Ausreisser keine Riesenzahl baut.
-                stufe = min(n - LOGIN_FAIL_MAX, 16)
-                delay = min(
-                    LOGIN_BLOCK_BASE_SEC * (2 ** stufe), LOGIN_BLOCK_MAX_SEC
-                )
-                remaining = max(remaining, _remaining(last, delay))
-        if ip:
-            n, last = _attempt_stats(c, "ip", ip, LOGIN_IP_WINDOW_MIN)
-            if n >= LOGIN_IP_MAX:
-                remaining = max(remaining, _remaining(last, LOGIN_IP_BLOCK_SEC))
+
+def _block_seconds(c: sqlite3.Connection, email: str, ip: str) -> int:
+    """Restliche Sperrzeit in Sekunden auf einer bestehenden Verbindung."""
+    remaining = 0
+    mail = (email or "").lower().strip()
+    if mail:
+        n, last = _attempt_stats(
+            c, "account", _account_subject(mail, ip), LOGIN_FAIL_WINDOW_MIN
+        )
+        if n >= LOGIN_FAIL_MAX:
+            # Exponent gedeckelt, damit ein Ausreisser keine Riesenzahl baut.
+            stufe = min(n - LOGIN_FAIL_MAX, 16)
+            delay = min(LOGIN_BLOCK_BASE_SEC * (2 ** stufe), LOGIN_BLOCK_MAX_SEC)
+            remaining = max(remaining, _remaining(last, delay))
+    if ip:
+        n, last = _attempt_stats(c, "ip", ip, LOGIN_IP_WINDOW_MIN)
+        if n >= LOGIN_IP_MAX:
+            remaining = max(remaining, _remaining(last, LOGIN_IP_BLOCK_SEC))
     return remaining
 
 
-def record_login_failure(email: str, ip: str) -> None:
-    subject = (email or "").lower().strip()
+def login_block_seconds(email: str, ip: str) -> int:
+    """Nur lesen: restliche Sperrzeit in Sekunden; 0 = Versuch waere erlaubt.
+
+    Fuer Diagnose und Tests. Der Anmeldepfad nimmt `begin_login_attempt`,
+    weil dort Pruefen und Verbuchen untrennbar zusammengehoeren.
+    """
     with _conn() as c:
+        return _block_seconds(c, email, ip)
+
+
+def begin_login_attempt(email: str, ip: str) -> int:
+    """Prueft die Sperre und verbucht den Versuch — in EINER Transaktion.
+
+    Rueckgabe: 0 = weitermachen (der Versuch ist bereits als Fehlversuch
+    verbucht), sonst die restliche Sperrzeit in Sekunden.
+
+    Der Fehlversuch wird VOR der Passwortpruefung verbucht, und Lesen und
+    Schreiben laufen unter `BEGIN IMMEDIATE`. Sonst klafft zwischen
+    Zaehlerlesen und Verbuchen der komplette bcrypt-Durchlauf (~230 ms) — bei
+    8 Gunicorn-Threads kamen so pro Runde acht Versuche gleichzeitig durch.
+    Eine erfolgreiche Anmeldung raeumt den Eintrag gleich wieder weg
+    (`clear_login_failures`), legitime Nutzer merken davon nichts.
+    """
+    mail = (email or "").lower().strip()
+    with _conn() as c:
+        c.execute("BEGIN IMMEDIATE")
+        blocked = _block_seconds(c, mail, ip)
+        if blocked:
+            return blocked
         # Auch unbekannte Adressen zaehlen mit — sonst verriete allein das
         # Auftreten einer Sperre, dass es das Konto gibt.
-        if subject:
-            _record_attempt(c, "account", subject)
+        if mail:
+            _record_attempt(c, "account", _account_subject(mail, ip))
         if ip:
             _record_attempt(c, "ip", ip)
-        cutoff = (datetime.utcnow() - timedelta(hours=ATTEMPT_KEEP_HOURS)).isoformat()
-        c.execute("DELETE FROM login_attempts WHERE attempted_at < ?", (cutoff,))
+        _prune(c)
+    return 0
 
 
-def clear_login_failures(email: str) -> None:
-    """Nach erfolgreicher Anmeldung: Zaehler des Kontos zuruecksetzen.
-
-    Die IP-Zaehlung bleibt bewusst stehen — wer ein gueltiges Konto besitzt,
-    koennte sich sonst die IP-Bremse jederzeit selbst wegdruecken.
-    """
-    subject = (email or "").lower().strip()
-    if not subject:
-        return
+def record_login_failure(email: str, ip: str) -> None:
+    """Fehlversuch verbuchen, ohne die Sperre zu pruefen (Tests, Sonderfaelle)."""
+    mail = (email or "").lower().strip()
     with _conn() as c:
-        c.execute(
-            "DELETE FROM login_attempts WHERE scope = 'account' AND subject = ?",
-            (subject,),
-        )
+        if mail:
+            _record_attempt(c, "account", _account_subject(mail, ip))
+        if ip:
+            _record_attempt(c, "ip", ip)
+        _prune(c)
+
+
+def clear_login_failures(email: str, ip: str | None = None) -> int:
+    """Zaehler zuruecksetzen. Gibt die Zahl geloeschter Zeilen zurueck.
+
+    Mit `ip`: nur das Paar (Konto, diese IP) — so raeumt eine erfolgreiche
+    Anmeldung die eigene Adresse frei, waehrend die Sperre einer fremden
+    Adresse (Angreifer) bestehen bleibt.
+    Ohne `ip`: alle Adressen dieses Kontos — das ist der Notausgang
+    `python -m db unlock <email>`.
+
+    Die IP-Zaehlung ueber alle Konten bleibt in beiden Faellen stehen; wer ein
+    gueltiges Konto besitzt, koennte sie sonst jederzeit selbst wegdruecken.
+    """
+    mail = (email or "").lower().strip()
+    if not mail:
+        return 0
+    with _conn() as c:
+        if ip is not None:
+            cur = c.execute(
+                "DELETE FROM login_attempts WHERE scope = 'account' AND subject = ?",
+                (_account_subject(mail, ip),),
+            )
+        else:
+            prefix = mail + "|"
+            cur = c.execute(
+                """DELETE FROM login_attempts
+                   WHERE scope = 'account' AND substr(subject, 1, ?) = ?""",
+                (len(prefix), prefix),
+            )
+        return cur.rowcount
 
 
 def reset_token_block_seconds(ip: str) -> int:
@@ -653,3 +745,33 @@ def latest_analysis(user_id: int) -> Optional[dict]:
         "created_at": row["created_at"],
         "result": json.loads(row["result_json"]),
     }
+
+
+# ---------------------------------------------------------------------------
+# Notausgang von der Kommandozeile
+# ---------------------------------------------------------------------------
+def _cli(argv: list[str]) -> int:
+    """`python -m db unlock <email>` — hebt die Login-Sperre eines Kontos auf.
+
+    Gedacht fuer den Fall, dass niemand mehr hineinkommt:
+        docker exec <container> python -m db unlock chef@example.org
+    Die Kontobremse haengt am Paar (Konto, IP); der Aufruf raeumt alle
+    Adressen dieses Kontos frei. Die IP-Bremse bleibt bestehen.
+    """
+    if len(argv) != 2 or argv[0] != "unlock":
+        print("Aufruf: python -m db unlock <email>")
+        return 2
+    init_db()
+    email = argv[1]
+    geloescht = clear_login_failures(email)
+    offen = login_block_seconds(email, "")
+    print(f"Datenbank: {DB_PATH}")
+    print(f"{email}: {geloescht} Fehlversuch-Eintraege geloescht.")
+    print("Kontosperre aufgehoben." if offen == 0 else f"Achtung: weiterhin {offen} s gesperrt.")
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+
+    sys.exit(_cli(sys.argv[1:]))
