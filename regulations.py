@@ -248,8 +248,14 @@ REGULATIONS = [
         "relevant_fields": ["branch"],
         "name": "ESG Rating VO",
         "full_name": "Verordnung (EU) 2024/3005 - ESG-Ratings",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R3005",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R3005",
+        # Zu dieser Verordnung fuehrt EUR-Lex KEINE konsolidierte Fassung: die
+        # datumslose ID `02024R3005` antwortet mit "The requested document does
+        # not exist", und Cellar liefert zu `02024R3005-20241212` 404 (geprueft
+        # 02.09.2026). Deshalb steht hier der Ursprungsrechtsakt `32024R3005` —
+        # mangels Aenderungen ist er zugleich der geltende Text. `_cellar_text`
+        # behandelt eine `3…`-ID direkt als gewuenschte Fassung und warnt nicht.
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R3005",
+        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R3005",
         "scope": "EU",
         "criteria": (
             "Gilt für Anbieter von ESG-Ratings mit Tätigkeit in der EU. "
@@ -445,7 +451,7 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "BAFA – Handreichungen zum LkSG",
          "url": "https://www.bafa.de/DE/Lieferketten/Handreichungen/handreichungen_node.html"},
         {"name": "BMAS/CSR in Deutschland – LkSG FAQ",
-         "url": "https://www.csr-in-deutschland.de/DE/Wirtschaft-Menschenrechte/Ueber-das-Gesetz/FAQ/faq_node.html"},
+         "url": "https://www.csr-in-deutschland.de/DE/Gesetze/Lieferkettensorgfaltspflichtengesetz/FAQ/faq-art.html"},
     ],
     "EUDR": [
         {"name": "EU-Kommission – Entwaldungsfreie Lieferketten (EUDR)",
@@ -453,27 +459,27 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
     ],
     "FLR": [
         {"name": "EU-Kommission – Forced Labour Regulation",
-         "url": "https://commission.europa.eu/business-economy-euro/doing-business-eu/sustainable-economy/forced-labour-regulation_en"},
+         "url": "https://single-market-economy.ec.europa.eu/single-market/goods/forced-labour-regulation_en"},
     ],
     "CSRD": [
         {"name": "EU-Kommission – CSRD Implementierung & Q&A",
          "url": "https://finance.ec.europa.eu/regulation-and-supervision/financial-services-legislation/implementing-and-delegated-acts/corporate-sustainability-reporting-directive_en"},
     ],
     "CSRD_DE": [
-        {"name": "IDW – CSRD-Umsetzung in Deutschland",
-         "url": "https://www.idw.de/idw/im-fokus/csrd"},
+        {"name": "IDW – Nachhaltigkeitsberichterstattung (CSRD/ESRS)",
+         "url": "https://www.idw.de/idw/themen-branchen/nachhaltigkeit/"},
     ],
     "ESRS": [
         {"name": "EFRAG – European Sustainability Reporting Standards",
-         "url": "https://www.efrag.org/en/projects/european-sustainability-reporting-standards-esrs"},
+         "url": "https://www.efrag.org/en/sustainability-reporting/esrs-workstreams"},
     ],
     "NFRD": [
         {"name": "EU-Kommission – Non-Financial Reporting (Historie)",
          "url": "https://finance.ec.europa.eu/capital-markets-union-and-financial-markets/company-reporting-and-auditing/company-reporting/corporate-sustainability-reporting_en"},
     ],
     "CSR-RUG": [
-        {"name": "DRSC – Deutsche Anwendungshinweise zur nichtfinanziellen Berichterstattung",
-         "url": "https://www.drsc.de/themen/nachhaltigkeitsberichterstattung/"},
+        {"name": "DRSC – DRS 20: nichtfinanzielle Erklärung (CSR-RUG)",
+         "url": "https://www.drsc.de/projekte/aenderung-drs-20-an-csr-rlug/"},
     ],
     "TaxonomieVO": [
         {"name": "EU-Kommission – EU-Taxonomie",
@@ -484,8 +490,8 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
          "url": "https://finance.ec.europa.eu/sustainable-finance/disclosures/sustainability-related-disclosure-financial-services-sector_en"},
     ],
     "ESGRatingVO": [
-        {"name": "ESMA – ESG Ratings",
-         "url": "https://www.esma.europa.eu/esmas-activities/sustainable-finance/esg-ratings"},
+        {"name": "ESMA – ESG Rating Providers",
+         "url": "https://www.esma.europa.eu/esmas-activities/investors-and-issuers/esg-rating-providers"},
     ],
     "WhistleblowerRL": [
         {"name": "EU-Kommission – Schutz von Hinweisgebern",
@@ -496,12 +502,12 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
          "url": "https://www.bundesjustizamt.de/DE/MeldestelledesBundes/MeldestelledesBundes_node.html"},
     ],
     "RightToRepair": [
-        {"name": "EU-Kommission – Right to Repair",
-         "url": "https://commission.europa.eu/strategy-and-policy/priorities-2019-2024/european-green-deal/right-repair_en"},
+        {"name": "EU-Kommission – Richtlinie zur Reparatur von Waren (Right to Repair)",
+         "url": "https://commission.europa.eu/law/law-topic/consumer-protection-law/directive-repair-goods_en"},
     ],
     "Oekodesign": [
         {"name": "EU-Kommission – Ecodesign for Sustainable Products Regulation (ESPR)",
-         "url": "https://commission.europa.eu/energy-climate-change-environment/standards-tools-and-labels/products-labelling-rules-and-requirements/sustainable-products/ecodesign-sustainable-products-regulation_en"},
+         "url": "https://environment.ec.europa.eu/strategy/circular-economy/ecodesign-sustainable-products-regulation_en"},
     ],
     "PPWR": [
         {"name": "EU-Kommission – Verpackungen und Verpackungsabfälle",
@@ -512,16 +518,16 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
          "url": "https://policy.trade.ec.europa.eu/development-and-sustainability/conflict-minerals-regulation_en"},
     ],
     "MinRohSorgG": [
-        {"name": "BAFA – Mineralische Rohstoffe",
-         "url": "https://www.bafa.de/DE/Wirtschaft_Rohstoffe/Mineralische_Rohstoffe/mineralische_rohstoffe_node.html"},
+        {"name": "DEKSOR (BGR) – Deutsche Kontrollstelle EU-Sorgfaltspflichten in Rohstofflieferketten",
+         "url": "https://www.bgr.bund.de/DE/BGR/Deksor/deksor_node.html"},
     ],
     "UmweltstrafRL": [
         {"name": "EU-Kommission – Environmental Crime Directive",
-         "url": "https://environment.ec.europa.eu/law/environmental-crime_en"},
+         "url": "https://environment.ec.europa.eu/law-and-governance/environmental-compliance-assurance/environmental-crime-directive_en"},
     ],
     "EmpCo": [
-        {"name": "EU-Kommission – Stärkung der Verbraucher für den grünen Wandel",
-         "url": "https://commission.europa.eu/law/law-topic/consumer-protection-law/empowering-consumers-green-transition_en"},
+        {"name": "EU-Kommission – Nachhaltiger Konsum / Stärkung der Verbraucher für den grünen Wandel",
+         "url": "https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/sustainable-consumption_en"},
     ],
     "GreenClaims": [
         {"name": "EU-Kommission – Green Claims",
