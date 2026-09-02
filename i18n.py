@@ -3642,13 +3642,13 @@ MATERIAL_LABELS: dict[str, dict[str, str]] = {
         "de": "Recyclingmaterialien", "en": "Recycled materials", "es": "Materiales reciclados",
         "fr": "Matériaux recyclés", "it": "Materiali riciclati", "zh": "再生材料",
     },
-    "Besondere chemische Ausrüstungen (z. B. PFAS)": {
-        "de": "Besondere chemische Ausrüstungen (z. B. PFAS)",
-        "en": "Special chemical finishes (e.g. PFAS)",
-        "es": "Acabados químicos especiales (p. ej. PFAS)",
-        "fr": "Apprêts chimiques particuliers (p. ex. PFAS)",
-        "it": "Finissaggi chimici particolari (p. es. PFAS)",
-        "zh": "特殊化学整理（如 PFAS）",
+    "Besondere chemische Ausrüstungen (ohne PFAS, z. B. Flammschutz, Wasserabweisung)": {
+        "de": "Besondere chemische Ausrüstungen (ohne PFAS, z. B. Flammschutz, Wasserabweisung)",
+        "en": "Special chemical finishes (other than PFAS, e.g. flame retardant, water repellent)",
+        "es": "Acabados químicos especiales (sin PFAS, p. ej. ignífugos, hidrófugos)",
+        "fr": "Apprêts chimiques particuliers (hors PFAS, p. ex. ignifuges, déperlants)",
+        "it": "Finissaggi chimici particolari (esclusi PFAS, p. es. ignifughi, idrorepellenti)",
+        "zh": "特殊化学整理（不含 PFAS，如阻燃、拒水）",
     },
     "PFAS-haltige Ausrüstung": {
         "de": "PFAS-haltige Ausrüstung",

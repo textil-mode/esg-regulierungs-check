@@ -1103,6 +1103,6 @@ MATERIALS = [
     "Zellulosebasierte Chemiefasern (z. B. Viskose, Modal, Lyocell)",
     "Synthetische Fasern",
     "Recyclingmaterialien",
-    "Besondere chemische Ausrüstungen (z. B. PFAS)",
+    "Besondere chemische Ausrüstungen (ohne PFAS, z. B. Flammschutz, Wasserabweisung)",
     "PFAS-haltige Ausrüstung",
 ]
