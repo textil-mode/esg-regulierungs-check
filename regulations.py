@@ -326,10 +326,10 @@ REGULATIONS = [
             "employees", "revenue_eur", "balance_sheet_eur",
             "product_categories", "value_chain_roles", "branch",
         ],
-        "name": "Vernichtungsverbot unverkaufter Konsumgueter",
+        "name": "Vernichtungsverbot unverkaufter Konsumgüter",
         "full_name": (
             "Delegierte Verordnung (EU) 2026/296 - Ausnahmen vom Verbot der Vernichtung "
-            "unverkaufter Verbraucherprodukte (zur Oekodesign-Verordnung (EU) 2024/1781)"
+            "unverkaufter Verbraucherprodukte (zur Ökodesign-Verordnung (EU) 2024/1781)"
         ),
         # Zu 2026/296 gibt es (Stand 09/2026) keine konsolidierte Fassung; der
         # Ursprungsrechtsakt IST der geltende Text. Deshalb die `3...`-CELEX-ID,
