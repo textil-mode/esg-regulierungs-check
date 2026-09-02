@@ -5,6 +5,7 @@ Prod:  gunicorn -w 2 -b 0.0.0.0:8080 app:app
 """
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import queue
@@ -155,6 +156,49 @@ def _require_login():
     return None
 
 
+def _valid_ip(value: str) -> str:
+    try:
+        return str(ipaddress.ip_address((value or "").strip()))
+    except ValueError:
+        return ""
+
+
+def _is_trusted_proxy(value: str) -> bool:
+    """Sitzt die Gegenstelle im lokalen Netz? Dann ist es unser nginx."""
+    try:
+        addr = ipaddress.ip_address(value)
+    except ValueError:
+        return False
+    return addr.is_loopback or addr.is_private or addr.is_link_local
+
+
+def _client_ip() -> str:
+    """Quell-IP des Anfragenden — hinter nginx aus `X-Forwarded-For`.
+
+    Defensiv ausgewertet: Der Header zaehlt nur, wenn die Verbindung
+    tatsaechlich von einem Proxy kommt, also die Gegenstelle im lokalen bzw.
+    privaten Netz sitzt (dort laeuft nginx bzw. das Docker-Gateway). Wer die
+    Anwendung am offenen Port direkt aus dem Internet anspricht, hat eine
+    oeffentliche Gegenstelle — sein `X-Forwarded-For` wird ignoriert, sonst
+    liesse sich die IP-Bremse mit einem frei erfundenen Header umgehen.
+    Verwendet wird ausschliesslich der **erste** Eintrag; alles dahinter hat
+    der Client selbst geschrieben.
+    """
+    remote = (request.remote_addr or "").strip()
+    if _is_trusted_proxy(remote):
+        first = (request.headers.get("X-Forwarded-For") or "").split(",")[0]
+        forwarded = _valid_ip(first)
+        if forwarded:
+            return forwarded
+    return _valid_ip(remote) or "unknown"
+
+
+def _locked_message(seconds: int, lang: str) -> str:
+    """Sperrhinweis — bewusst ohne Aussage darueber, ob es das Konto gibt."""
+    minutes = max(1, -(-seconds // 60))
+    return t("err_login_locked", lang).format(minutes=minutes)
+
+
 def _provider_info() -> tuple[str, str]:
     provider = (os.getenv("LLM_PROVIDER") or "ollama").lower()
     if provider == "ollama":
@@ -197,18 +241,31 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     lang = _lang()
+    status = 200
     if request.method == "POST":
         action = request.form.get("action")
         email = (request.form.get("email") or "").strip()
         pw = request.form.get("password", "")
 
         if action == "login":
-            uid = db.verify_user(email, pw)
-            if uid:
-                session["user_id"] = uid
-                session["user_email"] = email
-                return redirect(url_for("dashboard"))
-            flash(t("err_login_failed", lang), "error")
+            # Bremse gegen Passwort-Durchprobieren: je Konto UND je Quell-IP
+            # (Schwellen und Begruendung in db.py). Waehrend einer Sperre wird
+            # das Passwort gar nicht erst geprueft — dadurch faellt kein neuer
+            # Fehlversuch an und die Sperre verlaengert sich nicht selbst.
+            ip = _client_ip()
+            blocked = db.login_block_seconds(email, ip)
+            if blocked:
+                flash(_locked_message(blocked, lang), "error")
+                status = 429
+            else:
+                uid = db.verify_user(email, pw)
+                if uid:
+                    db.clear_login_failures(email)
+                    session["user_id"] = uid
+                    session["user_email"] = email
+                    return redirect(url_for("dashboard"))
+                db.record_login_failure(email, ip)
+                flash(t("err_login_failed", lang), "error")
 
         elif action == "forgot":
             # Bewusst immer dieselbe Meldung — sonst liesse sich abfragen,
@@ -234,7 +291,7 @@ def login():
                 flash(t("ok_account_created", lang), "success")
                 return redirect(url_for("dashboard"))
 
-    return render_template("login.html")
+    return render_template("login.html"), status
 
 
 @app.route("/logout")
@@ -282,8 +339,16 @@ def change_password():
 @app.route("/passwort-zuruecksetzen/<token>", methods=["GET", "POST"])
 def reset_password(token: str):
     lang = _lang()
+    # Der Token hat 256 Bit Zufall und ist nicht erratbar — hier geht es nicht
+    # ums Durchprobieren, sondern darum, dass ein unangemeldeter Endpunkt nicht
+    # beliebig oft angeklopft werden kann (jeder Versuch kostet eine DB-Abfrage).
+    # Gueltige Token zaehlen nie mit, legitime Nutzer merken davon nichts.
+    ip = _client_ip()
+    if db.reset_token_block_seconds(ip):
+        return render_template("password_reset.html", invalid=True), 429
     user = db.user_for_reset_token(token)
     if not user:
+        db.record_reset_token_failure(ip)
         return render_template("password_reset.html", invalid=True), 400
 
     if request.method == "POST":

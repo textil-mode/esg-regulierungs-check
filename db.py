@@ -108,6 +108,16 @@ def init_db() -> None:
                 used_at TEXT,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             );
+            -- Fehlversuche beim Anmelden; persistent, damit ein Neustart
+            -- des Containers keine laufende Sperre aufhebt.
+            CREATE TABLE IF NOT EXISTS login_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scope TEXT NOT NULL,        -- 'account' | 'ip' | 'reset_ip'
+                subject TEXT NOT NULL,      -- E-Mail (klein) bzw. Quell-IP
+                attempted_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_login_attempts_lookup
+                ON login_attempts (scope, subject, attempted_at);
             CREATE TABLE IF NOT EXISTS watchdog_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 started_at TEXT NOT NULL,
@@ -131,6 +141,11 @@ def init_db() -> None:
             """
         )
         _migrate_companies(c)
+        # Altlasten der Login-Bremse wegraeumen (idempotent).
+        c.execute(
+            "DELETE FROM login_attempts WHERE attempted_at < ?",
+            ((datetime.utcnow() - timedelta(hours=ATTEMPT_KEEP_HOURS)).isoformat(),),
+        )
 
 
 # ---------- Users ----------
@@ -144,12 +159,23 @@ def create_user(email: str, password: str) -> int:
         return cur.lastrowid
 
 
+# bcrypt-Hash eines zufaelligen, nirgends verwendeten Geheimnisses (Kostenfaktor 12,
+# identisch zu `bcrypt.gensalt()`). Er dient ausschliesslich dazu, den Pfad
+# "Adresse unbekannt" genauso lange rechnen zu lassen wie den Pfad
+# "Adresse bekannt, Passwort falsch". Ohne das verraet die Antwortzeit
+# (0,012 s gegen 0,27 s, Faktor 20), welche Adressen registriert sind.
+_DUMMY_PW_HASH = b"$2b$12$LOmoH0iusZ8izgFMaVdbsu5Qm6ftN2eop5FNIcwQRFRYVbhxWFbdG"
+
+
 def verify_user(email: str, password: str) -> Optional[int]:
     with _conn() as c:
         row = c.execute(
             "SELECT id, pw_hash FROM users WHERE email = ?", (email.lower().strip(),)
         ).fetchone()
     if not row:
+        # Kein frueher Ausstieg: gegen den Dummy-Hash rechnen, damit beide
+        # Faelle gleich lange brauchen (siehe _DUMMY_PW_HASH).
+        bcrypt.checkpw(password.encode(), _DUMMY_PW_HASH)
         return None
     if bcrypt.checkpw(password.encode(), row["pw_hash"].encode()):
         return row["id"]
@@ -186,6 +212,149 @@ def check_password(user_id: int, password: str) -> bool:
     with _conn() as c:
         row = c.execute("SELECT pw_hash FROM users WHERE id = ?", (user_id,)).fetchone()
     return bool(row) and bcrypt.checkpw(password.encode(), row["pw_hash"].encode())
+
+
+# ---------- Login-Bremse (Brute-Force) ----------
+# Zwei unabhaengige Bremsen, weil jede allein umgehbar waere:
+#  * je Konto — sonst probiert ein Angreifer ein Konto beliebig oft durch;
+#  * je Quell-IP — sonst verteilt ein Botnetz die Versuche auf viele Konten.
+# Bewusst KEINE dauerhafte Sperre: die Fenster gleiten, nach Ruhe loest sich
+# die Sperre von selbst. Sonst koennte jemand fremde Nutzer gezielt aussperren,
+# indem er deren Adresse mit falschen Passwoertern beschiesst.
+LOGIN_FAIL_WINDOW_MIN = 15   # Beobachtungsfenster je Konto
+LOGIN_FAIL_MAX = 5           # Fehlversuche in diesem Fenster, dann Sperre
+LOGIN_BLOCK_BASE_SEC = 60    # erste Sperre; verdoppelt sich je weiterem Fehlversuch
+LOGIN_BLOCK_MAX_SEC = 900    # Deckel: 15 Minuten
+
+LOGIN_IP_WINDOW_MIN = 60     # Beobachtungsfenster je Quell-IP
+LOGIN_IP_MAX = 30            # Fehlversuche je Stunde und IP
+LOGIN_IP_BLOCK_SEC = 900     # danach 15 Minuten Ruhe ab dem letzten Versuch
+
+# Der Reset-Token hat 256 Bit Zufall und ist praktisch nicht erratbar; diese
+# Bremse verhindert deshalb kein Durchprobieren, sondern nur das kostenlose
+# Hammern eines unangemeldeten Endpunkts (DB-Last). Gueltige Token zaehlen nie mit.
+RESET_IP_WINDOW_MIN = 60
+RESET_IP_MAX = 20
+RESET_IP_BLOCK_SEC = 900
+
+# Aelter als das laengste Fenster + laengste Sperre wird nie mehr gebraucht.
+ATTEMPT_KEEP_HOURS = 3
+
+
+def _parse_ts(value: str) -> Optional[datetime]:
+    try:
+        return datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _attempt_stats(
+    c: sqlite3.Connection, scope: str, subject: str, window_min: int
+) -> tuple[int, Optional[datetime]]:
+    """(Anzahl, letzter Zeitpunkt) der Fehlversuche im gleitenden Fenster."""
+    since = (datetime.utcnow() - timedelta(minutes=window_min)).isoformat()
+    row = c.execute(
+        """SELECT COUNT(*) AS n, MAX(attempted_at) AS last
+           FROM login_attempts
+           WHERE scope = ? AND subject = ? AND attempted_at >= ?""",
+        (scope, subject, since),
+    ).fetchone()
+    if not row or not row["n"]:
+        return 0, None
+    return int(row["n"]), _parse_ts(row["last"] or "")
+
+
+def _remaining(last: Optional[datetime], block_sec: int) -> int:
+    if last is None:
+        return 0
+    elapsed = (datetime.utcnow() - last).total_seconds()
+    return max(0, int(round(block_sec - elapsed)))
+
+
+def _record_attempt(c: sqlite3.Connection, scope: str, subject: str) -> None:
+    c.execute(
+        "INSERT INTO login_attempts (scope, subject, attempted_at) VALUES (?, ?, ?)",
+        (scope, subject, datetime.utcnow().isoformat()),
+    )
+
+
+def prune_login_attempts() -> None:
+    """Raeumt abgelaufene Fehlversuche weg (idempotent, jederzeit aufrufbar)."""
+    cutoff = (datetime.utcnow() - timedelta(hours=ATTEMPT_KEEP_HOURS)).isoformat()
+    with _conn() as c:
+        c.execute("DELETE FROM login_attempts WHERE attempted_at < ?", (cutoff,))
+
+
+def login_block_seconds(email: str, ip: str) -> int:
+    """Restliche Sperrzeit in Sekunden; 0 = Anmeldeversuch erlaubt.
+
+    Wichtig: waehrend einer Sperre wird kein Fehlversuch gezaehlt (der Aufrufer
+    prueft das Passwort gar nicht erst). Sonst wuerde sich die Sperre durch
+    blosses Weiterklopfen endlos selbst verlaengern.
+    """
+    subject = (email or "").lower().strip()
+    with _conn() as c:
+        remaining = 0
+        if subject:
+            n, last = _attempt_stats(c, "account", subject, LOGIN_FAIL_WINDOW_MIN)
+            if n >= LOGIN_FAIL_MAX:
+                # Exponent gedeckelt, damit ein Ausreisser keine Riesenzahl baut.
+                stufe = min(n - LOGIN_FAIL_MAX, 16)
+                delay = min(
+                    LOGIN_BLOCK_BASE_SEC * (2 ** stufe), LOGIN_BLOCK_MAX_SEC
+                )
+                remaining = max(remaining, _remaining(last, delay))
+        if ip:
+            n, last = _attempt_stats(c, "ip", ip, LOGIN_IP_WINDOW_MIN)
+            if n >= LOGIN_IP_MAX:
+                remaining = max(remaining, _remaining(last, LOGIN_IP_BLOCK_SEC))
+    return remaining
+
+
+def record_login_failure(email: str, ip: str) -> None:
+    subject = (email or "").lower().strip()
+    with _conn() as c:
+        # Auch unbekannte Adressen zaehlen mit — sonst verriete allein das
+        # Auftreten einer Sperre, dass es das Konto gibt.
+        if subject:
+            _record_attempt(c, "account", subject)
+        if ip:
+            _record_attempt(c, "ip", ip)
+        cutoff = (datetime.utcnow() - timedelta(hours=ATTEMPT_KEEP_HOURS)).isoformat()
+        c.execute("DELETE FROM login_attempts WHERE attempted_at < ?", (cutoff,))
+
+
+def clear_login_failures(email: str) -> None:
+    """Nach erfolgreicher Anmeldung: Zaehler des Kontos zuruecksetzen.
+
+    Die IP-Zaehlung bleibt bewusst stehen — wer ein gueltiges Konto besitzt,
+    koennte sich sonst die IP-Bremse jederzeit selbst wegdruecken.
+    """
+    subject = (email or "").lower().strip()
+    if not subject:
+        return
+    with _conn() as c:
+        c.execute(
+            "DELETE FROM login_attempts WHERE scope = 'account' AND subject = ?",
+            (subject,),
+        )
+
+
+def reset_token_block_seconds(ip: str) -> int:
+    if not ip:
+        return 0
+    with _conn() as c:
+        n, last = _attempt_stats(c, "reset_ip", ip, RESET_IP_WINDOW_MIN)
+    if n < RESET_IP_MAX:
+        return 0
+    return _remaining(last, RESET_IP_BLOCK_SEC)
+
+
+def record_reset_token_failure(ip: str) -> None:
+    if not ip:
+        return
+    with _conn() as c:
+        _record_attempt(c, "reset_ip", ip)
 
 
 # ---------- Passwort-Reset ----------

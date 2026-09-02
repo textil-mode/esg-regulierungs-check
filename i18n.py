@@ -109,6 +109,15 @@ UI: dict[str, dict[str, str]] = {
         "it": "E-mail o password errati.",
         "zh": "邮箱或密码错误。",
     },
+    # Bewusst neutral: sagt nichts darueber aus, ob es das Konto gibt.
+    "err_login_locked": {
+        "de": "Zu viele fehlgeschlagene Anmeldeversuche. Bitte versuchen Sie es in {minutes} Minuten erneut.",
+        "en": "Too many failed sign-in attempts. Please try again in {minutes} minutes.",
+        "es": "Demasiados intentos de inicio de sesión fallidos. Vuelva a intentarlo en {minutes} minutos.",
+        "fr": "Trop de tentatives de connexion échouées. Veuillez réessayer dans {minutes} minutes.",
+        "it": "Troppi tentativi di accesso non riusciti. Riprovi tra {minutes} minuti.",
+        "zh": "登录失败次数过多。请在 {minutes} 分钟后重试。",
+    },
     "err_email_invalid": {
         "de": "Ungültige E-Mail-Adresse.",
         "en": "Invalid email address.",
