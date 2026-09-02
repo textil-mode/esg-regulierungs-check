@@ -29,14 +29,14 @@
 | **Bremse gegen Passwort-Durchprobieren** (5 Fehlversuche je Konto+IP in 15 min mit sich verdoppelnder Wartezeit, zusätzlich 30/Stunde je IP; persistent in `login_attempts`) — siehe eigenen Abschnitt unten | `db.py` `begin_login_attempt`, `app.py` `/login` | ✅ |
 | **Passwort ändern** (eingeloggt, altes PW nötig) | `/passwort-aendern`, `templates/password_change.html` | ✅ |
 | **Passwort vergessen → Admin-Reset-Link** (kein Mailversand; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert) | `/admin/passwort-resets`, `db.password_resets` | ✅ |
-| Stammdaten-Formular (inkl. Standorte, Produktkategorien) | `templates/dashboard.html` | ✅ |
+| Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
 | Stammdaten-Frage "EU-Importeur / erstmaliges Inverkehrbringen" | `templates/dashboard.html`, `db.eu_importer` | ✅ |
-| LLM-Analyse über 22 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
+| LLM-Analyse über 20 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
 | **Datentrennung im globalen Cache** (siehe Invariante unten): der Prompt zeigt exakt die `relevant_fields` der Regulierung, der Firmenname steht nirgends darin, und der System-Prompt verbietet das Nennen eines Namens | `llm.py` `_format_profile`, `_SYSTEM_BASE` | ✅ |
 | **Handlungsplan je Karte**: "Gilt ab" mit unternehmensindividueller Frist (Phase-in) und aufklappbare "Erste Schritte" (2-4 kuratierte Stichpunkte + Leitlinien-Link) | `deadlines.py`, `regulations.py` `FIRST_STEPS_BY_REG_KEY`, `views.py` | ✅ |
 | **Schwellen-Naehe** ("Was waere wenn"): Hinweis, wenn das Profil ±20 % um eine Schwelle liegt (LkSG 1000, HinSchG 50, CSRD 1000/450 Mio., CSDDD 5000/1,5 Mrd.) | `thresholds.py`, `views.py` | ✅ |
-| **Deterministische Begruendungen ohne LLM** fuer die gekoppelten Regs (CSRD, CSRD_DE, ESRS, TaxonomieVO, HinSchG, WhistleblowerRL, CSR-RUG): handgeschriebene Bausteine in 6 Sprachen, 0 LLM-Calls, fuer immer byte-stabil | `regulations.py` `coupling_verdict`, `i18n.py` `coupling_texts`, `llm.py` `deterministic_result` | ✅ |
+| **Deterministische Begruendungen ohne LLM** fuer die gekoppelten Regs (CSRD, CSRD_DE, TaxonomieVO, HinSchG, WhistleblowerRL, CSR-RUG): handgeschriebene Bausteine in 6 Sprachen, 0 LLM-Calls, fuer immer byte-stabil | `regulations.py` `coupling_verdict`, `i18n.py` `coupling_texts`, `llm.py` `deterministic_result` | ✅ |
 | Gesetzestext-Cache mit ETag / Last-Modified | `fetcher.py` `law_texts` | ✅ |
 | **Strukturbasierte Kontext-Auswahl** (Art. 1-3 + `key_article` + Schwellenwert-Abschnitte statt Blind-Kappung; Kopfzeilen `=== Art. 2 - … ===`) | `lawparse.py` `build_context`, `app.py` Phase 1 | ✅ |
 | **EUR-Lex-Fallback ueber publications.europa.eu** (EUR-Lex antwortet Server-Clients mit AWS-WAF-Challenge, HTTP 202 + leerer Body) | `fetcher.py` `_cellar_text` | ✅ |
@@ -46,7 +46,7 @@
 | **Erstkonsolidierung ≠ Notbehelf**: ist die einzige konsolidierte Fassung auf den ABl.-Tag datiert (z. B. ESG-Rating-VO), gibt es keine spaeteren Aenderungen — der Ursprungstext ist der geltende Text, es wird nicht gewarnt | `fetcher.py` `_is_initial_consolidation` | ✅ |
 | **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
 | **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
-| **Watchdog** (`python watchdog.py`): laedt alle 22 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
+| **Watchdog** (`python watchdog.py`): laedt alle 20 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
 | **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
 | **"Gesetzesstand vom …"** auf jeder Ergebnis-Karte | `app.py` `law_dates`, `views.py` | ✅ |
 | **PDF-Export im textil+mode-CD** (Logo, Verlaufskante, Statusfarben; gleicher Umfang wie das frühere CSV plus Kopfbereich und Zusammenfassung). Chinesisch nutzt die nicht eingebettete CID-Schrift STSong-Light — siehe Modul-Docstring | `/download-pdf`, `pdfexport.py` | ✅ |
@@ -63,6 +63,30 @@
 | "Greifende Stelle" auf 280 Zeichen gekappt (+ " …"). Das statische `key_article` wird NICHT mehr vorangestellt — die Begruendungstexte tragen die Fundstelle seit Prompt v5 selbst, sonst stuenden zwei widerspruechliche Angaben da und die Kappung griffe nur auf den halben Text | `views.py` `_shorten_passage`, `_card_html` | ✅ |
 | Fehler-Regulierung als rote ✕-Karte sichtbar | `views.py` `APPLIES_ORDER` + `BADGE_STYLES` | ✅ |
 | i18n (DE / EN / ES / FR / IT / ZH) | `i18n.py` | ✅ |
+
+---
+
+### Auswahllisten und alte Firmenprofile (Stand 02.09.2026)
+
+`PRODUCT_CATEGORIES` in `regulations.py` wurde vollstaendig ausgetauscht (jetzt
+Verpackungen, Holz, Holzprodukte, Papier, Kautschuk/Gummi, Bekleidung,
+Heimtextilien, technische Textilien, PSA, Schuhe, Lederwaren, textile
+Medizinprodukte, Automotive-Textilien). Dazu kamen zwei weitere
+Mehrfachauswahlen: `VALUE_CHAIN_ROLES` (Rolle in der Wertschoepfungskette) und
+`MATERIALS`.
+
+Bestandsprofile in der Produktivdatenbank tragen die alten Kategorien
+("Kaffee / Kakao", "Keine physischen Produkte …"). **`db.get_company()` filtert
+alle Werte heraus, die in der jeweiligen Liste nicht mehr stehen** (`db._known`),
+und `db.upsert_company()` tut dasselbe beim Schreiben. Folge:
+
+- Das Formular zeigt nur noch gueltige Haken; alte Werte erscheinen nirgends.
+- Weder LLM-Prompt noch `profile_hash` sehen einen unbekannten Wert — die
+  Cache-Invariante bleibt gewahrt.
+- In der Spalte `product_categories_json` **bleiben** die alten Werte stehen,
+  bis der Nutzer das Formular das naechste Mal speichert; dann werden sie
+  ueberschrieben. Es gibt bewusst keine Datenmigration, die fremde Angaben
+  stillschweigend umdeutet.
 
 ---
 
@@ -215,7 +239,7 @@ git push origin rollback-2026-04-21
 |---|---|
 | Gesamtkosten seit Container-Start (30.04.2026) | **0,26 €** |
 | Erfolgreiche LLM-Calls in dem Zeitraum | 858 (25 Retries, 0 Failures) |
-| ≈ Durchläufe (858 / 22 Regs) | ~39 |
+| ≈ Durchläufe (858 / 22 Regs, Stand 05/2026) | ~39 |
 | **Kosten pro Durchlauf** | **≈ 0,7 ¢** (≈ 0,007 €) |
 | Hochrechnung 1 Jahr bei aktuellem Tempo | ~13–15 € |
 
@@ -229,7 +253,7 @@ Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER
 
 ### Regulierungen — statische Metadaten (`regulations.py`)
 
-- `REGULATIONS` — 22 Einträge mit `key`, `name`, `full_name`, `url`, `text_url`, `scope`, `criteria`, `key_article`
+- `REGULATIONS` — 20 Einträge mit `key`, `name`, `full_name`, `url`, `text_url`, `scope`, `criteria`, `key_article`
 - `GUIDELINES_BY_REG_KEY` — je Regulierung eine Liste kuratierter offizieller Leitlinien (EU-Kommission, BAFA, EFRAG, ESMA, IDW, BfJ, DRSC)
 - `PUBLISHED_BY_REG_KEY` — Veröffentlichungsdatum je Reg (OJ-Datum bzw. BGBl.-Datum), Format `DD.MM.YYYY`
 
@@ -268,7 +292,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `lawparse.py` | Zerlegt Gesetzestexte in Artikel-/§-/Anhang-Abschnitte und baut daraus den LLM-Kontext (Anwendungsbereich statt Praeambel) |
 | `test_lawparse.py` | Tests dazu — laufen gegen eine Kopie der DB (`data/esg_lawparse_test.db`), nie gegen `data/esg.db` |
 | `test_cache_stability.py` | Beweist die Wortstabilitaet der Begruendungen (6 Szenarien, eigene DB `data/esg_cache_test.db`). Ohne Argument mit Platzhalter statt LLM (kostenlos), mit `--live` echte Calls |
-| `regulations.py` | 22 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
+| `regulations.py` | 20 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
 | `watchdog.py` | Wöchentlicher Aktualitäts-Wächter (Cron auf dem VPS), schreibt `watchdog_runs` |
 | `i18n.py` | Übersetzungen (6 Sprachen) |
 | `db.py` | SQLite-Schema, Migrationen, Cache-Zugriff |
@@ -281,7 +305,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
 | `templates/dashboard.html` | Hauptseite (Stammdaten + "Jetzt prüfen" + "Regulierungsliste"-Button) |
-| `templates/regulierungsliste.html` | Tabelle aller 22 Regs + Guidelines + Stand |
+| `templates/regulierungsliste.html` | Tabelle aller 20 Regs + Guidelines + Stand |
 | `templates/login.html`, `fullscreen.html`, `analysis.html` | Auth, Fullscreen, Progress-Page |
 | `static/images/textil-mode-logo.png` | offizielles textil+mode-Logo (1925x437) |
 | `Dockerfile` | Python 3.12-slim + Gunicorn; **muss `static/` und `templates/` kopieren** |
@@ -356,9 +380,9 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 
 1. https://ki-textil-mode.de/esg/ (bzw. Legacy https://schuckert.cloud/regulierungs-check) → Login-Seite laedt, Logo oben links sichtbar, Footer "© 2026 · Alle Rechte vorbehalten".
 2. Nach Login: Dashboard mit Button "Regulierungsliste" oben rechts neben "Jetzt pruefen". Rechts in der Rechts-Spalte die Checkbox "EU-Importeur / erstmaliges Inverkehrbringen in der EU".
-3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 22 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
+3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 20 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
 4. Footer unten rechts: `<details>` "Hinweis" → auf Klick Popover mit Claude-Code-/Codex-Text.
-5. "Jetzt pruefen" laeuft bis 22/22 durch, keine rote ✕-Fehlerkarte. "Greifende Stelle" max. ~280 Zeichen.
+5. "Jetzt pruefen" laeuft bis 20/20 durch, keine rote ✕-Fehlerkarte. "Greifende Stelle" max. ~280 Zeichen.
 
 ---
 
@@ -386,7 +410,7 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
   geladen, ihr Hash würde den Cache oft ohne inhaltlichen Grund verwerfen. Wer `key_article`
   oder `FULLTEXT_MAX_CHARS` ändert, zählt ersatzweise `_PROMPT_VERSION` hoch.
 - **Die Zwei-Satz-Regel hält das Modell nicht immer ein** (Gemini 2.5 Flash Lite: in
-  etwa 5 von 22 Fällen ein dritter Satz). Inhaltlich korrekt, nur stilistisch uneinheitlich;
+  etwa 5 von 20 Fällen ein dritter Satz). Inhaltlich korrekt, nur stilistisch uneinheitlich;
   die deterministischen Bausteine sind davon nicht betroffen.
 - **`analysis_cache` wächst unbegrenzt.** Je Gesetzesänderung bleibt eine alte Zeile je
   Profil-Hash liegen (die None-Fallback-Logik lebt davon). Bei ~500 Byte pro Zeile

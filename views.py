@@ -158,6 +158,13 @@ _NO_DATE_TEXTS = {
     "rueckzug_angekuendigt": "deadline_none_withdrawn",
 }
 
+# Faelle, in denen es KEINEN Anwendungsbeginn gibt, weil die Norm das
+# Unternehmen gar nicht erfasst. "aus den Angaben nicht bestimmbar" waere hier
+# falsch: bestimmbar ist er sehr wohl, es gibt ihn nur nicht.
+_NO_DATE_BY_HINT = {
+    "vernichtung_klein": "deadline_none_exempt",
+}
+
 
 def _deadline_html(reg_key: str, profile: dict, language: str) -> str:
     """Block 'Gilt ab' fuer genau dieses Unternehmen.
@@ -315,5 +322,7 @@ def deadline_parts(reg_key: str, applies: str, profile: dict | None,
     else:
         status = application_for(reg_key)["status"]
         label = t("deadline_none_label", language)
-        value = t(_NO_DATE_TEXTS.get(status, "deadline_open"), language)
+        hint = info.get("hinweis") or ""
+        value = t(_NO_DATE_BY_HINT.get(hint)
+                  or _NO_DATE_TEXTS.get(status, "deadline_open"), language)
     return label, value, t_deadline_note(info.get("hinweis") or "", language)

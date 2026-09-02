@@ -1,4 +1,4 @@
-"""Kuratierte Liste der 22 ESG-/CSR-Regulierungen mit Anwendbarkeitskriterien.
+"""Kuratierte Liste der 20 ESG-/CSR-Regulierungen mit Anwendbarkeitskriterien.
 
 Die `criteria`-Felder sind bewusst in natürlicher Sprache gehalten, damit
 Claude sie gemeinsam mit dem Unternehmensprofil auswerten kann.
@@ -66,7 +66,12 @@ REGULATIONS = [
     {
         "nr": 3,
         "key": "EUDR",
-        "relevant_fields": ["product_categories", "eu_importer", "branch"],
+        # `materials` traegt hier die eigentliche Entscheidung mit: die
+        # Verordnung haengt am Rohstoff (Rind/Leder, Kautschuk, Holz und die
+        # daraus gewonnenen zellulosebasierten Fasern), nicht am Fertigprodukt.
+        # `value_chain_roles`, weil Art. 1 Marktteilnehmer UND Haendler erfasst.
+        "relevant_fields": ["product_categories", "materials", "value_chain_roles",
+                            "eu_importer", "branch"],
         "name": "EUDR",
         "full_name": "Verordnung (EU) 2023/1115 über entwaldungsfreie Lieferketten",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R1115",
@@ -83,7 +88,8 @@ REGULATIONS = [
     {
         "nr": 4,
         "key": "FLR",
-        "relevant_fields": ["product_categories", "eu_importer", "branch"],
+        "relevant_fields": ["product_categories", "materials", "value_chain_roles",
+                            "eu_importer", "branch"],
         "name": "FLR (Zwangsarbeitsverordnung)",
         "full_name": "Verordnung (EU) 2024/3015 - Verbot von in Zwangsarbeit hergestellten Produkten",
         # ELI-Form bewusst beibehalten: zu 2024/3015 gibt es (Stand 09/2026)
@@ -144,23 +150,6 @@ REGULATIONS = [
     },
     {
         "nr": 7,
-        "key": "ESRS",
-        "relevant_fields": ["employees", "revenue_eur", "listed", "group_role"],
-        "name": "ESRS",
-        "full_name": "Delegierte Verordnung (EU) 2023/2772 - Nachhaltigkeitsberichterstattung (Standards)",
-        # Zeigte bis 09/2026 faelschlich auf die CSRD (02022L2464); die Karte
-        # zitierte deshalb CSRD-Artikel statt der ESRS.
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R2772",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R2772",
-        "scope": "EU",
-        "criteria": (
-            "Technische Standards für die Nachhaltigkeitsberichterstattung. Gelten für alle Unternehmen, "
-            "die unter die CSRD fallen. Anwendung abhängig von CSRD-Pflicht."
-        ),
-        "key_article": "Annex I (ESRS 1, ESRS 2, E1-E5, S1-S4, G1)",
-    },
-    {
-        "nr": 8,
         "key": "NFRD",
         "relevant_fields": [
             "employees", "revenue_eur", "balance_sheet_eur", "listed", "legal_form",
@@ -178,7 +167,7 @@ REGULATIONS = [
         "key_article": "Art. 19a",
     },
     {
-        "nr": 9,
+        "nr": 8,
         "key": "CSR-RUG",
         # Genau die Felder, die `csr_rug_status()` auswertet — sonst wandern
         # Aenderungen an bedeutungslosen Feldern in den Cache-Schluessel.
@@ -211,7 +200,7 @@ REGULATIONS = [
         "key_article": "§§ 289b-289e HGB a.F.",
     },
     {
-        "nr": 10,
+        "nr": 9,
         "key": "TaxonomieVO",
         "relevant_fields": ["employees", "revenue_eur", "listed", "group_role", "branch"],
         "name": "Taxonomie-Verordnung",
@@ -227,7 +216,7 @@ REGULATIONS = [
         "key_article": "Art. 8",
     },
     {
-        "nr": 11,
+        "nr": 10,
         "key": "SFDR",
         "relevant_fields": ["branch"],
         "name": "SFDR",
@@ -243,7 +232,7 @@ REGULATIONS = [
         "key_article": "Art. 2, 3",
     },
     {
-        "nr": 12,
+        "nr": 11,
         "key": "ESGRatingVO",
         "relevant_fields": ["branch"],
         "name": "ESG Rating VO",
@@ -264,7 +253,7 @@ REGULATIONS = [
         "key_article": "Art. 2",
     },
     {
-        "nr": 13,
+        "nr": 12,
         "key": "WhistleblowerRL",
         "relevant_fields": ["employees_de", "branch"],
         "name": "Whistleblower-Richtlinie",
@@ -279,7 +268,7 @@ REGULATIONS = [
         "key_article": "Art. 8",
     },
     {
-        "nr": 14,
+        "nr": 13,
         "key": "HinSchG",
         "relevant_fields": ["employees_de", "branch"],
         "name": "HinSchG",
@@ -296,7 +285,7 @@ REGULATIONS = [
         "key_article": "§ 12 HinSchG",
     },
     {
-        "nr": 15,
+        "nr": 14,
         "key": "RightToRepair",
         "relevant_fields": ["product_categories", "branch", "eu_importer"],
         "name": "Right to Repair",
@@ -312,9 +301,12 @@ REGULATIONS = [
         "key_article": "Art. 2, 5",
     },
     {
-        "nr": 16,
+        "nr": 15,
         "key": "Oekodesign",
-        "relevant_fields": ["product_categories", "branch", "eu_importer"],
+        # `materials`, weil die Oekodesign-Anforderungen an Stoffen ansetzen
+        # (u. a. besorgniserregende chemische Ausruestungen).
+        "relevant_fields": ["product_categories", "materials", "value_chain_roles",
+                            "branch", "eu_importer"],
         "name": "Ökodesign-VO",
         "full_name": "Verordnung (EU) 2024/1781 - nachhaltige Produkte (ESPR)",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1781",
@@ -328,9 +320,63 @@ REGULATIONS = [
         "key_article": "Art. 1, 2",
     },
     {
+        "nr": 16,
+        "key": "Vernichtungsverbot",
+        "relevant_fields": [
+            "employees", "revenue_eur", "balance_sheet_eur",
+            "product_categories", "value_chain_roles", "branch",
+        ],
+        "name": "Vernichtungsverbot unverkaufter Konsumgueter",
+        "full_name": (
+            "Delegierte Verordnung (EU) 2026/296 - Ausnahmen vom Verbot der Vernichtung "
+            "unverkaufter Verbraucherprodukte (zur Oekodesign-Verordnung (EU) 2024/1781)"
+        ),
+        # Zu 2026/296 gibt es (Stand 09/2026) keine konsolidierte Fassung; der
+        # Ursprungsrechtsakt IST der geltende Text. Deshalb die `3...`-CELEX-ID,
+        # die `fetcher._cellar_text` direkt als gewuenschte Fassung behandelt —
+        # wie bei der ESG-Rating-VO (32024R3005). Geprueft am 02.09.2026:
+        # publications.europa.eu/resource/celex/32026R0296 liefert den Volltext.
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32026R0296",
+        "text_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32026R0296",
+        "scope": "EU",
+        # Alle Angaben am Volltext geprueft (02.09.2026):
+        #   - Del. VO (EU) 2026/296, ABl. L, 2026/296 vom 22.04.2026, Art. 6:
+        #     "Sie gilt ab dem 19. Juli 2026."
+        #   - Verbot selbst: Art. 25 Abs. 1 VO (EU) 2024/1781 — ab 19.07.2026,
+        #     nicht fuer Kleinst- und Kleinunternehmen, fuer mittlere Unternehmen
+        #     ab 19.07.2030. Erfasst sind die Waren des Anhangs VII (Kleidung und
+        #     Bekleidungszubehoer, KN 4203/61/62/6504/6505; Schuhe, KN 6401-6405).
+        #   - Offenlegung: Art. 24 Abs. 1 VO (EU) 2024/1781 (gleiche Staffelung).
+        "criteria": (
+            "Betrifft Wirtschaftsteilnehmer, die unverkaufte Verbraucherprodukte der in Anhang VII "
+            "der Verordnung (EU) 2024/1781 gelisteten Warengruppen vernichten oder entsorgen: "
+            "Kleidung und Bekleidungszubehoer (KN 4203, 61, 62, 6504, 6505) sowie Schuhe "
+            "(KN 6401-6405). Das Vernichtungsverbot des Art. 25 Abs. 1 der Verordnung (EU) 2024/1781 "
+            "gilt seit dem 19.07.2026; Kleinst- und Kleinunternehmen sind ausgenommen, mittlere "
+            "Unternehmen werden ab dem 19.07.2030 erfasst (Groessenklassen nach der Empfehlung "
+            "2003/361/EG). Keine Umsatzschwelle im eigentlichen Sinn. "
+            "Die Delegierte Verordnung (EU) 2026/296 legt die Ausnahmen abschliessend fest "
+            "(Art. 2): gefaehrliche Produkte, sonstige Rechtsverstoesse, Verletzung von Rechten "
+            "des geistigen Eigentums bzw. abgelaufene Lizenzen, technisch nicht entfernbare "
+            "Kennzeichen, Beschaedigung/Verschlechterung/Kontamination einschliesslich "
+            "Hygienemaengeln ohne kosteneffiziente Reparatur, Funktionsuntauglichkeit sowie — "
+            "nur nachrangig — ein mindestens achtwoechiges, erfolgloses Spendenangebot an "
+            "mindestens drei geeignete sozialwirtschaftliche Einrichtungen in der Union oder "
+            "ueber eine leicht zugaengliche Seite der eigenen Website. "
+            "Wer sich auf eine Ausnahme beruft, muss die Nachweise nach Art. 3 fuenf Jahre "
+            "aufbewahren und binnen 30 Tagen elektronisch vorlegen; nach Art. 4 ist der "
+            "Abfallbehandlungseinrichtung eine Erklaerung ueber die geltende Ausnahme zu geben. "
+            "Unabhaengig davon verlangt Art. 24 der Verordnung (EU) 2024/1781 die jaehrliche "
+            "Offenlegung von Menge und Gewicht entsorgter unverkaufter Verbraucherprodukte. "
+            "Branche: Bekleidung, Schuhe, Lederwaren, Handel und Onlinehandel damit."
+        ),
+        "key_article": "Art. 2 (Ausnahmen), Art. 3 (Dokumentation)",
+    },
+    {
         "nr": 17,
         "key": "PPWR",
-        "relevant_fields": ["product_categories", "branch", "eu_importer"],
+        "relevant_fields": ["product_categories", "value_chain_roles",
+                            "branch", "eu_importer"],
         "name": "PPWR",
         "full_name": "Verordnung (EU) 2025/40 - Verpackungen und Verpackungsabfälle",
         "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02025R0040",
@@ -345,22 +391,6 @@ REGULATIONS = [
     },
     {
         "nr": 18,
-        "key": "KonfliktminVO",
-        "relevant_fields": ["product_categories", "eu_importer", "branch"],
-        "name": "Konfliktmineralien-VO",
-        "full_name": "Verordnung (EU) 2017/821 - Konfliktmineralien",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0821",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0821",
-        "scope": "EU",
-        "criteria": (
-            "Gilt für Unionseinführer von Zinn, Tantal, Wolfram, deren Erzen und Gold. "
-            "Volumenschwellen pro Mineral in Anhang I. Branche relevant: Metallimporteure, Elektronik, "
-            "Schmuck, Automobil mit Direktimport."
-        ),
-        "key_article": "Art. 1, Anhang I",
-    },
-    {
-        "nr": 19,
         "key": "MinRohSorgG",
         "relevant_fields": ["product_categories", "eu_importer", "sites"],
         "name": "MinRohSorgG",
@@ -376,25 +406,9 @@ REGULATIONS = [
         "key_article": "§ 3 MinRohSorgG",
     },
     {
-        "nr": 20,
-        "key": "UmweltstrafRL",
-        "relevant_fields": ["branch"],
-        "name": "EU Umweltstrafrechts-RL",
-        "full_name": "Richtlinie (EU) 2024/1203 - strafrechtlicher Schutz der Umwelt",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1203",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1203",
-        "scope": "EU",
-        "criteria": (
-            "Richtet sich primär an Mitgliedstaaten (Umsetzung ins nationale Strafrecht). "
-            "Unternehmen sind indirekt betroffen: juristische Personen haftbar für definierte Umweltstraftaten. "
-            "Alle Branchen, insbes. Industrie/Chemie/Abfall."
-        ),
-        "key_article": "Art. 3, 7",
-    },
-    {
-        "nr": 21,
+        "nr": 19,
         "key": "EmpCo",
-        "relevant_fields": ["b2c", "env_claims"],
+        "relevant_fields": ["b2c", "env_claims", "value_chain_roles"],
         "name": "EmpCo",
         "full_name": "Richtlinie (EU) 2024/825 - Stärkung der Verbraucher für den ökologischen Wandel (UWG-Umsetzung DE)",
         "url": "https://www.gesetze-im-internet.de/uwg_2004/BJNR141400004.html",
@@ -407,7 +421,7 @@ REGULATIONS = [
         "key_article": "Art. 1",
     },
     {
-        "nr": 22,
+        "nr": 20,
         "key": "GreenClaims",
         "relevant_fields": ["b2c", "env_claims", "employees", "revenue_eur"],
         # Kein "(Entwurf)" im Namen: der Zusatz stuende auch in der englischen
@@ -469,10 +483,6 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "IDW – Nachhaltigkeitsberichterstattung (CSRD/ESRS)",
          "url": "https://www.idw.de/idw/themen-branchen/nachhaltigkeit/"},
     ],
-    "ESRS": [
-        {"name": "EFRAG – European Sustainability Reporting Standards",
-         "url": "https://www.efrag.org/en/sustainability-reporting/esrs-workstreams"},
-    ],
     "NFRD": [
         {"name": "EU-Kommission – Non-Financial Reporting (Historie)",
          "url": "https://finance.ec.europa.eu/capital-markets-union-and-financial-markets/company-reporting-and-auditing/company-reporting/corporate-sustainability-reporting_en"},
@@ -509,21 +519,19 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "EU-Kommission – Ecodesign for Sustainable Products Regulation (ESPR)",
          "url": "https://environment.ec.europa.eu/strategy/circular-economy/ecodesign-sustainable-products-regulation_en"},
     ],
+    "Vernichtungsverbot": [
+        {"name": "EU-Kommission – Verbot der Vernichtung unverkaufter Kleidung und Schuhe",
+         "url": "https://environment.ec.europa.eu/news/ban-destruction-unsold-clothes-and-shoes-enters-application-2026-07-17_en"},
+        {"name": "Umweltbundesamt – Vernichtungsverbot und Transparenzpflicht für unverkaufte Waren",
+         "url": "https://www.umweltbundesamt.de/themen/wirtschaft-konsum/produkte/oekodesign/oekodesign-verordnung/vernichtungsverbot-transparenzpflicht-fuer"},
+    ],
     "PPWR": [
         {"name": "EU-Kommission – Verpackungen und Verpackungsabfälle",
          "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en"},
     ],
-    "KonfliktminVO": [
-        {"name": "EU-Kommission – Konfliktmineralien-Verordnung",
-         "url": "https://policy.trade.ec.europa.eu/development-and-sustainability/conflict-minerals-regulation_en"},
-    ],
     "MinRohSorgG": [
         {"name": "DEKSOR (BGR) – Deutsche Kontrollstelle EU-Sorgfaltspflichten in Rohstofflieferketten",
          "url": "https://www.bgr.bund.de/DE/BGR/Deksor/deksor_node.html"},
-    ],
-    "UmweltstrafRL": [
-        {"name": "EU-Kommission – Environmental Crime Directive",
-         "url": "https://environment.ec.europa.eu/law-and-governance/environmental-compliance-assurance/environmental-crime-directive_en"},
     ],
     "EmpCo": [
         {"name": "EU-Kommission – Nachhaltiger Konsum / Stärkung der Verbraucher für den grünen Wandel",
@@ -562,7 +570,6 @@ FIRST_STEPS_BY_REG_KEY: dict[str, list[str]] = {
     "FLR": ["flr_1", "flr_2", "flr_3"],
     "CSRD": ["csrd_1", "csrd_2", "csrd_3", "csrd_4"],
     "CSRD_DE": ["csrd_de_1", "csrd_de_2", "csrd_de_3"],
-    "ESRS": ["esrs_1", "esrs_2", "esrs_3"],
     "NFRD": ["nfrd_1", "nfrd_2"],
     "CSR-RUG": ["csr_rug_1", "csr_rug_2", "csr_rug_3"],
     "TaxonomieVO": ["taxonomie_1", "taxonomie_2", "taxonomie_3"],
@@ -572,10 +579,9 @@ FIRST_STEPS_BY_REG_KEY: dict[str, list[str]] = {
     "HinSchG": ["hinschg_1", "hinschg_2", "hinschg_3", "hinschg_4"],
     "RightToRepair": ["r2r_1", "r2r_2", "r2r_3"],
     "Oekodesign": ["oekodesign_1", "oekodesign_2", "oekodesign_3"],
+    "Vernichtungsverbot": ["vernichtung_1", "vernichtung_2", "vernichtung_3", "vernichtung_4"],
     "PPWR": ["ppwr_1", "ppwr_2", "ppwr_3"],
-    "KonfliktminVO": ["konfliktmin_1", "konfliktmin_2", "konfliktmin_3"],
     "MinRohSorgG": ["minroh_1", "minroh_2", "minroh_3"],
-    "UmweltstrafRL": ["umweltstraf_1", "umweltstraf_2", "umweltstraf_3"],
     "EmpCo": ["empco_1", "empco_2", "empco_3", "empco_4"],
     "GreenClaims": ["greenclaims_1", "greenclaims_2"],
 }
@@ -608,7 +614,6 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     # Kein Veroeffentlichungsdatum — das Gesetz ist nicht verkuendet.
     # Der Entwurfshinweis kommt uebersetzt aus i18n (siehe DRAFT_PUBLISHED).
     "CSRD_DE":         "",
-    "ESRS":            "22.12.2023",
     "NFRD":            "15.11.2014",
     "CSR-RUG":         "11.04.2017",
     "TaxonomieVO":     "22.06.2020",
@@ -618,10 +623,10 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     "HinSchG":         "02.06.2023",
     "RightToRepair":   "10.07.2024",
     "Oekodesign":      "28.06.2024",
+    # ABl. L, 2026/296 vom 22.04.2026 (Kopfzeile des Volltextes).
+    "Vernichtungsverbot": "22.04.2026",
     "PPWR":            "22.01.2025",
-    "KonfliktminVO":   "19.05.2017",
     "MinRohSorgG":     "18.12.2020",
-    "UmweltstrafRL":   "30.04.2024",
     "EmpCo":           "06.03.2024",
     # Datum des Kommissionsvorschlags COM(2023) 166 final.
     "GreenClaims":     "22.03.2023",
@@ -679,8 +684,6 @@ APPLICATION_BY_REG_KEY: dict[str, dict] = {
     "CSRD":            {"applies_from": "01.01.2027", "note": "csrd"},
     # Gesetzgebungsverfahren nicht abgeschlossen (Stand 09/2026).
     "CSRD_DE":         {"applies_from": "", "status": STATUS_ENTWURF, "note": "entwurf_de"},
-    # Art. 2 Del. VO (EU) 2023/2772: gilt fuer Geschaeftsjahre ab 01.01.2024.
-    "ESRS":            {"applies_from": "01.01.2024"},
     # Art. 4 Abs. 1 UAbs. 2 RL 2014/95/EU: ab dem am 01.01.2017 beginnenden GJ.
     "NFRD":            {"applies_from": "01.01.2017", "note": "nfrd"},
     # §§ 289b ff. HGB: erstmals fuer nach dem 31.12.2016 beginnende Geschaeftsjahre.
@@ -699,18 +702,14 @@ APPLICATION_BY_REG_KEY: dict[str, dict] = {
     "RightToRepair":   {"applies_from": "31.07.2026"},
     # Art. 80 VO (EU) 2024/1781 (20. Tag nach ABl. vom 28.06.2024).
     "Oekodesign":      {"applies_from": "18.07.2024", "note": "oekodesign"},
+    # Art. 6 Del. VO (EU) 2026/296: "Sie gilt ab dem 19. Juli 2026." Dasselbe
+    # Datum nennt Art. 25 Abs. 1 VO (EU) 2024/1781 fuer das Verbot selbst;
+    # mittlere Unternehmen folgen am 19.07.2030 (Staffelung siehe deadlines.py).
+    "Vernichtungsverbot": {"applies_from": "19.07.2026", "note": "vernichtungsverbot"},
     # Art. 71 VO (EU) 2025/40.
     "PPWR":            {"applies_from": "12.08.2026"},
-    # Art. 20 Abs. 3 VO (EU) 2017/821: die Vorschriften, die den Unternehmen
-    # Pflichten auferlegen (Art. 4 bis 7 — Managementsystem, Risikomanagement,
-    # Pruefung durch Dritte, Offenlegung), gelten erst ab 01.01.2021. Der Termin
-    # aus Abs. 2 (09.07.2017) betrifft die uebrigen, an die Mitgliedstaaten und
-    # die Kommission gerichteten Bestimmungen und waere hier irrefuehrend.
-    "KonfliktminVO":   {"applies_from": "01.01.2021", "note": "konfliktmin"},
     # Art. 3 MinRohSorgG-Artikelgesetz (Fussnote gesetze-im-internet.de).
     "MinRohSorgG":     {"applies_from": "07.05.2020"},
-    # Art. 28 Abs. 1 RL (EU) 2024/1203 (Umsetzungsfrist der Mitgliedstaaten).
-    "UmweltstrafRL":   {"applies_from": "21.05.2026", "note": "umweltstraf"},
     # Art. 4 Abs. 1 UAbs. 2 RL (EU) 2024/825.
     "EmpCo":           {"applies_from": "27.09.2026", "note": "empco"},
     # Kommission hat die Ruecknahme am 20.06.2025 angekuendigt, aber nicht vollzogen.
@@ -753,13 +752,13 @@ def application_for(reg_key: str, today=None) -> dict:
 # Gekoppelte Regulierungen — deterministisch bestimmte, verbindliche Vorgaben.
 #
 # Einige Regulierungen haengen rechtlich an einer "Eltern"-Regulierung:
-#   ESRS / Taxonomie-VO / CSRD-Umsetzungsgesetz folgen der CSRD-Pflicht,
+#   Taxonomie-VO und CSRD-Umsetzungsgesetz folgen der CSRD-Pflicht,
 #   die Whistleblower-RL wird in DE ueber das HinSchG umgesetzt.
 # Daneben laeuft hier das CSR-RUG mit: es haengt an keiner anderen Regulierung,
 # seine Merkmale stehen aber genauso abschliessend im Gesetz (§ 289b Abs. 1 HGB)
 # und gehoeren deshalb nicht vor ein Sprachmodell.
 # Damit das LLM diese nicht isoliert und widerspruechlich bewertet (z. B.
-# CSRD = nein, aber ESRS = ja fuer dasselbe Unternehmen), wird der ausloesende
+# CSRD = nein, aber Taxonomie = ja fuer dasselbe Unternehmen), wird der ausloesende
 # Schwellenwert EINMAL aus dem Profil berechnet. Quelle der Schwellen: die
 # jeweiligen `criteria` oben (CSRD post-Omnibus, HinSchG § 12).
 #
@@ -904,7 +903,6 @@ def csr_rug_status(profile: dict) -> tuple[str, str]:
 _COUPLINGS: dict[str, tuple[str, object]] = {
     "CSRD":            ("CSRD", csrd_status),
     "CSRD_DE":         ("CSRD", csrd_status),
-    "ESRS":            ("CSRD", csrd_status),
     "TaxonomieVO":     ("CSRD", csrd_status),
     "HinSchG":         ("HinSchG", hinschg_status),
     "WhistleblowerRL": ("HinSchG", hinschg_status),
@@ -915,7 +913,6 @@ _COUPLINGS: dict[str, tuple[str, object]] = {
 _COUPLING_RELATION: dict[str, str] = {
     "CSRD_DE": ("Das CSRD-Umsetzungsgesetz setzt die CSRD in deutsches Recht um; fuer in "
                 "Deutschland ansaessige Unternehmen gilt dieselbe Pflichtlage wie bei der CSRD."),
-    "ESRS": "Die ESRS gelten ausschliesslich fuer Unternehmen, die der CSRD unterliegen.",
     "TaxonomieVO": ("Die Taxonomie-Offenlegung (Art. 8) trifft Unternehmen, die der CSRD "
                     "unterliegen; Finanzmarktteilnehmer sind zusaetzlich eigenstaendig erfasst."),
     "WhistleblowerRL": ("Die EU-Whistleblower-Richtlinie wird in Deutschland ueber das HinSchG "
@@ -1052,18 +1049,60 @@ GROUP_ROLES = [
     "Tochter, Nicht-EU-Muttergesellschaft",
 ]
 
+# Produktkategorien: sprachneutrale Keys (= DE-String) fuer die DB-Persistenz.
+# Uebersetzungen: siehe i18n.PRODUCT_CAT_LABELS.
+#
+# Die Liste wurde am 02.09.2026 vollstaendig ausgetauscht und auf die
+# Warengruppen der Textil- und Modewirtschaft zugeschnitten. Profile aus der
+# Zeit davor tragen die alten Werte; `db.get_company()` filtert alles heraus,
+# was hier nicht mehr steht, damit weder Formular noch LLM-Prompt noch der
+# Cache-Schluessel einen unbekannten Wert sehen (siehe dort).
 PRODUCT_CATEGORIES = [
     "Verpackungen (eigene oder vertriebene)",
-    "Elektronik / Haushaltsgeräte / IT-Hardware",
-    "Holz / Holzprodukte / Papier",
-    "Kaffee / Kakao",
-    "Palmöl / Soja",
-    "Kautschuk / Gummi",
-    "Rinder / Rindsprodukte / Leder",
-    "Zinn / Tantal / Wolfram / Gold (Direktimport)",
-    "Chemische Stoffe",
-    "Textilien / Bekleidung / Leder",
-    "Möbel / Baustoffe",
-    "Lebensmittel / Getränke",
-    "Keine physischen Produkte (nur Dienstleistung/Software)",
+    "Holz",
+    "Holzprodukte",
+    "Papier",
+    "Kautschuk/Gummi",
+    "Bekleidung",
+    "Heimtextilien",
+    "technische Textilien",
+    "PSA",
+    "Schuhe",
+    "Lederwaren",
+    "textile Medizinprodukte",
+    "Automotive-Textilien",
+]
+
+# Rolle in der Wertschoepfungskette (Mehrfachauswahl).
+#
+# Traegt die Frage, ob eine produktbezogene Pflicht ueberhaupt an diesem
+# Unternehmen haengt: das Vernichtungsverbot und die PPWR richten sich an
+# "Wirtschaftsteilnehmer", die EUDR an Marktteilnehmer UND Haendler, die
+# EmpCo-Vorgaben an denjenigen, der die Umweltaussage gegenueber Verbrauchern
+# macht. Uebersetzungen: siehe i18n.ROLE_LABELS.
+VALUE_CHAIN_ROLES = [
+    "Hersteller",
+    "Marke",
+    "Importeur",
+    "Händler",
+    "Onlinehändler",
+    "Zulieferer",
+]
+
+# Eingesetzte Materialien (Mehrfachauswahl).
+#
+# Fuer die EUDR entscheidet der Rohstoff (Rinderleder, Naturkautschuk, Holz und
+# zellulosebasierte Fasern), fuer die Zwangsarbeitsverordnung das Rohstoffrisiko
+# und fuer die Oekodesign-Anforderungen die chemische Ausruestung (PFAS).
+# Uebersetzungen: siehe i18n.MATERIAL_LABELS.
+MATERIALS = [
+    "Baumwolle und andere Naturfasern",
+    "Wolle",
+    "Leder bzw. Rindererzeugnisse",
+    "Naturkautschuk",
+    "Zellulosebasierte Chemiefasern (z. B. Viskose, Modal, Lyocell)",
+    "Synthetische Fasern",
+    "Recyclingmaterialien",
+    "Besondere chemische Ausrüstungen (z. B. PFAS)",
+    "PFAS-haltige Ausrüstung",
 ]

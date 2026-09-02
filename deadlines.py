@@ -3,8 +3,10 @@
 `regulations.APPLICATION_BY_REG_KEY` haelt den Anwendungsbeginn der Norm.
 Der Anwendungsbeginn fuer ein KONKRETES Unternehmen kann davon abweichen, wenn
 die Norm nach Groesse staffelt (LkSG 3.000/1.000, HinSchG 250/50-249) oder wenn
-sie an einer anderen Regulierung haengt (ESRS und Taxonomie-Offenlegung folgen
-dem ersten CSRD-pflichtigen Geschaeftsjahr dieses Unternehmens).
+sie an einer anderen Regulierung haengt (die Taxonomie-Offenlegung folgt dem
+ersten CSRD-pflichtigen Geschaeftsjahr dieses Unternehmens) oder wenn sie nach
+Groessenklasse staffelt (Vernichtungsverbot: gross seit 2026, mittel ab 2030,
+klein und kleinst ausgenommen).
 
 Kein LLM, keine Netzzugriffe, kein Cache: `deadline_for()` rechnet aus dem
 Profil und laeuft zur Renderzeit. Damit fliesst nichts davon in den
@@ -59,6 +61,14 @@ _CSRD_WELLE1 = "01.01.2024"
 
 # Art. 38 Abs. 3 VO (EU) 2023/1115 in der Fassung der Verschiebung.
 _EUDR_KLEIN = "30.06.2027"
+
+# Art. 25 Abs. 1 und Art. 24 Abs. 1 VO (EU) 2024/1781: das Vernichtungsverbot
+# und die Offenlegungspflicht gelten ab dem 19.07.2026, fuer mittlere
+# Unternehmen ab dem 19.07.2030; auf Kleinst- und Kleinunternehmen finden sie
+# keine Anwendung. Die Groessenklassen richten sich nach der Empfehlung
+# 2003/361/EG (Fussnote zu Art. 2 Nr. 41-43 der Verordnung).
+_VERNICHTUNG_GROSS = "19.07.2026"
+_VERNICHTUNG_MITTEL = "19.07.2030"
 
 # Art. 27 Abs. 2 lit. a VO (EU) 2020/852 — Klimaschutz/Anpassung; die
 # Offenlegung nach Art. 8 haengt daneben an der CSRD-Pflicht.
@@ -122,19 +132,6 @@ def _csrd(profile: dict, today: date | None) -> dict:
 def _csrd_de(profile: dict, today: date | None) -> dict:
     """CSRD-Umsetzungsgesetz: Verfahren nicht abgeschlossen, kein Datum."""
     return {"gilt_ab": "", "hinweis": "entwurf_de"}
-
-
-def _esrs(profile: dict, today: date | None) -> dict:
-    """ESRS: gelten mit dem ersten CSRD-pflichtigen Geschaeftsjahr.
-
-    Art. 2 der Del. VO (EU) 2023/2772 nennt 01.01.2024 — das ist der Beginn
-    fuer Welle 1. Ein Unternehmen, das erst ab dem Geschaeftsjahr 2027
-    berichtspflichtig wird, wendet die Standards auch erst dann an.
-    """
-    csrd = _csrd(profile, today)
-    if not csrd["gilt_ab"]:
-        return {"gilt_ab": "", "hinweis": "esrs_folgt_csrd"}
-    return {"gilt_ab": csrd["gilt_ab"], "hinweis": "esrs_folgt_csrd"}
 
 
 def _taxonomie(profile: dict, today: date | None) -> dict:
@@ -204,6 +201,54 @@ def _eudr(profile: dict, today: date | None) -> dict:
     return _pass_through("EUDR", today)
 
 
+def _size_limit_ok(profile: dict, revenue_limit: float, balance_limit: float) -> bool | None:
+    """Halten die ANGEGEBENEN Finanzkennzahlen die KMU-Schwellen ein?
+
+    Die Empfehlung 2003/361/EG verlangt neben der Beschaeftigtenzahl, dass
+    ENTWEDER der Umsatz ODER die Bilanzsumme unter der jeweiligen Grenze
+    bleibt. Ein Feld, das im Profil fehlt (0), ist keine Aussage — es darf
+    weder fuer noch gegen die Einstufung zaehlen. Sind beide Felder leer,
+    liefert die Funktion None ("nicht bestimmbar").
+    """
+    checks = []
+    revenue = profile.get("revenue_eur") or 0
+    balance = profile.get("balance_sheet_eur") or 0
+    if revenue > 0:
+        checks.append(revenue <= revenue_limit)
+    if balance > 0:
+        checks.append(balance <= balance_limit)
+    if not checks:
+        return None
+    return any(checks)
+
+
+def _vernichtungsverbot(profile: dict, today: date | None) -> dict:
+    """Vernichtungsverbot: gestaffelt nach der Groessenklasse des Unternehmens.
+
+    Art. 25 Abs. 1 UAbs. 2 und 3 VO (EU) 2024/1781: Kleinst- und Klein-
+    unternehmen sind ausgenommen, mittlere Unternehmen ab dem 19.07.2030
+    erfasst, alle uebrigen seit dem 19.07.2026. Die Groessenklassen kommen aus
+    der Empfehlung 2003/361/EG: mittleres Unternehmen unter 250 Beschaeftigten
+    UND (Umsatz bis 50 Mio. EUR ODER Bilanzsumme bis 43 Mio. EUR); kleines
+    Unternehmen unter 50 Beschaeftigten UND (Umsatz ODER Bilanzsumme bis
+    10 Mio. EUR).
+
+    Fehlende Finanzkennzahlen kippen die Einstufung nicht: sie entscheiden nur
+    dann, wenn sie im Profil stehen (`_size_limit_ok`). Ein Unternehmen mit 30
+    Beschaeftigten und 80 Mio. EUR Umsatz gilt deshalb als mittleres und nicht
+    als kleines Unternehmen. Die Einstufung bleibt eine Naeherung — das sagt
+    der Hinweistext auf der Karte auch.
+    """
+    employees = profile.get("employees") or 0
+    if employees >= 250 or _size_limit_ok(profile, 50_000_000, 43_000_000) is False:
+        return {"gilt_ab": _VERNICHTUNG_GROSS, "hinweis": "vernichtung_gross"}
+    if employees < 50 and _size_limit_ok(profile, 10_000_000, 10_000_000) is not False:
+        # Kleinst- und Kleinunternehmen: kein Anwendungsbeginn, weil das Verbot
+        # sie gar nicht erfasst. Lieber kein Datum als ein erfundenes.
+        return {"gilt_ab": "", "hinweis": "vernichtung_klein"}
+    return {"gilt_ab": _VERNICHTUNG_MITTEL, "hinweis": "vernichtung_mittel"}
+
+
 def _greenclaims(profile: dict, today: date | None) -> dict:
     """Green Claims: Ruecknahme angekuendigt, kein Anwendungsbeginn."""
     return {"gilt_ab": "", "hinweis": "greenclaims"}
@@ -214,11 +259,11 @@ _RULES = {
     "LkSG": _lksg,
     "CSRD": _csrd,
     "CSRD_DE": _csrd_de,
-    "ESRS": _esrs,
     "TaxonomieVO": _taxonomie,
     "HinSchG": _hinschg,
     "WhistleblowerRL": _whistleblower,
     "EUDR": _eudr,
+    "Vernichtungsverbot": _vernichtungsverbot,
     "GreenClaims": _greenclaims,
 }
 

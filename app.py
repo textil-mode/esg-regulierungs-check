@@ -40,7 +40,9 @@ from i18n import (
     LANGUAGES,
     LEGAL_FORM_LABELS,
     LOCATION_LABELS,
+    MATERIAL_LABELS,
     PRODUCT_CAT_LABELS,
+    ROLE_LABELS,
     SITE_TYPE_LABELS,
     normalize_lang,
     t,
@@ -62,9 +64,11 @@ from regulations import (
     GROUP_ROLES,
     LEGAL_FORMS,
     LOCATIONS,
+    MATERIALS,
     PRODUCT_CATEGORIES,
     REGULATIONS,
     SITE_TYPES,
+    VALUE_CHAIN_ROLES,
     application_for,
     guidelines_for,
     published_for,
@@ -243,6 +247,8 @@ def _inject_globals():
         LEGAL_FORM_LABELS=LEGAL_FORM_LABELS,
         GROUP_ROLE_LABELS=GROUP_ROLE_LABELS,
         PRODUCT_CAT_LABELS=PRODUCT_CAT_LABELS,
+        ROLE_LABELS=ROLE_LABELS,
+        MATERIAL_LABELS=MATERIAL_LABELS,
     )
 
 
@@ -499,6 +505,8 @@ def dashboard():
         LEGAL_FORMS=LEGAL_FORMS,
         GROUP_ROLES=GROUP_ROLES,
         PRODUCT_CATEGORIES=PRODUCT_CATEGORIES,
+        VALUE_CHAIN_ROLES=VALUE_CHAIN_ROLES,
+        MATERIALS=MATERIALS,
         reg_count=len(REGULATIONS),
     )
 
@@ -539,6 +547,8 @@ def save_company():
         "env_claims": "env_claims" in f,
         "eu_importer": "eu_importer" in f,
         "product_categories": f.getlist("product_categories"),
+        "value_chain_roles": f.getlist("value_chain_roles"),
+        "materials": f.getlist("materials"),
         "sites": sites,
         "language": lang,
     }

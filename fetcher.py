@@ -188,7 +188,7 @@ _UNDATED_CONSOLIDATED = re.compile(r"^0(\d{4}[A-Z]\d{4})$")
 
 # Eigener, KURZER Timeout: die Konsolidierungssuche ist eine Zusatzabfrage vor
 # dem eigentlichen Download. Mit dem 60-s-Timeout des Cellar-Abrufs koennte sie
-# Phase 1 (sequenziell ueber alle 22 Regulierungen) um Minuten verlaengern.
+# Phase 1 (sequenziell ueber alle 20 Regulierungen) um Minuten verlaengern.
 _SPARQL_TIMEOUT = float(os.getenv("SPARQL_TIMEOUT", "8"))
 
 # Ergebniszustaende der Konsolidierungssuche. Bewusst nur zwei: entweder die
@@ -252,7 +252,7 @@ def _latest_consolidated(celex: str, timeout: float | None = None) -> tuple[str,
 
     Ein zweiter Versuch faengt die haeufigste Ursache ab: der Endpunkt drosselt
     bei mehreren Abfragen kurz hintereinander, wie sie ein Analyse- oder
-    Watchdog-Lauf ueber alle 22 Regulierungen ausloest.
+    Watchdog-Lauf ueber alle 20 Regulierungen ausloest.
     """
     if celex in _consolidated_cache:
         return _consolidated_cache[celex], RESOLVE_CONSOLIDATED
@@ -612,7 +612,7 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
 
     # EUR-Lex antwortet Server-Clients mit einer WAF-Challenge (HTTP 202,
     # leerer Body). Dann den Volltext beim Amt fuer Veroeffentlichungen holen.
-    # Genau ein Fallback-Versuch — Phase 1 laeuft sequenziell ueber alle 22
+    # Genau ein Fallback-Versuch — Phase 1 laeuft sequenziell ueber alle 20
     # Regulierungen, ein zweiter Anlauf koennte pro Reg 60 s zusaetzlich kosten.
     used_fallback = False
     source_note = f"Primaerquelle HTTP {resp.status_code}"

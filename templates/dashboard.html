@@ -96,6 +96,34 @@
       {% endfor %}
     </div>
 
+    <!-- Rolle in der Wertschöpfungskette -->
+    <hr>
+    <h3 style="margin-bottom:8px;">{{ t("section_roles", lang)|replace("#### ","") }}</h3>
+    <p class="help-text" style="margin-bottom:12px;">{{ t("roles_hint", lang) }}</p>
+    {% set existing_roles = company.get('value_chain_roles', []) or [] %}
+    <div class="grid-2 products-grid">
+      {% for v in VALUE_CHAIN_ROLES %}
+      <div class="checkbox-row">
+        <input type="checkbox" name="value_chain_roles" value="{{ v }}" id="role_{{ loop.index }}" {{ 'checked' if v in existing_roles }}>
+        <label for="role_{{ loop.index }}">{{ t_opt(v, ROLE_LABELS, lang) }}</label>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Materialien -->
+    <hr>
+    <h3 style="margin-bottom:8px;">{{ t("section_materials", lang)|replace("#### ","") }}</h3>
+    <p class="help-text" style="margin-bottom:12px;">{{ t("materials_hint", lang) }}</p>
+    {% set existing_materials = company.get('materials', []) or [] %}
+    <div class="grid-2 products-grid">
+      {% for v in MATERIALS %}
+      <div class="checkbox-row">
+        <input type="checkbox" name="materials" value="{{ v }}" id="mat_{{ loop.index }}" {{ 'checked' if v in existing_materials }}>
+        <label for="mat_{{ loop.index }}">{{ t_opt(v, MATERIAL_LABELS, lang) }}</label>
+      </div>
+      {% endfor %}
+    </div>
+
     <!-- Standorte -->
     <hr>
     <h3 style="margin-bottom:8px;">{{ t("section_sites", lang)|replace("#### ","") }}</h3>

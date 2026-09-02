@@ -106,6 +106,8 @@ _PROFILE_LABELS: dict[str, str] = {
     "eu_importer": ("EU importer (places products from third countries on the EU market / "
                     "first placing on the market)"),
     "product_categories": "Product categories",
+    "value_chain_roles": "Role(s) in the value chain",
+    "materials": "Materials used",
     "sites": "Sites",
 }
 
@@ -136,7 +138,7 @@ def _render_field(field: str, value) -> str:
             f"- {s.get('count', 0)}x {s.get('type', '-')} in {s.get('location', '-')}"
             for s in sites
         )
-    if field == "product_categories":
+    if field in _LIST_FIELDS:
         return ", ".join(value or []) or "none"
     if field in _BOOL_FIELDS:
         return "yes" if value else "no"
@@ -169,6 +171,9 @@ def _format_profile(profile: dict, reg: dict) -> str:
     return "\n".join(lines)
 
 
+# Mehrfachauswahl-Felder: im Prompt als Aufzaehlung, im Cache-Schluessel
+# sortiert (die Reihenfolge im Formular ist bedeutungslos).
+_LIST_FIELDS = frozenset({"product_categories", "value_chain_roles", "materials"})
 _BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer"})
 _INT_FIELDS = frozenset({"employees", "employees_de"})
 _FLOAT_FIELDS = frozenset({"revenue_eur", "balance_sheet_eur"})
@@ -183,7 +188,7 @@ def _stable_value(field: str, value):
              for s in (value or [])),
             key=lambda d: (d["type"] or "", d["location"] or ""),
         )
-    if field == "product_categories":
+    if field in _LIST_FIELDS:
         return sorted(value or [])
     if field in _BOOL_FIELDS:
         return bool(value)
@@ -208,7 +213,10 @@ def profile_hash(profile: dict, reg: dict) -> str:
 
 # Bei Prompt-Aenderungen hochzaehlen: invalidiert den analysis_cache, damit alle
 # Nutzer einmalig frische Ergebnisse mit dem neuen Prompt bekommen.
-_PROMPT_VERSION = "v5-2026-09-01"
+# v6: Profilschema erweitert (Rolle in der Wertschoepfungskette, Materialien)
+# und Produktkategorien vollstaendig ausgetauscht — alte Begruendungen
+# beruhen auf Angaben, die es so nicht mehr gibt.
+_PROMPT_VERSION = "v6-2026-09-02"
 
 
 def reg_hash(reg: dict, language: str, law_text_hash: str | None) -> str:
@@ -376,7 +384,7 @@ def _enrich(reg: dict, parsed: dict) -> dict:
 def deterministic_result(reg: dict, profile: dict, language: str) -> dict | None:
     """Ergebnis ohne LLM, wo die Rechtslage die Antwort bereits festlegt.
 
-    Betrifft die per Kopplung entschiedenen Regulierungen (CSRD, CSRD_DE, ESRS,
+    Betrifft die per Kopplung entschiedenen Regulierungen (CSRD, CSRD_DE,
     Taxonomie-VO, HinSchG, Whistleblower-RL) sowie das CSR-RUG, dessen Merkmale
     § 289b Abs. 1 HGB abschliessend nennt. Struktur identisch zu `_enrich`.
     None heisst: dieser Fall gehoert weiterhin dem LLM.

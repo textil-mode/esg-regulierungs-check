@@ -32,7 +32,9 @@ KLEINBETRIEB = {
     "env_claims": True,
     "eu_importer": False,
     "sites": [{"type": "Hauptsitz", "location": "Deutschland", "count": 35}],
-    "product_categories": ["Textilien / Bekleidung / Leder"],
+    "product_categories": ["Bekleidung", "Schuhe"],
+    "value_chain_roles": ["Hersteller", "Marke"],
+    "materials": ["Baumwolle und andere Naturfasern"],
     "language": "de",
 }
 
@@ -49,7 +51,9 @@ MITTELSTAND_1100 = {
     "env_claims": True,
     "eu_importer": True,
     "sites": [{"type": "Hauptsitz", "location": "Deutschland", "count": 1100}],
-    "product_categories": ["Textilien / Bekleidung / Leder"],
+    "product_categories": ["Bekleidung", "Schuhe"],
+    "value_chain_roles": ["Hersteller", "Marke"],
+    "materials": ["Baumwolle und andere Naturfasern"],
     "language": "de",
 }
 
@@ -66,7 +70,9 @@ GROSSKONZERN = {
     "env_claims": True,
     "eu_importer": True,
     "sites": [{"type": "Hauptsitz", "location": "Deutschland", "count": 6500}],
-    "product_categories": ["Textilien / Bekleidung / Leder"],
+    "product_categories": ["Bekleidung", "Schuhe"],
+    "value_chain_roles": ["Hersteller", "Marke"],
+    "materials": ["Baumwolle und andere Naturfasern"],
     "language": "de",
 }
 
@@ -117,9 +123,6 @@ ERWARTET: list[tuple[str, dict, str, str]] = [
     ("CSRD", GROSSKONZERN, "01.01.2024",
      "boersennotiert mit mehr als 500 MA -> Welle 1"),
 
-    ("ESRS", MITTELSTAND_1100, "01.01.2027", "folgt der CSRD-Frist dieses Unternehmens"),
-    ("ESRS", GROSSKONZERN, "01.01.2024", "folgt der CSRD-Frist dieses Unternehmens"),
-
     ("TaxonomieVO", GROSSKONZERN, "01.01.2024", "folgt der CSRD-Frist"),
 
     ("EUDR", KLEINBETRIEB, "30.06.2027",
@@ -137,8 +140,15 @@ ERWARTET: list[tuple[str, dict, str, str]] = [
     ("RightToRepair", KLEINBETRIEB, "31.07.2026", "Art. 22 Abs. 1 UAbs. 3"),
     ("Oekodesign", MITTELSTAND_1100, "18.07.2024", "Art. 80 VO (EU) 2024/1781"),
     ("SFDR", GROSSKONZERN, "10.03.2021", "Art. 20 Abs. 2 VO (EU) 2019/2088"),
-    ("KonfliktminVO", GROSSKONZERN, "01.01.2021",
-     "Art. 20 Abs. 3: Unternehmenspflichten der Art. 4-7 erst ab 2021"),
+    ("MinRohSorgG", GROSSKONZERN, "07.05.2020", "Art. 3 MinRohSorgG-Artikelgesetz"),
+
+    # Vernichtungsverbot: Art. 25 Abs. 1 VO (EU) 2024/1781, Groessenklassen
+    # nach der Empfehlung 2003/361/EG.
+    ("Vernichtungsverbot", GROSSKONZERN, "19.07.2026", "grosses Unternehmen"),
+    ("Vernichtungsverbot", MITTELSTAND_1100, "19.07.2026",
+     "1 100 MA -> kein KMU, Verbot gilt seit 2026"),
+    ("Vernichtungsverbot", KLEINBETRIEB, "",
+     "Kleinunternehmen: vom Verbot gar nicht erfasst"),
 
     # Ohne bestimmbares Datum.
     ("CSRD_DE", GROSSKONZERN, "", "Gesetzgebungsverfahren nicht abgeschlossen"),

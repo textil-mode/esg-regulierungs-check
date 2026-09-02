@@ -650,12 +650,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "欧盟进口商 / 首次在欧盟市场投放",
     },
     "field_eu_importer_help": {
-        "de": "Führt Ihr Unternehmen Produkte aus Drittländern in die EU ein und stellt diese auf dem EU-Markt bereit bzw. bringt sie erstmals in Verkehr? Relevant u.a. für EUDR, FLR, PPWR, Ökodesign-VO, Konfliktmineralien-VO.",
-        "en": "Does your company import products from third countries into the EU and make them available on the EU market or place them on the market for the first time? Relevant for EUDR, FLR, PPWR, Ecodesign Regulation, Conflict Minerals Regulation.",
-        "es": "¿Su empresa importa productos de terceros países a la UE y los comercializa en el mercado de la UE o los introduce por primera vez en el mercado? Relevante para EUDR, FLR, PPWR, Reglamento de Ecodiseño, Reglamento de Minerales en Conflicto.",
-        "fr": "Votre entreprise importe-t-elle des produits de pays tiers dans l'UE et les met-elle à disposition sur le marché de l'UE ou les place-t-elle pour la première fois sur le marché ? Pertinent pour EUDR, FLR, PPWR, règlement Écoconception, règlement sur les minéraux de conflit.",
-        "it": "La vostra azienda importa prodotti da paesi terzi nell'UE e li mette a disposizione sul mercato UE o li immette sul mercato per la prima volta? Rilevante per EUDR, FLR, PPWR, Regolamento Ecodesign, Regolamento sui Minerali di Conflitto.",
-        "zh": "贵公司是否从第三国向欧盟进口产品，并在欧盟市场上提供或首次投放市场？涉及 EUDR、FLR、PPWR、生态设计条例、冲突矿产条例等。",
+        "de": "Führt Ihr Unternehmen Produkte aus Drittländern in die EU ein und stellt diese auf dem EU-Markt bereit bzw. bringt sie erstmals in Verkehr? Relevant u.a. für EUDR, FLR, PPWR, Ökodesign-VO, MinRohSorgG.",
+        "en": "Does your company import products from third countries into the EU and make them available on the EU market or place them on the market for the first time? Relevant for EUDR, FLR, PPWR, Ecodesign Regulation, MinRohSorgG.",
+        "es": "¿Su empresa importa productos de terceros países a la UE y los comercializa en el mercado de la UE o los introduce por primera vez en el mercado? Relevante para EUDR, FLR, PPWR, Reglamento de Ecodiseño, MinRohSorgG.",
+        "fr": "Votre entreprise importe-t-elle des produits de pays tiers dans l'UE et les met-elle à disposition sur le marché de l'UE ou les place-t-elle pour la première fois sur le marché ? Pertinent pour EUDR, FLR, PPWR, règlement Écoconception, MinRohSorgG.",
+        "it": "La vostra azienda importa prodotti da paesi terzi nell'UE e li mette a disposizione sul mercato UE o li immette sul mercato per la prima volta? Rilevante per EUDR, FLR, PPWR, Regolamento Ecodesign, MinRohSorgG.",
+        "zh": "贵公司是否从第三国向欧盟进口产品，并在欧盟市场上提供或首次投放市场？涉及 EUDR、FLR、PPWR、生态设计条例、MinRohSorgG 等。",
     },
 
     # Product categories / sites
@@ -668,14 +668,46 @@ UI: dict[str, dict[str, str]] = {
         "zh": "#### 产品类别",
     },
     "products_hint": {
-        "de": "Mehrfachauswahl möglich. Steuert EUDR, PPWR, Ökodesign, Right-to-Repair, Konfliktmineralien.",
-        "en": "Multi-select possible. Drives EUDR, PPWR, Ecodesign, Right-to-Repair, Conflict Minerals.",
-        "es": "Selección múltiple posible. Afecta EUDR, PPWR, Ecodiseño, Derecho a Reparar, Minerales de Conflicto.",
-        "fr": "Sélection multiple possible. Influence EUDR, PPWR, Écoconception, Droit à la Réparation, Minéraux de Conflit.",
-        "it": "Selezione multipla possibile. Influenza EUDR, PPWR, Ecodesign, Diritto alla Riparazione, Minerali di Conflitto.",
-        "zh": "可多选。影响 EUDR、PPWR、生态设计、维修权、冲突矿产。",
+        "de": "Mehrfachauswahl möglich. Steuert EUDR, PPWR, Ökodesign, Right-to-Repair und das Vernichtungsverbot.",
+        "en": "Multi-select possible. Drives EUDR, PPWR, Ecodesign, Right-to-Repair and the destruction ban.",
+        "es": "Selección múltiple posible. Afecta EUDR, PPWR, Ecodiseño, Derecho a Reparar y la prohibición de destrucción.",
+        "fr": "Sélection multiple possible. Influence EUDR, PPWR, Écoconception, Droit à la Réparation et l'interdiction de destruction.",
+        "it": "Selezione multipla possibile. Influenza EUDR, PPWR, Ecodesign, Diritto alla Riparazione e il divieto di distruzione.",
+        "zh": "可多选。影响 EUDR、PPWR、生态设计、维修权与销毁禁令。",
     },
     "products_label": {"de": "Kategorien", "en": "Categories", "es": "Categorías", "fr": "Catégories", "it": "Categorie", "zh": "类别"},
+    "section_roles": {
+        "de": "#### Rolle in der Wertschöpfungskette",
+        "en": "#### Role in the value chain",
+        "es": "#### Función en la cadena de valor",
+        "fr": "#### Rôle dans la chaîne de valeur",
+        "it": "#### Ruolo nella catena del valore",
+        "zh": "#### 在价值链中的角色",
+    },
+    "roles_hint": {
+        "de": "Mehrfachauswahl möglich. Entscheidet mit, ob produktbezogene Pflichten an Ihrem Unternehmen hängen — etwa EUDR, PPWR, EmpCo und das Vernichtungsverbot.",
+        "en": "Multi-select possible. Helps decide whether product-related duties attach to your company — e.g. EUDR, PPWR, EmpCo and the destruction ban.",
+        "es": "Selección múltiple posible. Determina si las obligaciones sobre productos recaen en su empresa: EUDR, PPWR, EmpCo y la prohibición de destrucción.",
+        "fr": "Sélection multiple possible. Détermine si les obligations liées aux produits pèsent sur votre entreprise : EUDR, PPWR, EmpCo et l'interdiction de destruction.",
+        "it": "Selezione multipla possibile. Determina se gli obblighi sui prodotti ricadono sulla vostra impresa: EUDR, PPWR, EmpCo e il divieto di distruzione.",
+        "zh": "可多选。用于判断与产品相关的义务是否落在贵公司身上——如 EUDR、PPWR、EmpCo 及销毁禁令。",
+    },
+    "section_materials": {
+        "de": "#### Materialien",
+        "en": "#### Materials",
+        "es": "#### Materiales",
+        "fr": "#### Matériaux",
+        "it": "#### Materiali",
+        "zh": "#### 材料",
+    },
+    "materials_hint": {
+        "de": "Mehrfachauswahl möglich. Steuert EUDR (Leder/Rind, Naturkautschuk, Holz- und Zellulosefasern), die Zwangsarbeitsverordnung und die Ökodesign-Anforderungen an chemische Ausrüstungen.",
+        "en": "Multi-select possible. Drives EUDR (leather/cattle, natural rubber, wood and cellulose fibres), the Forced Labour Regulation and the ecodesign requirements for chemical finishes.",
+        "es": "Selección múltiple posible. Afecta al EUDR (cuero/bovino, caucho natural, fibras de madera y celulosa), al Reglamento sobre trabajo forzoso y a los requisitos de ecodiseño para acabados químicos.",
+        "fr": "Sélection multiple possible. Influence l'EUDR (cuir/bovins, caoutchouc naturel, fibres de bois et de cellulose), le règlement sur le travail forcé et les exigences d'écoconception relatives aux apprêts chimiques.",
+        "it": "Selezione multipla possibile. Influenza l'EUDR (pelle/bovini, gomma naturale, fibre di legno e cellulosa), il regolamento sul lavoro forzato e i requisiti di ecodesign per i finissaggi chimici.",
+        "zh": "可多选。影响 EUDR（皮革/牛类、天然橡胶、木材与纤维素纤维）、强迫劳动条例以及针对化学整理的生态设计要求。",
+    },
     "section_sites": {
         "de": "#### Standorte",
         "en": "#### Sites",
@@ -905,6 +937,14 @@ UI: dict[str, dict[str, str]] = {
         "de": "Anwendungsbeginn", "en": "Start of application",
         "es": "Inicio de aplicación", "fr": "Début d'application",
         "it": "Inizio dell'applicazione", "zh": "适用起始",
+    },
+    "deadline_none_exempt": {
+        "de": "keiner; das Unternehmen wird von der Norm nicht erfasst",
+        "en": "none; the company is not covered by the rule",
+        "es": "ninguno; la empresa no está sujeta a la norma",
+        "fr": "aucun ; l'entreprise n'est pas visée par la règle",
+        "it": "nessuno; l'impresa non rientra nella norma",
+        "zh": "无；该企业不在此规范的适用范围内",
     },
     "deadline_open": {
         "de": "aus den Angaben nicht bestimmbar",
@@ -1143,31 +1183,23 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
               "gruppo di prodotti.",
         "zh": "框架性条例：具体产品要求须由针对各产品组的授权法案确定。",
     },
-    "konfliktmin": {
-        "de": "Genanntes Datum ist der Geltungsbeginn der Unternehmenspflichten aus Art. 4 bis 7 "
-              "(Art. 20 Abs. 3). Die Verordnung selbst gilt bereits seit dem 09.07.2017 (Art. 20 Abs. 2).",
-        "en": "The date given is the start of application of the company duties under Art. 4 to 7 "
-              "(Art. 20(3)). The regulation itself entered into application on 09.07.2017.",
-        "es": "La fecha indicada es el inicio de aplicación de las obligaciones empresariales de los "
-              "art. 4 a 7 (art. 20, apdo. 3). El reglamento como tal se aplica desde el 09.07.2017.",
-        "fr": "La date indiquée est le début d'application des obligations des entreprises prévues aux "
-              "art. 4 à 7 (art. 20, par. 3). Le règlement lui-même s'applique depuis le 09.07.2017.",
-        "it": "La data indicata è l'inizio di applicazione degli obblighi delle imprese di cui agli "
-              "art. 4-7 (art. 20, par. 3). Il regolamento in quanto tale si applica dal 09.07.2017.",
-        "zh": "所示日期为第 4 至 7 条企业义务的适用起始日（第 20 条第 3 款）。该条例本身自 2017 年 7 月 9 日起适用。",
-    },
-    "umweltstraf": {
-        "de": "Datum der Umsetzungsfrist für die Mitgliedstaaten. Unternehmen sind mittelbar über das "
-              "nationale Strafrecht betroffen.",
-        "en": "Date of the transposition deadline for member states. Companies are affected indirectly "
-              "through national criminal law.",
-        "es": "Fecha límite de transposición para los Estados miembros. Las empresas se ven afectadas "
-              "indirectamente a través del derecho penal nacional.",
-        "fr": "Date limite de transposition pour les États membres. Les entreprises sont concernées "
-              "indirectement via le droit pénal national.",
-        "it": "Termine di recepimento per gli Stati membri. Le imprese sono interessate indirettamente "
-              "tramite il diritto penale nazionale.",
-        "zh": "为成员国规定的转化期限。企业通过国内刑法间接受到影响。",
+    "vernichtungsverbot": {
+        "de": "Art. 6 der Delegierten Verordnung (EU) 2026/296; dasselbe Datum nennt Art. 25 Abs. 1 der "
+              "Verordnung (EU) 2024/1781 für das Verbot selbst. Mittlere Unternehmen folgen am 19.07.2030, "
+              "Kleinst- und Kleinunternehmen sind ausgenommen.",
+        "en": "Art. 6 of Delegated Regulation (EU) 2026/296; Art. 25(1) of Regulation (EU) 2024/1781 "
+              "gives the same date for the ban itself. Medium-sized companies follow on 19.07.2030, "
+              "micro and small companies are exempt.",
+        "es": "Art. 6 del Reglamento Delegado (UE) 2026/296; el art. 25, apdo. 1, del Reglamento (UE) "
+              "2024/1781 fija la misma fecha para la propia prohibición. Las medianas empresas quedan "
+              "sujetas el 19.07.2030 y las micro y pequeñas están exentas.",
+        "fr": "Art. 6 du règlement délégué (UE) 2026/296 ; l'art. 25, par. 1, du règlement (UE) "
+              "2024/1781 retient la même date pour l'interdiction elle-même. Les moyennes entreprises "
+              "suivent le 19.07.2030, les micro et petites entreprises sont exclues.",
+        "it": "Art. 6 del regolamento delegato (UE) 2026/296; l'art. 25, par. 1, del regolamento (UE) "
+              "2024/1781 indica la stessa data per il divieto stesso. Le medie imprese seguono il "
+              "19.07.2030, le micro e piccole imprese sono escluse.",
+        "zh": "授权条例 (EU) 2026/296 第 6 条；条例 (EU) 2024/1781 第 25 条第 1 款就禁令本身规定了同一日期。中型企业自 2030 年 7 月 19 日起适用，微型和小型企业不受约束。",
     },
     "empco": {
         "de": "Ab diesem Tag wenden die Mitgliedstaaten die Vorschriften an; in Deutschland über das "
@@ -1275,18 +1307,66 @@ DEADLINE_NOTES: dict[str, dict[str, str]] = {
               "Recepimento nazionale entro il 19.03.2027.",
         "zh": "自 2027 年 1 月 1 日或之后开始的第一个财政年度；报告于次年发布。各成员国须于 2027 年 3 月 19 日前完成转化。",
     },
-    "esrs_folgt_csrd": {
-        "de": "Die Standards sind mit dem ersten CSRD-pflichtigen Geschäftsjahr dieses Unternehmens "
-              "anzuwenden; ein eigener früherer Anwendungsbeginn besteht nicht.",
-        "en": "The standards apply from this company's first CSRD reporting year; there is no separate, "
-              "earlier start date.",
-        "es": "Las normas se aplican desde el primer ejercicio con obligación CSRD de esta empresa; no "
-              "existe una fecha de inicio propia anterior.",
-        "fr": "Les normes s'appliquent à compter du premier exercice soumis à la CSRD pour cette "
-              "entreprise ; il n'existe pas de date de début distincte antérieure.",
-        "it": "Gli standard si applicano dal primo esercizio soggetto a CSRD di questa impresa; non "
-              "esiste una data di avvio autonoma anteriore.",
-        "zh": "该标准自本企业首个负有 CSRD 报告义务的财政年度起适用，不存在单独的更早适用日。",
+    "vernichtung_gross": {
+        "de": "Das Unternehmen gilt nach der Größeneinstufung nicht als klein oder mittel; damit greift "
+              "das Verbot seit dem 19.07.2026 (Art. 25 Abs. 1 der Verordnung (EU) 2024/1781). Die "
+              "Einstufung folgt der Empfehlung 2003/361/EG und ist anhand der eigenen Abschlusszahlen "
+              "zu bestätigen.",
+        "en": "By size classification the company does not count as small or medium-sized, so the ban "
+              "has applied since 19.07.2026 (Art. 25(1) of Regulation (EU) 2024/1781). The "
+              "classification follows Recommendation 2003/361/EC and should be confirmed against your "
+              "own financial statements.",
+        "es": "Según la clasificación por tamaño, la empresa no es pequeña ni mediana, por lo que la "
+              "prohibición se aplica desde el 19.07.2026 (art. 25, apdo. 1, del Reglamento (UE) "
+              "2024/1781). La clasificación sigue la Recomendación 2003/361/CE y debe confirmarse con "
+              "las cuentas anuales propias.",
+        "fr": "Selon le classement par taille, l'entreprise n'est ni petite ni moyenne : l'interdiction "
+              "s'applique donc depuis le 19.07.2026 (art. 25, par. 1, du règlement (UE) 2024/1781). Le "
+              "classement suit la recommandation 2003/361/CE et doit être confirmé au vu des comptes "
+              "annuels.",
+        "it": "In base alla classificazione dimensionale l'impresa non è piccola né media: il divieto si "
+              "applica quindi dal 19.07.2026 (art. 25, par. 1, del regolamento (UE) 2024/1781). La "
+              "classificazione segue la raccomandazione 2003/361/CE e va confermata sui propri bilanci.",
+        "zh": "按规模分类，本企业不属于小型或中型企业，故自 2026 年 7 月 19 日起适用该禁令（条例 (EU) 2024/1781 第 25 条第 1 款）。分类依据建议 2003/361/EC，应结合本企业年度财务报表确认。",
+    },
+    "vernichtung_mittel": {
+        "de": "Für mittlere Unternehmen gilt das Verbot erst ab dem 19.07.2030 (Art. 25 Abs. 1 UAbs. 3 "
+              "der Verordnung (EU) 2024/1781); dasselbe gilt für die Offenlegung nach Art. 24. Die "
+              "Größeneinstufung folgt der Empfehlung 2003/361/EG.",
+        "en": "For medium-sized companies the ban applies only from 19.07.2030 (Art. 25(1) third "
+              "subparagraph of Regulation (EU) 2024/1781); the same holds for the disclosure under "
+              "Art. 24. The size classification follows Recommendation 2003/361/EC.",
+        "es": "Para las medianas empresas la prohibición solo se aplica desde el 19.07.2030 (art. 25, "
+              "apdo. 1, párr. 3, del Reglamento (UE) 2024/1781); lo mismo vale para la divulgación del "
+              "art. 24. La clasificación por tamaño sigue la Recomendación 2003/361/CE.",
+        "fr": "Pour les moyennes entreprises, l'interdiction ne s'applique qu'à partir du 19.07.2030 "
+              "(art. 25, par. 1, al. 3, du règlement (UE) 2024/1781) ; il en va de même de la "
+              "publication au titre de l'art. 24. Le classement par taille suit la recommandation "
+              "2003/361/CE.",
+        "it": "Per le medie imprese il divieto si applica solo dal 19.07.2030 (art. 25, par. 1, terzo "
+              "comma, del regolamento (UE) 2024/1781); lo stesso vale per l'informativa ex art. 24. La "
+              "classificazione dimensionale segue la raccomandazione 2003/361/CE.",
+        "zh": "对中型企业，该禁令自 2030 年 7 月 19 日起才适用（条例 (EU) 2024/1781 第 25 条第 1 款第三项），第 24 条的披露义务同理。规模分类依据建议 2003/361/EC。",
+    },
+    "vernichtung_klein": {
+        "de": "Auf Kleinst- und Kleinunternehmen finden weder das Verbot noch die Offenlegungspflicht "
+              "Anwendung (Art. 25 Abs. 1 UAbs. 2 und Art. 24 Abs. 1 der Verordnung (EU) 2024/1781); "
+              "deshalb gibt es keinen Anwendungsbeginn. Die Einstufung folgt der Empfehlung 2003/361/EG.",
+        "en": "Neither the ban nor the disclosure duty applies to micro and small companies (Art. 25(1) "
+              "second subparagraph and Art. 24(1) of Regulation (EU) 2024/1781), so there is no start "
+              "date. The classification follows Recommendation 2003/361/EC.",
+        "es": "Ni la prohibición ni la obligación de divulgación se aplican a las microempresas y "
+              "pequeñas empresas (art. 25, apdo. 1, párr. 2, y art. 24, apdo. 1, del Reglamento (UE) "
+              "2024/1781); por eso no hay fecha de inicio. La clasificación sigue la Recomendación "
+              "2003/361/CE.",
+        "fr": "Ni l'interdiction ni l'obligation de publication ne s'appliquent aux micro et petites "
+              "entreprises (art. 25, par. 1, al. 2, et art. 24, par. 1, du règlement (UE) 2024/1781) ; "
+              "il n'y a donc pas de date d'application. Le classement suit la recommandation 2003/361/CE.",
+        "it": "Né il divieto né l'obbligo di informativa si applicano alle micro e piccole imprese "
+              "(art. 25, par. 1, secondo comma, e art. 24, par. 1, del regolamento (UE) 2024/1781): non "
+              "esiste quindi una data di applicazione. La classificazione segue la raccomandazione "
+              "2003/361/CE.",
+        "zh": "禁令与披露义务均不适用于微型和小型企业（条例 (EU) 2024/1781 第 25 条第 1 款第二项、第 24 条第 1 款），故无适用起始日。分类依据建议 2003/361/EC。",
     },
     "taxonomie_folgt_csrd": {
         "de": "Die Offenlegung nach Art. 8 knüpft an die Berichtspflicht an und beginnt mit dem "
@@ -1869,45 +1949,6 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
               "servizi di attestazione).",
         "zh": "尽早明确鉴证委托对象（法定审计师或独立鉴证服务提供者）。",
     },
-    # --- ESRS ---
-    "esrs_1": {
-        "de": "Nach der Wesentlichkeitsanalyse festlegen, welche themenbezogenen Standards (E1–E5, "
-              "S1–S4, G1) zu berichten sind (ESRS 1).",
-        "en": "After the materiality assessment, determine which topical standards (E1–E5, S1–S4, G1) "
-              "have to be reported (ESRS 1).",
-        "es": "Tras el análisis de materialidad, determinar qué normas temáticas (E1–E5, S1–S4, G1) "
-              "deben reportarse (ESRS 1).",
-        "fr": "Après l'analyse de matérialité, déterminer quelles normes thématiques (E1–E5, S1–S4, G1) "
-              "doivent être publiées (ESRS 1).",
-        "it": "Dopo l'analisi di materialità, stabilire quali standard tematici (E1–E5, S1–S4, G1) vanno "
-              "rendicontati (ESRS 1).",
-        "zh": "在完成重要性分析后，确定需要报告哪些主题标准（E1–E5、S1–S4、G1）（ESRS 1）。",
-    },
-    "esrs_2": {
-        "de": "Die allgemeinen Angaben nach ESRS 2 sind unabhängig von der Wesentlichkeit immer zu "
-              "berichten.",
-        "en": "The general disclosures under ESRS 2 must always be reported, irrespective of materiality.",
-        "es": "La información general del ESRS 2 debe reportarse siempre, con independencia de la "
-              "materialidad.",
-        "fr": "Les informations générales de l'ESRS 2 doivent toujours être publiées, indépendamment de "
-              "la matérialité.",
-        "it": "Le informazioni generali dell'ESRS 2 vanno sempre rendicontate, a prescindere dalla "
-              "materialità.",
-        "zh": "ESRS 2 规定的一般披露事项无论重要性如何均须报告。",
-    },
-    "esrs_3": {
-        "de": "Lückenanalyse gegen die Datenpunktliste erstellen und interne Kontrollen für die "
-              "Datenqualität einrichten.",
-        "en": "Perform a gap analysis against the data point list and set up internal controls for data "
-              "quality.",
-        "es": "Elaborar un análisis de brechas frente a la lista de puntos de datos y establecer "
-              "controles internos de calidad de datos.",
-        "fr": "Réaliser une analyse des écarts par rapport à la liste des points de données et mettre en "
-              "place des contrôles internes de qualité des données.",
-        "it": "Effettuare una gap analysis rispetto all'elenco dei data point e istituire controlli "
-              "interni sulla qualità dei dati.",
-        "zh": "对照数据点清单开展差距分析，并建立数据质量内部控制。",
-    },
     # --- NFRD ---
     "nfrd_1": {
         "de": "Prüfen, ob für zurückliegende Geschäftsjahre noch eine nichtfinanzielle Erklärung "
@@ -2235,6 +2276,70 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
               "distrutti; per tessili e calzature vige il divieto di distruzione (art. 24, 25).",
         "zh": "明确未售出消费品的处置方式：须披露被销毁商品，纺织品和鞋类适用销毁禁令（第 24、25 条）。",
     },
+    # --- Vernichtungsverbot unverkaufter Konsumgueter (Del. VO (EU) 2026/296) ---
+    "vernichtung_1": {
+        "de": "Prüfen, ob unverkaufte Kleidung, Bekleidungszubehör oder Schuhe vernichtet oder "
+              "entsorgt werden — nur diese Warengruppen listet Anhang VII der Verordnung (EU) 2024/1781.",
+        "en": "Check whether unsold clothing, clothing accessories or footwear are destroyed or "
+              "discarded — Annex VII to Regulation (EU) 2024/1781 lists only these product groups.",
+        "es": "Comprobar si se destruye o desecha ropa, complementos de vestir o calzado sin vender: "
+              "el anexo VII del Reglamento (UE) 2024/1781 solo enumera estos grupos de productos.",
+        "fr": "Vérifier si des vêtements, accessoires vestimentaires ou chaussures invendus sont "
+              "détruits ou éliminés — l'annexe VII du règlement (UE) 2024/1781 ne vise que ces groupes.",
+        "it": "Verificare se abbigliamento, accessori di abbigliamento o calzature invenduti vengono "
+              "distrutti o smaltiti: l'allegato VII del regolamento (UE) 2024/1781 elenca solo questi gruppi.",
+        "zh": "核查是否销毁或处置未售出的服装、服饰配件或鞋类——条例 (EU) 2024/1781 附件七仅列明这些产品组。",
+    },
+    "vernichtung_2": {
+        "de": "Vor jeder Vernichtung die Ausnahmen des Art. 2 der Delegierten Verordnung (EU) 2026/296 "
+              "durchgehen; das Spendenangebot nach Buchstabe h greift erst, wenn keine der übrigen "
+              "Ausnahmen zutrifft.",
+        "en": "Before any destruction, work through the derogations in Art. 2 of Delegated Regulation "
+              "(EU) 2026/296; the donation route in point (h) only applies if none of the others does.",
+        "es": "Antes de cualquier destrucción, repasar las excepciones del art. 2 del Reglamento "
+              "Delegado (UE) 2026/296; la vía de donación de la letra h) solo cabe si no aplica ninguna otra.",
+        "fr": "Avant toute destruction, passer en revue les dérogations de l'art. 2 du règlement "
+              "délégué (UE) 2026/296 ; l'offre de don du point h) ne joue que si aucune autre ne s'applique.",
+        "it": "Prima di ogni distruzione, esaminare le deroghe dell'art. 2 del regolamento delegato "
+              "(UE) 2026/296; l'offerta di donazione di cui alla lettera h) vale solo se nessun'altra si applica.",
+        "zh": "销毁前逐条核对授权条例 (EU) 2026/296 第 2 条的例外情形；第 h 项的捐赠途径仅在其他例外均不适用时才可援引。",
+    },
+    "vernichtung_3": {
+        "de": "Für den Spendenweg ein Angebot über mindestens acht Wochen dokumentieren — an mindestens "
+              "drei geeignete sozialwirtschaftliche Einrichtungen in der Union oder über eine leicht "
+              "zugängliche Seite der eigenen Website (Art. 2 Buchst. h).",
+        "en": "For the donation route, document an offer running at least eight weeks — to at least "
+              "three suitable social economy entities in the Union or via an easily accessible page on "
+              "your own website (Art. 2(h)).",
+        "es": "Para la vía de donación, documentar una oferta de al menos ocho semanas: a un mínimo de "
+              "tres entidades de la economía social de la Unión o a través de una página fácilmente "
+              "accesible del propio sitio web (art. 2, letra h).",
+        "fr": "Pour la voie du don, documenter une offre d'au moins huit semaines — à au moins trois "
+              "entités de l'économie sociale de l'Union ou via une page aisément accessible de son "
+              "propre site web (art. 2, point h).",
+        "it": "Per la via della donazione, documentare un'offerta di almeno otto settimane: ad almeno "
+              "tre enti dell'economia sociale dell'Unione o tramite una pagina facilmente accessibile "
+              "del proprio sito web (art. 2, lett. h).",
+        "zh": "走捐赠途径的，须记录至少八周的捐赠要约——面向欧盟境内至少三家合适的社会经济实体，或通过本企业网站上易于访问的页面（第 2 条 h 项）。",
+    },
+    "vernichtung_4": {
+        "de": "Nachweise nach Art. 3 fünf Jahre aufbewahren und binnen 30 Tagen elektronisch vorlegen "
+              "können; zusätzlich jährlich Menge, Gewicht und Gründe der entsorgten Ware offenlegen "
+              "(Art. 24 der Verordnung (EU) 2024/1781).",
+        "en": "Keep the evidence required by Art. 3 for five years and be able to submit it "
+              "electronically within 30 days; in addition disclose quantity, weight and reasons for "
+              "discarded goods every year (Art. 24 of Regulation (EU) 2024/1781).",
+        "es": "Conservar cinco años la documentación del art. 3 y poder presentarla electrónicamente en "
+              "30 días; además, divulgar anualmente cantidad, peso y motivos de los productos "
+              "desechados (art. 24 del Reglamento (UE) 2024/1781).",
+        "fr": "Conserver cinq ans les justificatifs de l'art. 3 et pouvoir les transmettre par voie "
+              "électronique sous 30 jours ; publier en outre chaque année la quantité, le poids et les "
+              "motifs des produits éliminés (art. 24 du règlement (UE) 2024/1781).",
+        "it": "Conservare per cinque anni la documentazione dell'art. 3 e poterla trasmettere in forma "
+              "elettronica entro 30 giorni; inoltre pubblicare ogni anno quantità, peso e motivi dei "
+              "prodotti smaltiti (art. 24 del regolamento (UE) 2024/1781).",
+        "zh": "按第 3 条留存证明材料五年，并能在 30 天内以电子形式提交；此外须每年披露被处置商品的数量、重量及原因（条例 (EU) 2024/1781 第 24 条）。",
+    },
     # --- PPWR ---
     "ppwr_1": {
         "de": "Verpackungsportfolio erfassen und gegen die Anforderungen an Recyclingfähigkeit und "
@@ -2275,46 +2380,6 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
               "l'imballaggio è messo a disposizione per la prima volta (art. 44 ss.).",
         "zh": "在首次提供包装的每个成员国明确注册登记与生产者延伸责任（第 44 条及以下）。",
     },
-    # --- Konfliktmineralien-VO ---
-    "konfliktmin_1": {
-        "de": "Prüfen, ob die eingeführten Mengen die Schwellen in Anhang I überschreiten; darunter "
-              "greifen die Pflichten nicht.",
-        "en": "Check whether the imported volumes exceed the thresholds in Annex I; below them the "
-              "obligations do not apply.",
-        "es": "Comprobar si los volúmenes importados superan los umbrales del anexo I; por debajo no se "
-              "aplican las obligaciones.",
-        "fr": "Vérifier si les volumes importés dépassent les seuils de l'annexe I ; en deçà, les "
-              "obligations ne s'appliquent pas.",
-        "it": "Verificare se i volumi importati superano le soglie dell'allegato I; al di sotto gli "
-              "obblighi non si applicano.",
-        "zh": "核查进口数量是否超过附件一的门槛；未超过则不适用相关义务。",
-    },
-    "konfliktmin_2": {
-        "de": "Managementsystem nach dem OECD-Leitfaden einrichten und die Lieferkette bis zur "
-              "Schmelze oder Raffinerie offenlegen (Art. 4, 5).",
-        "en": "Set up a management system in line with the OECD guidance and disclose the supply chain "
-              "up to the smelter or refiner (Art. 4, 5).",
-        "es": "Establecer un sistema de gestión conforme a la guía de la OCDE y revelar la cadena de "
-              "suministro hasta la fundición o refinería (art. 4, 5).",
-        "fr": "Mettre en place un système de gestion conforme au guide de l'OCDE et divulguer la chaîne "
-              "d'approvisionnement jusqu'à la fonderie ou l'affinerie (art. 4, 5).",
-        "it": "Istituire un sistema di gestione conforme alla guida OCSE e divulgare la catena di "
-              "fornitura fino alla fonderia o raffineria (art. 4, 5).",
-        "zh": "按照经合组织指南建立管理体系，并披露至冶炼厂或精炼厂的供应链（第 4、5 条）。",
-    },
-    "konfliktmin_3": {
-        "de": "Unabhängige Prüfung durch Dritte veranlassen und jährlich über die Sorgfaltspflichten "
-              "berichten (Art. 6, 7).",
-        "en": "Commission an independent third-party audit and report annually on due diligence "
-              "(Art. 6, 7).",
-        "es": "Encargar una auditoría independiente por terceros e informar anualmente sobre la "
-              "diligencia debida (art. 6, 7).",
-        "fr": "Faire réaliser un audit indépendant par un tiers et rendre compte annuellement du devoir "
-              "de diligence (art. 6, 7).",
-        "it": "Commissionare un audit indipendente di terzi e riferire annualmente sul dovere di "
-              "diligenza (art. 6, 7).",
-        "zh": "委托第三方开展独立审计，并每年就尽职调查情况报告（第 6、7 条）。",
-    },
     # --- MinRohSorgG ---
     "minroh_1": {
         "de": "Prüfen, ob das Unternehmen Unionseinführer mit Sitz in Deutschland ist und die "
@@ -2354,47 +2419,7 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
               "sanzionate (§ 8).",
         "zh": "遵守对联邦经济和出口管制局的时限和配合义务；违反规定将被处以罚款（第 8 条）。",
     },
-    # --- EU-Umweltstrafrechts-Richtlinie ---
-    "umweltstraf_1": {
-        "de": "Umweltrechtliche Genehmigungen und Betreiberpflichten auf Aktualität prüfen; ohne "
-              "Genehmigung ausgeführte Tätigkeiten sind der Kern der Straftatbestände (Art. 3).",
-        "en": "Check environmental permits and operator duties for currency; activities carried out "
-              "without a permit are at the core of the criminal offences (Art. 3).",
-        "es": "Comprobar la vigencia de las autorizaciones ambientales y las obligaciones del operador; "
-              "las actividades sin autorización son el núcleo de los tipos penales (art. 3).",
-        "fr": "Vérifier l'actualité des autorisations environnementales et des obligations d'exploitant ; "
-              "les activités menées sans autorisation sont au cœur des infractions (art. 3).",
-        "it": "Verificare l'attualità delle autorizzazioni ambientali e degli obblighi del gestore; le "
-              "attività svolte senza autorizzazione sono il nucleo delle fattispecie penali (art. 3).",
-        "zh": "核查环境许可与经营者义务是否仍然有效；未经许可开展的活动是相关刑事罪名的核心（第 3 条）。",
-    },
-    "umweltstraf_2": {
-        "de": "Compliance-Organisation und Aufsicht so aufstellen, dass eine Haftung der juristischen "
-              "Person wegen mangelnder Überwachung vermieden wird (Art. 6).",
-        "en": "Set up compliance and oversight so as to avoid liability of the legal person for lack of "
-              "supervision (Art. 6).",
-        "es": "Configurar el cumplimiento y la supervisión para evitar la responsabilidad de la persona "
-              "jurídica por falta de vigilancia (art. 6).",
-        "fr": "Organiser la conformité et la surveillance de manière à éviter la responsabilité de la "
-              "personne morale pour défaut de contrôle (art. 6).",
-        "it": "Impostare compliance e vigilanza in modo da evitare la responsabilità della persona "
-              "giuridica per carenza di controllo (art. 6).",
-        "zh": "健全合规与监督机制，以避免法人因监督不力而承担责任（第 6 条）。",
-    },
-    "umweltstraf_3": {
-        "de": "Die nationale Umsetzung verfolgen; in Deutschland wirkt die Richtlinie über die "
-              "Umweltstraftatbestände der §§ 324 ff. StGB.",
-        "en": "Follow the national transposition; in Germany the directive takes effect through the "
-              "environmental offences in sections 324 et seq. of the Criminal Code.",
-        "es": "Seguir la transposición nacional; en Alemania la directiva actúa a través de los delitos "
-              "ambientales de los §§ 324 y ss. del Código Penal.",
-        "fr": "Suivre la transposition nationale ; en Allemagne, la directive produit ses effets via les "
-              "infractions environnementales des §§ 324 et suiv. du code pénal.",
-        "it": "Seguire il recepimento nazionale; in Germania la direttiva opera tramite i reati "
-              "ambientali dei §§ 324 ss. del codice penale.",
-        "zh": "关注本国转化立法；在德国，该指令通过《刑法典》第 324 条及以下的环境犯罪条款生效。",
-    },
-    # --- EmpCo (UWG) ---
+    # --- EmpCo ---
     "empco_1": {
         "de": "Werbeaussagen inventarisieren: Pauschale Umweltaussagen ohne Nachweis und "
               "Klimaneutralitätsaussagen, die allein auf Kompensation beruhen, sind unzulässig.",
@@ -2475,7 +2500,7 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
 
 # ---------- Begruendungs-Bausteine fuer gekoppelte Regulierungen ----------
 #
-# CSRD, CSRD_DE, ESRS, Taxonomie-VO, HinSchG, Whistleblower-RL und CSR-RUG
+# CSRD, CSRD_DE, Taxonomie-VO, HinSchG, Whistleblower-RL und CSR-RUG
 # werden nicht vom LLM bewertet, sondern von `regulations.coupling_verdict()`
 # entschieden.
 # Die Begruendung entsteht aus zwei Bausteinen und behaelt damit die
@@ -2895,32 +2920,6 @@ COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
             "zh": "《商法典》第 289b 条及以下（草案）是否适用，取决于尚待厘清的 CSRD 义务。",
         },
     },
-    "ESRS": {
-        "ja": {
-            "de": "Die ESRS sind damit als verbindliches Berichtsformat anzuwenden.",
-            "en": "The ESRS therefore have to be applied as the binding reporting format.",
-            "es": "Por tanto, las ESRS deben aplicarse como formato de información vinculante.",
-            "fr": "Les ESRS doivent donc être appliquées comme format de reporting contraignant.",
-            "it": "Gli ESRS devono quindi essere applicati come formato di rendicontazione vincolante.",
-            "zh": "因此必须按 ESRS 这一强制报告格式编制报告。",
-        },
-        "nein": {
-            "de": "Ohne CSRD-Pflicht sind die ESRS nicht verbindlich anzuwenden.",
-            "en": "Without a CSRD duty the ESRS are not binding.",
-            "es": "Sin obligación CSRD, las ESRS no son de aplicación obligatoria.",
-            "fr": "En l'absence d'obligation CSRD, les ESRS ne s'imposent pas.",
-            "it": "In assenza di obbligo CSRD gli ESRS non sono vincolanti.",
-            "zh": "无 CSRD 义务时，ESRS 不具强制适用性。",
-        },
-        "moeglich": {
-            "de": "Ob die ESRS anzuwenden sind, folgt der noch zu klärenden CSRD-Pflicht.",
-            "en": "Whether the ESRS apply follows the CSRD duty that still has to be clarified.",
-            "es": "Que las ESRS sean aplicables depende de la obligación CSRD aún por aclarar.",
-            "fr": "L'application des ESRS suit l'obligation CSRD encore à clarifier.",
-            "it": "L'applicazione degli ESRS segue l'obbligo CSRD ancora da chiarire.",
-            "zh": "ESRS 是否适用，取决于尚待厘清的 CSRD 义务。",
-        },
-    },
     "TaxonomieVO": {
         "ja": {
             "de": "Damit greift auch die Taxonomie-Offenlegung nach Art. 8 (Anteile an Umsatz, "
@@ -3090,19 +3089,6 @@ COUPLING_PASSAGES: dict[str, dict[str, str]] = {
               "governativo): rendicontazione di sostenibilità nella relazione sulla gestione secondo "
               "le soglie della CSRD.",
         "zh": "CSRD 转化法（政府草案）版本的《商法典》第 289b 条：按 CSRD 门槛在管理报告中进行可持续发展报告。",
-    },
-    "ESRS": {
-        "de": "Art. 1 der Delegierten Verordnung (EU) 2023/2772 i. V. m. Anhang I: Standards für "
-              "die Berichterstattung nach Art. 19a und 29a der Richtlinie 2013/34/EU.",
-        "en": "Art. 1 of Delegated Regulation (EU) 2023/2772 in conjunction with Annex I: standards "
-              "for reporting under Art. 19a and 29a of Directive 2013/34/EU.",
-        "es": "Art. 1 del Reglamento Delegado (UE) 2023/2772 en relación con el anexo I: normas para "
-              "la información conforme a los arts. 19 bis y 29 bis de la Directiva 2013/34/UE.",
-        "fr": "Art. 1er du règlement délégué (UE) 2023/2772, lu avec l'annexe I : normes pour le "
-              "reporting au titre des art. 19 bis et 29 bis de la directive 2013/34/UE.",
-        "it": "Art. 1 del regolamento delegato (UE) 2023/2772 in combinato disposto con l'allegato I: "
-              "principi per la rendicontazione ex artt. 19 bis e 29 bis della direttiva 2013/34/UE.",
-        "zh": "《授权条例》(EU) 2023/2772 第 1 条结合附件一：依《指令》2013/34/EU 第 19a 条和第 29a 条报告的准则。",
     },
     "TaxonomieVO": {
         "de": "Art. 8 Abs. 1 der Verordnung (EU) 2020/852: Offenlegungspflicht für Unternehmen, die "
@@ -3541,75 +3527,136 @@ PRODUCT_CAT_LABELS: dict[str, dict[str, str]] = {
         "es": "Envases (propios o distribuidos)",
         "fr": "Emballages (propres ou distribués)",
         "it": "Imballaggi (propri o distribuiti)",
-        "zh": "包装(自有或经销)",
+        "zh": "包装（自有或经销）",
     },
-    "Elektronik / Haushaltsgeräte / IT-Hardware": {
-        "de": "Elektronik / Haushaltsgeräte / IT-Hardware",
-        "en": "Electronics / Appliances / IT hardware",
-        "es": "Electrónica / Electrodomésticos / Hardware TI",
-        "fr": "Électronique / Électroménager / Matériel IT",
-        "it": "Elettronica / Elettrodomestici / Hardware IT",
-        "zh": "电子产品 / 家电 / IT 硬件",
+    "Holz": {"de": "Holz", "en": "Wood", "es": "Madera", "fr": "Bois", "it": "Legno", "zh": "木材"},
+    "Holzprodukte": {
+        "de": "Holzprodukte", "en": "Wood products", "es": "Productos de madera",
+        "fr": "Produits en bois", "it": "Prodotti in legno", "zh": "木制品",
     },
-    "Holz / Holzprodukte / Papier": {
-        "de": "Holz / Holzprodukte / Papier",
-        "en": "Wood / Wood products / Paper",
-        "es": "Madera / Productos de madera / Papel",
-        "fr": "Bois / Produits en bois / Papier",
-        "it": "Legno / Prodotti in legno / Carta",
-        "zh": "木材 / 木制品 / 纸张",
+    "Papier": {"de": "Papier", "en": "Paper", "es": "Papel", "fr": "Papier", "it": "Carta", "zh": "纸张"},
+    "Kautschuk/Gummi": {
+        "de": "Kautschuk/Gummi", "en": "Rubber", "es": "Caucho / Goma",
+        "fr": "Caoutchouc", "it": "Gomma / Caucciù", "zh": "橡胶",
     },
-    "Kaffee / Kakao": {"de": "Kaffee / Kakao", "en": "Coffee / Cocoa", "es": "Café / Cacao", "fr": "Café / Cacao", "it": "Caffè / Cacao", "zh": "咖啡 / 可可"},
-    "Palmöl / Soja": {"de": "Palmöl / Soja", "en": "Palm oil / Soy", "es": "Aceite de palma / Soja", "fr": "Huile de palme / Soja", "it": "Olio di palma / Soia", "zh": "棕榈油 / 大豆"},
-    "Kautschuk / Gummi": {"de": "Kautschuk / Gummi", "en": "Rubber", "es": "Caucho / Goma", "fr": "Caoutchouc", "it": "Gomma / Caucciù", "zh": "橡胶"},
-    "Rinder / Rindsprodukte / Leder": {
-        "de": "Rinder / Rindsprodukte / Leder",
-        "en": "Cattle / Beef products / Leather",
-        "es": "Bovino / Productos bovinos / Cuero",
-        "fr": "Bovins / Produits bovins / Cuir",
-        "it": "Bovini / Prodotti bovini / Pelle",
-        "zh": "牛 / 牛肉产品 / 皮革",
+    "Bekleidung": {
+        "de": "Bekleidung", "en": "Clothing", "es": "Ropa",
+        "fr": "Habillement", "it": "Abbigliamento", "zh": "服装",
     },
-    "Zinn / Tantal / Wolfram / Gold (Direktimport)": {
-        "de": "Zinn / Tantal / Wolfram / Gold (Direktimport)",
-        "en": "Tin / Tantalum / Tungsten / Gold (direct import)",
-        "es": "Estaño / Tantalio / Tungsteno / Oro (importación directa)",
-        "fr": "Étain / Tantale / Tungstène / Or (import direct)",
-        "it": "Stagno / Tantalio / Tungsteno / Oro (import diretto)",
-        "zh": "锡 / 钽 / 钨 / 金(直接进口)",
+    "Heimtextilien": {
+        "de": "Heimtextilien", "en": "Home textiles", "es": "Textiles del hogar",
+        "fr": "Textiles de maison", "it": "Tessili per la casa", "zh": "家用纺织品",
     },
-    "Chemische Stoffe": {"de": "Chemische Stoffe", "en": "Chemicals", "es": "Sustancias químicas", "fr": "Substances chimiques", "it": "Sostanze chimiche", "zh": "化学品"},
-    "Textilien / Bekleidung / Leder": {
-        "de": "Textilien / Bekleidung / Leder",
-        "en": "Textiles / Clothing / Leather",
-        "es": "Textiles / Ropa / Cuero",
-        "fr": "Textiles / Habillement / Cuir",
-        "it": "Tessili / Abbigliamento / Pelletteria",
-        "zh": "纺织品 / 服装 / 皮革",
+    "technische Textilien": {
+        "de": "technische Textilien", "en": "Technical textiles", "es": "Textiles técnicos",
+        "fr": "Textiles techniques", "it": "Tessili tecnici", "zh": "产业用纺织品",
     },
-    "Möbel / Baustoffe": {
-        "de": "Möbel / Baustoffe",
-        "en": "Furniture / Building materials",
-        "es": "Muebles / Materiales de construcción",
-        "fr": "Meubles / Matériaux de construction",
-        "it": "Mobili / Materiali edili",
-        "zh": "家具 / 建材",
+    "PSA": {
+        "de": "PSA (persönliche Schutzausrüstung)",
+        "en": "PPE (personal protective equipment)",
+        "es": "EPI (equipos de protección individual)",
+        "fr": "EPI (équipements de protection individuelle)",
+        "it": "DPI (dispositivi di protezione individuale)",
+        "zh": "个人防护装备（PPE）",
     },
-    "Lebensmittel / Getränke": {
-        "de": "Lebensmittel / Getränke",
-        "en": "Food / Beverages",
-        "es": "Alimentos / Bebidas",
-        "fr": "Alimentation / Boissons",
-        "it": "Alimentare / Bevande",
-        "zh": "食品 / 饮料",
+    "Schuhe": {"de": "Schuhe", "en": "Footwear", "es": "Calzado", "fr": "Chaussures", "it": "Calzature", "zh": "鞋类"},
+    "Lederwaren": {
+        "de": "Lederwaren", "en": "Leather goods", "es": "Marroquinería",
+        "fr": "Maroquinerie", "it": "Pelletteria", "zh": "皮革制品",
     },
-    "Keine physischen Produkte (nur Dienstleistung/Software)": {
-        "de": "Keine physischen Produkte (nur Dienstleistung/Software)",
-        "en": "No physical products (services/software only)",
-        "es": "Sin productos físicos (solo servicios/software)",
-        "fr": "Aucun produit physique (services/logiciels uniquement)",
-        "it": "Nessun prodotto fisico (solo servizi/software)",
-        "zh": "无实体产品(仅服务/软件)",
+    "textile Medizinprodukte": {
+        "de": "textile Medizinprodukte", "en": "Textile medical devices",
+        "es": "Productos sanitarios textiles", "fr": "Dispositifs médicaux textiles",
+        "it": "Dispositivi medici tessili", "zh": "纺织类医疗器械",
+    },
+    "Automotive-Textilien": {
+        "de": "Automotive-Textilien", "en": "Automotive textiles", "es": "Textiles para automoción",
+        "fr": "Textiles pour l'automobile", "it": "Tessili per l'automotive", "zh": "汽车用纺织品",
+    },
+}
+
+
+ROLE_LABELS: dict[str, dict[str, str]] = {
+    "Hersteller": {
+        "de": "Hersteller", "en": "Manufacturer", "es": "Fabricante",
+        "fr": "Fabricant", "it": "Fabbricante", "zh": "制造商",
+    },
+    "Marke": {
+        "de": "Marke", "en": "Brand", "es": "Marca",
+        "fr": "Marque", "it": "Marchio", "zh": "品牌方",
+    },
+    "Importeur": {
+        "de": "Importeur", "en": "Importer", "es": "Importador",
+        "fr": "Importateur", "it": "Importatore", "zh": "进口商",
+    },
+    "Händler": {
+        "de": "Händler", "en": "Distributor / retailer", "es": "Distribuidor / minorista",
+        "fr": "Distributeur / détaillant", "it": "Distributore / rivenditore", "zh": "经销商 / 零售商",
+    },
+    "Onlinehändler": {
+        "de": "Onlinehändler", "en": "Online retailer", "es": "Comercio en línea",
+        "fr": "Commerçant en ligne", "it": "Rivenditore online", "zh": "线上零售商",
+    },
+    "Zulieferer": {
+        "de": "Zulieferer", "en": "Supplier", "es": "Proveedor",
+        "fr": "Fournisseur", "it": "Fornitore", "zh": "供应商",
+    },
+}
+
+
+MATERIAL_LABELS: dict[str, dict[str, str]] = {
+    "Baumwolle und andere Naturfasern": {
+        "de": "Baumwolle und andere Naturfasern",
+        "en": "Cotton and other natural fibres",
+        "es": "Algodón y otras fibras naturales",
+        "fr": "Coton et autres fibres naturelles",
+        "it": "Cotone e altre fibre naturali",
+        "zh": "棉及其他天然纤维",
+    },
+    "Wolle": {"de": "Wolle", "en": "Wool", "es": "Lana", "fr": "Laine", "it": "Lana", "zh": "羊毛"},
+    "Leder bzw. Rindererzeugnisse": {
+        "de": "Leder bzw. Rindererzeugnisse",
+        "en": "Leather or cattle products",
+        "es": "Cuero o productos bovinos",
+        "fr": "Cuir ou produits bovins",
+        "it": "Pelle o prodotti bovini",
+        "zh": "皮革及牛类产品",
+    },
+    "Naturkautschuk": {
+        "de": "Naturkautschuk", "en": "Natural rubber", "es": "Caucho natural",
+        "fr": "Caoutchouc naturel", "it": "Gomma naturale", "zh": "天然橡胶",
+    },
+    "Zellulosebasierte Chemiefasern (z. B. Viskose, Modal, Lyocell)": {
+        "de": "Zellulosebasierte Chemiefasern (z. B. Viskose, Modal, Lyocell)",
+        "en": "Cellulose-based man-made fibres (e.g. viscose, modal, lyocell)",
+        "es": "Fibras químicas de celulosa (p. ej. viscosa, modal, liocel)",
+        "fr": "Fibres chimiques cellulosiques (p. ex. viscose, modal, lyocell)",
+        "it": "Fibre chimiche cellulosiche (p. es. viscosa, modal, lyocell)",
+        "zh": "纤维素基化学纤维（如粘胶、莫代尔、莱赛尔）",
+    },
+    "Synthetische Fasern": {
+        "de": "Synthetische Fasern", "en": "Synthetic fibres", "es": "Fibras sintéticas",
+        "fr": "Fibres synthétiques", "it": "Fibre sintetiche", "zh": "合成纤维",
+    },
+    "Recyclingmaterialien": {
+        "de": "Recyclingmaterialien", "en": "Recycled materials", "es": "Materiales reciclados",
+        "fr": "Matériaux recyclés", "it": "Materiali riciclati", "zh": "再生材料",
+    },
+    "Besondere chemische Ausrüstungen (z. B. PFAS)": {
+        "de": "Besondere chemische Ausrüstungen (z. B. PFAS)",
+        "en": "Special chemical finishes (e.g. PFAS)",
+        "es": "Acabados químicos especiales (p. ej. PFAS)",
+        "fr": "Apprêts chimiques particuliers (p. ex. PFAS)",
+        "it": "Finissaggi chimici particolari (p. es. PFAS)",
+        "zh": "特殊化学整理（如 PFAS）",
+    },
+    "PFAS-haltige Ausrüstung": {
+        "de": "PFAS-haltige Ausrüstung",
+        "en": "PFAS-containing finish",
+        "es": "Acabado con PFAS",
+        "fr": "Apprêt contenant des PFAS",
+        "it": "Finissaggio contenente PFAS",
+        "zh": "含 PFAS 的整理",
     },
 }
 

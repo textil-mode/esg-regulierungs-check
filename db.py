@@ -12,6 +12,8 @@ from typing import Optional
 
 import bcrypt
 
+from regulations import MATERIALS, PRODUCT_CATEGORIES, VALUE_CHAIN_ROLES
+
 
 def _configured_db_path() -> Path:
     """Ziel-Datenbank; `ESG_DB_PATH` erlaubt isolierte Laeufe.
@@ -45,6 +47,8 @@ COMPANY_EXTRA_COLUMNS = [
     ("employees_de", "INTEGER DEFAULT 0"),
     ("language", "TEXT DEFAULT 'de'"),
     ("eu_importer", "INTEGER DEFAULT 0"),
+    ("value_chain_roles_json", "TEXT"),
+    ("materials_json", "TEXT"),
 ]
 
 
@@ -540,6 +544,12 @@ def user_for_reset_token(token: str) -> Optional[dict]:
 
 
 # ---------- Company ----------
+def _known(values, allowed) -> list[str]:
+    """Nur Werte, die es in der aktuellen Auswahlliste noch gibt (Reihenfolge der Liste)."""
+    chosen = set(values or ())
+    return [v for v in allowed if v in chosen]
+
+
 def get_company(user_id: int) -> Optional[dict]:
     with _conn() as c:
         row = c.execute("SELECT * FROM companies WHERE user_id = ?", (user_id,)).fetchone()
@@ -547,7 +557,21 @@ def get_company(user_id: int) -> Optional[dict]:
         return None
     data = dict(row)
     data["sites"] = json.loads(data.pop("sites_json") or "[]")
-    data["product_categories"] = json.loads(data.pop("product_categories_json") or "[]")
+    # Auswahllisten: nur noch bekannte Werte durchlassen. Die Produkt-
+    # kategorien wurden am 02.09.2026 vollstaendig ausgetauscht; aeltere
+    # Profile tragen Werte, die es nicht mehr gibt ("Kaffee / Kakao",
+    # "Keine physischen Produkte ..."). Wuerden sie durchgereicht, stuenden sie
+    # im LLM-Prompt und im Cache-Schluessel, waeren im Formular aber unsichtbar
+    # und beim naechsten Speichern verschwunden — der Nutzer saehe also eine
+    # Begruendung zu einer Angabe, die er nicht mehr machen kann. Deshalb hier
+    # zentral herausfiltern; gespeichert bleiben sie, bis der Nutzer das
+    # naechste Mal speichert.
+    data["product_categories"] = _known(
+        json.loads(data.pop("product_categories_json") or "[]"), PRODUCT_CATEGORIES)
+    data["value_chain_roles"] = _known(
+        json.loads(data.pop("value_chain_roles_json") or "[]"), VALUE_CHAIN_ROLES)
+    data["materials"] = _known(
+        json.loads(data.pop("materials_json") or "[]"), MATERIALS)
     data["b2c"] = bool(data.get("b2c"))
     data["listed"] = bool(data.get("listed"))
     data["env_claims"] = bool(data.get("env_claims"))
@@ -557,7 +581,12 @@ def get_company(user_id: int) -> Optional[dict]:
 
 def upsert_company(user_id: int, data: dict) -> None:
     sites_json = json.dumps(data.get("sites", []), ensure_ascii=False)
-    products_json = json.dumps(data.get("product_categories", []), ensure_ascii=False)
+    products_json = json.dumps(
+        _known(data.get("product_categories"), PRODUCT_CATEGORIES), ensure_ascii=False)
+    roles_json = json.dumps(
+        _known(data.get("value_chain_roles"), VALUE_CHAIN_ROLES), ensure_ascii=False)
+    materials_json = json.dumps(
+        _known(data.get("materials"), MATERIALS), ensure_ascii=False)
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute(
@@ -566,9 +595,9 @@ def upsert_company(user_id: int, data: dict) -> None:
                 user_id, name, employees, revenue_eur, branch, b2c, listed,
                 sites_json, updated_at, balance_sheet_eur, legal_form, group_role,
                 env_claims, product_categories_json, employees_de, language,
-                eu_importer
+                eu_importer, value_chain_roles_json, materials_json
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 name=excluded.name,
                 employees=excluded.employees,
@@ -585,7 +614,9 @@ def upsert_company(user_id: int, data: dict) -> None:
                 product_categories_json=excluded.product_categories_json,
                 employees_de=excluded.employees_de,
                 language=excluded.language,
-                eu_importer=excluded.eu_importer
+                eu_importer=excluded.eu_importer,
+                value_chain_roles_json=excluded.value_chain_roles_json,
+                materials_json=excluded.materials_json
             """,
             (
                 user_id,
@@ -605,6 +636,8 @@ def upsert_company(user_id: int, data: dict) -> None:
                 int(data.get("employees_de") or 0),
                 data.get("language") or "de",
                 1 if data.get("eu_importer") else 0,
+                roles_json,
+                materials_json,
             ),
         )
 

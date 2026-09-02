@@ -4,7 +4,7 @@ Ausfuehren:  ./.venv/Scripts/python.exe test_lawparse.py
              ./.venv/Scripts/python.exe test_lawparse.py --keep   (Cache behalten)
 
 Die Test-DB `data/esg_lawparse_test.db` wird standardmaessig VERWORFEN und neu
-aufgebaut: alle 22 Quellen werden frisch geladen. Nur so faellt auf, wenn eine
+aufgebaut: alle 20 Quellen werden frisch geladen. Nur so faellt auf, wenn eine
 `text_url` wieder auf eine Inhaltsverzeichnis- oder Portalseite zeigt — ein
 mitgeschleppter Cache aus einem frueheren Lauf wuerde genau das verdecken.
 Ein voller Lauf dauert dadurch rund eine Minute. Mit `--keep` bleibt die Test-DB
@@ -14,7 +14,7 @@ Die Produktiv-DB `data/esg.db` wird nie beschrieben (`data/` steht in
 .gitignore).
 
 Abnahmekriterien:
-  * jede der 22 Quellen liefert echten Volltext (Mindestlaenge + Artikelstruktur),
+  * jede der 20 Quellen liefert echten Volltext (Mindestlaenge + Artikelstruktur),
   * die fuenf reparierten Quellen liefern nachweislich den RICHTIGEN Rechtsakt,
   * fuer CSDDD, CSRD und EUDR enthaelt der gebaute Kontext den
     Anwendungsbereichs-Artikel, und die Gesamtlaenge bleibt unter dem Budget.
@@ -129,7 +129,7 @@ def test_parser_basics() -> None:
         "§ 12 HinSchG": (["12"], []),
         "§§ 289b-289h HGB-E": (["289b", "289c", "289d", "289e", "289f", "289g", "289h"], []),
         "Art. 1, Anhang I": (["1"], ["I"]),
-        "Annex I (ESRS 1, ESRS 2, E1-E5, S1-S4, G1)": ([], ["I"]),
+        "Art. 2 (Ausnahmen), Art. 3 (Dokumentation)": (["2", "3"], []),
     }
     for src, expected in cases.items():
         check(lawparse.article_refs(src) == expected, f"{src!r} -> {lawparse.article_refs(src)}")
@@ -181,10 +181,8 @@ SOURCE_MARKERS: dict[str, list[str]] = {
     # zeigte auf die bgbl.de-Startseite; jetzt HGB-Gesamtausgabe.
     # § 289b steht bei Zeichen ~259 000 — der Test sichert die Kappungsgrenze ab.
     "CSR-RUG":     ["§ 289b", "500 Arbeitnehmer"],
-    # zeigte auf die CSRD (02022L2464) statt auf die Delegierte VO 2023/2772.
-    # Die CELEX-Kopfzeile ist der eindeutige Beleg: bei der CSRD staende dort
-    # 02022L2464.
-    "ESRS":        ["02023R2772", "ESRS 1"],
+    # Neu am 02.09.2026; der Volltext kommt ueber Cellar (32026R0296).
+    "Vernichtungsverbot": ["2026/296", "acht Wochen"],
 }
 
 
@@ -207,7 +205,7 @@ def test_sources_deliver_fulltext() -> None:
 
 
 def test_all_regulations_fit() -> None:
-    print("\n[build_context — alle 22 Regulierungen]")
+    print("\n[build_context — alle 20 Regulierungen]")
     for reg in REGULATIONS:
         cached = fetcher.get_cached_text(reg["key"], "de") or {}
         raw = cached.get("text") or ""
