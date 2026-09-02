@@ -180,10 +180,9 @@ REGULATIONS = [
     {
         "nr": 9,
         "key": "CSR-RUG",
-        "relevant_fields": [
-            "employees", "employees_de", "revenue_eur", "balance_sheet_eur", "listed", "legal_form",
-            "group_role", "sites",
-        ],
+        # Genau die Felder, die `csr_rug_status()` auswertet — sonst wandern
+        # Aenderungen an bedeutungslosen Feldern in den Cache-Schluessel.
+        "relevant_fields": ["employees", "listed", "legal_form", "group_role", "branch"],
         "name": "CSR-RUG",
         "full_name": "Gesetz zur Stärkung der nichtfinanziellen Berichterstattung",
         # Der BGBl.-Jahrgang 2017 liegt nur im JS-Viewer von bgbl.de und ist
@@ -696,8 +695,12 @@ APPLICATION_BY_REG_KEY: dict[str, dict] = {
     "Oekodesign":      {"applies_from": "18.07.2024", "note": "oekodesign"},
     # Art. 71 VO (EU) 2025/40.
     "PPWR":            {"applies_from": "12.08.2026"},
-    # Art. 20 Abs. 2/3 VO (EU) 2017/821.
-    "KonfliktminVO":   {"applies_from": "09.07.2017", "note": "konfliktmin"},
+    # Art. 20 Abs. 3 VO (EU) 2017/821: die Vorschriften, die den Unternehmen
+    # Pflichten auferlegen (Art. 4 bis 7 — Managementsystem, Risikomanagement,
+    # Pruefung durch Dritte, Offenlegung), gelten erst ab 01.01.2021. Der Termin
+    # aus Abs. 2 (09.07.2017) betrifft die uebrigen, an die Mitgliedstaaten und
+    # die Kommission gerichteten Bestimmungen und waere hier irrefuehrend.
+    "KonfliktminVO":   {"applies_from": "01.01.2021", "note": "konfliktmin"},
     # Art. 3 MinRohSorgG-Artikelgesetz (Fussnote gesetze-im-internet.de).
     "MinRohSorgG":     {"applies_from": "07.05.2020"},
     # Art. 28 Abs. 1 RL (EU) 2024/1203 (Umsetzungsfrist der Mitgliedstaaten).
@@ -746,6 +749,9 @@ def application_for(reg_key: str, today=None) -> dict:
 # Einige Regulierungen haengen rechtlich an einer "Eltern"-Regulierung:
 #   ESRS / Taxonomie-VO / CSRD-Umsetzungsgesetz folgen der CSRD-Pflicht,
 #   die Whistleblower-RL wird in DE ueber das HinSchG umgesetzt.
+# Daneben laeuft hier das CSR-RUG mit: es haengt an keiner anderen Regulierung,
+# seine Merkmale stehen aber genauso abschliessend im Gesetz (§ 289b Abs. 1 HGB)
+# und gehoeren deshalb nicht vor ein Sprachmodell.
 # Damit das LLM diese nicht isoliert und widerspruechlich bewertet (z. B.
 # CSRD = nein, aber ESRS = ja fuer dasselbe Unternehmen), wird der ausloesende
 # Schwellenwert EINMAL aus dem Profil berechnet. Quelle der Schwellen: die
@@ -828,7 +834,65 @@ def hinschg_status(profile: dict) -> tuple[str, str]:
     return "nein", "hinschg_unter_50"
 
 
-# child_key -> (Eltern-Label, Statusfunktion)
+# Rechtsformen, auf die § 289b HGB unmittelbar anwendbar ist: Kapital-
+# gesellschaften und die ihnen ueber § 264a HGB gleichgestellte GmbH & Co. KG
+# (Personenhandelsgesellschaft ohne natuerliche Person als Vollhafter).
+_KAPITALGESELLSCHAFTEN = frozenset({"AG / SE", "GmbH", "GmbH & Co. KG", "Limited / Ltd."})
+
+
+def csr_rug_status(profile: dict) -> tuple[str, str]:
+    """Nichtfinanzielle Erklaerung nach § 289b HGB (CSR-RUG), deterministisch.
+
+    Liefert (applies, fact_key) wie `csrd_status`. § 289b Abs. 1 HGB nennt drei
+    KUMULATIVE Merkmale, geprueft am Volltext (gesetze-im-internet.de, HGB):
+      1. Voraussetzungen des § 267 Abs. 3 Satz 1 (grosse Kapitalgesellschaft),
+      2. kapitalmarktorientiert im Sinne des § 264d,
+      3. im Jahresdurchschnitt mehr als 500 Arbeitnehmer.
+    Merkmal 1 muss nicht eigens geprueft werden: § 267 Abs. 3 Satz 2 bestimmt,
+    dass eine Kapitalgesellschaft im Sinn des § 264d STETS als gross gilt. Ist
+    Merkmal 2 erfuellt, ist Merkmal 1 es damit auch. Uebrig bleibt eine
+    Zwei-Faktoren-Pruefung aus `listed` und `employees`.
+
+    Zwei Sonderlagen, die eine reine Schwellenpruefung falsch beantworten
+    wuerde und die deshalb als "moeglich" ausgewiesen werden:
+    - § 340a Abs. 1a und § 341a Abs. 1a HGB verpflichten Kreditinstitute und
+      Versicherungsunternehmen OHNE das Merkmal der Kapitalmarktorientierung,
+      wenn sie als gross gelten und mehr als 500 Arbeitnehmer haben. Ob ein
+      Unternehmen der Branche "Finanzdienstleistungen" ein Kreditinstitut in
+      diesem Sinn ist, sagt das Profil nicht.
+    - Rechtsformen ausserhalb von § 289b/§ 264a HGB (etwa KG/OHG, Verein,
+      Genossenschaft): dort greifen eigene Vorschriften; die Angabe
+      "kapitalmarktorientiert" allein traegt das Ergebnis nicht.
+    """
+    emp = profile.get("employees") or 0
+    listed = bool(profile.get("listed"))
+    group = profile.get("group_role") or ""
+    legal_form = profile.get("legal_form") or ""
+
+    if listed and emp > 500:
+        if legal_form and legal_form not in _KAPITALGESELLSCHAFTEN:
+            return "moeglich", "csr_rug_rechtsform"
+        # § 289b Abs. 2 HGB befreit ein einbezogenes Tochterunternehmen, wenn
+        # der Konzernlagebericht der Mutter eine nichtfinanzielle Konzern-
+        # erklaerung enthaelt. Die Pflicht besteht, kann aber auf Konzernebene
+        # erfuellt werden — genau wie bei der CSRD.
+        if _SUBSIDIARY_MARKER in group:
+            return "ja", "csr_rug_erfuellt_tochter"
+        return "ja", "csr_rug_erfuellt"
+    if (not listed and emp > 500
+            and (profile.get("branch") or "") in _FINANCIAL_BRANCHES):
+        return "moeglich", "csr_rug_finanz"
+    if listed:
+        return "nein", "csr_rug_unter_500"
+    return "nein", "csr_rug_nicht_kapitalmarkt"
+
+
+# child_key -> (Bezugs-Label, Statusfunktion)
+#
+# CSR-RUG haengt an keiner Elternregulierung, wird hier aber mitgefuehrt: die
+# Entscheidung steht mit § 289b Abs. 1 HGB genauso fest wie bei den gekoppelten
+# Faellen, und der Weg ueber diese Tabelle liefert die Textbausteine und den
+# Vorrang vor dem LLM-Pfad ohne zweite Mechanik.
 _COUPLINGS: dict[str, tuple[str, object]] = {
     "CSRD":            ("CSRD", csrd_status),
     "CSRD_DE":         ("CSRD", csrd_status),
@@ -836,6 +900,7 @@ _COUPLINGS: dict[str, tuple[str, object]] = {
     "TaxonomieVO":     ("CSRD", csrd_status),
     "HinSchG":         ("HinSchG", hinschg_status),
     "WhistleblowerRL": ("HinSchG", hinschg_status),
+    "CSR-RUG":         ("CSR-RUG", csr_rug_status),
 }
 
 # child_key -> erlaeuternde Beziehung (warum die Eltern-Pflicht hier bindet)

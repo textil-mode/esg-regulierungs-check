@@ -377,7 +377,8 @@ def deterministic_result(reg: dict, profile: dict, language: str) -> dict | None
     """Ergebnis ohne LLM, wo die Rechtslage die Antwort bereits festlegt.
 
     Betrifft die per Kopplung entschiedenen Regulierungen (CSRD, CSRD_DE, ESRS,
-    Taxonomie-VO, HinSchG, Whistleblower-RL). Struktur identisch zu `_enrich`.
+    Taxonomie-VO, HinSchG, Whistleblower-RL) sowie das CSR-RUG, dessen Merkmale
+    § 289b Abs. 1 HGB abschliessend nennt. Struktur identisch zu `_enrich`.
     None heisst: dieser Fall gehoert weiterhin dem LLM.
     """
     verdict = coupling_verdict(reg.get("key", ""), profile)

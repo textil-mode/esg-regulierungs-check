@@ -10,6 +10,7 @@ from __future__ import annotations
 import sys
 
 import i18n
+import llm
 import regulations
 from deadlines import deadline_for, deadlines_for_profile
 from thresholds import near_thresholds
@@ -72,6 +73,12 @@ GROSSKONZERN = {
 # Fuer den Schwellen-Test aus den Abschlusskriterien.
 PROFIL_950_DE = dict(MITTELSTAND_1100, name="950 MA in DE", employees=950, employees_de=950)
 
+# Kleiner Finanzdienstleister: unter 50 Beschaeftigten, aber ueber § 12 Abs. 3
+# HinSchG bzw. Art. 8 Abs. 4 der Richtlinie ohne Groessenschwelle erfasst.
+KLEIN_FINANZ = dict(KLEINBETRIEB, name="Finanzdienstleister", employees=20,
+                    employees_de=20, branch="Finanzdienstleistungen")
+KLEIN_VERSICHERUNG = dict(KLEIN_FINANZ, name="Versicherer", branch="Versicherungen")
+
 
 # ---------------------------------------------------------------------------
 # Erwartete gilt_ab-Werte. Herleitung steht jeweils daneben.
@@ -94,6 +101,16 @@ ERWARTET: list[tuple[str, dict, str, str]] = [
 
     ("WhistleblowerRL", KLEINBETRIEB, "17.12.2023", "Art. 26 Abs. 2"),
     ("WhistleblowerRL", GROSSKONZERN, "17.12.2021", "Art. 26 Abs. 1"),
+
+    # § 42 Abs. 1 Satz 2 HinSchG nimmt die Beschaeftigungsgeber des § 12 Abs. 3
+    # von der Verschiebung aus; Art. 8 Abs. 4 RL (EU) 2019/1937 nimmt dieselbe
+    # Gruppe vom Schwellenwert aus, den Art. 26 Abs. 2 allein verschiebt.
+    ("HinSchG", KLEIN_FINANZ, "02.07.2023",
+     "20 MA, Finanzdienstleistungen -> keine Uebergangsfrist"),
+    ("WhistleblowerRL", KLEIN_FINANZ, "17.12.2021",
+     "20 MA, Finanzdienstleistungen -> Regelfrist"),
+    ("HinSchG", KLEIN_VERSICHERUNG, "02.07.2023", "Versicherungen ebenso"),
+    ("WhistleblowerRL", KLEIN_VERSICHERUNG, "17.12.2021", "Versicherungen ebenso"),
 
     ("CSRD", KLEINBETRIEB, "01.01.2027", "neue Schwellen, kein Welle-1-Fall"),
     ("CSRD", MITTELSTAND_1100, "01.01.2027", "neue Schwellen, nicht boersennotiert"),
@@ -120,6 +137,8 @@ ERWARTET: list[tuple[str, dict, str, str]] = [
     ("RightToRepair", KLEINBETRIEB, "31.07.2026", "Art. 22 Abs. 1 UAbs. 3"),
     ("Oekodesign", MITTELSTAND_1100, "18.07.2024", "Art. 80 VO (EU) 2024/1781"),
     ("SFDR", GROSSKONZERN, "10.03.2021", "Art. 20 Abs. 2 VO (EU) 2019/2088"),
+    ("KonfliktminVO", GROSSKONZERN, "01.01.2021",
+     "Art. 20 Abs. 3: Unternehmenspflichten der Art. 4-7 erst ab 2021"),
 
     # Ohne bestimmbares Datum.
     ("CSRD_DE", GROSSKONZERN, "", "Gesetzgebungsverfahren nicht abgeschlossen"),
@@ -218,6 +237,81 @@ def test_erste_schritte(fehler: list[str]) -> None:
     print(f"  ok  {len(regulations.REGULATIONS)} Regulierungen mit Leitlinien-Link")
 
 
+def test_hinweise_der_finanzfaelle(fehler: list[str]) -> None:
+    """Der Finanz-Sonderfall darf nicht den Staffelungshinweis tragen."""
+    print("\n[6] Hinweisschluessel der Finanz-Sonderfaelle")
+    faelle = [
+        ("HinSchG", KLEIN_FINANZ, "hinschg_finanz"),
+        ("WhistleblowerRL", KLEIN_FINANZ, "whistle_finanz"),
+        ("HinSchG", KLEINBETRIEB, "hinschg_ab_50"),
+        ("WhistleblowerRL", KLEINBETRIEB, "whistle_ab_50"),
+    ]
+    for reg_key, profil, erwartet in faelle:
+        ist = deadline_for(reg_key, profil)["hinweis"]
+        marke = "ok " if ist == erwartet else "XX "
+        print(f"  {marke}{reg_key:<16} {profil['name']:<20} {ist}")
+        if ist != erwartet:
+            _fail(f"{reg_key}/{profil['name']}: Hinweis {ist!r} statt {erwartet!r}", fehler)
+
+
+# (Profil, erwartetes applies, erwarteter fact_key, Herleitung)
+CSR_RUG_FAELLE = [
+    (dict(MITTELSTAND_1100, listed=False), "nein", "csr_rug_nicht_kapitalmarkt",
+     "§ 289b Abs. 1 Nr. 2 verlangt Kapitalmarktorientierung"),
+    (dict(MITTELSTAND_1100, listed=True), "ja", "csr_rug_erfuellt",
+     "kapitalmarktorientiert + 1.100 > 500; § 267 Abs. 3 S. 2 macht sie gross"),
+    (dict(MITTELSTAND_1100, listed=True, group_role="Tochter, EU-Muttergesellschaft"),
+     "ja", "csr_rug_erfuellt_tochter", "§ 289b Abs. 2 Befreiung moeglich"),
+    (dict(MITTELSTAND_1100, listed=True, employees=400), "nein", "csr_rug_unter_500",
+     "§ 289b Abs. 1 Nr. 3 nicht erreicht"),
+    (dict(MITTELSTAND_1100, listed=True, legal_form="KG / OHG"), "moeglich",
+     "csr_rug_rechtsform", "Rechtsform ausserhalb § 289b/§ 264a HGB"),
+    (dict(MITTELSTAND_1100, listed=False, branch="Finanzdienstleistungen"),
+     "moeglich", "csr_rug_finanz", "§ 340a Abs. 1a HGB ohne Kapitalmarktorientierung"),
+    (dict(MITTELSTAND_1100, listed=False, branch="Versicherungen", employees=400),
+     "nein", "csr_rug_nicht_kapitalmarkt", "unter 500 -> auch § 341a Abs. 1a greift nicht"),
+    (dict(GROSSKONZERN), "ja", "csr_rug_erfuellt", "AG/SE, boersennotiert, 12.000 MA"),
+    (dict(KLEINBETRIEB), "nein", "csr_rug_nicht_kapitalmarkt", "35 MA, nicht boersennotiert"),
+]
+
+
+def test_csr_rug(fehler: list[str]) -> None:
+    """CSR-RUG entscheidet § 289b Abs. 1 HGB, nicht das LLM."""
+    print("\n[7] CSR-RUG deterministisch (§ 289b Abs. 1 HGB)")
+    reg = next(r for r in regulations.REGULATIONS if r["key"] == "CSR-RUG")
+    for profil, erwartet_applies, erwartet_fact, herleitung in CSR_RUG_FAELLE:
+        applies, fact = regulations.csr_rug_status(profil)
+        ok = (applies, fact) == (erwartet_applies, erwartet_fact)
+        print(f"  {'ok ' if ok else 'XX '}{applies:<9}{fact:<28}{herleitung}")
+        if not ok:
+            _fail(f"CSR-RUG {herleitung}: {applies}/{fact} statt "
+                  f"{erwartet_applies}/{erwartet_fact}", fehler)
+        # Ein Textbaustein muss in allen sechs Sprachen vorliegen, sonst faellt
+        # der Fall doch wieder ans LLM zurueck.
+        for lang in i18n.LANG_CODES:
+            texts = i18n.coupling_texts("CSR-RUG", regulations.coupling_verdict("CSR-RUG", profil), lang)
+            if not texts:
+                _fail(f"CSR-RUG/{fact}: kein Textbaustein in {lang}", fehler)
+        if llm.deterministic_result(reg, {**profil, "language": "de"}, "de") is None:
+            _fail(f"CSR-RUG/{fact}: geht trotzdem ans LLM", fehler)
+
+
+def test_csr_rug_nicht_im_cache(fehler: list[str]) -> None:
+    """Alte LLM-Fehlurteile im analysis_cache duerfen nicht mehr auftauchen."""
+    print("\n[8] CSR-RUG umgeht den Begruendungs-Cache")
+    reg = next(r for r in regulations.REGULATIONS if r["key"] == "CSR-RUG")
+    for profil, *_rest in CSR_RUG_FAELLE:
+        if llm.deterministic_result(reg, {**profil, "language": "de"}, "de") is None:
+            _fail("CSR-RUG landet fuer mindestens ein Profil wieder im Cache-Pfad", fehler)
+            return
+    # relevant_fields muessen die Felder der Regel spiegeln (Invariante aus CLAUDE.md)
+    erwartet = {"employees", "listed", "legal_form", "group_role", "branch", "language"}
+    ist = set(regulations.relevant_fields_for(reg))
+    if ist != erwartet:
+        _fail(f"CSR-RUG relevant_fields {sorted(ist)} statt {sorted(erwartet)}", fehler)
+    print("  ok  deterministic_result greift vor jedem Cache-Zugriff")
+
+
 def main() -> int:
     fehler: list[str] = []
     test_gilt_ab(fehler)
@@ -225,6 +319,9 @@ def main() -> int:
     test_unbekannte_reg(fehler)
     test_schwellen_naehe(fehler)
     test_erste_schritte(fehler)
+    test_hinweise_der_finanzfaelle(fehler)
+    test_csr_rug(fehler)
+    test_csr_rug_nicht_im_cache(fehler)
     print("\n" + "=" * 70)
     if fehler:
         print(f"FEHLGESCHLAGEN — {len(fehler)} Befund(e):")

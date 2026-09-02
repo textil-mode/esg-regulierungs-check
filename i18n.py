@@ -880,6 +880,14 @@ UI: dict[str, dict[str, str]] = {
         "de": "Gilt ab", "en": "Applies from", "es": "Se aplica desde",
         "fr": "S'applique à partir du", "it": "Si applica dal", "zh": "自此适用",
     },
+    # Ohne bestimmbares Datum passt "Gilt ab" grammatisch nicht mehr
+    # ("Gilt ab: Ruecknahme angekuendigt"). Dann traegt die Zeile das
+    # Substantiv-Label und einen der drei Fortsetzungstexte darunter.
+    "deadline_none_label": {
+        "de": "Anwendungsbeginn", "en": "Start of application",
+        "es": "Inicio de aplicación", "fr": "Début d'application",
+        "it": "Inizio dell'applicazione", "zh": "适用起始",
+    },
     "deadline_open": {
         "de": "aus den Angaben nicht bestimmbar",
         "en": "cannot be determined from the data provided",
@@ -887,6 +895,22 @@ UI: dict[str, dict[str, str]] = {
         "fr": "non déterminable à partir des données fournies",
         "it": "non determinabile in base ai dati forniti",
         "zh": "无法根据所填数据确定",
+    },
+    "deadline_none_draft": {
+        "de": "noch offen; das Gesetzgebungsverfahren ist nicht abgeschlossen",
+        "en": "not yet set; the legislative procedure is not complete",
+        "es": "aún abierto; el procedimiento legislativo no ha concluido",
+        "fr": "pas encore fixé ; la procédure législative n'est pas achevée",
+        "it": "non ancora fissato; l'iter legislativo non è concluso",
+        "zh": "尚未确定；立法程序未完成",
+    },
+    "deadline_none_withdrawn": {
+        "de": "keiner; die Rücknahme des Vorschlags ist angekündigt",
+        "en": "none; withdrawal of the proposal has been announced",
+        "es": "ninguno; se ha anunciado la retirada de la propuesta",
+        "fr": "aucun ; le retrait de la proposition a été annoncé",
+        "it": "nessuno; è stato annunciato il ritiro della proposta",
+        "zh": "无；已宣布撤回该提案",
     },
     "first_steps_label": {
         "de": "Erste Schritte", "en": "First steps", "es": "Primeros pasos",
@@ -1083,14 +1107,17 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
         "zh": "框架性条例：具体产品要求须由针对各产品组的授权法案确定。",
     },
     "konfliktmin": {
-        "de": "Die Kernpflichten (Sorgfaltspflichten, Prüfung, Offenlegung) gelten seit 01.01.2021.",
-        "en": "The core duties (due diligence, audit, disclosure) have applied since 01.01.2021.",
-        "es": "Las obligaciones principales (diligencia debida, auditoría, divulgación) se aplican desde "
-              "el 01.01.2021.",
-        "fr": "Les obligations principales (diligence raisonnable, audit, publication) s'appliquent depuis "
-              "le 01.01.2021.",
-        "it": "Gli obblighi principali (dovere di diligenza, verifica, informativa) si applicano dal 01.01.2021.",
-        "zh": "核心义务（尽职调查、审计、披露）自 2021 年 1 月 1 日起适用。",
+        "de": "Genanntes Datum ist der Geltungsbeginn der Unternehmenspflichten aus Art. 4 bis 7 "
+              "(Art. 20 Abs. 3). In Kraft getreten ist die Verordnung bereits am 09.07.2017.",
+        "en": "The date given is the start of application of the company duties under Art. 4 to 7 "
+              "(Art. 20(3)). The regulation itself entered into application on 09.07.2017.",
+        "es": "La fecha indicada es el inicio de aplicación de las obligaciones empresariales de los "
+              "art. 4 a 7 (art. 20, apdo. 3). El reglamento como tal se aplica desde el 09.07.2017.",
+        "fr": "La date indiquée est le début d'application des obligations des entreprises prévues aux "
+              "art. 4 à 7 (art. 20, par. 3). Le règlement lui-même s'applique depuis le 09.07.2017.",
+        "it": "La data indicata è l'inizio di applicazione degli obblighi delle imprese di cui agli "
+              "art. 4-7 (art. 20, par. 3). Il regolamento in quanto tale si applica dal 09.07.2017.",
+        "zh": "所示日期为第 4 至 7 条企业义务的适用起始日（第 20 条第 3 款）。该条例本身自 2017 年 7 月 9 日起适用。",
     },
     "umweltstraf": {
         "de": "Datum der Umsetzungsfrist für die Mitgliedstaaten. Unternehmen sind mittelbar über das "
@@ -1279,6 +1306,52 @@ DEADLINE_NOTES: dict[str, dict[str, str]] = {
         "it": "Per i datori di lavoro con 50-249 dipendenti l'obbligo del canale interno vale solo dal "
               "17.12.2023 (§ 42 HinSchG).",
         "zh": "对拥有 50 至 249 名员工的雇主，设立内部举报渠道的义务自 2023 年 12 月 17 日起才适用（《举报人保护法》第 42 条）。",
+    },
+    "hinschg_finanz": {
+        "de": "Als Beschäftigungsgeber nach § 12 Abs. 3 HinSchG (u. a. Wertpapierdienstleistungs"
+              "unternehmen, Institute, Kapitalverwaltungsgesellschaften, Versicherer) besteht die "
+              "Pflicht unabhängig von der Zahl der Beschäftigten; die Übergangsfrist bis 17.12.2023 "
+              "gilt für diese Gruppe ausdrücklich nicht (§ 42 Abs. 1 Satz 2 HinSchG).",
+        "en": "As an employer under section 12(3) HinSchG (investment firms, credit institutions, "
+              "capital management companies, insurers and others) the duty applies irrespective of the "
+              "number of employees; the transitional period until 17.12.2023 expressly does not apply "
+              "to this group (section 42(1) sentence 2 HinSchG).",
+        "es": "Como empleador del § 12, apdo. 3, HinSchG (empresas de servicios de inversión, "
+              "entidades, sociedades gestoras, aseguradoras y otras), la obligación rige con "
+              "independencia del número de empleados; el periodo transitorio hasta el 17.12.2023 no se "
+              "aplica expresamente a este grupo (§ 42, apdo. 1, frase 2 HinSchG).",
+        "fr": "En tant qu'employeur visé au § 12, al. 3, HinSchG (entreprises d'investissement, "
+              "établissements, sociétés de gestion, assureurs et autres), l'obligation s'applique "
+              "indépendamment du nombre de salariés ; la période transitoire jusqu'au 17.12.2023 ne "
+              "s'applique expressément pas à ce groupe (§ 42, al. 1, phrase 2 HinSchG).",
+        "it": "In quanto datore di lavoro ai sensi del § 12, c. 3, HinSchG (imprese di investimento, "
+              "istituti, società di gestione, assicuratori e altri), l'obbligo vale a prescindere dal "
+              "numero di dipendenti; il periodo transitorio fino al 17.12.2023 espressamente non si "
+              "applica a questo gruppo (§ 42, c. 1, per. 2 HinSchG).",
+        "zh": "作为《举报人保护法》第 12 条第 3 款所列的雇主（证券服务机构、金融机构、资产管理公司、保险公司等），该义务不受员工人数限制；至 2023 年 12 月 17 日的过渡期明确不适用于该类雇主（第 42 条第 1 款第 2 句）。",
+    },
+    "whistle_finanz": {
+        "de": "Auf Rechtsträger, die unter die Rechtsakte in Anhang Teil I.B fallen (unter anderem "
+              "Finanzdienstleistungen und Versicherungen), ist der Schwellenwert von 50 Arbeitnehmern "
+              "nach Art. 8 Abs. 4 nicht anzuwenden. Die Verschiebung des Art. 26 Abs. 2 betrifft nur "
+              "die Pflicht aus Art. 8 Abs. 3 und greift für sie deshalb nicht.",
+        "en": "For legal entities covered by the Union acts in Annex Part I.B (including financial "
+              "services and insurance) the threshold of 50 workers does not apply under Art. 8(4). The "
+              "deferral in Art. 26(2) only concerns the duty under Art. 8(3) and therefore does not "
+              "apply to them.",
+        "es": "A las entidades sujetas a los actos del anexo, parte I.B (entre otros, servicios "
+              "financieros y seguros), no se les aplica el umbral de 50 trabajadores según el art. 8, "
+              "apdo. 4. El aplazamiento del art. 26, apdo. 2, solo afecta a la obligación del art. 8, "
+              "apdo. 3, y por tanto no las alcanza.",
+        "fr": "Pour les entités relevant des actes énumérés à l'annexe, partie I.B (notamment services "
+              "financiers et assurance), le seuil de 50 travailleurs ne s'applique pas en vertu de "
+              "l'art. 8, par. 4. Le report de l'art. 26, par. 2, ne concerne que l'obligation de "
+              "l'art. 8, par. 3, et ne les vise donc pas.",
+        "it": "Ai soggetti che rientrano negli atti dell'allegato, parte I.B (tra cui servizi "
+              "finanziari e assicurazioni), non si applica la soglia di 50 lavoratori ai sensi "
+              "dell'art. 8, par. 4. Il rinvio dell'art. 26, par. 2, riguarda solo l'obbligo "
+              "dell'art. 8, par. 3, e quindi non li tocca.",
+        "zh": "对于附件第 I.B 部分所列法案涵盖的法人（包括金融服务和保险），依第 8 条第 4 款不适用 50 名工作人员的门槛。第 26 条第 2 款的延期仅涉及第 8 条第 3 款的义务，因此对其不适用。",
     },
     "whistle_ab_250": {
         "de": "Umsetzungsfrist für Einrichtungen ab 250 Beschäftigten (Art. 26 Abs. 1). In Deutschland "
@@ -2365,8 +2438,9 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
 
 # ---------- Begruendungs-Bausteine fuer gekoppelte Regulierungen ----------
 #
-# CSRD, CSRD_DE, ESRS, Taxonomie-VO, HinSchG und Whistleblower-RL werden nicht
-# vom LLM bewertet, sondern von `regulations.coupling_verdict()` entschieden.
+# CSRD, CSRD_DE, ESRS, Taxonomie-VO, HinSchG, Whistleblower-RL und CSR-RUG
+# werden nicht vom LLM bewertet, sondern von `regulations.coupling_verdict()`
+# entschieden.
 # Die Begruendung entsteht aus zwei Bausteinen und behaelt damit die
 # Zwei-Satz-Struktur der LLM-Antworten:
 #   Satz 1 (COUPLING_FACTS)       — Schwellenwert und der Ist-Wert des Unternehmens
@@ -2548,9 +2622,172 @@ COUPLING_FACTS: dict[str, dict[str, str]] = {
               "di 50 dipendenti del § 12, comma 2, HinSchG.",
         "zh": "公司在德国雇用 {employees_de} 人，低于《举报人保护法》第 12 条第 2 款规定的 50 人门槛。",
     },
+    # --- CSR-RUG (§ 289b HGB) ---
+    "csr_rug_erfuellt": {
+        "de": "Das Unternehmen ist kapitalmarktorientiert und beschäftigte im Jahresdurchschnitt "
+              "{employees} Arbeitnehmer (Schwelle: mehr als 500); eine kapitalmarktorientierte "
+              "Kapitalgesellschaft gilt nach § 267 Abs. 3 Satz 2 HGB stets als groß, womit alle drei "
+              "Merkmale des § 289b Abs. 1 HGB erfüllt sind.",
+        "en": "The company is capital-market oriented and had {employees} employees on annual average "
+              "(threshold: more than 500); under section 267(3) sentence 2 HGB a capital-market "
+              "oriented company always counts as large, so all three criteria of section 289b(1) HGB "
+              "are met.",
+        "es": "La empresa está orientada al mercado de capitales y tenía {employees} trabajadores de "
+              "media anual (umbral: más de 500); según el § 267, apdo. 3, frase 2 HGB una sociedad "
+              "orientada al mercado de capitales cuenta siempre como grande, por lo que se cumplen los "
+              "tres criterios del § 289b, apdo. 1, HGB.",
+        "fr": "L'entreprise fait appel au marché des capitaux et employait {employees} salariés en "
+              "moyenne annuelle (seuil : plus de 500) ; selon le § 267, al. 3, phrase 2 HGB, une "
+              "société faisant appel au marché des capitaux est toujours réputée grande, de sorte que "
+              "les trois critères du § 289b, al. 1, HGB sont réunis.",
+        "it": "L'impresa fa ricorso al mercato dei capitali e aveva {employees} dipendenti in media "
+              "annua (soglia: più di 500); ai sensi del § 267, c. 3, per. 2 HGB una società che fa "
+              "ricorso al mercato dei capitali è sempre considerata grande, per cui sono soddisfatti "
+              "tutti e tre i criteri del § 289b, c. 1, HGB.",
+        "zh": "该企业属于资本市场导向企业，年平均雇员 {employees} 人（门槛：超过 500 人）；依《商法典》第 267 条第 3 款第 2 句，资本市场导向的资合公司始终视为大型企业，因此第 289b 条第 1 款的三项要件全部满足。",
+    },
+    "csr_rug_erfuellt_tochter": {
+        "de": "Das Unternehmen ist kapitalmarktorientiert, beschäftigte im Jahresdurchschnitt "
+              "{employees} Arbeitnehmer (Schwelle: mehr als 500) und ist zugleich Tochterunternehmen — "
+              "nach § 289b Abs. 2 HGB ist eine Befreiung möglich, wenn der Konzernlagebericht der "
+              "Mutter eine nichtfinanzielle Konzernerklärung enthält.",
+        "en": "The company is capital-market oriented, had {employees} employees on annual average "
+              "(threshold: more than 500) and is at the same time a subsidiary — under section 289b(2) "
+              "HGB an exemption is possible if the parent's consolidated management report contains a "
+              "consolidated non-financial statement.",
+        "es": "La empresa está orientada al mercado de capitales, tenía {employees} trabajadores de "
+              "media anual (umbral: más de 500) y es a la vez filial: según el § 289b, apdo. 2, HGB "
+              "cabe una exención si el informe de gestión consolidado de la matriz incluye un estado "
+              "no financiero consolidado.",
+        "fr": "L'entreprise fait appel au marché des capitaux, employait {employees} salariés en "
+              "moyenne annuelle (seuil : plus de 500) et est en même temps une filiale : selon le "
+              "§ 289b, al. 2, HGB, une exemption est possible si le rapport de gestion consolidé de la "
+              "société mère contient une déclaration non financière consolidée.",
+        "it": "L'impresa fa ricorso al mercato dei capitali, aveva {employees} dipendenti in media "
+              "annua (soglia: più di 500) ed è al contempo una controllata: ai sensi del § 289b, c. 2, "
+              "HGB è possibile un'esenzione se la relazione consolidata sulla gestione della "
+              "capogruppo contiene una dichiarazione non finanziaria consolidata.",
+        "zh": "该企业属于资本市场导向企业，年平均雇员 {employees} 人（门槛：超过 500 人），同时又是子公司——依《商法典》第 289b 条第 2 款，若母公司的合并管理报告中含有合并非财务声明，则可获豁免。",
+    },
+    "csr_rug_rechtsform": {
+        "de": "Das Unternehmen ist kapitalmarktorientiert und beschäftigte {employees} Arbeitnehmer "
+              "(Schwelle: mehr als 500), hat aber eine Rechtsform außerhalb der von § 289b HGB und "
+              "§ 264a HGB erfassten Kapitalgesellschaften.",
+        "en": "The company is capital-market oriented and had {employees} employees (threshold: more "
+              "than 500), but its legal form lies outside the companies covered by sections 289b and "
+              "264a HGB.",
+        "es": "La empresa está orientada al mercado de capitales y tenía {employees} trabajadores "
+              "(umbral: más de 500), pero su forma jurídica queda fuera de las sociedades cubiertas por "
+              "los §§ 289b y 264a HGB.",
+        "fr": "L'entreprise fait appel au marché des capitaux et employait {employees} salariés "
+              "(seuil : plus de 500), mais sa forme juridique se situe hors des sociétés visées par les "
+              "§§ 289b et 264a HGB.",
+        "it": "L'impresa fa ricorso al mercato dei capitali e aveva {employees} dipendenti (soglia: più "
+              "di 500), ma la sua forma giuridica esula dalle società coperte dai §§ 289b e 264a HGB.",
+        "zh": "该企业属于资本市场导向企业，雇员 {employees} 人（门槛：超过 500 人），但其法律形式不属于《商法典》第 289b 条和第 264a 条所涵盖的资合公司。",
+    },
+    "csr_rug_finanz": {
+        "de": "Das Unternehmen ist nicht kapitalmarktorientiert, beschäftigte aber {employees} "
+              "Arbeitnehmer (Schwelle: mehr als 500); für Kreditinstitute und Versicherungsunternehmen "
+              "entfällt das Merkmal der Kapitalmarktorientierung (§ 340a Abs. 1a, § 341a Abs. 1a HGB).",
+        "en": "The company is not capital-market oriented but had {employees} employees (threshold: "
+              "more than 500); for credit institutions and insurance undertakings the capital-market "
+              "criterion does not apply (sections 340a(1a), 341a(1a) HGB).",
+        "es": "La empresa no está orientada al mercado de capitales, pero tenía {employees} "
+              "trabajadores (umbral: más de 500); para entidades de crédito y aseguradoras decae el "
+              "criterio de orientación al mercado de capitales (§ 340a, apdo. 1a, y § 341a, apdo. 1a, "
+              "HGB).",
+        "fr": "L'entreprise ne fait pas appel au marché des capitaux mais employait {employees} "
+              "salariés (seuil : plus de 500) ; pour les établissements de crédit et les entreprises "
+              "d'assurance, le critère de l'appel au marché des capitaux ne s'applique pas "
+              "(§ 340a, al. 1a, et § 341a, al. 1a, HGB).",
+        "it": "L'impresa non fa ricorso al mercato dei capitali ma aveva {employees} dipendenti "
+              "(soglia: più di 500); per gli enti creditizi e le imprese di assicurazione il criterio "
+              "del ricorso al mercato dei capitali non si applica (§ 340a, c. 1a, e § 341a, c. 1a, HGB).",
+        "zh": "该企业并非资本市场导向企业，但雇员 {employees} 人（门槛：超过 500 人）；对信贷机构和保险企业而言，资本市场导向这一要件不适用（《商法典》第 340a 条第 1a 款、第 341a 条第 1a 款）。",
+    },
+    "csr_rug_unter_500": {
+        "de": "Das Unternehmen ist kapitalmarktorientiert, beschäftigte im Jahresdurchschnitt aber nur "
+              "{employees} Arbeitnehmer und erreicht damit die Schwelle des § 289b Abs. 1 Nr. 3 HGB "
+              "von mehr als 500 Arbeitnehmern nicht.",
+        "en": "The company is capital-market oriented but had only {employees} employees on annual "
+              "average and therefore does not reach the threshold of more than 500 employees in "
+              "section 289b(1) no. 3 HGB.",
+        "es": "La empresa está orientada al mercado de capitales, pero solo tenía {employees} "
+              "trabajadores de media anual y no alcanza el umbral de más de 500 del § 289b, apdo. 1, "
+              "n.º 3, HGB.",
+        "fr": "L'entreprise fait appel au marché des capitaux mais n'employait que {employees} salariés "
+              "en moyenne annuelle et n'atteint donc pas le seuil de plus de 500 du § 289b, al. 1, "
+              "n° 3, HGB.",
+        "it": "L'impresa fa ricorso al mercato dei capitali ma aveva solo {employees} dipendenti in "
+              "media annua e non raggiunge quindi la soglia di oltre 500 del § 289b, c. 1, n. 3, HGB.",
+        "zh": "该企业虽属资本市场导向企业，但年平均雇员仅 {employees} 人，未达到《商法典》第 289b 条第 1 款第 3 项超过 500 人的门槛。",
+    },
+    "csr_rug_nicht_kapitalmarkt": {
+        "de": "Das Unternehmen ist nicht kapitalmarktorientiert im Sinne des § 264d HGB; dieses "
+              "Merkmal verlangt § 289b Abs. 1 Nr. 2 HGB kumulativ neben der Größe und mehr als 500 "
+              "Arbeitnehmern (laut Profil {employees}).",
+        "en": "The company is not capital-market oriented within the meaning of section 264d HGB; "
+              "section 289b(1) no. 2 HGB requires this criterion cumulatively alongside size and more "
+              "than 500 employees ({employees} according to the profile).",
+        "es": "La empresa no está orientada al mercado de capitales en el sentido del § 264d HGB; el "
+              "§ 289b, apdo. 1, n.º 2, HGB exige este criterio de forma acumulativa junto al tamaño y "
+              "a más de 500 trabajadores (según el perfil, {employees}).",
+        "fr": "L'entreprise ne fait pas appel au marché des capitaux au sens du § 264d HGB ; le "
+              "§ 289b, al. 1, n° 2, HGB exige ce critère cumulativement avec la taille et plus de 500 "
+              "salariés ({employees} selon le profil).",
+        "it": "L'impresa non fa ricorso al mercato dei capitali ai sensi del § 264d HGB; il § 289b, "
+              "c. 1, n. 2, HGB richiede tale criterio cumulativamente con la dimensione e con più di "
+              "500 dipendenti (secondo il profilo {employees}).",
+        "zh": "该企业不属于《商法典》第 264d 条意义上的资本市场导向企业；第 289b 条第 1 款第 2 项要求该要件与规模及超过 500 名雇员（档案显示 {employees} 人）累积满足。",
+    },
 }
 
 COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
+    "CSR-RUG": {
+        "ja": {
+            "de": "Die nichtfinanzielle Erklärung nach § 289b HGB ist damit im Lagebericht abzugeben; "
+                  "mit der CSRD-Umsetzung tritt die Nachhaltigkeitsberichterstattung an ihre Stelle.",
+            "en": "The non-financial statement under section 289b HGB therefore has to be included in "
+                  "the management report; sustainability reporting will replace it once the CSRD is "
+                  "transposed.",
+            "es": "Por tanto, el estado no financiero del § 289b HGB debe incluirse en el informe de "
+                  "gestión; con la transposición de la CSRD lo sustituirá la información de "
+                  "sostenibilidad.",
+            "fr": "La déclaration non financière du § 289b HGB doit donc figurer dans le rapport de "
+                  "gestion ; avec la transposition de la CSRD, le reporting de durabilité la "
+                  "remplacera.",
+            "it": "La dichiarazione non finanziaria del § 289b HGB va quindi inserita nella relazione "
+                  "sulla gestione; con il recepimento della CSRD sarà sostituita dalla rendicontazione "
+                  "di sostenibilità.",
+            "zh": "因此须在管理报告中作出《商法典》第 289b 条规定的非财务声明；随着 CSRD 的转化，可持续发展报告将取而代之。",
+        },
+        "nein": {
+            "de": "Eine Pflicht zur nichtfinanziellen Erklärung nach § 289b HGB besteht damit nicht.",
+            "en": "There is therefore no duty to provide a non-financial statement under section 289b "
+                  "HGB.",
+            "es": "Por tanto, no existe obligación de presentar un estado no financiero conforme al "
+                  "§ 289b HGB.",
+            "fr": "Il n'existe donc pas d'obligation de déclaration non financière au titre du § 289b "
+                  "HGB.",
+            "it": "Non sussiste quindi alcun obbligo di dichiarazione non finanziaria ai sensi del "
+                  "§ 289b HGB.",
+            "zh": "因此不负有《商法典》第 289b 条规定的非财务声明义务。",
+        },
+        "moeglich": {
+            "de": "Die Pflicht zur nichtfinanziellen Erklärung nach § 289b HGB ist deshalb im "
+                  "Einzelfall zu prüfen.",
+            "en": "The duty to provide a non-financial statement under section 289b HGB therefore has "
+                  "to be assessed case by case.",
+            "es": "Por ello, la obligación de estado no financiero conforme al § 289b HGB debe "
+                  "examinarse caso por caso.",
+            "fr": "L'obligation de déclaration non financière au titre du § 289b HGB doit donc être "
+                  "examinée au cas par cas.",
+            "it": "L'obbligo di dichiarazione non finanziaria ai sensi del § 289b HGB va quindi "
+                  "verificato caso per caso.",
+            "zh": "因此需就个案审查《商法典》第 289b 条规定的非财务声明义务。",
+        },
+    },
     "CSRD": {
         "ja": {
             "de": "Es besteht damit eine Berichtspflicht nach der CSRD; die neuen Schwellen gelten "
@@ -2766,6 +3003,23 @@ COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
 }
 
 COUPLING_PASSAGES: dict[str, dict[str, str]] = {
+    "CSR-RUG": {
+        "de": "§ 289b Abs. 1 HGB: Kapitalgesellschaft, die die Voraussetzungen des § 267 Abs. 3 "
+              "Satz 1 erfüllt, kapitalmarktorientiert im Sinne des § 264d ist und im Jahresdurchschnitt "
+              "mehr als 500 Arbeitnehmer beschäftigt.",
+        "en": "Section 289b(1) HGB: a company that meets the conditions of section 267(3) sentence 1, "
+              "is capital-market oriented within the meaning of section 264d and has more than 500 "
+              "employees on annual average.",
+        "es": "§ 289b, apdo. 1, HGB: sociedad que cumple los requisitos del § 267, apdo. 3, frase 1, "
+              "está orientada al mercado de capitales según el § 264d y tiene más de 500 trabajadores "
+              "de media anual.",
+        "fr": "§ 289b, al. 1, HGB : société remplissant les conditions du § 267, al. 3, phrase 1, "
+              "faisant appel au marché des capitaux au sens du § 264d et employant plus de 500 "
+              "salariés en moyenne annuelle.",
+        "it": "§ 289b, c. 1, HGB: società che soddisfa i requisiti del § 267, c. 3, per. 1, fa ricorso "
+              "al mercato dei capitali ai sensi del § 264d e ha più di 500 dipendenti in media annua.",
+        "zh": "《商法典》第 289b 条第 1 款：满足第 267 条第 3 款第 1 句条件、属于第 264d 条意义上的资本市场导向企业且年平均雇员超过 500 人的资合公司。",
+    },
     "CSRD": {
         "de": "Art. 19a Abs. 1 der Richtlinie 2013/34/EU (i. d. F. der Richtlinie (EU) 2026/470): "
               "große Unternehmen mit mehr als 1.000 Beschäftigten und mehr als 450 Mio. EUR "

@@ -154,24 +154,35 @@ def _iso_to_display(value: str) -> str:
 _PLAN_APPLIES = {"ja", "moeglich"}
 
 
+# Status ohne Datum -> passender Fortsetzungstext hinter "Anwendungsbeginn:".
+_NO_DATE_TEXTS = {
+    "entwurf": "deadline_none_draft",
+    "rueckzug_angekuendigt": "deadline_none_withdrawn",
+}
+
+
 def _deadline_html(reg_key: str, profile: dict, language: str) -> str:
-    """Block 'Gilt ab' fuer genau dieses Unternehmen."""
+    """Block 'Gilt ab' fuer genau dieses Unternehmen.
+
+    Ohne bestimmbares Datum traegt die Zeile ein anderes Label: "Gilt ab:
+    Ruecknahme angekuendigt" waere kein Satz. Dort steht dann
+    "Anwendungsbeginn: keiner; die Ruecknahme des Vorschlags ist angekuendigt".
+    """
     info = deadline_for(reg_key, profile)
     if not info:
         return ""
     date_text = info.get("gilt_ab") or ""
-    if not date_text:
-        # Kein bestimmbares Datum: den Status zeigen statt eines erfundenen
-        # Termins (Entwurf, angekuendigte Ruecknahme, Drittland-Sonderregime).
+    if date_text:
+        label, value = t("deadline_label", language), date_text
+    else:
         status = application_for(reg_key)["status"]
-        date_text = t_status(status, language) if status in ("entwurf", "rueckzug_angekuendigt") \
-            else t("deadline_open", language)
+        label = t("deadline_none_label", language)
+        value = t(_NO_DATE_TEXTS.get(status, "deadline_open"), language)
     note = t_deadline_note(info.get("hinweis") or "", language)
     note_html = f'\n    <div class="reg-deadline-note">{escape(note)}</div>' if note else ""
     return (f'\n  <div class="reg-deadline">'
-            f'<strong>{escape(t("deadline_label", language))}:</strong> '
-            f'{escape(date_text)}{note_html}\n  </div>')
-
+            f'<strong>{escape(label)}:</strong> '
+            f'{escape(value)}{note_html}\n  </div>')
 
 def _steps_html(reg_key: str, language: str) -> str:
     """Aufklappbarer Block 'Erste Schritte' inkl. weiterfuehrender Leitlinie."""
@@ -210,7 +221,10 @@ def _thresholds_html(profile: dict, language: str) -> str:
 
 def _card_html(r: dict, lang_dict: dict, language: str = "de",
                profile: dict | None = None) -> str:
-    a = r["applies"]
+    # Klein geschrieben, genau wie Filter und Sortierung in render_cards_html
+    # es tun. Ohne das ergaebe ein "JA" aus einem aelteren Ergebnis eine
+    # sichtbare Karte ohne Frist- und Schritte-Block.
+    a = (r.get("applies") or "").lower()
     bg, icon = BADGE_STYLES.get(a, ("background:#6b6b6b;color:#ffffff;", "·"))
     label = lang_dict["applies_label"].get(a, a.upper())
     name = escape(r["name"])
@@ -316,12 +330,13 @@ def render_csv(results: list[dict], language: str = "de",
                      t("csv_deadline", language),
                      lang_dict["reason"], lang_dict["passage"], "URL"])
     for r in shown:
+        applies = (r.get("applies") or "").lower()
         writer.writerow([
-            lang_dict["applies_label"].get(r["applies"], r["applies"].upper()),
+            lang_dict["applies_label"].get(applies, applies.upper()),
             r["nr"],
             r["name"],
             r["full_name"],
-            _csv_deadline(r.get("key") or "", r["applies"], profile, language),
+            _csv_deadline(r.get("key") or "", applies, profile, language),
             r.get("reason", ""),
             r.get("passage", ""),
             r["url"],
