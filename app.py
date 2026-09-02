@@ -70,7 +70,8 @@ from regulations import (
     published_for,
     published_is_draft,
 )
-from views import render_cards_html, render_csv
+from pdfexport import render_pdf
+from views import render_cards_html
 
 
 def _secret_key() -> str:
@@ -689,7 +690,7 @@ def analysis_status_api():
 
 
 # ---------------------------------------------------------------------------
-# Vollbild + CSV
+# Vollbild + PDF-Export
 # ---------------------------------------------------------------------------
 @app.route("/fullscreen")
 def fullscreen():
@@ -741,8 +742,9 @@ def regulations_list():
     return render_template("regulierungsliste.html", rows=rows, lang=lang)
 
 
-@app.route("/download-csv")
-def download_csv():
+@app.route("/download-pdf")
+def download_pdf():
+    """Das zuletzt gespeicherte Ergebnis als PDF (textil+mode-Design)."""
     uid = _uid()
     if not uid:
         return redirect(url_for("login"))
@@ -750,11 +752,12 @@ def download_csv():
     if not last:
         return "No results", 404
     lang = _lang()
-    csv_bytes = render_csv(last["result"], lang, profile=db.get_company(uid))
-    fname = f"esg_analyse_{datetime.now():%Y%m%d_%H%M}.csv"
+    pdf_bytes = render_pdf(last["result"], lang, profile=db.get_company(uid),
+                           created_at=last.get("created_at"))
+    fname = f"esg_analyse_{datetime.now():%Y%m%d_%H%M}.pdf"
     return Response(
-        csv_bytes,
-        mimetype="text/csv",
+        pdf_bytes,
+        mimetype="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={fname}"},
     )
 

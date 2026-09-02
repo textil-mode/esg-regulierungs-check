@@ -56,7 +56,7 @@ python app.py
    - Schritt 1: Gesetzestexte werden per HTTP geladen/aktualisiert (ETag-basiert, inkrementell)
    - Schritt 2: LLM analysiert je Regulierung Profil + Volltext → JSON mit applies/reason/passage
 4. **Ergebnistabelle** zeigt nur einschlaegige oder moeglicherweise einschlaegige Regulierungen,
-   sortiert JA → MOEGLICH. Regulierungsname selbst ist Link zum Originaltext. CSV-Export vorhanden.
+   sortiert JA → MOEGLICH. Regulierungsname selbst ist Link zum Originaltext. PDF-Export vorhanden.
 5. **Cache:** Bei unveraendertem Profil werden gespeicherte Ergebnisse beim zweiten Klick
    instant angezeigt (kein LLM-Call).
 

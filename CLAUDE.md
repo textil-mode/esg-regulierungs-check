@@ -49,7 +49,7 @@
 | **Watchdog** (`python watchdog.py`): laedt alle 22 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
 | **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
 | **"Gesetzesstand vom …"** auf jeder Ergebnis-Karte | `app.py` `law_dates`, `views.py` | ✅ |
-| CSV-Export | `/download-csv` | ✅ |
+| **PDF-Export im textil+mode-CD** (Logo, Verlaufskante, Statusfarben; gleicher Umfang wie das frühere CSV plus Kopfbereich und Zusammenfassung). Chinesisch nutzt die nicht eingebettete CID-Schrift STSong-Light — siehe Modul-Docstring | `/download-pdf`, `pdfexport.py` | ✅ |
 | Fullscreen-Ansicht Ergebnisse | `/fullscreen` | ✅ |
 | **Regulierungsliste** (3-spaltig: Reg / Guidelines / Quelle+Stand) | `/regulierungsliste`, `templates/regulierungsliste.html` | ✅ |
 | **textil+mode-Logo oben links** (verlinkt textil-mode.de) | `templates/base.html`, `static/images/textil-mode-logo.png` | ✅ |
@@ -276,7 +276,8 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `thresholds.py` | Erkennt Naehe zu Schwellenwerten (±20 %) fuer die "Was waere wenn"-Hinweise |
 | `test_deadlines.py` | Tests zu beidem plus CSR-RUG-Regel; ohne DB, Netz und LLM |
 | `test_login_throttle.py` | Tests zur Login-Bremse und zum Zeitgleichlauf beider Fehlerpfade (16 Blöcke, eigene DB `data/esg_login_test.db`, kein Netz, kein LLM) |
-| `views.py` | Card/CSV-Renderer (Kennzahl-Hervorhebung, "Gilt ab", "Erste Schritte", Schwellen-Hinweise) |
+| `views.py` | Card-Renderer (Kennzahl-Hervorhebung, "Gilt ab", "Erste Schritte", Schwellen-Hinweise) |
+| `pdfexport.py` | PDF-Export der Ergebnisse (reportlab, textil+mode-CD) |
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
 | `templates/dashboard.html` | Hauptseite (Stammdaten + "Jetzt prüfen" + "Regulierungsliste"-Button) |

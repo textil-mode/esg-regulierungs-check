@@ -953,9 +953,28 @@ UI: dict[str, dict[str, str]] = {
         "it": "Le soglie seguenti distano meno del 20 per cento dai dati di questa impresa.",
         "zh": "以下门槛值与该企业的数据相差不到 20%。",
     },
-    "csv_deadline": {
-        "de": "Gilt ab", "en": "Applies from", "es": "Se aplica desde",
-        "fr": "S'applique à partir du", "it": "Si applica dal", "zh": "自此适用",
+    # ---------- PDF-Export ----------
+    # "Gilt ab" liefert bereits "deadline_label"; ein eigener Schluessel dafuer
+    # (frueher "csv_deadline") waere eine zweite Quelle fuer denselben Text.
+    "btn_download_pdf": {
+        "de": "Ergebnis als PDF", "en": "Result as PDF", "es": "Resultado en PDF",
+        "fr": "Résultat en PDF", "it": "Risultato in PDF", "zh": "结果 PDF",
+    },
+    "pdf_created": {
+        "de": "Erstellt am", "en": "Created on", "es": "Creado el",
+        "fr": "Établi le", "it": "Creato il", "zh": "创建日期",
+    },
+    "pdf_summary": {
+        "de": "Zusammenfassung", "en": "Summary", "es": "Resumen",
+        "fr": "Synthèse", "it": "Sintesi", "zh": "摘要",
+    },
+    "pdf_source": {
+        "de": "Quelle", "en": "Source", "es": "Fuente",
+        "fr": "Source", "it": "Fonte", "zh": "来源",
+    },
+    "pdf_page": {
+        "de": "Seite", "en": "Page", "es": "Página",
+        "fr": "Page", "it": "Pagina", "zh": "页码",
     },
 }
 

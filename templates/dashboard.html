@@ -143,7 +143,7 @@
       {% if last %}
       <span style="font-size:13px;color:#5A5A5A;">{{ t("last_check", lang) }}: {{ last.created_at[:19]|replace('T',' ') }}</span>
       <a href="{{ url_for('fullscreen') }}" target="_blank" class="btn btn-sm btn-secondary">{{ t("btn_open_fullscreen", lang) }}</a>
-      <a href="{{ url_for('download_csv') }}" class="btn btn-sm btn-secondary">CSV</a>
+      <a href="{{ url_for('download_pdf') }}" class="btn btn-sm btn-secondary">{{ t("btn_download_pdf", lang) }}</a>
       {% endif %}
       <a href="{{ url_for('regulations_list') }}" target="_blank" rel="noopener"
          class="btn btn-secondary" style="margin-left:auto;">

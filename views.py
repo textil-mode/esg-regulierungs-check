@@ -1,16 +1,14 @@
-"""HTML-Generierung für Regulierungskarten + CSV-Export.
+"""HTML-Generierung für Regulierungskarten.
 
 Kein Streamlit mehr — reines HTML/CSS für Flask-Templates.
 """
 from __future__ import annotations
 
-import csv
-import io
 import re
 from html import escape
 
 from deadlines import deadline_for
-from i18n import t, t_deadline_note, t_first_step, t_status, t_threshold_hint
+from i18n import t, t_deadline_note, t_first_step, t_threshold_hint
 from regulations import application_for, first_steps_for, first_steps_link
 from thresholds import near_thresholds
 
@@ -168,17 +166,10 @@ def _deadline_html(reg_key: str, profile: dict, language: str) -> str:
     Ruecknahme angekuendigt" waere kein Satz. Dort steht dann
     "Anwendungsbeginn: keiner; die Ruecknahme des Vorschlags ist angekuendigt".
     """
-    info = deadline_for(reg_key, profile)
-    if not info:
+    parts = deadline_parts(reg_key, "ja", profile, language)
+    if not parts:
         return ""
-    date_text = info.get("gilt_ab") or ""
-    if date_text:
-        label, value = t("deadline_label", language), date_text
-    else:
-        status = application_for(reg_key)["status"]
-        label = t("deadline_none_label", language)
-        value = t(_NO_DATE_TEXTS.get(status, "deadline_open"), language)
-    note = t_deadline_note(info.get("hinweis") or "", language)
+    label, value, note = parts
     note_html = f'\n    <div class="reg-deadline-note">{escape(note)}</div>' if note else ""
     return (f'\n  <div class="reg-deadline">'
             f'<strong>{escape(label)}:</strong> '
@@ -301,48 +292,28 @@ def render_cards_html(results: list[dict], language: str = "de",
     return "\n".join(parts)
 
 
-def _csv_deadline(reg_key: str, applies: str, profile: dict | None,
-                  language: str) -> str:
-    """Wert der Spalte 'Gilt ab' — leer, wo die Regulierung nicht greift.
+def deadline_parts(reg_key: str, applies: str, profile: dict | None,
+                   language: str) -> tuple[str, str, str] | None:
+    """(Label, Wert, Hinweis) für "Gilt ab" — `None`, wo nichts anzugeben ist.
 
-    Bei applies = nein waere ein Datum irrefuehrend: es gaebe einen Termin vor,
-    den es fuer dieses Unternehmen nicht gibt.
+    Einzige Quelle für beide Ausgabewege: die HTML-Karte (`_deadline_html`)
+    und der PDF-Export (`pdfexport.py`). Sonst driften die Formulierungen
+    auseinander — genau das war beim CSV der Fall, das für einen
+    zurückgezogenen Vorschlag "Gilt ab: Rücknahme angekündigt" schrieb.
+
+    Bei applies = nein wäre ein Datum irreführend: es gäbe einen Termin vor,
+    den es für dieses Unternehmen nicht gibt.
     """
     if not (profile and reg_key and applies in _PLAN_APPLIES):
-        return ""
+        return None
     info = deadline_for(reg_key, profile)
     if not info:
-        return ""
-    if info.get("gilt_ab"):
-        return info["gilt_ab"]
-    status = application_for(reg_key)["status"]
-    if status in ("entwurf", "rueckzug_angekuendigt"):
-        return t_status(status, language)
-    return t("deadline_open", language)
-
-
-def render_csv(results: list[dict], language: str = "de",
-               profile: dict | None = None) -> bytes:
-    """Generiert CSV als UTF-8-BOM-Bytes."""
-    lang_dict = I18N.get(language, I18N["de"])
-    shown = [r for r in results if (r.get("applies") or "").lower() in APPLIES_ORDER]
-    shown.sort(key=lambda r: (APPLIES_ORDER.get((r.get("applies") or "").lower(), 9), r["nr"]))
-
-    buf = io.StringIO()
-    writer = csv.writer(buf)
-    writer.writerow(["Status", "Nr.", "Regulierung", "Bezeichnung",
-                     t("csv_deadline", language),
-                     lang_dict["reason"], lang_dict["passage"], "URL"])
-    for r in shown:
-        applies = (r.get("applies") or "").lower()
-        writer.writerow([
-            lang_dict["applies_label"].get(applies, applies.upper()),
-            r["nr"],
-            r["name"],
-            r["full_name"],
-            _csv_deadline(r.get("key") or "", applies, profile, language),
-            r.get("reason", ""),
-            r.get("passage", ""),
-            r["url"],
-        ])
-    return ("\ufeff" + buf.getvalue()).encode("utf-8")
+        return None
+    date_text = info.get("gilt_ab") or ""
+    if date_text:
+        label, value = t("deadline_label", language), date_text
+    else:
+        status = application_for(reg_key)["status"]
+        label = t("deadline_none_label", language)
+        value = t(_NO_DATE_TEXTS.get(status, "deadline_open"), language)
+    return label, value, t_deadline_note(info.get("hinweis") or "", language)
