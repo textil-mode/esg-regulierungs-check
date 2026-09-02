@@ -49,7 +49,7 @@
 | CSV-Export | `/download-csv` | ✅ |
 | Fullscreen-Ansicht Ergebnisse | `/fullscreen` | ✅ |
 | **Regulierungsliste** (3-spaltig: Reg / Guidelines / Quelle+Stand) | `/regulierungsliste`, `templates/regulierungsliste.html` | ✅ |
-| **textil+mode-Logo oben links** (verlinkt textil-mode.de) | `templates/base.html`, `static/images/tum-logo.svg` | ✅ |
+| **textil+mode-Logo oben links** (verlinkt textil-mode.de) | `templates/base.html`, `static/images/textil-mode-logo.png` | ✅ |
 | **Dunkelgraue Seitenränder** (`#2b2b2b` außerhalb des 1140px-Containers) | `templates/base.html` | ✅ |
 | **Footer-Hinweis** ("Claude Code + OpenAI Codex") unten rechts als `<details>` | `templates/base.html` | ✅ |
 | LLM-Robustheit: 60s Request-Timeout, max_tokens 3000, JSON-Auto-Repair | `llm.py` | ✅ |
@@ -275,7 +275,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `templates/dashboard.html` | Hauptseite (Stammdaten + "Jetzt prüfen" + "Regulierungsliste"-Button) |
 | `templates/regulierungsliste.html` | Tabelle aller 22 Regs + Guidelines + Stand |
 | `templates/login.html`, `fullscreen.html`, `analysis.html` | Auth, Fullscreen, Progress-Page |
-| `static/images/tum-logo.svg` | textil+mode-Logo |
+| `static/images/textil-mode-logo.png` | offizielles textil+mode-Logo (1925x437) |
 | `Dockerfile` | Python 3.12-slim + Gunicorn; **muss `static/` und `templates/` kopieren** |
 | `docker-compose.hostinger.yml` | Compose-Dummy/Vorlage (nur Platzhalter — echte Keys live im Hostinger-UI) |
 | `.github/workflows/docker-build.yml` | Build-Push nach ghcr.io |

@@ -30,7 +30,7 @@ UI: dict[str, dict[str, str]] = {
         "zh": "ESG 法规检查",
     },
     "app_subtitle": {
-        "de": "Prüfe, welche ESG-/CSR-Regulierungen für dein Unternehmen gelten.",
+        "de": "Prüfen Sie, welche ESG-/CSR-Regulierungen für Ihr Unternehmen gelten.",
         "en": "Check which ESG/CSR regulations apply to your company.",
         "es": "Comprueba qué regulaciones ESG/CSR se aplican a tu empresa.",
         "fr": "Vérifiez quelles réglementations ESG/CSR s'appliquent à votre entreprise.",
@@ -436,7 +436,7 @@ UI: dict[str, dict[str, str]] = {
         "zh": "1. 公司数据",
     },
     "section_company_hint": {
-        "de": "Deine Daten werden pro Konto gespeichert und beim nächsten Login vorausgefüllt.",
+        "de": "Ihre Daten werden pro Konto gespeichert und beim nächsten Login vorausgefüllt.",
         "en": "Your data is stored per account and pre-filled on next login.",
         "es": "Tus datos se guardan por cuenta y se rellenan previamente en el próximo inicio de sesión.",
         "fr": "Vos données sont enregistrées par compte et préremplies à la prochaine connexion.",

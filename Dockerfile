@@ -9,7 +9,11 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py db.py llm.py views.py fetcher.py regulations.py i18n.py autofill.py ./
+# Alle Anwendungsmodule pauschal kopieren. Die frueher hier gepflegte
+# Einzelaufzaehlung wurde zweimal vergessen (autofill.py, lawparse.py) und
+# liess den Container mit ModuleNotFoundError nicht mehr starten.
+COPY *.py ./
+RUN rm -f test_*.py
 COPY templates/ templates/
 COPY static/ static/
 
