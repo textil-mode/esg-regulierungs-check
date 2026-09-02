@@ -184,6 +184,7 @@ def _deadline_html(reg_key: str, profile: dict, language: str) -> str:
             f'<strong>{escape(label)}:</strong> '
             f'{escape(value)}{note_html}\n  </div>')
 
+
 def _steps_html(reg_key: str, language: str) -> str:
     """Aufklappbarer Block 'Erste Schritte' inkl. weiterfuehrender Leitlinie."""
     steps = [t_first_step(key, language) for key in first_steps_for(reg_key)]
@@ -263,9 +264,12 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de",
 
 
 def _metrics_html(shown: list[dict], lang_dict: dict) -> str:
-    yes = sum(1 for r in shown if r["applies"] == "ja")
-    maybe = sum(1 for r in shown if r["applies"] == "moeglich")
-    no = sum(1 for r in shown if r["applies"] == "nein")
+    # Gleiche Normalisierung wie Filter, Sortierung und Karten: sonst zaehlt
+    # ein gross geschriebenes "JA" die sichtbare Karte nicht mit.
+    applies = [(r.get("applies") or "").lower() for r in shown]
+    yes = sum(1 for a in applies if a == "ja")
+    maybe = sum(1 for a in applies if a == "moeglich")
+    no = sum(1 for a in applies if a == "nein")
     return f"""
 <div class="metrics">
   <div class="metric metric-yes"><div class="metric-value">{yes}</div><div class="metric-label">{escape(lang_dict['metric_yes'])}</div></div>

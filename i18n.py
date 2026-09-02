@@ -1108,7 +1108,7 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
     },
     "konfliktmin": {
         "de": "Genanntes Datum ist der Geltungsbeginn der Unternehmenspflichten aus Art. 4 bis 7 "
-              "(Art. 20 Abs. 3). In Kraft getreten ist die Verordnung bereits am 09.07.2017.",
+              "(Art. 20 Abs. 3). Die Verordnung selbst gilt bereits seit dem 09.07.2017 (Art. 20 Abs. 2).",
         "en": "The date given is the start of application of the company duties under Art. 4 to 7 "
               "(Art. 20(3)). The regulation itself entered into application on 09.07.2017.",
         "es": "La fecha indicada es el inicio de aplicación de las obligaciones empresariales de los "
@@ -1331,7 +1331,7 @@ DEADLINE_NOTES: dict[str, dict[str, str]] = {
         "zh": "作为《举报人保护法》第 12 条第 3 款所列的雇主（证券服务机构、金融机构、资产管理公司、保险公司等），该义务不受员工人数限制；至 2023 年 12 月 17 日的过渡期明确不适用于该类雇主（第 42 条第 1 款第 2 句）。",
     },
     "whistle_finanz": {
-        "de": "Auf Rechtsträger, die unter die Rechtsakte in Anhang Teil I.B fallen (unter anderem "
+        "de": "Auf Rechtsträger, die unter die Rechtsakte in Anhang Teil I.B und Teil II fallen (unter anderem "
               "Finanzdienstleistungen und Versicherungen), ist der Schwellenwert von 50 Arbeitnehmern "
               "nach Art. 8 Abs. 4 nicht anzuwenden. Die Verschiebung des Art. 26 Abs. 2 betrifft nur "
               "die Pflicht aus Art. 8 Abs. 3 und greift für sie deshalb nicht.",
@@ -2626,25 +2626,25 @@ COUPLING_FACTS: dict[str, dict[str, str]] = {
     "csr_rug_erfuellt": {
         "de": "Das Unternehmen ist kapitalmarktorientiert und beschäftigte im Jahresdurchschnitt "
               "{employees} Arbeitnehmer (Schwelle: mehr als 500); eine kapitalmarktorientierte "
-              "Kapitalgesellschaft gilt nach § 267 Abs. 3 Satz 2 HGB stets als groß, womit alle drei "
-              "Merkmale des § 289b Abs. 1 HGB erfüllt sind.",
+              "Kapitalgesellschaft gilt nach § 267 Abs. 3 Satz 2 HGB stets als groß, womit das "
+              "Größenmerkmal des § 289b Abs. 1 Nr. 1 HGB regelmäßig mitverwirklicht ist.",
         "en": "The company is capital-market oriented and had {employees} employees on annual average "
               "(threshold: more than 500); under section 267(3) sentence 2 HGB a capital-market "
-              "oriented company always counts as large, so all three criteria of section 289b(1) HGB "
-              "are met.",
+              "oriented company always counts as large, so the size criterion of section 289b(1) no. 1 "
+              "HGB is regularly met as well.",
         "es": "La empresa está orientada al mercado de capitales y tenía {employees} trabajadores de "
               "media anual (umbral: más de 500); según el § 267, apdo. 3, frase 2 HGB una sociedad "
-              "orientada al mercado de capitales cuenta siempre como grande, por lo que se cumplen los "
-              "tres criterios del § 289b, apdo. 1, HGB.",
+              "orientada al mercado de capitales cuenta siempre como grande, por lo que el criterio de "
+              "tamaño del § 289b, apdo. 1, n.º 1, HGB queda por regla general cumplido.",
         "fr": "L'entreprise fait appel au marché des capitaux et employait {employees} salariés en "
               "moyenne annuelle (seuil : plus de 500) ; selon le § 267, al. 3, phrase 2 HGB, une "
               "société faisant appel au marché des capitaux est toujours réputée grande, de sorte que "
-              "les trois critères du § 289b, al. 1, HGB sont réunis.",
+              "le critère de taille du § 289b, al. 1, n° 1, HGB est en règle générale rempli.",
         "it": "L'impresa fa ricorso al mercato dei capitali e aveva {employees} dipendenti in media "
               "annua (soglia: più di 500); ai sensi del § 267, c. 3, per. 2 HGB una società che fa "
-              "ricorso al mercato dei capitali è sempre considerata grande, per cui sono soddisfatti "
-              "tutti e tre i criteri del § 289b, c. 1, HGB.",
-        "zh": "该企业属于资本市场导向企业，年平均雇员 {employees} 人（门槛：超过 500 人）；依《商法典》第 267 条第 3 款第 2 句，资本市场导向的资合公司始终视为大型企业，因此第 289b 条第 1 款的三项要件全部满足。",
+              "ricorso al mercato dei capitali è sempre considerata grande, per cui il criterio "
+              "dimensionale del § 289b, c. 1, n. 1, HGB risulta di regola soddisfatto.",
+        "zh": "该企业属于资本市场导向企业，年平均雇员 {employees} 人（门槛：超过 500 人）；依《商法典》第 267 条第 3 款第 2 句，资本市场导向的资合公司始终视为大型企业，因此第 289b 条第 1 款第 1 项的规模要件通常一并满足。",
     },
     "csr_rug_erfuellt_tochter": {
         "de": "Das Unternehmen ist kapitalmarktorientiert, beschäftigte im Jahresdurchschnitt "

@@ -870,7 +870,9 @@ def csr_rug_status(profile: dict) -> tuple[str, str]:
     legal_form = profile.get("legal_form") or ""
 
     if listed and emp > 500:
-        if legal_form and legal_form not in _KAPITALGESELLSCHAFTEN:
+        # Ohne Angabe der Rechtsform (Altprofile) nicht stillschweigend eine
+        # Kapitalgesellschaft unterstellen — dann lieber "moeglich".
+        if legal_form not in _KAPITALGESELLSCHAFTEN:
             return "moeglich", "csr_rug_rechtsform"
         # § 289b Abs. 2 HGB befreit ein einbezogenes Tochterunternehmen, wenn
         # der Konzernlagebericht der Mutter eine nichtfinanzielle Konzern-
