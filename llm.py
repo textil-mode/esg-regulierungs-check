@@ -219,6 +219,19 @@ def profile_hash(profile: dict, reg: dict) -> str:
 _PROMPT_VERSION = "v7-2026-09-04"
 
 
+def _model_id() -> str:
+    """Aktuell konfiguriertes Modell — Bestandteil des Cache-Schluessels."""
+    provider = (os.getenv("LLM_PROVIDER") or "ollama").lower().strip()
+    if provider == "ollama":
+        return "ollama:" + os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+    if provider == "anthropic":
+        return "anthropic:" + os.getenv("CLAUDE_MODEL", "claude-haiku-4-5")
+    if provider == "google":
+        return "google:" + (os.getenv("GOOGLE_MODEL")
+                            or os.getenv("OPENAI_MODEL", "gemini-2.5-flash"))
+    return provider + ":" + os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+
 def reg_hash(reg: dict, language: str, law_text_hash: str | None) -> str:
     """Reg-Schluessel aus Kriterien, Prompt-Stand, Sprache und Gesetzesstand.
 
@@ -227,8 +240,14 @@ def reg_hash(reg: dict, language: str, law_text_hash: str | None) -> str:
     verfaellt und wird einmalig neu formuliert. Liegt kein Text vor (Quelle
     nicht abrufbar, `None`), traegt der Schluessel den Platzhalter '-'; das
     allein verwirft aber nichts, siehe `_cache_hit`.
+
+    Das **Modell** gehoert ebenfalls in den Schluessel: ein Wechsel (etwa von
+    gemini-2.5-flash-lite auf 3.5) formuliert anders. Ohne diesen Bestandteil
+    stuenden im selben Ergebnis Begruendungen zweier Modelle nebeneinander,
+    und die zugesagte Wortstabilitaet waere nur scheinbar gegeben.
     """
-    raw = f"{reg['criteria']}|{_PROMPT_VERSION}|{language}|{law_text_hash or '-'}"
+    raw = (f"{reg['criteria']}|{_PROMPT_VERSION}|{language}|"
+           f"{law_text_hash or '-'}|{_model_id()}")
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
