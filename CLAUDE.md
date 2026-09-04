@@ -223,7 +223,7 @@ git push origin rollback-2026-04-21
 | Variable | Wert |
 |---|---|
 | `LLM_PROVIDER` | `google` |
-| `OPENAI_MODEL` | `gemini-2.5-flash-lite` (wird im google-Pfad als Modellname genutzt) |
+| `OPENAI_MODEL` | `gemini-3.5-flash-lite` (wird im google-Pfad als Modellname genutzt) |
 | `OPENAI_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai/` (im google-Code-Pfad **ignoriert**, dort ist Base-URL hardcoded auf `…/v1beta`) |
 | `OPENAI_API_KEY` | Google-AI-Studio-Key (`AQ.…`, 53 Zeichen) — wird vom google-Pfad als Fallback gelesen, falls `GOOGLE_API_KEY` fehlt (`llm.py:315`) |
 | `LLM_CONCURRENCY` | `8` |
@@ -233,38 +233,42 @@ git push origin rollback-2026-04-21
 
 **Tarif:** Paid-Tier (Google Billing aktiv, `serviceTier: "standard"` in der API-Response). NICHT free.
 
-**Verifizierte Kosten** (Stand 2026-09-04, am Live-Modell nachgemessen)
+**Verifizierte Kosten** (Stand 2026-09-04, kompletter Durchlauf nachgemessen)
 
-Gemessen mit `countTokens` (Eingabe, exakt) und echten `generateContent`-Aufrufen
-(Ausgabe) gegen `gemini-2.5-flash-lite`, Live-Konfiguration `FULLTEXT_MAX_CHARS=25000`,
-Referenzprofil 1.200 Beschaeftigte / 80 Mio. Umsatz / Textil.
+Am 2026-09-04 von `gemini-2.5-flash-lite` auf **`gemini-3.5-flash-lite`** gewechselt.
+Anlass: Google liefert 2.5-flash-lite an neue API-Schluessel nicht mehr aus
+("no longer available to new users") — der noetige Schluesselwechsel erzwang den
+Modellwechsel. Vorher an drei Regulierungen gegengeprueft: gleiche Urteile,
+gleicher Tokenverbrauch, **keine Denk-Token**.
 
 | Metrik | Wert |
 |---|---|
 | Regulierungen gesamt | 20 |
-| davon ohne LLM entschieden (Textbausteine) | **6** (CSRD, CSRD_DE, CSR-RUG, TaxonomieVO, WhistleblowerRL, HinSchG) |
-| tatsaechliche LLM-Aufrufe je Durchlauf | **14** |
-| Eingabe-Token gesamt | 91.672 (rund 7.000 je Aufruf bei vollem 25k-Kontext) |
-| Ausgabe-Token gesamt | rund 2.100 (rund 149 je Aufruf) |
-| Denk-Token | **0** — Flash-Lite denkt nicht mit, keine versteckten Kosten |
-| Preise (09/2026) | 0,10 USD je 1 Mio. Eingabe, 0,40 USD je 1 Mio. Ausgabe |
-| **Kosten je Durchlauf** | **rund 1,0 US-Cent** (0,0092 USD Eingabe + 0,0008 USD Ausgabe) |
-| 100 Durchlaeufe | rund 1 USD |
-| 1.000 Durchlaeufe | rund 10 USD |
+| davon ohne LLM entschieden (Textbausteine) | 6 |
+| LLM-Aufrufe je Durchlauf | 14 |
+| Eingabe-Token | 93.533 |
+| Ausgabe-Token | 1.885 |
+| Denk-Token | **0** |
+| Preise (09/2026, Paid-Tier) | 0,30 USD je 1 Mio. Eingabe · 2,50 USD je 1 Mio. Ausgabe |
+| **Kosten je Durchlauf** | **3,3 US-Cent** |
+| 100 Durchlaeufe | rund 3,30 USD |
 
-Die Eingabe macht **92 % der Kosten** aus — der Hebel liegt also im Kontext, nicht in der
-Antwortlaenge. `FULLTEXT_MAX_CHARS` wirkt daher fast linear auf den Preis.
+Vorher mit 2.5-flash-lite: 1,0 ct. Der Anstieg kommt allein vom Preis des neueren
+Modells, nicht von hoeherem Verbrauch. Die Eingabe traegt **93 %** der Kosten —
+der Hebel ist `FULLTEXT_MAX_CHARS`, nicht die Antwortlaenge.
 
-Nicht enthalten:
-- **Wiederholte Laeufe kosten nichts**, solange Profil und Gesetzesstand gleich bleiben
-  (globaler Cache, siehe Abschnitt Begruendungen).
-- **KI-Autofill** ist ein eigener, zusaetzlicher Aufruf je Nutzung.
-- **Watchdog** ruft das LLM nur, wenn sich ein Gesetzestext tatsaechlich geaendert hat.
-- Seltene Wiederholungen nach Fehlern (Retry) kommen oben drauf.
+**Qualitaetsgewinn durch 3.5:** Zwei fruehere Fehlurteile sind weg. LkSG folgerte
+aus "900 Inlands-Arbeitnehmer unterschreiten die 1.000er-Schwelle" frueher ein "ja";
+MinRohSorgG erfand fuer ein Textilprofil Importe von Zinn/Tantal/Wolfram/Gold. Beide
+urteilen jetzt korrekt mit "nein".
 
-Der frueher hier dokumentierte Wert von 0,7 ¢ (Stand 05/2026) galt fuer 22 Regulierungen,
-zu denen EUR-Lex damals wegen des Bot-Schutzes teils gar keinen Volltext lieferte — die
-Aufrufe waren also kuerzer und die Ergebnisse schwaecher.
+Nicht enthalten: wiederholte Laeufe kosten nichts (Cache), KI-Autofill ist ein eigener
+Aufruf, der Watchdog ruft das LLM nur bei tatsaechlicher Textaenderung.
+
+**Wichtig bei einem Modellwechsel:** Das Modell steckt seit 2026-09-04 im
+Cache-Schluessel (`llm._model_id`). Ein Wechsel verwirft die gespeicherten
+Begruendungen also bewusst und laesst sie einmalig neu formulieren — sonst stuenden
+Texte zweier Modelle nebeneinander.
 
 Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER` und Modell ändern → Bereitstellen.
 
