@@ -2605,26 +2605,28 @@ COUPLING_FACTS: dict[str, dict[str, str]] = {
     "csrd_drittland": {
         "de": "Die oberste Muttergesellschaft sitzt außerhalb der EU und der Nettoumsatz in der "
               "Union beträgt {revenue_eu} (Schwelle des Art. 40a Bilanzrichtlinie: mehr als "
-              "450 Mio. EUR); ob eine EU-Tochter oder Zweigniederlassung die zusätzlich nötigen "
-              "200 Mio. EUR erreicht, geht aus dem Profil nicht hervor.",
+              "450 Mio. EUR); ob zusätzlich eine EU-Tochter als großes Unternehmen gilt oder eine "
+              "Zweigniederlassung mehr als 200 Mio. EUR Umsatz erzielt, geht aus dem Profil "
+              "nicht hervor.",
         "en": "The ultimate parent is established outside the EU and net turnover in the Union is "
               "{revenue_eu} (threshold of Art. 40a of the Accounting Directive: more than EUR 450 "
-              "million); whether an EU subsidiary or branch reaches the additionally required "
-              "EUR 200 million is not stated in the profile.",
+              "million); whether an EU subsidiary additionally qualifies as a large undertaking, or "
+              "a branch exceeds EUR 200 million in turnover, is not stated in the profile.",
         "es": "La sociedad matriz última tiene su sede fuera de la UE y la cifra neta de negocios "
               "en la Unión es de {revenue_eu} (umbral del art. 40a de la Directiva contable: más "
-              "de 450 millones EUR); el perfil no indica si una filial o sucursal en la UE alcanza "
-              "los 200 millones EUR adicionales exigidos.",
+              "de 450 millones EUR); el perfil no indica si además una filial en la UE es una gran "
+              "empresa o si una sucursal supera los 200 millones EUR de cifra de negocios.",
         "fr": "La société mère ultime est établie hors de l'UE et le chiffre d'affaires net réalisé "
               "dans l'Union s'élève à {revenue_eu} (seuil de l'art. 40a de la directive comptable : "
-              "plus de 450 millions EUR) ; le profil n'indique pas si une filiale ou succursale de "
-              "l'UE atteint les 200 millions EUR supplémentaires requis.",
+              "plus de 450 millions EUR) ; le profil n'indique pas si une filiale de l'UE est en outre "
+              "une grande entreprise ni si une succursale dépasse 200 millions EUR de chiffre "
+              "d'affaires.",
         "it": "La capogruppo ha sede fuori dall'UE e i ricavi netti realizzati nell'Unione "
               "ammontano a {revenue_eu} (soglia dell'art. 40a della direttiva contabile: più di "
-              "450 milioni di EUR); dal profilo non risulta se una controllata o succursale UE "
-              "raggiunga i 200 milioni di EUR ulteriormente richiesti.",
+              "450 milioni di EUR); dal profilo non risulta se una controllata UE sia inoltre una "
+              "grande impresa né se una succursale superi i 200 milioni di EUR di ricavi.",
         "zh": "最终母公司设在欧盟境外，在欧盟境内的净营业额为 {revenue_eu}（《会计指令》第 40a 条门槛：超过 4.5 亿欧元）；"
-              "档案中未说明是否有欧盟子公司或分支机构达到另需的 2 亿欧元。",
+              "档案中未说明欧盟子公司是否另属大型企业，或分支机构营业额是否超过 2 亿欧元。",
     },
     # Altprofile und Nutzer, die den EU-Umsatz nicht angeben: Art. 40a stellt
     # auf den Unionsumsatz ab, im Profil steht nur der weltweite. Der Fall wird

@@ -4,7 +4,7 @@ Ausfuehren:  ./.venv/Scripts/python.exe test_lawparse.py
              ./.venv/Scripts/python.exe test_lawparse.py --keep   (Cache behalten)
 
 Die Test-DB `data/esg_lawparse_test.db` wird standardmaessig VERWORFEN und neu
-aufgebaut: alle 20 Quellen werden frisch geladen. Nur so faellt auf, wenn eine
+aufgebaut: alle Quellen werden frisch geladen. Nur so faellt auf, wenn eine
 `text_url` wieder auf eine Inhaltsverzeichnis- oder Portalseite zeigt — ein
 mitgeschleppter Cache aus einem frueheren Lauf wuerde genau das verdecken.
 Ein voller Lauf dauert dadurch rund eine Minute. Mit `--keep` bleibt die Test-DB
@@ -14,7 +14,7 @@ Die Produktiv-DB `data/esg.db` wird nie beschrieben (`data/` steht in
 .gitignore).
 
 Abnahmekriterien:
-  * jede der 20 Quellen liefert echten Volltext (Mindestlaenge + Artikelstruktur),
+  * jede Quelle liefert echten Volltext (Mindestlaenge + Artikelstruktur),
   * die fuenf reparierten Quellen liefern nachweislich den RICHTIGEN Rechtsakt,
   * fuer CSDDD, CSRD und EUDR enthaelt der gebaute Kontext den
     Anwendungsbereichs-Artikel, und die Gesamtlaenge bleibt unter dem Budget.
