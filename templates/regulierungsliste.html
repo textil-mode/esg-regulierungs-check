@@ -57,7 +57,7 @@
           </td>
           <td>
             <a href="{{ row.url }}" target="_blank" rel="noopener" class="source-link">
-              {{ t("open_source", lang) }}
+              {{ row.url_label or t("open_source", lang) }}
             </a>
             <div class="guide-stand">
               {{ t("stand_label", lang) }}: {{ row.stand }}{% if row.stand_draft %} ({{ row.stand_draft }}){% endif %}

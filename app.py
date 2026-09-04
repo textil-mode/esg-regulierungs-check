@@ -738,6 +738,9 @@ def regulations_list():
             "full_name": reg.get("full_name") or reg["name"],
             "scope": reg.get("scope") or "",
             "url": reg["url"],
+            # Nur dort gesetzt, wo "Quelle oeffnen" zu wenig sagt (Entwurfs-PDF).
+            "url_label": (t(reg["url_note_key"], lang)
+                          if reg.get("url_note_key") else ""),
             "key_article": reg.get("key_article") or "",
             "stand": published_for(reg["key"]),
             # Uebersetztes "Entwurf" statt eines deutschen Freitexts im Datum.

@@ -18,9 +18,9 @@ REGULATIONS = [
         "nr": 1,
         "key": "CSDDD",
         "relevant_fields": ["employees", "revenue_eur", "group_role", "legal_form", "sites"],
-        "name": "CSDDD",
+        "name": "CSDDD – EU-Lieferkettenrichtlinie",
         "full_name": "Richtlinie (EU) 2024/1760 - Sorgfaltspflichten von Unternehmen im Hinblick auf Nachhaltigkeit",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1760",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32024L1760&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024L1760",
         "scope": "EU",
         # Stand: konsolidierte Fassung 02024L1760 vom 18.03.2026, Art. 2 und
@@ -49,7 +49,7 @@ REGULATIONS = [
         "nr": 2,
         "key": "LkSG",
         "relevant_fields": ["employees_de", "sites", "group_role"],
-        "name": "LkSG",
+        "name": "LkSG – deutsches Lieferkettengesetz",
         "full_name": "Lieferkettensorgfaltspflichtengesetz",
         # Bis 09/2026 zeigten beide URLs auf die BAFA-Uebersichtsseite — ein
         # Pressetext ohne § 1. Jetzt der amtliche Volltext.
@@ -72,9 +72,9 @@ REGULATIONS = [
         # `value_chain_roles`, weil Art. 1 Marktteilnehmer UND Haendler erfasst.
         "relevant_fields": ["product_categories", "materials", "value_chain_roles",
                             "eu_importer", "branch"],
-        "name": "EUDR",
+        "name": "EUDR – EU-Entwaldungsverordnung",
         "full_name": "Verordnung (EU) 2023/1115 über entwaldungsfreie Lieferketten",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R1115",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32023R1115&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02023R1115",
         "scope": "EU",
         "criteria": (
@@ -90,7 +90,7 @@ REGULATIONS = [
         "key": "FLR",
         "relevant_fields": ["product_categories", "materials", "value_chain_roles",
                             "eu_importer", "branch"],
-        "name": "FLR (Zwangsarbeitsverordnung)",
+        "name": "FLR – EU-Zwangsarbeitsverordnung",
         "full_name": "Verordnung (EU) 2024/3015 - Verbot von in Zwangsarbeit hergestellten Produkten",
         # ELI-Form bewusst beibehalten: zu 2024/3015 gibt es (Stand 09/2026)
         # keine konsolidierte Fassung, der Ursprungsrechtsakt IST der geltende
@@ -98,7 +98,7 @@ REGULATIONS = [
         # EU-Quellen zeigen auf die datumslose konsolidierte CELEX-ID, sonst
         # lieferte der Abruf dauerhaft die Ursprungsfassung — bei der EUDR waere
         # das der Stand VOR den beiden Verschiebungen gewesen.
-        "url": "https://eur-lex.europa.eu/eli/reg/2024/3015/oj",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32024R3015&locale=de",
         "text_url": "https://eur-lex.europa.eu/eli/reg/2024/3015/oj",
         "scope": "EU",
         "criteria": (
@@ -112,9 +112,9 @@ REGULATIONS = [
         "nr": 5,
         "key": "CSRD",
         "relevant_fields": ["employees", "revenue_eur", "listed", "group_role"],
-        "name": "CSRD",
+        "name": "CSRD – EU-Nachhaltigkeitsberichtsrichtlinie",
         "full_name": "Richtlinie (EU) 2022/2464 - Nachhaltigkeitsberichterstattung",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022L2464&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02022L2464",
         "scope": "EU",
         # Stand: Art. 19a Abs. 1, Art. 29a Abs. 1 und Art. 40a Abs. 1 der
@@ -138,9 +138,16 @@ REGULATIONS = [
         "nr": 6,
         "key": "CSRD_DE",
         "relevant_fields": ["employees", "revenue_eur", "listed", "group_role"],
-        "name": "CSRD-Umsetzungsgesetz (DE)",
+        "name": "CSRD-UmsG – deutsches CSRD-Umsetzungsgesetz",
         "full_name": "Gesetz zur Umsetzung der Richtlinie (EU) 2022/2464",
+        # Das Gesetz ist noch nicht verkuendet (Stand 09/2026: nach der
+        # Anhoerung vom 13.04.2026 weiter im Rechtsausschuss). Amtliche
+        # Fundstelle ist deshalb der Regierungsentwurf als Drucksache.
+        # `url_note_key` beschriftet den Link, damit klar ist, was einen
+        # erwartet - eine 1,5-MB-PDF ohne Sprungmarke ist sonst eine
+        # Ueberraschung.
         "url": "https://dserver.bundestag.de/btd/21/018/2101857.pdf",
+        "url_note_key": "src_note_csrd_de",
         "scope": "DE",
         "criteria": (
             "Deutsche Umsetzung der CSRD; gilt für in Deutschland ansässige große Unternehmen und "
@@ -154,9 +161,9 @@ REGULATIONS = [
         "relevant_fields": [
             "employees", "revenue_eur", "balance_sheet_eur", "listed", "legal_form",
         ],
-        "name": "NFRD",
+        "name": "NFRD – EU-Richtlinie zur nichtfinanziellen Berichterstattung",
         "full_name": "Richtlinie 2014/95/EU - nichtfinanzielle Berichterstattung",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02014L0095",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32014L0095&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02014L0095",
         "scope": "EU",
         "criteria": (
@@ -172,7 +179,7 @@ REGULATIONS = [
         # Genau die Felder, die `csr_rug_status()` auswertet — sonst wandern
         # Aenderungen an bedeutungslosen Feldern in den Cache-Schluessel.
         "relevant_fields": ["employees", "listed", "legal_form", "group_role", "branch"],
-        "name": "CSR-RUG",
+        "name": "CSR-RUG – CSR-Richtlinie-Umsetzungsgesetz",
         "full_name": "Gesetz zur Stärkung der nichtfinanziellen Berichterstattung",
         # Der BGBl.-Jahrgang 2017 liegt nur im JS-Viewer von bgbl.de und ist
         # maschinell nicht abrufbar (die alte URL lieferte die Portal-Startseite,
@@ -203,9 +210,9 @@ REGULATIONS = [
         "nr": 9,
         "key": "TaxonomieVO",
         "relevant_fields": ["employees", "revenue_eur", "listed", "group_role", "branch"],
-        "name": "Taxonomie-Verordnung",
+        "name": "Taxonomie-VO – EU-Klassifikation nachhaltiger Tätigkeiten",
         "full_name": "Verordnung (EU) 2020/852 - Rahmen für nachhaltige Investitionen",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02020R0852",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32020R0852&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02020R0852",
         "scope": "EU",
         "criteria": (
@@ -219,9 +226,9 @@ REGULATIONS = [
         "nr": 10,
         "key": "SFDR",
         "relevant_fields": ["branch"],
-        "name": "SFDR",
+        "name": "SFDR – EU-Offenlegungsverordnung",
         "full_name": "Verordnung (EU) 2019/2088 - nachhaltigkeitsbezogene Offenlegungspflichten",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019R2088",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32019R2088&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019R2088",
         "scope": "EU",
         "criteria": (
@@ -235,7 +242,7 @@ REGULATIONS = [
         "nr": 11,
         "key": "ESGRatingVO",
         "relevant_fields": ["branch"],
-        "name": "ESG Rating VO",
+        "name": "ESG-Rating-VO – EU-Regeln für ESG-Ratinganbieter",
         "full_name": "Verordnung (EU) 2024/3005 - ESG-Ratings",
         # Zu dieser Verordnung fuehrt EUR-Lex KEINE konsolidierte Fassung: die
         # datumslose ID `02024R3005` antwortet mit "The requested document does
@@ -243,7 +250,7 @@ REGULATIONS = [
         # 02.09.2026). Deshalb steht hier der Ursprungsrechtsakt `32024R3005` —
         # mangels Aenderungen ist er zugleich der geltende Text. `_cellar_text`
         # behandelt eine `3…`-ID direkt als gewuenschte Fassung und warnt nicht.
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R3005",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32024R3005&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R3005",
         "scope": "EU",
         "criteria": (
@@ -256,9 +263,9 @@ REGULATIONS = [
         "nr": 12,
         "key": "WhistleblowerRL",
         "relevant_fields": ["employees_de", "branch"],
-        "name": "Whistleblower-Richtlinie",
+        "name": "Whistleblower-Richtlinie – EU-Hinweisgeberschutz",
         "full_name": "Richtlinie (EU) 2019/1937 - Schutz von Hinweisgebern",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32019L1937&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937",
         "scope": "EU",
         "criteria": (
@@ -271,7 +278,7 @@ REGULATIONS = [
         "nr": 13,
         "key": "HinSchG",
         "relevant_fields": ["employees_de", "branch"],
-        "name": "HinSchG",
+        "name": "HinSchG – deutsches Hinweisgeberschutzgesetz",
         "full_name": "Hinweisgeberschutzgesetz",
         # Die Verzeichnis-Seite (…/hinschg/) liefert nur das Inhaltsverzeichnis
         # (2 365 Zeichen). Der Volltext liegt auf der BJNR-Seite.
@@ -288,9 +295,9 @@ REGULATIONS = [
         "nr": 14,
         "key": "RightToRepair",
         "relevant_fields": ["product_categories", "branch", "eu_importer"],
-        "name": "Right to Repair",
+        "name": "Right to Repair – EU-Reparaturrichtlinie",
         "full_name": "Richtlinie (EU) 2024/1799 - Reparatur von Waren",
-        "url": "https://eur-lex.europa.eu/eli/dir/2024/1799/oj",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32024L1799&locale=de",
         "text_url": "https://eur-lex.europa.eu/eli/dir/2024/1799/oj",
         "scope": "EU",
         "criteria": (
@@ -307,9 +314,9 @@ REGULATIONS = [
         # (u. a. besorgniserregende chemische Ausruestungen).
         "relevant_fields": ["product_categories", "materials", "value_chain_roles",
                             "branch", "eu_importer"],
-        "name": "Ökodesign-VO",
+        "name": "Ökodesign-VO (ESPR) – EU-Verordnung für nachhaltige Produkte",
         "full_name": "Verordnung (EU) 2024/1781 - nachhaltige Produkte (ESPR)",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1781",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32024R1781&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1781",
         "scope": "EU",
         "criteria": (
@@ -326,7 +333,7 @@ REGULATIONS = [
             "employees", "revenue_eur", "balance_sheet_eur",
             "product_categories", "value_chain_roles", "branch",
         ],
-        "name": "Vernichtungsverbot unverkaufter Konsumgüter",
+        "name": "Vernichtungsverbot – unverkaufte Kleidung und Schuhe",
         "full_name": (
             "Delegierte Verordnung (EU) 2026/296 - Ausnahmen vom Verbot der Vernichtung "
             "unverkaufter Verbraucherprodukte (zur Ökodesign-Verordnung (EU) 2024/1781)"
@@ -336,7 +343,7 @@ REGULATIONS = [
         # die `fetcher._cellar_text` direkt als gewuenschte Fassung behandelt —
         # wie bei der ESG-Rating-VO (32024R3005). Geprueft am 02.09.2026:
         # publications.europa.eu/resource/celex/32026R0296 liefert den Volltext.
-        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32026R0296",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32026R0296&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32026R0296",
         "scope": "EU",
         # Alle Angaben am Volltext geprueft (02.09.2026):
@@ -377,9 +384,9 @@ REGULATIONS = [
         "key": "PPWR",
         "relevant_fields": ["product_categories", "value_chain_roles",
                             "branch", "eu_importer"],
-        "name": "PPWR",
+        "name": "PPWR – EU-Verpackungsverordnung",
         "full_name": "Verordnung (EU) 2025/40 - Verpackungen und Verpackungsabfälle",
-        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02025R0040",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32025R0040&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02025R0040",
         "scope": "EU",
         "criteria": (
@@ -393,7 +400,7 @@ REGULATIONS = [
         "nr": 18,
         "key": "MinRohSorgG",
         "relevant_fields": ["product_categories", "eu_importer", "sites"],
-        "name": "MinRohSorgG",
+        "name": "MinRohSorgG – Sorgfaltspflichten für mineralische Rohstoffe",
         "full_name": "Mineralische-Rohstoffe-Sorgfaltspflichtengesetz",
         # Wie beim HinSchG: die Verzeichnis-Seite liefert nur 767 Zeichen.
         "url": "https://www.gesetze-im-internet.de/minrohsorgg/BJNR086410020.html",
@@ -409,7 +416,7 @@ REGULATIONS = [
         "nr": 19,
         "key": "EmpCo",
         "relevant_fields": ["b2c", "env_claims", "value_chain_roles"],
-        "name": "EmpCo",
+        "name": "EmpCo – EU-Greenwashing-Richtlinie (UWG)",
         "full_name": "Richtlinie (EU) 2024/825 - Stärkung der Verbraucher für den ökologischen Wandel (UWG-Umsetzung DE)",
         "url": "https://www.gesetze-im-internet.de/uwg_2004/BJNR141400004.html",
         "text_url": "https://www.gesetze-im-internet.de/uwg_2004/BJNR141400004.html",
@@ -427,9 +434,9 @@ REGULATIONS = [
         # Kein "(Entwurf)" im Namen: der Zusatz stuende auch in der englischen
         # und franzoesischen Tabelle auf Deutsch. Den Entwurfscharakter tragen
         # der Status-Badge und der Stand-Hinweis, beide uebersetzt.
-        "name": "Green Claims Directive",
+        "name": "Green Claims – EU-Richtlinie zu Umweltaussagen (Entwurf)",
         "full_name": "Vorschlag Richtlinie - Begründung/Kommunikation ausdrücklicher Umweltaussagen",
-        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:52023PC0166",
+        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A52023PC0166&locale=de",
         "text_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:52023PC0166",
         "scope": "EU",
         "criteria": (
@@ -480,7 +487,9 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
          "url": "https://finance.ec.europa.eu/regulation-and-supervision/financial-services-legislation/implementing-and-delegated-acts/corporate-sustainability-reporting-directive_en"},
     ],
     "CSRD_DE": [
-        {"name": "IDW – Nachhaltigkeitsberichterstattung (CSRD/ESRS)",
+        {"name": "DRSC – Stand des CSRD-Umsetzungsgesetzes (Anhörung und Änderungsantrag)",
+         "url": "https://www.drsc.de/news/csrd-umsetzungsgesetz-oeffentliche-anhoerung-aenderungsantrag/"},
+        {"name": "IDW – Themenübersicht Nachhaltigkeitsberichterstattung (CSRD/ESRS)",
          "url": "https://www.idw.de/idw/themen-branchen/nachhaltigkeit/"},
     ],
     "NFRD": [

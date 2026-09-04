@@ -216,7 +216,7 @@ def profile_hash(profile: dict, reg: dict) -> str:
 # v6: Profilschema erweitert (Rolle in der Wertschoepfungskette, Materialien)
 # und Produktkategorien vollstaendig ausgetauscht — alte Begruendungen
 # beruhen auf Angaben, die es so nicht mehr gibt.
-_PROMPT_VERSION = "v6-2026-09-02"
+_PROMPT_VERSION = "v7-2026-09-04"
 
 
 def reg_hash(reg: dict, language: str, law_text_hash: str | None) -> str:

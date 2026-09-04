@@ -15,6 +15,11 @@ Besonderheiten, die das Skript kennt:
     403 bei leerem Body). Das ist KEIN kaputter Link. Solche URLs werden ueber
     ``publications.europa.eu/resource/celex/<CELEX>`` gegengeprueft — genau den
     Weg nutzt auch ``fetcher._cellar_text``.
+  * **Datumslose konsolidierte CELEX-IDs** (``02024L1760``) beantwortet EUR-Lex
+    mit HTTP 404 — auch im Browser. Sie stehen darum nur in ``text_url``, wo die
+    Anwendung sie ueber SPARQL aufloest; geprueft wird deshalb ebenfalls ueber
+    Cellar statt per Direktabruf. Die Anzeige-URLs (``url``) verwenden dagegen
+    die Ursprungsakt-ID (``32024L1760``) mit ``&locale=de``.
   * Behoerdenseiten liefern "Seite nicht gefunden" haeufig mit HTTP 200 aus.
     Deshalb wird der Seitentext zusaetzlich auf Fehlerfloskeln abgeklopft.
 
@@ -170,6 +175,21 @@ def check(url: str, where: str, label: str, client: httpx.Client) -> Result:
                           f"EUR-Lex-Bot-Schutz (HTTP {resp.status_code}). {note}")
         return Result(url, where, label, "UNKNOWN", resp.status_code, final,
                       ctype, length, "EUR-Lex-Bot-Schutz, kein CELEX ableitbar")
+
+    # --- datumslose konsolidierte CELEX-ID ----------------------------------
+    # `?uri=CELEX:02024L1760` beantwortet EUR-Lex mit 404 ("The requested
+    # document does not exist") - im Browser wie hier. Genau deshalb steht
+    # diese Form nur noch in `text_url`: die Anwendung ruft sie nie direkt ab,
+    # sondern loest sie ueber SPARQL auf und liest den Text aus Cellar. Hier
+    # wird derselbe Weg geprueft; der Direktabruf kann gar nicht gelingen.
+    if is_eurlex and resp.status_code >= 400:
+        celex = _celex_of(url)
+        if celex and UNDATED_CONSOLIDATED.match(celex):
+            ok, note = _check_cellar(celex, client)
+            return Result(url, where, label, "OK_VIA_CELLAR" if ok else "BROKEN",
+                          resp.status_code, final, ctype, length,
+                          f"datumslose konsolidierte Fassung (HTTP "
+                          f"{resp.status_code} bei Direktabruf ist hier normal). {note}")
 
     if resp.status_code >= 400:
         return Result(url, where, label, "BROKEN", resp.status_code, final,

@@ -1,10 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- 1. Unternehmensdaten -->
+<!-- 1. Unternehmensdaten (einklappbar) -->
+{# Liegt bereits ein Ergebnis vor, startet der Abschnitt zugeklappt: sonst
+   steht das lange Formular ueber dem Befund und der Eindruck entsteht, die
+   Pruefung haette nichts bewirkt. Ohne Ergebnis bleibt er offen, damit ein
+   neuer Nutzer sofort das Formular sieht. Bewusst natives <details>: kein
+   Skript, kein Nachladen, also auch kein Springen beim Aufklappen. Auch
+   zugeklappt bleiben alle Felder im DOM und werden mitgesendet. #}
 <div class="section section-box">
-  <h2>{{ t("section_company_data", lang) }}</h2>
-  <p style="font-size:13px;color:#5A5A5A;margin-bottom:16px;">{{ t("section_company_hint", lang) }}</p>
+  <details class="company-details"{% if not cards_html %} open{% endif %}>
+    <summary class="company-summary">
+      <h2 style="margin:0;">{{ t("section_company_data", lang) }}</h2>
+      <span class="company-toggle-hint">{{ t("company_toggle_hint", lang) }}</span>
+    </summary>
+  <p style="font-size:13px;color:#5A5A5A;margin:16px 0;">{{ t("section_company_hint", lang) }}</p>
 
   <div style="margin-bottom:18px;padding:12px 14px;background:#FFFFFF;border-left:3px solid #0070C0;">
     <button type="button" id="autofill-btn" class="btn btn-primary"
@@ -157,7 +167,32 @@
     <hr>
     <button type="submit" class="btn btn-primary">{{ t("btn_save_master", lang) }}</button>
   </form>
+  </details>
 </div>
+
+<style>
+  /* Einklappbarer Stammdaten-Abschnitt, textil+mode-CD (kein Framework). */
+  .company-details > summary {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    cursor: pointer; list-style: none; padding: 2px 0;
+  }
+  .company-details > summary::-webkit-details-marker { display: none; }
+  /* Eigenes Dreieck, damit es links vom Titel steht und die Farbe stimmt. */
+  .company-details > summary::before {
+    content: ""; flex: 0 0 auto; width: 0; height: 0; margin-top: 4px;
+    border-left: 7px solid #0F3750;
+    border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+  }
+  .company-details[open] > summary::before {
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 7px solid #0F3750; border-bottom: 0;
+  }
+  .company-details > summary:focus-visible { outline: 2px solid #0070C0; outline-offset: 2px; }
+  .company-toggle-hint { font-size: 13px; color: #5A5A5A; }
+  @media (max-width: 560px) {
+    .company-toggle-hint { flex-basis: 100%; margin-left: 19px; }
+  }
+</style>
 
 <!-- 2. Regulierungen prüfen -->
 <div class="section">

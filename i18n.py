@@ -461,6 +461,26 @@ UI: dict[str, dict[str, str]] = {
         "it": "I tuoi dati vengono salvati per account e precompilati al prossimo accesso.",
         "zh": "您的数据按账户保存,下次登录时自动填充。",
     },
+    # Der Stammdaten-Abschnitt ist einklappbar, sobald ein Ergebnis vorliegt.
+    # Ohne den Hinweis waere das Dreieck des <summary> die einzige Andeutung.
+    "company_toggle_hint": {
+        "de": "Zum Ein- und Ausklappen anklicken",
+        "en": "Click to expand or collapse",
+        "es": "Haga clic para desplegar o plegar",
+        "fr": "Cliquez pour déplier ou replier",
+        "it": "Fare clic per espandere o comprimere",
+        "zh": "点击展开或收起",
+    },
+    # Beschriftung fuer Quellenlinks, die keine Rechtsvorschrift, sondern ein
+    # Entwurfsdokument sind (CSRD-Umsetzungsgesetz, noch nicht verkuendet).
+    "src_note_csrd_de": {
+        "de": "Regierungsentwurf – BT-Drucksache 21/1857 (PDF, 1,5 MB)",
+        "en": "Government bill – Bundestag paper 21/1857 (PDF, 1.5 MB)",
+        "es": "Proyecto de ley del Gobierno – documento del Bundestag 21/1857 (PDF, 1,5 MB)",
+        "fr": "Projet de loi du gouvernement – document du Bundestag 21/1857 (PDF, 1,5 Mo)",
+        "it": "Disegno di legge del governo – documento del Bundestag 21/1857 (PDF, 1,5 MB)",
+        "zh": "联邦政府法案 – 联邦议院文件 21/1857（PDF，1.5 MB）",
+    },
     "ok_saved": {"de": "Gespeichert.", "en": "Saved.", "es": "Guardado.", "fr": "Enregistré.", "it": "Salvato.", "zh": "已保存。"},
     "section_check_regulations": {
         "de": "2. Regulierungen prüfen",
