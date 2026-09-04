@@ -634,8 +634,18 @@ async def _analyze_one(client: LLMClient, reg: dict, fulltext: str,
             err_low = last_error.lower()
             is_rate_limit = ("429" in last_error or "rate_limit" in err_low
                              or "resource_exhausted" in err_low or "quota" in err_low)
-            print(f"[llm] retry {key} attempt={attempt} ratelimit={is_rate_limit}: {last_error[:160]}",
+            # 503/UNAVAILABLE ist bei Google eine Lastspitze des Modells
+            # ("This model is currently experiencing high demand"). Am 04.09.2026
+            # war gemini-3.5-flash-lite darueber minutenlang nicht erreichbar.
+            # Kurze Abstaende helfen da nicht — wie beim Rate-Limit warten.
+            is_overload = ("503" in last_error or "unavailable" in err_low
+                           or "high demand" in err_low or "overloaded" in err_low)
+            print(f"[llm] retry {key} attempt={attempt} "
+                  f"ratelimit={is_rate_limit} ueberlastet={is_overload}: {last_error[:160]}",
                   flush=True)
+            if is_overload and not is_rate_limit:
+                await asyncio.sleep(min(15 * (attempt + 1), 90))
+                continue
             if is_rate_limit:
                 # Google sendet "retry in Xs" - parsen, sonst 60s default
                 import re as _re

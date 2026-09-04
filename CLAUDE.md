@@ -252,7 +252,7 @@ git push origin rollback-2026-04-21
 | Variable | Wert |
 |---|---|
 | `LLM_PROVIDER` | `google` |
-| `OPENAI_MODEL` | `gemini-3.5-flash-lite` (wird im google-Pfad als Modellname genutzt) |
+| `OPENAI_MODEL` | `gemini-3.1-flash-lite` (wird im google-Pfad als Modellname genutzt) |
 | `OPENAI_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai/` (im google-Code-Pfad **ignoriert**, dort ist Base-URL hardcoded auf `…/v1beta`) |
 | `OPENAI_API_KEY` | Google-AI-Studio-Key (`AQ.…`, 53 Zeichen) — wird vom google-Pfad als Fallback gelesen, falls `GOOGLE_API_KEY` fehlt (`llm.py:315`) |
 | `LLM_CONCURRENCY` | `8` |
@@ -293,6 +293,14 @@ urteilen jetzt korrekt mit "nein".
 
 Nicht enthalten: wiederholte Laeufe kosten nichts (Cache), KI-Autofill ist ein eigener
 Aufruf, der Watchdog ruft das LLM nur bei tatsaechlicher Textaenderung.
+
+**Modellwahl 04.09.2026:** Erst auf `gemini-3.5-flash-lite` umgestellt, dann noch am
+selben Tag auf **`gemini-3.1-flash-lite`** zurueck: 3.5 antwortete ueber mehrere Minuten
+durchgehend mit `503 UNAVAILABLE — This model is currently experiencing high demand`,
+waehrend 3.1 sofort lieferte. 3.1 ist zudem guenstiger (0,25/1,50 USD statt 0,30/2,50)
+— rund **2,6 ct je Durchlauf** statt 3,3 ct. Wer auf 3.5 zurueckwill, prueft vorher die
+Verfuegbarkeit; Umstellung mit `/root/esg_modellwechsel.sh <modellname>` auf dem VPS
+(setzt nur das Modell, Werte ueber `--env-file`, Ruecknahme bei Fehlstart).
 
 **Wichtig bei einem Modellwechsel:** Das Modell steckt seit 2026-09-04 im
 Cache-Schluessel (`llm._model_id`). Ein Wechsel verwirft die gespeicherten
