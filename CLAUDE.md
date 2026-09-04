@@ -233,15 +233,38 @@ git push origin rollback-2026-04-21
 
 **Tarif:** Paid-Tier (Google Billing aktiv, `serviceTier: "standard"` in der API-Response). NICHT free.
 
-**Verifizierte Kosten** (Stand 2026-05-07, Google Cloud Billing):
+**Verifizierte Kosten** (Stand 2026-09-04, am Live-Modell nachgemessen)
+
+Gemessen mit `countTokens` (Eingabe, exakt) und echten `generateContent`-Aufrufen
+(Ausgabe) gegen `gemini-2.5-flash-lite`, Live-Konfiguration `FULLTEXT_MAX_CHARS=25000`,
+Referenzprofil 1.200 Beschaeftigte / 80 Mio. Umsatz / Textil.
 
 | Metrik | Wert |
 |---|---|
-| Gesamtkosten seit Container-Start (30.04.2026) | **0,26 €** |
-| Erfolgreiche LLM-Calls in dem Zeitraum | 858 (25 Retries, 0 Failures) |
-| ≈ Durchläufe (858 / 22 Regs, Stand 05/2026) | ~39 |
-| **Kosten pro Durchlauf** | **≈ 0,7 ¢** (≈ 0,007 €) |
-| Hochrechnung 1 Jahr bei aktuellem Tempo | ~13–15 € |
+| Regulierungen gesamt | 20 |
+| davon ohne LLM entschieden (Textbausteine) | **6** (CSRD, CSRD_DE, CSR-RUG, TaxonomieVO, WhistleblowerRL, HinSchG) |
+| tatsaechliche LLM-Aufrufe je Durchlauf | **14** |
+| Eingabe-Token gesamt | 91.672 (rund 7.000 je Aufruf bei vollem 25k-Kontext) |
+| Ausgabe-Token gesamt | rund 2.100 (rund 149 je Aufruf) |
+| Denk-Token | **0** — Flash-Lite denkt nicht mit, keine versteckten Kosten |
+| Preise (09/2026) | 0,10 USD je 1 Mio. Eingabe, 0,40 USD je 1 Mio. Ausgabe |
+| **Kosten je Durchlauf** | **rund 1,0 US-Cent** (0,0092 USD Eingabe + 0,0008 USD Ausgabe) |
+| 100 Durchlaeufe | rund 1 USD |
+| 1.000 Durchlaeufe | rund 10 USD |
+
+Die Eingabe macht **92 % der Kosten** aus — der Hebel liegt also im Kontext, nicht in der
+Antwortlaenge. `FULLTEXT_MAX_CHARS` wirkt daher fast linear auf den Preis.
+
+Nicht enthalten:
+- **Wiederholte Laeufe kosten nichts**, solange Profil und Gesetzesstand gleich bleiben
+  (globaler Cache, siehe Abschnitt Begruendungen).
+- **KI-Autofill** ist ein eigener, zusaetzlicher Aufruf je Nutzung.
+- **Watchdog** ruft das LLM nur, wenn sich ein Gesetzestext tatsaechlich geaendert hat.
+- Seltene Wiederholungen nach Fehlern (Retry) kommen oben drauf.
+
+Der frueher hier dokumentierte Wert von 0,7 ¢ (Stand 05/2026) galt fuer 22 Regulierungen,
+zu denen EUR-Lex damals wegen des Bot-Schutzes teils gar keinen Volltext lieferte — die
+Aufrufe waren also kuerzer und die Ergebnisse schwaecher.
 
 Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER` und Modell ändern → Bereitstellen.
 
