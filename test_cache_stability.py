@@ -17,7 +17,7 @@ die Cache-Entscheidungen, kostet nichts und braucht keinen API-Key. Mit `--live`
 laufen echte Calls (Szenario 1 formuliert 16 Begruendungen, ca. 0,5 ct).
 
 Szenarien:
-  1. Erstlauf                      -> 20 Karten, nur die nicht-gekoppelten ans LLM
+  1. Erstlauf                      -> je Regulierung eine Karte, nur die nicht-gekoppelten ans LLM
   2. Gleiches Profil noch einmal   -> 0 neue Formulierungen, Texte byte-identisch
   3. Firmenname geaendert          -> 0 neue Formulierungen, Texte byte-identisch
   4. employees geaendert           -> nur Regs mit `employees` in relevant_fields
@@ -67,7 +67,7 @@ PROFILE = {
     "eu_importer": True,
     "legal_form": "GmbH",
     "group_role": "Eigenständig (kein Konzern)",
-    "sites": [{"type": "Hauptsitz", "location": "Deutschland", "count": 1}],
+    "sites": [{"type": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung", "location": "Deutschland", "count": 1}],
     "product_categories": ["Bekleidung"],
     "value_chain_roles": ["Hersteller", "Marke"],
     "materials": ["Baumwolle und andere Naturfasern"],
@@ -170,7 +170,7 @@ def main() -> int:
 
     # --- 1. Erstlauf -------------------------------------------------------
     res1, calls1 = run(uid, PROFILE)
-    check("1 Erstlauf: 20 Karten", len(res1) == len(REGULATIONS), f"{len(res1)}/{len(REGULATIONS)}")
+    check("1 Erstlauf: eine Karte je Regulierung", len(res1) == len(REGULATIONS), f"{len(res1)}/{len(REGULATIONS)}")
     check("1 Erstlauf: keine Fehlerkarte",
           all(r.get("applies") != "error" for r in res1.values()),
           ", ".join(k for k, r in res1.items() if r.get("applies") == "error") or "keine")

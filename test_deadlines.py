@@ -31,7 +31,7 @@ KLEINBETRIEB = {
     "b2c": True,
     "env_claims": True,
     "eu_importer": False,
-    "sites": [{"type": "Hauptsitz", "location": "Deutschland", "count": 35}],
+    "sites": [{"type": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung", "location": "Deutschland", "count": 35}],
     "product_categories": ["Bekleidung", "Schuhe"],
     "value_chain_roles": ["Hersteller", "Marke"],
     "materials": ["Baumwolle und andere Naturfasern"],
@@ -50,7 +50,7 @@ MITTELSTAND_1100 = {
     "b2c": True,
     "env_claims": True,
     "eu_importer": True,
-    "sites": [{"type": "Hauptsitz", "location": "Deutschland", "count": 1100}],
+    "sites": [{"type": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung", "location": "Deutschland", "count": 1100}],
     "product_categories": ["Bekleidung", "Schuhe"],
     "value_chain_roles": ["Hersteller", "Marke"],
     "materials": ["Baumwolle und andere Naturfasern"],
@@ -69,7 +69,7 @@ GROSSKONZERN = {
     "b2c": True,
     "env_claims": True,
     "eu_importer": True,
-    "sites": [{"type": "Hauptsitz", "location": "Deutschland", "count": 6500}],
+    "sites": [{"type": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung", "location": "Deutschland", "count": 6500}],
     "product_categories": ["Bekleidung", "Schuhe"],
     "value_chain_roles": ["Hersteller", "Marke"],
     "materials": ["Baumwolle und andere Naturfasern"],
@@ -105,18 +105,11 @@ ERWARTET: list[tuple[str, dict, str, str]] = [
     ("HinSchG", GROSSKONZERN, "02.07.2023",
      "ueber 250 Beschaeftigte -> mit Inkrafttreten"),
 
-    ("WhistleblowerRL", KLEINBETRIEB, "17.12.2023", "Art. 26 Abs. 2"),
-    ("WhistleblowerRL", GROSSKONZERN, "17.12.2021", "Art. 26 Abs. 1"),
-
     # § 42 Abs. 1 Satz 2 HinSchG nimmt die Beschaeftigungsgeber des § 12 Abs. 3
-    # von der Verschiebung aus; Art. 8 Abs. 4 RL (EU) 2019/1937 nimmt dieselbe
-    # Gruppe vom Schwellenwert aus, den Art. 26 Abs. 2 allein verschiebt.
+    # von der Verschiebung aus.
     ("HinSchG", KLEIN_FINANZ, "02.07.2023",
      "20 MA, Finanzdienstleistungen -> keine Uebergangsfrist"),
-    ("WhistleblowerRL", KLEIN_FINANZ, "17.12.2021",
-     "20 MA, Finanzdienstleistungen -> Regelfrist"),
     ("HinSchG", KLEIN_VERSICHERUNG, "02.07.2023", "Versicherungen ebenso"),
-    ("WhistleblowerRL", KLEIN_VERSICHERUNG, "17.12.2021", "Versicherungen ebenso"),
 
     ("CSRD", KLEINBETRIEB, "01.01.2027", "neue Schwellen, kein Welle-1-Fall"),
     ("CSRD", MITTELSTAND_1100, "01.01.2027", "neue Schwellen, nicht boersennotiert"),
@@ -252,9 +245,7 @@ def test_hinweise_der_finanzfaelle(fehler: list[str]) -> None:
     print("\n[6] Hinweisschluessel der Finanz-Sonderfaelle")
     faelle = [
         ("HinSchG", KLEIN_FINANZ, "hinschg_finanz"),
-        ("WhistleblowerRL", KLEIN_FINANZ, "whistle_finanz"),
         ("HinSchG", KLEINBETRIEB, "hinschg_ab_50"),
-        ("WhistleblowerRL", KLEINBETRIEB, "whistle_ab_50"),
     ]
     for reg_key, profil, erwartet in faelle:
         ist = deadline_for(reg_key, profil)["hinweis"]

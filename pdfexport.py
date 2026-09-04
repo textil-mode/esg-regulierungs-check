@@ -198,7 +198,7 @@ def _page_furniture(canvas, doc, language: str, font: str) -> None:
     canvas.setFont(font, 7.5)
     canvas.setFillColor(MUTED)
     canvas.drawString(_MARGIN, y - 4.2 * mm,
-                      _clean(t("disclaimer", language), font))
+                      _clean(t("disclaimer_short", language), font))
     canvas.drawRightString(_PAGE_W - _MARGIN, y - 4.2 * mm,
                            f"{_clean(t('pdf_page', language), font)} {doc.page}")
     canvas.restoreState()
@@ -264,6 +264,9 @@ def _header_story(company: str, created: str, language: str, font: str,
     story.append(Paragraph(
         f'{_mk(t("pdf_created", language), font)}: {_mk(created, font)}',
         st["meta"]))
+    story.append(Spacer(1, 4 * mm))
+    story.append(Paragraph(_mk(t("pdf_disclaimer", language), font),
+                           st["meta"]))
     story.append(Spacer(1, 6 * mm))
     return story
 

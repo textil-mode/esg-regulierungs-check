@@ -30,12 +30,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "ESG 法规检查",
     },
     "app_subtitle": {
-        "de": "Prüfen Sie, welche ESG-/CSR-Regulierungen für Ihr Unternehmen gelten.",
-        "en": "Check which ESG/CSR regulations apply to your company.",
-        "es": "Comprueba qué regulaciones ESG/CSR se aplican a tu empresa.",
-        "fr": "Vérifiez quelles réglementations ESG/CSR s'appliquent à votre entreprise.",
-        "it": "Verifica quali normative ESG/CSR si applicano alla tua azienda.",
-        "zh": "查看哪些 ESG/CSR 法规适用于您的公司。",
+        "de": "Erhalten Sie einen ersten Überblick, welche ESG-Regulierungen für Ihr Unternehmen relevant sein könnten",
+        "en": "Get a first overview of which ESG regulations could be relevant for your company",
+        "es": "Obtenga una primera visión general de qué regulaciones ESG podrían ser relevantes para su empresa",
+        "fr": "Obtenez un premier aperçu des réglementations ESG qui pourraient être pertinentes pour votre entreprise",
+        "it": "Ottenga una prima panoramica delle normative ESG che potrebbero essere rilevanti per la sua azienda",
+        "zh": "先大致了解哪些 ESG 法规可能与贵公司相关",
     },
     "language_picker_label": {
         "de": "Sprache",
@@ -45,13 +45,59 @@ UI: dict[str, dict[str, str]] = {
         "it": "Lingua",
         "zh": "语言",
     },
-    "disclaimer": {
-        "de": "Alle Angaben ohne Gewähr.",
-        "en": "All information provided without guarantee.",
-        "es": "Toda la información se proporciona sin garantía.",
-        "fr": "Toutes les informations sont données sans garantie.",
-        "it": "Tutte le informazioni sono fornite senza garanzia.",
-        "zh": "所有信息均不作担保。",
+    # Haftungshinweis in drei Bausteinen: `disclaimer_lead` bleibt sichtbar,
+    # `disclaimer_body` und `disclaimer_contact` stehen im aufklappbaren Teil.
+    # So verdraengt der lange Text die Anmeldemaske nicht.
+    "disclaimer_lead": {
+        "de": "Hinweis: Der ESG-Regulierungs-Check dient ausschließlich der ersten Orientierung und gibt auf Grundlage der von Ihnen eingegebenen Unternehmensdaten einen unverbindlichen Überblick über möglicherweise relevante regulatorische Anforderungen.",
+        "en": "Note: The ESG Regulation Check serves solely as a first orientation and provides, on the basis of the company data you enter, a non-binding overview of regulatory requirements that may be relevant.",
+        "es": "Aviso: la Verificación de Regulaciones ESG sirve exclusivamente como primera orientación y ofrece, a partir de los datos de empresa que usted introduce, una visión general no vinculante de los requisitos regulatorios que podrían ser relevantes.",
+        "fr": "Remarque : la Vérification des Réglementations ESG sert uniquement de première orientation et fournit, sur la base des données d'entreprise que vous saisissez, un aperçu non contraignant des exigences réglementaires susceptibles d'être pertinentes.",
+        "it": "Nota: la Verifica delle Normative ESG serve esclusivamente come primo orientamento e fornisce, sulla base dei dati aziendali da lei inseriti, una panoramica non vincolante dei requisiti normativi che potrebbero essere rilevanti.",
+        "zh": "提示：ESG 法规检查仅用于初步定位，并根据您输入的企业数据，就可能相关的监管要求提供不具约束力的概览。",
+    },
+    "disclaimer_body": {
+        "de": "Die Ergebnisse stellen keine Rechtsberatung dar und ersetzen keine rechtliche oder fachliche Prüfung des Einzelfalls. Trotz sorgfältiger und regelmäßiger Aktualisierung übernimmt textil+mode keine Gewähr für die Vollständigkeit, Richtigkeit und Aktualität der bereitgestellten Informationen.",
+        "en": "The results do not constitute legal advice and do not replace a legal or expert examination of the individual case. Despite careful and regular updating, textil+mode accepts no liability for the completeness, accuracy and topicality of the information provided.",
+        "es": "Los resultados no constituyen asesoramiento jurídico ni sustituyen un examen jurídico o técnico del caso concreto. Pese a una actualización cuidadosa y periódica, textil+mode no asume garantía alguna por la integridad, exactitud y actualidad de la información facilitada.",
+        "fr": "Les résultats ne constituent pas un conseil juridique et ne remplacent pas un examen juridique ou technique du cas d'espèce. Malgré une actualisation soigneuse et régulière, textil+mode n'assume aucune garantie quant à l'exhaustivité, l'exactitude et l'actualité des informations fournies.",
+        "it": "I risultati non costituiscono consulenza legale e non sostituiscono un esame giuridico o tecnico del caso concreto. Nonostante un aggiornamento accurato e regolare, textil+mode non fornisce alcuna garanzia circa la completezza, la correttezza e l'attualità delle informazioni messe a disposizione.",
+        "zh": "本结果不构成法律咨询，也不能替代对个案的法律或专业审查。尽管进行了细致且定期的更新，textil+mode 对所提供信息的完整性、准确性和时效性不作担保。",
+    },
+    "disclaimer_contact": {
+        "de": "Sie haben Fragen zu einer Regulierung oder möchten die Betroffenheit Ihres Unternehmens vertieft prüfen? Wenden Sie sich gerne an das zuständige Team von textil+mode oder Ihres Mitgliedverbandes.",
+        "en": "Do you have questions about a regulation or would you like to examine your company's exposure in more depth? Please contact the responsible team at textil+mode or at your member association.",
+        "es": "¿Tiene preguntas sobre una regulación o desea examinar con más detalle la afectación de su empresa? Diríjase al equipo competente de textil+mode o de su asociación miembro.",
+        "fr": "Vous avez des questions sur une réglementation ou souhaitez examiner plus en profondeur la situation de votre entreprise ? Adressez-vous à l'équipe compétente de textil+mode ou de votre fédération membre.",
+        "it": "Ha domande su una normativa o desidera approfondire il coinvolgimento della sua azienda? Si rivolga al team competente di textil+mode o della sua associazione membro.",
+        "zh": "对某项法规有疑问，或希望更深入地评估贵公司的受影响程度？欢迎联系 textil+mode 或贵会员协会的相关团队。",
+    },
+    # Kurzform fuer die PDF-Fusszeile: dort steht der Hinweis auf JEDER Seite,
+    # der vollstaendige Text wuerde den Satzspiegel sprengen.
+    "disclaimer_short": {
+        "de": "Erstorientierung, keine Rechtsberatung; ohne Gewähr für Vollständigkeit und Aktualität.",
+        "en": "First orientation, not legal advice; no warranty as to completeness or topicality.",
+        "es": "Primera orientación, no asesoramiento jurídico; sin garantía de integridad ni actualidad.",
+        "fr": "Première orientation, pas un conseil juridique ; sans garantie d'exhaustivité ni d'actualité.",
+        "it": "Primo orientamento, non consulenza legale; senza garanzia di completezza e attualità.",
+        "zh": "初步定位，非法律咨询；不保证完整性与时效性。",
+    },
+    # Punkt 7 der Vorgabe: Satz am Anfang des PDF.
+    "pdf_disclaimer": {
+        "de": "Ergebnis dient der Erstorientierung und stellt keine Rechtsberatung dar.",
+        "en": "The result serves as a first orientation and does not constitute legal advice.",
+        "es": "El resultado sirve de primera orientación y no constituye asesoramiento jurídico.",
+        "fr": "Le résultat sert de première orientation et ne constitue pas un conseil juridique.",
+        "it": "Il risultato serve da primo orientamento e non costituisce consulenza legale.",
+        "zh": "本结果用于初步定位，不构成法律咨询。",
+    },
+    "disclaimer_more": {
+        "de": "Vollständigen Hinweis anzeigen",
+        "en": "Show full notice",
+        "es": "Mostrar el aviso completo",
+        "fr": "Afficher la mention complète",
+        "it": "Mostra l'avviso completo",
+        "zh": "显示完整提示",
     },
     "created_by": {
         "de": "© 2026 · Alle Rechte vorbehalten",
@@ -603,12 +649,28 @@ UI: dict[str, dict[str, str]] = {
         "zh": "对 LkSG(>1000 本国)和 HinSchG(≥50 本国)重要。",
     },
     "field_revenue": {
-        "de": "Nettoumsatz pro Jahr (EUR)",
-        "en": "Net revenue per year (EUR)",
-        "es": "Ingresos netos anuales (EUR)",
-        "fr": "Chiffre d'affaires net annuel (EUR)",
-        "it": "Ricavi netti annui (EUR)",
-        "zh": "年度净收入(欧元)",
+        "de": "Nettoumsatz weltweit pro Jahr (EUR)",
+        "en": "Net revenue worldwide per year (EUR)",
+        "es": "Ingresos netos anuales a nivel mundial (EUR)",
+        "fr": "Chiffre d'affaires net annuel mondial (EUR)",
+        "it": "Ricavi netti annui a livello mondiale (EUR)",
+        "zh": "全球年度净收入(欧元)",
+    },
+    "field_revenue_eu": {
+        "de": "Nettoumsatz pro Jahr in der EU (EUR)",
+        "en": "Net revenue per year in the EU (EUR)",
+        "es": "Ingresos netos anuales en la UE (EUR)",
+        "fr": "Chiffre d'affaires net annuel dans l'UE (EUR)",
+        "it": "Ricavi netti annui nell'UE (EUR)",
+        "zh": "欧盟境内年度净收入(欧元)",
+    },
+    "field_revenue_eu_help": {
+        "de": "Maßgeblich für Unternehmen aus Drittländern: CSRD (Art. 40a Bilanzrichtlinie, mehr als 450 Mio. EUR) und CSDDD (Art. 2 Abs. 2, mehr als 1,5 Mrd. EUR) stellen dort auf den Umsatz in der Union ab.",
+        "en": "Decisive for third-country companies: CSRD (Art. 40a Accounting Directive, more than EUR 450 million) and CSDDD (Art. 2(2), more than EUR 1.5 billion) rely on turnover in the Union.",
+        "es": "Determinante para empresas de terceros países: la CSRD (art. 40a de la Directiva contable, más de 450 millones EUR) y la CSDDD (art. 2, apdo. 2, más de 1500 millones EUR) se basan en la cifra de negocios en la Unión.",
+        "fr": "Déterminant pour les entreprises de pays tiers : la CSRD (art. 40a de la directive comptable, plus de 450 millions EUR) et la CSDDD (art. 2, par. 2, plus de 1,5 milliard EUR) se fondent sur le chiffre d'affaires réalisé dans l'Union.",
+        "it": "Determinante per le imprese di paesi terzi: la CSRD (art. 40a della direttiva contabile, oltre 450 milioni di EUR) e la CSDDD (art. 2, par. 2, oltre 1,5 miliardi di EUR) si basano sul fatturato realizzato nell'Unione.",
+        "zh": "对第三国企业具有决定意义：CSRD（《会计指令》第 40a 条，超过 4.5 亿欧元）与 CSDDD（第 2 条第 2 款，超过 15 亿欧元）均以在欧盟境内的营业额为准。",
     },
     "field_balance_sheet": {
         "de": "Bilanzsumme (EUR)",
@@ -727,6 +789,22 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Sélection multiple possible. Influence l'EUDR (cuir/bovins, caoutchouc naturel, fibres de bois et de cellulose), le règlement sur le travail forcé et les exigences d'écoconception relatives aux apprêts chimiques.",
         "it": "Selezione multipla possibile. Influenza l'EUDR (pelle/bovini, gomma naturale, fibre di legno e cellulosa), il regolamento sul lavoro forzato e i requisiti di ecodesign per i finissaggi chimici.",
         "zh": "可多选。影响 EUDR（皮革/牛类、天然橡胶、木材与纤维素纤维）、强迫劳动条例以及针对化学整理的生态设计要求。",
+    },
+    "section_markets": {
+        "de": "#### Absatzmärkte",
+        "en": "#### Sales markets",
+        "es": "#### Mercados de venta",
+        "fr": "#### Marchés de vente",
+        "it": "#### Mercati di sbocco",
+        "zh": "#### 销售市场",
+    },
+    "markets_hint": {
+        "de": "Mehrfachauswahl möglich. Produktbezogene Marktregeln wie EUDR, PPWR, Right to Repair, EmpCo und das Vernichtungsverbot knüpfen an das Inverkehrbringen in der EU an.",
+        "en": "Multi-select possible. Product-related market rules such as EUDR, PPWR, Right to Repair, EmpCo and the destruction ban attach to placing products on the EU market.",
+        "es": "Selección múltiple posible. Las normas de mercado sobre productos como EUDR, PPWR, derecho a reparar, EmpCo y la prohibición de destrucción se vinculan a la introducción en el mercado de la UE.",
+        "fr": "Sélection multiple possible. Les règles de marché relatives aux produits (EUDR, PPWR, droit à la réparation, EmpCo, interdiction de destruction) se rattachent à la mise sur le marché de l'UE.",
+        "it": "Selezione multipla possibile. Le regole di mercato sui prodotti come EUDR, PPWR, diritto alla riparazione, EmpCo e il divieto di distruzione si ricollegano all'immissione sul mercato dell'UE.",
+        "zh": "可多选。EUDR、PPWR、维修权、EmpCo 及销毁禁令等与产品相关的市场规则，均以在欧盟投放市场为连接点。",
     },
     "section_sites": {
         "de": "#### Standorte",
@@ -1028,6 +1106,14 @@ UI: dict[str, dict[str, str]] = {
         "de": "Zusammenfassung", "en": "Summary", "es": "Resumen",
         "fr": "Synthèse", "it": "Sintesi", "zh": "摘要",
     },
+    "results_hint": {
+        "de": "Fragen zu Ihrem Ergebnis? Der ESG-Regulierungs-Check bietet eine erste Orientierung. Für eine vertiefte Einordnung einzelner Regelungen und ihrer Auswirkungen auf Ihr Unternehmen steht Ihnen das Team von textil+mode und seiner Mitgliedsverbände gerne zur Verfügung.",
+        "en": "Questions about your result? The ESG Regulation Check offers a first orientation. For a deeper assessment of individual rules and their effects on your company, the team of textil+mode and its member associations is happy to help.",
+        "es": "¿Preguntas sobre su resultado? La Verificación de Regulaciones ESG ofrece una primera orientación. Para una valoración más profunda de normas concretas y de sus efectos sobre su empresa, el equipo de textil+mode y de sus asociaciones miembro está a su disposición.",
+        "fr": "Des questions sur votre résultat ? La Vérification des Réglementations ESG offre une première orientation. Pour une analyse approfondie de règles précises et de leurs effets sur votre entreprise, l'équipe de textil+mode et de ses fédérations membres se tient à votre disposition.",
+        "it": "Domande sul suo risultato? La Verifica delle Normative ESG offre un primo orientamento. Per un inquadramento più approfondito delle singole norme e dei loro effetti sulla sua azienda, il team di textil+mode e delle sue associazioni membro è a sua disposizione.",
+        "zh": "对结果有疑问？ESG 法规检查提供的是初步定位。如需就个别规定及其对贵公司的影响作更深入的评估，textil+mode 及其会员协会的团队乐意提供帮助。",
+    },
     "pdf_source": {
         "de": "Quelle", "en": "Source", "es": "Fuente",
         "fr": "Source", "it": "Fonte", "zh": "来源",
@@ -1176,19 +1262,6 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
         "it": "Per gli obiettivi di mitigazione e adattamento climatico dal 01.01.2022, per gli altri quattro "
               "obiettivi ambientali dal 01.01.2023.",
         "zh": "气候减缓与适应目标自 2022 年 1 月 1 日起适用，其余四项环境目标自 2023 年 1 月 1 日起适用。",
-    },
-    "whistle": {
-        "de": "Für Beschäftigungsgeber mit 50 bis 249 Beschäftigten galt die Umsetzungsfrist bis 17.12.2023. "
-              "In Deutschland wirkt die Richtlinie über das HinSchG.",
-        "en": "For employers with 50 to 249 employees the transposition deadline ran until 17.12.2023. In "
-              "Germany the directive takes effect through the HinSchG.",
-        "es": "Para empleadores con 50 a 249 empleados el plazo de transposición fue hasta el 17.12.2023. En "
-              "Alemania la directiva actúa a través de la HinSchG.",
-        "fr": "Pour les employeurs de 50 à 249 salariés, le délai de transposition courait jusqu'au "
-              "17.12.2023. En Allemagne, la directive produit ses effets via la HinSchG.",
-        "it": "Per i datori di lavoro con 50-249 dipendenti il termine di recepimento era il 17.12.2023. In "
-              "Germania la direttiva opera tramite la HinSchG.",
-        "zh": "对于拥有 50 至 249 名员工的雇主，转化期限为 2023 年 12 月 17 日。在德国，该指令通过《举报人保护法》生效。",
     },
     "oekodesign": {
         "de": "Rahmenverordnung: konkrete Produktanforderungen entstehen erst durch delegierte Rechtsakte "
@@ -1466,55 +1539,6 @@ DEADLINE_NOTES: dict[str, dict[str, str]] = {
               "numero di dipendenti; il periodo transitorio fino al 17.12.2023 espressamente non si "
               "applica a questo gruppo (§ 42, c. 1, per. 2 HinSchG).",
         "zh": "作为《举报人保护法》第 12 条第 3 款所列的雇主（证券服务机构、金融机构、资产管理公司、保险公司等），该义务不受员工人数限制；至 2023 年 12 月 17 日的过渡期明确不适用于该类雇主（第 42 条第 1 款第 2 句）。",
-    },
-    "whistle_finanz": {
-        "de": "Auf Rechtsträger, die unter die Rechtsakte in Anhang Teil I.B und Teil II fallen (unter anderem "
-              "Finanzdienstleistungen und Versicherungen), ist der Schwellenwert von 50 Arbeitnehmern "
-              "nach Art. 8 Abs. 4 nicht anzuwenden. Die Verschiebung des Art. 26 Abs. 2 betrifft nur "
-              "die Pflicht aus Art. 8 Abs. 3 und greift für sie deshalb nicht.",
-        "en": "For legal entities covered by the Union acts in Annex Part I.B (including financial "
-              "services and insurance) the threshold of 50 workers does not apply under Art. 8(4). The "
-              "deferral in Art. 26(2) only concerns the duty under Art. 8(3) and therefore does not "
-              "apply to them.",
-        "es": "A las entidades sujetas a los actos del anexo, parte I.B (entre otros, servicios "
-              "financieros y seguros), no se les aplica el umbral de 50 trabajadores según el art. 8, "
-              "apdo. 4. El aplazamiento del art. 26, apdo. 2, solo afecta a la obligación del art. 8, "
-              "apdo. 3, y por tanto no las alcanza.",
-        "fr": "Pour les entités relevant des actes énumérés à l'annexe, partie I.B (notamment services "
-              "financiers et assurance), le seuil de 50 travailleurs ne s'applique pas en vertu de "
-              "l'art. 8, par. 4. Le report de l'art. 26, par. 2, ne concerne que l'obligation de "
-              "l'art. 8, par. 3, et ne les vise donc pas.",
-        "it": "Ai soggetti che rientrano negli atti dell'allegato, parte I.B (tra cui servizi "
-              "finanziari e assicurazioni), non si applica la soglia di 50 lavoratori ai sensi "
-              "dell'art. 8, par. 4. Il rinvio dell'art. 26, par. 2, riguarda solo l'obbligo "
-              "dell'art. 8, par. 3, e quindi non li tocca.",
-        "zh": "对于附件第 I.B 部分所列法案涵盖的法人（包括金融服务和保险），依第 8 条第 4 款不适用 50 名工作人员的门槛。第 26 条第 2 款的延期仅涉及第 8 条第 3 款的义务，因此对其不适用。",
-    },
-    "whistle_ab_250": {
-        "de": "Umsetzungsfrist für Einrichtungen ab 250 Beschäftigten (Art. 26 Abs. 1). In Deutschland "
-              "wirkt die Richtlinie über das HinSchG.",
-        "en": "Transposition deadline for entities with 250 or more workers (Art. 26(1)). In Germany the "
-              "directive takes effect through the HinSchG.",
-        "es": "Plazo de transposición para entidades con 250 o más trabajadores (art. 26, apdo. 1). En "
-              "Alemania la directiva actúa a través de la HinSchG.",
-        "fr": "Délai de transposition pour les entités d'au moins 250 travailleurs (art. 26, § 1). En "
-              "Allemagne, la directive produit ses effets via la HinSchG.",
-        "it": "Termine di recepimento per i soggetti con almeno 250 lavoratori (art. 26, c. 1). In "
-              "Germania la direttiva opera tramite la HinSchG.",
-        "zh": "适用于员工 250 人及以上实体的转化期限（第 26 条第 1 款）。在德国，该指令通过《举报人保护法》生效。",
-    },
-    "whistle_ab_50": {
-        "de": "Für Einrichtungen mit 50 bis 249 Beschäftigten lief die Umsetzungsfrist bis zum "
-              "17.12.2023 (Art. 26 Abs. 2). In Deutschland wirkt die Richtlinie über das HinSchG.",
-        "en": "For entities with 50 to 249 workers the transposition deadline ran until 17.12.2023 "
-              "(Art. 26(2)). In Germany the directive takes effect through the HinSchG.",
-        "es": "Para entidades con 50 a 249 trabajadores el plazo de transposición fue hasta el 17.12.2023 "
-              "(art. 26, apdo. 2). En Alemania la directiva actúa a través de la HinSchG.",
-        "fr": "Pour les entités de 50 à 249 travailleurs, le délai de transposition courait jusqu'au "
-              "17.12.2023 (art. 26, § 2). En Allemagne, la directive produit ses effets via la HinSchG.",
-        "it": "Per i soggetti con 50-249 lavoratori il termine di recepimento era il 17.12.2023 "
-              "(art. 26, c. 2). In Germania la direttiva opera tramite la HinSchG.",
-        "zh": "对拥有 50 至 249 名工作人员的实体，转化期限为 2023 年 12 月 17 日（第 26 条第 2 款）。在德国，该指令通过《举报人保护法》生效。",
     },
     "eudr_klein": {
         "de": "Spätere Frist für Kleinst- und Kleinunternehmen, die am 31.12.2024 bereits als solche "
@@ -2133,42 +2157,6 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
         "it": "Divulgare metodologie, modelli e ipotesi di base e mantenerli aggiornati (allegato I).",
         "zh": "披露方法论、模型和基本假设，并持续保持更新（附件一）。",
     },
-    # --- Whistleblower-Richtlinie ---
-    "whistle_1": {
-        "de": "In Deutschland wirkt die Richtlinie über das HinSchG; dessen Pflichten erfüllen.",
-        "en": "In Germany the directive takes effect through the HinSchG; comply with its obligations.",
-        "es": "En Alemania la directiva actúa a través de la HinSchG; cumplir sus obligaciones.",
-        "fr": "En Allemagne, la directive produit ses effets via la HinSchG ; en respecter les "
-              "obligations.",
-        "it": "In Germania la direttiva opera tramite la HinSchG; adempiere ai relativi obblighi.",
-        "zh": "在德国，该指令通过《举报人保护法》生效；应履行该法规定的义务。",
-    },
-    "whistle_2": {
-        "de": "Für Standorte in anderen Mitgliedstaaten die jeweilige nationale Umsetzung prüfen; "
-              "konzernweite Meldestellen sind nicht überall zulässig.",
-        "en": "For sites in other member states, check the respective national transposition; "
-              "group-wide reporting channels are not permitted everywhere.",
-        "es": "Para centros en otros Estados miembros, comprobar la transposición nacional respectiva; "
-              "los canales de denuncia a nivel de grupo no se admiten en todas partes.",
-        "fr": "Pour les sites situés dans d'autres États membres, vérifier la transposition nationale "
-              "concernée ; les canaux de signalement à l'échelle du groupe ne sont pas admis partout.",
-        "it": "Per le sedi in altri Stati membri verificare il rispettivo recepimento nazionale; i "
-              "canali di segnalazione di gruppo non sono ammessi ovunque.",
-        "zh": "对位于其他成员国的经营场所，须核查当地的转化立法；集团层面的统一举报渠道并非在各国均获允许。",
-    },
-    "whistle_3": {
-        "de": "Meldekanäle so ausgestalten, dass der Eingang binnen sieben Tagen bestätigt und binnen "
-              "drei Monaten zurückgemeldet wird (Art. 9).",
-        "en": "Design reporting channels so that receipt is acknowledged within seven days and feedback "
-              "is given within three months (Art. 9).",
-        "es": "Configurar los canales de denuncia de modo que se acuse recibo en siete días y se dé "
-              "respuesta en tres meses (art. 9).",
-        "fr": "Concevoir les canaux de signalement de sorte que la réception soit accusée sous sept "
-              "jours et un retour donné sous trois mois (art. 9).",
-        "it": "Configurare i canali di segnalazione in modo da confermare la ricezione entro sette "
-              "giorni e dare riscontro entro tre mesi (art. 9).",
-        "zh": "设置举报渠道，确保七日内确认收到、三个月内给予反馈（第 9 条）。",
-    },
     # --- HinSchG ---
     "hinschg_1": {
         "de": "Interne Meldestelle einrichten und die dafür zuständige Person oder Organisationseinheit "
@@ -2520,7 +2508,7 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
 
 # ---------- Begruendungs-Bausteine fuer gekoppelte Regulierungen ----------
 #
-# CSRD, CSRD_DE, Taxonomie-VO, HinSchG, Whistleblower-RL und CSR-RUG
+# CSRD, CSRD_DE, Taxonomie-VO, HinSchG und CSR-RUG
 # werden nicht vom LLM bewertet, sondern von `regulations.coupling_verdict()`
 # entschieden.
 # Die Begruendung entsteht aus zwei Bausteinen und behaelt damit die
@@ -2615,25 +2603,52 @@ COUPLING_FACTS: dict[str, dict[str, str]] = {
               "若母公司的合并报告已涵盖本公司，则可豁免。",
     },
     "csrd_drittland": {
-        "de": "Die oberste Muttergesellschaft sitzt außerhalb der EU und der Nettoumsatz beträgt "
-              "{revenue} (Schwelle: mehr als 450 Mio. EUR); ob eine EU-Tochter oder "
-              "Zweigniederlassung die zusätzlich nötigen 200 Mio. EUR erreicht, geht aus dem "
-              "Profil nicht hervor.",
-        "en": "The ultimate parent is established outside the EU and net turnover is {revenue} "
-              "(threshold: more than EUR 450 million); whether an EU subsidiary or branch reaches "
-              "the additionally required EUR 200 million is not stated in the profile.",
+        "de": "Die oberste Muttergesellschaft sitzt außerhalb der EU und der Nettoumsatz in der "
+              "Union beträgt {revenue_eu} (Schwelle des Art. 40a Bilanzrichtlinie: mehr als "
+              "450 Mio. EUR); ob eine EU-Tochter oder Zweigniederlassung die zusätzlich nötigen "
+              "200 Mio. EUR erreicht, geht aus dem Profil nicht hervor.",
+        "en": "The ultimate parent is established outside the EU and net turnover in the Union is "
+              "{revenue_eu} (threshold of Art. 40a of the Accounting Directive: more than EUR 450 "
+              "million); whether an EU subsidiary or branch reaches the additionally required "
+              "EUR 200 million is not stated in the profile.",
         "es": "La sociedad matriz última tiene su sede fuera de la UE y la cifra neta de negocios "
-              "es de {revenue} (umbral: más de 450 millones EUR); el perfil no indica si una filial "
-              "o sucursal en la UE alcanza los 200 millones EUR adicionales exigidos.",
-        "fr": "La société mère ultime est établie hors de l'UE et le chiffre d'affaires net "
-              "s'élève à {revenue} (seuil : plus de 450 millions EUR) ; le profil n'indique pas si "
-              "une filiale ou succursale de l'UE atteint les 200 millions EUR supplémentaires "
-              "requis.",
-        "it": "La capogruppo ha sede fuori dall'UE e i ricavi netti ammontano a {revenue} (soglia: "
-              "più di 450 milioni di EUR); dal profilo non risulta se una controllata o succursale "
-              "UE raggiunga i 200 milioni di EUR ulteriormente richiesti.",
-        "zh": "最终母公司设在欧盟境外，净营业额为 {revenue}（门槛：超过 4.5 亿欧元）；档案中未说明是否有欧盟子公司或分支机构"
-              "达到另需的 2 亿欧元。",
+              "en la Unión es de {revenue_eu} (umbral del art. 40a de la Directiva contable: más "
+              "de 450 millones EUR); el perfil no indica si una filial o sucursal en la UE alcanza "
+              "los 200 millones EUR adicionales exigidos.",
+        "fr": "La société mère ultime est établie hors de l'UE et le chiffre d'affaires net réalisé "
+              "dans l'Union s'élève à {revenue_eu} (seuil de l'art. 40a de la directive comptable : "
+              "plus de 450 millions EUR) ; le profil n'indique pas si une filiale ou succursale de "
+              "l'UE atteint les 200 millions EUR supplémentaires requis.",
+        "it": "La capogruppo ha sede fuori dall'UE e i ricavi netti realizzati nell'Unione "
+              "ammontano a {revenue_eu} (soglia dell'art. 40a della direttiva contabile: più di "
+              "450 milioni di EUR); dal profilo non risulta se una controllata o succursale UE "
+              "raggiunga i 200 milioni di EUR ulteriormente richiesti.",
+        "zh": "最终母公司设在欧盟境外，在欧盟境内的净营业额为 {revenue_eu}（《会计指令》第 40a 条门槛：超过 4.5 亿欧元）；"
+              "档案中未说明是否有欧盟子公司或分支机构达到另需的 2 亿欧元。",
+    },
+    # Altprofile und Nutzer, die den EU-Umsatz nicht angeben: Art. 40a stellt
+    # auf den Unionsumsatz ab, im Profil steht nur der weltweite. Der Fall wird
+    # deshalb offen gehalten und die Luecke ausdruecklich benannt.
+    "csrd_drittland_ohne_eu_umsatz": {
+        "de": "Die oberste Muttergesellschaft sitzt außerhalb der EU und der weltweite Nettoumsatz "
+              "beträgt {revenue}; Art. 40a der Bilanzrichtlinie stellt jedoch auf den Nettoumsatz "
+              "in der Union ab (mehr als 450 Mio. EUR), und dieser ist im Profil nicht angegeben.",
+        "en": "The ultimate parent is established outside the EU and worldwide net turnover is "
+              "{revenue}; Art. 40a of the Accounting Directive, however, relies on net turnover in "
+              "the Union (more than EUR 450 million), which the profile does not state.",
+        "es": "La sociedad matriz última tiene su sede fuera de la UE y la cifra neta de negocios "
+              "mundial es de {revenue}; sin embargo, el art. 40a de la Directiva contable se basa "
+              "en la cifra de negocios en la Unión (más de 450 millones EUR), que no consta en el "
+              "perfil.",
+        "fr": "La société mère ultime est établie hors de l'UE et le chiffre d'affaires net mondial "
+              "s'élève à {revenue} ; l'art. 40a de la directive comptable se fonde toutefois sur le "
+              "chiffre d'affaires réalisé dans l'Union (plus de 450 millions EUR), qui n'est pas "
+              "indiqué dans le profil.",
+        "it": "La capogruppo ha sede fuori dall'UE e i ricavi netti mondiali ammontano a {revenue}; "
+              "l'art. 40a della direttiva contabile si basa però sui ricavi netti realizzati "
+              "nell'Unione (più di 450 milioni di EUR), che il profilo non indica.",
+        "zh": "最终母公司设在欧盟境外，全球净营业额为 {revenue}；但《会计指令》第 40a 条以在欧盟境内的净营业额为准"
+              "（超过 4.5 亿欧元），而档案中未填写该数值。",
     },
     "csrd_welle1": {
         "de": "Das Unternehmen ist kapitalmarktorientiert und hat {employees} Beschäftigte "
@@ -3019,43 +3034,6 @@ COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
             "zh": "是否须设立内部举报机构，取决于公司是否属于《举报人保护法》第 12 条第 3 款所列的金融企业。",
         },
     },
-    "WhistleblowerRL": {
-        "ja": {
-            "de": "Die Richtlinie wirkt in Deutschland über das HinSchG; der interne Meldekanal ist "
-                  "damit einzurichten.",
-            "en": "In Germany the directive takes effect through the HinSchG; the internal "
-                  "reporting channel therefore has to be set up.",
-            "es": "En Alemania la Directiva actúa a través de la HinSchG; por tanto, debe "
-                  "establecerse el canal interno de denuncias.",
-            "fr": "En Allemagne, la directive produit ses effets via la HinSchG ; le canal de "
-                  "signalement interne doit donc être mis en place.",
-            "it": "In Germania la direttiva opera tramite l'HinSchG; il canale di segnalazione "
-                  "interno va quindi istituito.",
-            "zh": "该指令在德国通过《举报人保护法》产生效力，因此必须设立内部举报渠道。",
-        },
-        "nein": {
-            "de": "Die über das HinSchG umgesetzte Pflicht greift damit nicht.",
-            "en": "The obligation transposed via the HinSchG therefore does not apply.",
-            "es": "La obligación transpuesta mediante la HinSchG no resulta por tanto aplicable.",
-            "fr": "L'obligation transposée par la HinSchG ne s'applique donc pas.",
-            "it": "L'obbligo recepito tramite l'HinSchG non trova quindi applicazione.",
-            "zh": "因此，通过《举报人保护法》转化的义务不适用。",
-        },
-        "moeglich": {
-            "de": "Ob die über das HinSchG umgesetzte Pflicht greift, hängt davon ab, ob das "
-                  "Unternehmen zu den in § 12 Abs. 3 HinSchG aufgezählten Finanzunternehmen zählt.",
-            "en": "Whether the obligation transposed via the HinSchG applies depends on whether the "
-                  "company is one of the financial undertakings listed in section 12(3) HinSchG.",
-            "es": "Que se aplique la obligación transpuesta mediante la HinSchG depende de si la "
-                  "empresa figura entre las entidades financieras del § 12, apdo. 3, HinSchG.",
-            "fr": "L'application de l'obligation transposée par la HinSchG dépend de la question de "
-                  "savoir si l'entreprise fait partie des entreprises financières du § 12, al. 3, "
-                  "HinSchG.",
-            "it": "L'applicazione dell'obbligo recepito tramite l'HinSchG dipende dal fatto che "
-                  "l'impresa rientri tra i soggetti finanziari del § 12, comma 3, HinSchG.",
-            "zh": "通过《举报人保护法》转化的义务是否适用，取决于公司是否属于该法第 12 条第 3 款所列的金融企业。",
-        },
-    },
 }
 
 COUPLING_PASSAGES: dict[str, dict[str, str]] = {
@@ -3140,19 +3118,6 @@ COUPLING_PASSAGES: dict[str, dict[str, str]] = {
               "istituiscono un ufficio di segnalazione interno.",
         "zh": "《举报人保护法》第 12 条第 1、2 款：通常雇用至少 50 名员工的雇主须设立内部举报机构。",
     },
-    "WhistleblowerRL": {
-        "de": "Art. 8 Abs. 3 der Richtlinie (EU) 2019/1937: juristische Personen des privaten "
-              "Sektors mit 50 oder mehr Arbeitnehmern richten interne Meldekanäle ein.",
-        "en": "Art. 8(3) of Directive (EU) 2019/1937: legal entities in the private sector with 50 "
-              "or more workers have to establish internal reporting channels.",
-        "es": "Art. 8, apdo. 3, de la Directiva (UE) 2019/1937: las entidades jurídicas del sector "
-              "privado con 50 o más trabajadores establecen canales internos de denuncia.",
-        "fr": "Art. 8, par. 3, de la directive (UE) 2019/1937 : les entités juridiques du secteur "
-              "privé comptant 50 travailleurs ou plus établissent des canaux de signalement interne.",
-        "it": "Art. 8, par. 3, della direttiva (UE) 2019/1937: i soggetti giuridici del settore "
-              "privato con 50 o più lavoratori istituiscono canali di segnalazione interni.",
-        "zh": "《指令》(EU) 2019/1937 第 8 条第 3 款：拥有 50 名及以上员工的私营部门法律实体须设立内部举报渠道。",
-    },
 }
 
 
@@ -3181,6 +3146,7 @@ def coupling_fact(verdict: dict, lang: str = "de") -> str:
         employees=fmt_int(values.get("employees"), lang),
         employees_de=fmt_int(values.get("employees_de"), lang),
         revenue=fmt_eur(values.get("revenue_eur"), lang),
+        revenue_eu=fmt_eur(values.get("revenue_eu_eur"), lang),
     )
 
 
@@ -3408,7 +3374,14 @@ BRANCH_LABELS: dict[str, dict[str, str]] = {
 }
 
 SITE_TYPE_LABELS: dict[str, dict[str, str]] = {
-    "Hauptsitz": {"de": "Hauptsitz", "en": "Headquarters", "es": "Sede central", "fr": "Siège social", "it": "Sede centrale", "zh": "总部"},
+    "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung": {
+        "de": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung",
+        "en": "Head office, principal place of business, administrative seat, registered office or branch",
+        "es": "Administración central, establecimiento principal, sede administrativa, domicilio social o sucursal",
+        "fr": "Administration centrale, établissement principal, siège administratif, siège statutaire ou succursale",
+        "it": "Amministrazione centrale, sede principale, sede amministrativa, sede legale o succursale",
+        "zh": "主行政管理机构、主要营业地、管理住所、章程登记住所或分支机构",
+    },
     "Produktionsstätte": {
         "de": "Produktionsstätte",
         "en": "Production site",
@@ -3541,13 +3514,13 @@ GROUP_ROLE_LABELS: dict[str, dict[str, str]] = {
 }
 
 PRODUCT_CAT_LABELS: dict[str, dict[str, str]] = {
-    "Verpackungen (eigene oder vertriebene)": {
-        "de": "Verpackungen (eigene oder vertriebene)",
-        "en": "Packaging (own or distributed)",
-        "es": "Envases (propios o distribuidos)",
-        "fr": "Emballages (propres ou distribués)",
-        "it": "Imballaggi (propri o distribuiti)",
-        "zh": "包装（自有或经销）",
+    "Verpackungen von Produkten / Versand- oder Transportverpackungen": {
+        "de": "Verpackungen von Produkten / Versand- oder Transportverpackungen",
+        "en": "Product packaging / shipping or transport packaging",
+        "es": "Envases de productos / embalajes de envío o transporte",
+        "fr": "Emballages de produits / emballages d'expédition ou de transport",
+        "it": "Imballaggi di prodotti / imballaggi per spedizione o trasporto",
+        "zh": "产品包装 / 运输或物流包装",
     },
     "Holz": {"de": "Holz", "en": "Wood", "es": "Madera", "fr": "Bois", "it": "Legno", "zh": "木材"},
     "Holzprodukte": {
@@ -3633,7 +3606,14 @@ MATERIAL_LABELS: dict[str, dict[str, str]] = {
         "it": "Cotone e altre fibre naturali",
         "zh": "棉及其他天然纤维",
     },
-    "Wolle": {"de": "Wolle", "en": "Wool", "es": "Lana", "fr": "Laine", "it": "Lana", "zh": "羊毛"},
+    "Materialien tierischen Ursprungs (außer Leder), z. B. Wolle": {
+        "de": "Materialien tierischen Ursprungs (außer Leder), z. B. Wolle",
+        "en": "Materials of animal origin (other than leather), e.g. wool",
+        "es": "Materiales de origen animal (salvo el cuero), p. ej. lana",
+        "fr": "Matériaux d'origine animale (hors cuir), p. ex. laine",
+        "it": "Materiali di origine animale (esclusa la pelle), p. es. lana",
+        "zh": "动物来源材料（皮革除外），如羊毛",
+    },
     "Leder bzw. Rindererzeugnisse": {
         "de": "Leder bzw. Rindererzeugnisse",
         "en": "Leather or cattle products",
@@ -3677,6 +3657,30 @@ MATERIAL_LABELS: dict[str, dict[str, str]] = {
         "fr": "Apprêt contenant des PFAS",
         "it": "Finissaggio contenente PFAS",
         "zh": "含 PFAS 的整理",
+    },
+}
+
+
+SALES_MARKET_LABELS: dict[str, dict[str, str]] = {
+    "Deutschland": {
+        "de": "Deutschland", "en": "Germany", "es": "Alemania",
+        "fr": "Allemagne", "it": "Germania", "zh": "德国",
+    },
+    "andere EU-/EWR-Staaten": {
+        "de": "andere EU-/EWR-Staaten",
+        "en": "other EU/EEA states",
+        "es": "otros Estados de la UE/EEE",
+        "fr": "autres États de l'UE/EEE",
+        "it": "altri Stati UE/SEE",
+        "zh": "其他欧盟/欧洲经济区国家",
+    },
+    "außerhalb EU/EWR": {
+        "de": "außerhalb EU/EWR",
+        "en": "outside the EU/EEA",
+        "es": "fuera de la UE/EEE",
+        "fr": "hors UE/EEE",
+        "it": "fuori dall'UE/SEE",
+        "zh": "欧盟/欧洲经济区以外",
     },
 }
 

@@ -1,4 +1,4 @@
-"""Kuratierte Liste der 20 ESG-/CSR-Regulierungen mit Anwendbarkeitskriterien.
+"""Kuratierte Liste der 19 ESG-/CSR-Regulierungen mit Anwendbarkeitskriterien.
 
 Die `criteria`-Felder sind bewusst in natürlicher Sprache gehalten, damit
 Claude sie gemeinsam mit dem Unternehmensprofil auswerten kann.
@@ -17,7 +17,8 @@ REGULATIONS = [
     {
         "nr": 1,
         "key": "CSDDD",
-        "relevant_fields": ["employees", "revenue_eur", "group_role", "legal_form", "sites"],
+        "relevant_fields": ["employees", "revenue_eur", "revenue_eu_eur", "group_role",
+                            "legal_form", "sites"],
         "name": "CSDDD – EU-Lieferkettenrichtlinie",
         "full_name": "Richtlinie (EU) 2024/1760 - Sorgfaltspflichten von Unternehmen im Hinblick auf Nachhaltigkeit",
         "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32024L1760&locale=de",
@@ -71,7 +72,7 @@ REGULATIONS = [
         # daraus gewonnenen zellulosebasierten Fasern), nicht am Fertigprodukt.
         # `value_chain_roles`, weil Art. 1 Marktteilnehmer UND Haendler erfasst.
         "relevant_fields": ["product_categories", "materials", "value_chain_roles",
-                            "eu_importer", "branch"],
+                            "eu_importer", "branch", "sales_markets"],
         "name": "EUDR – EU-Entwaldungsverordnung",
         "full_name": "Verordnung (EU) 2023/1115 über entwaldungsfreie Lieferketten",
         "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32023R1115&locale=de",
@@ -111,7 +112,7 @@ REGULATIONS = [
     {
         "nr": 5,
         "key": "CSRD",
-        "relevant_fields": ["employees", "revenue_eur", "listed", "group_role"],
+        "relevant_fields": ["employees", "revenue_eur", "revenue_eu_eur", "listed", "group_role"],
         "name": "CSRD – EU-Nachhaltigkeitsberichtsrichtlinie",
         "full_name": "Richtlinie (EU) 2022/2464 - Nachhaltigkeitsberichterstattung",
         "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022L2464&locale=de",
@@ -137,7 +138,7 @@ REGULATIONS = [
     {
         "nr": 6,
         "key": "CSRD_DE",
-        "relevant_fields": ["employees", "revenue_eur", "listed", "group_role"],
+        "relevant_fields": ["employees", "revenue_eur", "revenue_eu_eur", "listed", "group_role"],
         "name": "CSRD-UmsG – deutsches CSRD-Umsetzungsgesetz",
         "full_name": "Gesetz zur Umsetzung der Richtlinie (EU) 2022/2464",
         # Das Gesetz ist noch nicht verkuendet (Stand 09/2026: nach der
@@ -209,7 +210,8 @@ REGULATIONS = [
     {
         "nr": 9,
         "key": "TaxonomieVO",
-        "relevant_fields": ["employees", "revenue_eur", "listed", "group_role", "branch"],
+        "relevant_fields": ["employees", "revenue_eur", "revenue_eu_eur", "listed",
+                            "group_role", "branch"],
         "name": "Taxonomie-VO – EU-Klassifikation nachhaltiger Tätigkeiten",
         "full_name": "Verordnung (EU) 2020/852 - Rahmen für nachhaltige Investitionen",
         "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32020R0852&locale=de",
@@ -261,21 +263,6 @@ REGULATIONS = [
     },
     {
         "nr": 12,
-        "key": "WhistleblowerRL",
-        "relevant_fields": ["employees_de", "branch"],
-        "name": "Whistleblower-Richtlinie – EU-Hinweisgeberschutz",
-        "full_name": "Richtlinie (EU) 2019/1937 - Schutz von Hinweisgebern",
-        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32019L1937&locale=de",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019L1937",
-        "scope": "EU",
-        "criteria": (
-            "Richtet sich an Mitgliedstaaten. In DE umgesetzt durch HinSchG. "
-            "Direkte Anwendung für Unternehmen über HinSchG."
-        ),
-        "key_article": "Art. 8",
-    },
-    {
-        "nr": 13,
         "key": "HinSchG",
         "relevant_fields": ["employees_de", "branch"],
         "name": "HinSchG – deutsches Hinweisgeberschutzgesetz",
@@ -292,9 +279,9 @@ REGULATIONS = [
         "key_article": "§ 12 HinSchG",
     },
     {
-        "nr": 14,
+        "nr": 13,
         "key": "RightToRepair",
-        "relevant_fields": ["product_categories", "branch", "eu_importer"],
+        "relevant_fields": ["product_categories", "branch", "eu_importer", "sales_markets"],
         "name": "Right to Repair – EU-Reparaturrichtlinie",
         "full_name": "Richtlinie (EU) 2024/1799 - Reparatur von Waren",
         "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32024L1799&locale=de",
@@ -308,7 +295,7 @@ REGULATIONS = [
         "key_article": "Art. 2, 5",
     },
     {
-        "nr": 15,
+        "nr": 14,
         "key": "Oekodesign",
         # `materials`, weil die Oekodesign-Anforderungen an Stoffen ansetzen
         # (u. a. besorgniserregende chemische Ausruestungen).
@@ -327,11 +314,11 @@ REGULATIONS = [
         "key_article": "Art. 1, 2",
     },
     {
-        "nr": 16,
+        "nr": 15,
         "key": "Vernichtungsverbot",
         "relevant_fields": [
             "employees", "revenue_eur", "balance_sheet_eur",
-            "product_categories", "value_chain_roles", "branch",
+            "product_categories", "value_chain_roles", "branch", "sales_markets",
         ],
         "name": "Vernichtungsverbot – unverkaufte Kleidung und Schuhe",
         "full_name": (
@@ -380,10 +367,10 @@ REGULATIONS = [
         "key_article": "Art. 2 (Ausnahmen), Art. 3 (Dokumentation)",
     },
     {
-        "nr": 17,
+        "nr": 16,
         "key": "PPWR",
         "relevant_fields": ["product_categories", "value_chain_roles",
-                            "branch", "eu_importer"],
+                            "branch", "eu_importer", "sales_markets"],
         "name": "PPWR – EU-Verpackungsverordnung",
         "full_name": "Verordnung (EU) 2025/40 - Verpackungen und Verpackungsabfälle",
         "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32025R0040&locale=de",
@@ -397,7 +384,7 @@ REGULATIONS = [
         "key_article": "Art. 1, 3",
     },
     {
-        "nr": 18,
+        "nr": 17,
         "key": "MinRohSorgG",
         "relevant_fields": ["product_categories", "eu_importer", "sites"],
         "name": "MinRohSorgG – Sorgfaltspflichten für mineralische Rohstoffe",
@@ -413,9 +400,9 @@ REGULATIONS = [
         "key_article": "§ 3 MinRohSorgG",
     },
     {
-        "nr": 19,
+        "nr": 18,
         "key": "EmpCo",
-        "relevant_fields": ["b2c", "env_claims", "value_chain_roles"],
+        "relevant_fields": ["b2c", "env_claims", "value_chain_roles", "sales_markets"],
         "name": "EmpCo – EU-Greenwashing-Richtlinie (UWG)",
         "full_name": "Richtlinie (EU) 2024/825 - Stärkung der Verbraucher für den ökologischen Wandel (UWG-Umsetzung DE)",
         "url": "https://www.gesetze-im-internet.de/uwg_2004/BJNR141400004.html",
@@ -428,7 +415,7 @@ REGULATIONS = [
         "key_article": "Art. 1",
     },
     {
-        "nr": 20,
+        "nr": 19,
         "key": "GreenClaims",
         "relevant_fields": ["b2c", "env_claims", "employees", "revenue_eur"],
         # Kein "(Entwurf)" im Namen: der Zusatz stuende auch in der englischen
@@ -512,10 +499,6 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "ESMA – ESG Rating Providers",
          "url": "https://www.esma.europa.eu/esmas-activities/investors-and-issuers/esg-rating-providers"},
     ],
-    "WhistleblowerRL": [
-        {"name": "EU-Kommission – Schutz von Hinweisgebern",
-         "url": "https://commission.europa.eu/aid-development-cooperation-fundamental-rights/your-rights-eu/whistleblowers-protection_en"},
-    ],
     "HinSchG": [
         {"name": "Bundesamt für Justiz – Externe Meldestelle (HinSchG)",
          "url": "https://www.bundesjustizamt.de/DE/MeldestelledesBundes/MeldestelledesBundes_node.html"},
@@ -584,7 +567,6 @@ FIRST_STEPS_BY_REG_KEY: dict[str, list[str]] = {
     "TaxonomieVO": ["taxonomie_1", "taxonomie_2", "taxonomie_3"],
     "SFDR": ["sfdr_1", "sfdr_2", "sfdr_3"],
     "ESGRatingVO": ["esgrating_1", "esgrating_2", "esgrating_3"],
-    "WhistleblowerRL": ["whistle_1", "whistle_2", "whistle_3"],
     "HinSchG": ["hinschg_1", "hinschg_2", "hinschg_3", "hinschg_4"],
     "RightToRepair": ["r2r_1", "r2r_2", "r2r_3"],
     "Oekodesign": ["oekodesign_1", "oekodesign_2", "oekodesign_3"],
@@ -628,7 +610,6 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     "TaxonomieVO":     "22.06.2020",
     "SFDR":            "09.12.2019",
     "ESGRatingVO":     "12.12.2024",
-    "WhistleblowerRL": "26.11.2019",
     "HinSchG":         "02.06.2023",
     "RightToRepair":   "10.07.2024",
     "Oekodesign":      "28.06.2024",
@@ -704,7 +685,6 @@ APPLICATION_BY_REG_KEY: dict[str, dict] = {
     # Art. 53 VO (EU) 2024/3005.
     "ESGRatingVO":     {"applies_from": "02.07.2026"},
     # Art. 26 Abs. 1 RL (EU) 2019/1937 (Abs. 2: 50-249 Beschaeftigte ab 17.12.2023).
-    "WhistleblowerRL": {"applies_from": "17.12.2021", "note": "whistle"},
     # Art. 10 Abs. 2 HinSchG-Artikelgesetz.
     "HinSchG":         {"applies_from": "02.07.2023"},
     # Art. 22 Abs. 1 UAbs. 3 RL (EU) 2024/1799.
@@ -761,8 +741,7 @@ def application_for(reg_key: str, today=None) -> dict:
 # Gekoppelte Regulierungen — deterministisch bestimmte, verbindliche Vorgaben.
 #
 # Einige Regulierungen haengen rechtlich an einer "Eltern"-Regulierung:
-#   Taxonomie-VO und CSRD-Umsetzungsgesetz folgen der CSRD-Pflicht,
-#   die Whistleblower-RL wird in DE ueber das HinSchG umgesetzt.
+#   Taxonomie-VO und CSRD-Umsetzungsgesetz folgen der CSRD-Pflicht.
 # Daneben laeuft hier das CSR-RUG mit: es haengt an keiner anderen Regulierung,
 # seine Merkmale stehen aber genauso abschliessend im Gesetz (§ 289b Abs. 1 HGB)
 # und gehoeren deshalb nicht vor ein Sprachmodell.
@@ -798,6 +777,16 @@ def csrd_status(profile: dict) -> tuple[str, str]:
     Jahresdurchschnitt UND >450 Mio. EUR Nettoumsatzerloese — beide Merkmale
     kumulativ. Die Bilanzsumme ist kein Kriterium mehr.
 
+    Fuer Unternehmen aus Drittlaendern stellt Art. 40a der Bilanzrichtlinie
+    nicht auf den weltweiten, sondern auf den in der UNION erzielten
+    Nettoumsatz ab ("Nettoumsatzerloese von mehr als 450 000 000 EUR ... in der
+    Union"). Seit 09/2026 gibt es dafuer ein eigenes Profilfeld
+    (`revenue_eu_eur`); es wird hier ausgewertet. Ist es leer — Altprofile und
+    Nutzer, die den EU-Umsatz nicht kennen —, faellt die Pruefung ersatzweise
+    auf den weltweiten Umsatz zurueck und sagt in der Begruendung ausdruecklich,
+    dass der EU-Umsatz fehlt. Ohne diesen Rueckfall verschwaende der Hinweis
+    fuer jedes Bestandsprofil kommentarlos.
+
     Diese Werte gelten fuer Geschaeftsjahre ab dem 01.01.2027. Fuer die
     Geschaeftsjahre 2024 bis 2026 gilt daneben WEITER die Welle-1-Regel des
     Art. 5 Abs. 2 UAbs. 1 lit. a RL (EU) 2022/2464 (grosse Unternehmen von
@@ -808,6 +797,7 @@ def csrd_status(profile: dict) -> tuple[str, str]:
     from datetime import date
     emp = profile.get("employees") or 0
     rev = profile.get("revenue_eur") or 0
+    rev_eu = profile.get("revenue_eu_eur") or 0
     listed = bool(profile.get("listed"))
     group = profile.get("group_role") or ""
     non_eu_parent = any(m in group for m in _NON_EU_PARENT_MARKERS)
@@ -820,8 +810,11 @@ def csrd_status(profile: dict) -> tuple[str, str]:
         if _SUBSIDIARY_MARKER in group:
             return "ja", "csrd_ueber_schwelle_tochter"
         return "ja", "csrd_ueber_schwelle"
-    if non_eu_parent and rev > 450_000_000:
-        return "moeglich", "csrd_drittland"
+    if non_eu_parent:
+        if rev_eu > 450_000_000:
+            return "moeglich", "csrd_drittland"
+        if not rev_eu and rev > 450_000_000:
+            return "moeglich", "csrd_drittland_ohne_eu_umsatz"
     # Welle 1 laeuft mit dem Geschaeftsjahr 2026 aus; Berichte dazu erscheinen
     # noch im Laufe von 2027. Das Zeitfenster steht hier, damit die Aussage
     # danach von selbst verschwindet statt zu veralten.
@@ -914,7 +907,6 @@ _COUPLINGS: dict[str, tuple[str, object]] = {
     "CSRD_DE":         ("CSRD", csrd_status),
     "TaxonomieVO":     ("CSRD", csrd_status),
     "HinSchG":         ("HinSchG", hinschg_status),
-    "WhistleblowerRL": ("HinSchG", hinschg_status),
     "CSR-RUG":         ("CSR-RUG", csr_rug_status),
 }
 
@@ -924,8 +916,6 @@ _COUPLING_RELATION: dict[str, str] = {
                 "Deutschland ansaessige Unternehmen gilt dieselbe Pflichtlage wie bei der CSRD."),
     "TaxonomieVO": ("Die Taxonomie-Offenlegung (Art. 8) trifft Unternehmen, die der CSRD "
                     "unterliegen; Finanzmarktteilnehmer sind zusaetzlich eigenstaendig erfasst."),
-    "WhistleblowerRL": ("Die EU-Whistleblower-Richtlinie wird in Deutschland ueber das HinSchG "
-                        "umgesetzt; es gilt dieselbe Schwelle von 50 Beschaeftigten."),
 }
 
 
@@ -955,6 +945,7 @@ def coupling_verdict(reg_key: str, profile: dict) -> dict | None:
             "employees": profile.get("employees") or 0,
             "employees_de": profile.get("employees_de") or 0,
             "revenue_eur": profile.get("revenue_eur") or 0,
+            "revenue_eu_eur": profile.get("revenue_eu_eur") or 0,
         },
     }
 
@@ -1027,8 +1018,16 @@ BRANCHES = [
     "Sonstige Dienstleistungen",
 ]
 
+# Standort-Typen: sprachneutrale Keys (= DE-String) fuer die DB-Persistenz.
+#
+# Der erste Eintrag hiess bis 09/2026 schlicht "Hauptsitz". Die neue, laengere
+# Fassung nimmt die Anknuepfungspunkte auf, die § 1 LkSG und Art. 2 CSDDD
+# nennen (Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmaessiger
+# Sitz, Zweigniederlassung) — "Hauptsitz" allein deckt sie nicht ab.
+# Altprofile tragen den alten Wert; `db._SITE_TYPE_RENAMES` bildet ihn beim
+# Lesen und Schreiben auf den neuen ab (reine Umbenennung, keine Umdeutung).
 SITE_TYPES = [
-    "Hauptsitz",
+    "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung",
     "Produktionsstätte",
     "Vertriebsbüro",
     "Lager / Logistikzentrum",
@@ -1067,7 +1066,7 @@ GROUP_ROLES = [
 # was hier nicht mehr steht, damit weder Formular noch LLM-Prompt noch der
 # Cache-Schluessel einen unbekannten Wert sehen (siehe dort).
 PRODUCT_CATEGORIES = [
-    "Verpackungen (eigene oder vertriebene)",
+    "Verpackungen von Produkten / Versand- oder Transportverpackungen",
     "Holz",
     "Holzprodukte",
     "Papier",
@@ -1106,7 +1105,7 @@ VALUE_CHAIN_ROLES = [
 # Uebersetzungen: siehe i18n.MATERIAL_LABELS.
 MATERIALS = [
     "Baumwolle und andere Naturfasern",
-    "Wolle",
+    "Materialien tierischen Ursprungs (außer Leder), z. B. Wolle",
     "Leder bzw. Rindererzeugnisse",
     "Naturkautschuk",
     "Zellulosebasierte Chemiefasern (z. B. Viskose, Modal, Lyocell)",
@@ -1114,4 +1113,18 @@ MATERIALS = [
     "Recyclingmaterialien",
     "Besondere chemische Ausrüstungen (ohne PFAS, z. B. Flammschutz, Wasserabweisung)",
     "PFAS-haltige Ausrüstung",
+]
+
+# Absatzmaerkte (Mehrfachauswahl).
+#
+# Wo ein Unternehmen absetzt, entscheidet mit darueber, ob eine produkt-
+# bezogene Marktordnung ueberhaupt greift: EUDR, PPWR, Vernichtungsverbot,
+# Right to Repair und die EmpCo-Vorgaben knuepfen an das Inverkehrbringen bzw.
+# Bereitstellen auf dem Unionsmarkt an. Wer ausschliesslich ausserhalb der EU
+# absetzt, wird von ihnen nicht erfasst.
+# Uebersetzungen: siehe i18n.SALES_MARKET_LABELS.
+SALES_MARKETS = [
+    "Deutschland",
+    "andere EU-/EWR-Staaten",
+    "außerhalb EU/EWR",
 ]

@@ -16,55 +16,55 @@ APPLIES_ORDER = {"error": 0, "ja": 1, "moeglich": 2, "nein": 3}
 
 I18N = {
     "de": {
-        "metric_yes": "Greift",
-        "metric_maybe": "Möglich / zu prüfen",
+        "metric_yes": "Relevant",
+        "metric_maybe": "Prüfen",
         "metric_no": "Nicht einschlägig",
-        "applies_label": {"ja": "GREIFT", "moeglich": "MÖGLICH", "nein": "NICHT EINSCHLÄGIG", "error": "FEHLER"},
+        "applies_label": {"ja": "RELEVANT", "moeglich": "PRÜFEN", "nein": "NICHT EINSCHLÄGIG", "error": "FEHLER"},
         "reason": "Begründung",
         "reason_missing": "Keine Begründung verfügbar.",
         "passage": "Greifende Stelle",
     },
     "en": {
-        "metric_yes": "Applies",
-        "metric_maybe": "Possible / to verify",
+        "metric_yes": "Relevant",
+        "metric_maybe": "To check",
         "metric_no": "Not applicable",
-        "applies_label": {"ja": "APPLIES", "moeglich": "POSSIBLE", "nein": "NOT APPLICABLE", "error": "ERROR"},
+        "applies_label": {"ja": "RELEVANT", "moeglich": "TO CHECK", "nein": "NOT APPLICABLE", "error": "ERROR"},
         "reason": "Reason",
         "reason_missing": "No justification available.",
         "passage": "Triggering passage",
     },
     "es": {
-        "metric_yes": "Aplica",
-        "metric_maybe": "Posible / a verificar",
+        "metric_yes": "Relevante",
+        "metric_maybe": "Comprobar",
         "metric_no": "No aplicable",
-        "applies_label": {"ja": "APLICA", "moeglich": "POSIBLE", "nein": "NO APLICABLE", "error": "ERROR"},
+        "applies_label": {"ja": "RELEVANTE", "moeglich": "COMPROBAR", "nein": "NO APLICABLE", "error": "ERROR"},
         "reason": "Justificación",
         "reason_missing": "Sin justificación disponible.",
         "passage": "Pasaje relevante",
     },
     "fr": {
-        "metric_yes": "S'applique",
-        "metric_maybe": "Possible / à vérifier",
+        "metric_yes": "Pertinent",
+        "metric_maybe": "À vérifier",
         "metric_no": "Non applicable",
-        "applies_label": {"ja": "S'APPLIQUE", "moeglich": "POSSIBLE", "nein": "NON APPLICABLE", "error": "ERREUR"},
+        "applies_label": {"ja": "PERTINENT", "moeglich": "À VÉRIFIER", "nein": "NON APPLICABLE", "error": "ERREUR"},
         "reason": "Justification",
         "reason_missing": "Aucune justification disponible.",
         "passage": "Passage pertinent",
     },
     "it": {
-        "metric_yes": "Si applica",
-        "metric_maybe": "Possibile / da verificare",
+        "metric_yes": "Rilevante",
+        "metric_maybe": "Da verificare",
         "metric_no": "Non applicabile",
-        "applies_label": {"ja": "SI APPLICA", "moeglich": "POSSIBILE", "nein": "NON APPLICABILE", "error": "ERRORE"},
+        "applies_label": {"ja": "RILEVANTE", "moeglich": "DA VERIFICARE", "nein": "NON APPLICABILE", "error": "ERRORE"},
         "reason": "Motivazione",
         "reason_missing": "Nessuna motivazione disponibile.",
         "passage": "Passaggio rilevante",
     },
     "zh": {
-        "metric_yes": "适用",
-        "metric_maybe": "可能 / 需核实",
+        "metric_yes": "相关",
+        "metric_maybe": "需核实",
         "metric_no": "不适用",
-        "applies_label": {"ja": "适用", "moeglich": "可能", "nein": "不适用", "error": "错误"},
+        "applies_label": {"ja": "相关", "moeglich": "需核实", "nein": "不适用", "error": "错误"},
         "reason": "理由",
         "reason_missing": "暂无理由说明。",
         "passage": "相关条款",
@@ -218,6 +218,11 @@ def _thresholds_html(profile: dict, language: str) -> str:
 </div>"""
 
 
+def _results_hint_html(language: str) -> str:
+    """Hinweis ueber der Ergebnisliste: das Ergebnis ist eine Erstorientierung."""
+    return (f'\n<div class="results-hint">{escape(t("results_hint", language))}</div>')
+
+
 def _card_html(r: dict, lang_dict: dict, language: str = "de",
                profile: dict | None = None) -> str:
     # Klein geschrieben, genau wie Filter und Sortierung in render_cards_html
@@ -290,7 +295,7 @@ def render_cards_html(results: list[dict], language: str = "de",
     if not shown:
         return '<p class="no-results">—</p>'
 
-    parts = [_metrics_html(shown, lang_dict)]
+    parts = [_metrics_html(shown, lang_dict), _results_hint_html(language)]
     if profile:
         threshold_html = _thresholds_html(profile, language)
         if threshold_html:

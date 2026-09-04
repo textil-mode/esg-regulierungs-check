@@ -45,15 +45,6 @@ _LKSG_STUFE_1000 = "01.01.2024"
 _HINSCHG_INKRAFTTRETEN = "02.07.2023"
 _HINSCHG_AB_50 = "17.12.2023"
 
-# Art. 26 RL (EU) 2019/1937: Abs. 1 nennt den 17.12.2021. Abs. 2 verschiebt
-# ALLEIN die Pflicht aus Art. 8 Abs. 3 (juristische Personen mit 50 bis 249
-# Arbeitnehmern) auf den 17.12.2023. Auf wen der Schwellenwert des Art. 8
-# Abs. 3 gar nicht anzuwenden ist (Art. 8 Abs. 4: Rechtstraeger, die unter die
-# Rechtsakte in Anhang Teil I.B und II fallen, u. a. Finanzdienstleistungen),
-# den erreicht die Verschiebung nicht — fuer ihn bleibt es beim 17.12.2021.
-_WHISTLE_REGELFRIST = "17.12.2021"
-_WHISTLE_AB_50 = "17.12.2023"
-
 # Art. 5 Abs. 2 UAbs. 1 lit. a RL (EU) 2022/2464 — Welle 1 (grosse Unternehmen
 # von oeffentlichem Interesse mit mehr als 500 Beschaeftigten) berichtet seit
 # dem Geschaeftsjahr 2024.
@@ -165,24 +156,6 @@ def _hinschg(profile: dict, today: date | None) -> dict:
     return {"gilt_ab": _HINSCHG_AB_50, "hinweis": "hinschg_ab_50"}
 
 
-def _whistleblower(profile: dict, today: date | None) -> dict:
-    """Whistleblower-RL: Umsetzungsfrist gestaffelt wie beim HinSchG.
-
-    Art. 26 Abs. 2 verschiebt ausschliesslich die Pflicht aus Art. 8 Abs. 3 —
-    und die trifft nur juristische Personen des privaten Sektors mit 50 bis 249
-    Arbeitnehmern. Fuer Rechtstraeger, auf die der Schwellenwert nach Art. 8
-    Abs. 4 nicht anzuwenden ist (u. a. Finanzdienstleistungen und Versicherungen
-    ueber Anhang Teil I.B), greift die Verschiebung nicht; fuer sie gilt die
-    Regelfrist des Art. 26 Abs. 1.
-    """
-    emp_de = profile.get("employees_de") or 0
-    if emp_de >= 250:
-        return {"gilt_ab": _WHISTLE_REGELFRIST, "hinweis": "whistle_ab_250"}
-    if (profile.get("branch") or "") in regulations._FINANCIAL_BRANCHES:
-        return {"gilt_ab": _WHISTLE_REGELFRIST, "hinweis": "whistle_finanz"}
-    return {"gilt_ab": _WHISTLE_AB_50, "hinweis": "whistle_ab_50"}
-
-
 def _eudr(profile: dict, today: date | None) -> dict:
     """EUDR: Kleinst- und Kleinunternehmen ein halbes Jahr spaeter.
 
@@ -261,7 +234,6 @@ _RULES = {
     "CSRD_DE": _csrd_de,
     "TaxonomieVO": _taxonomie,
     "HinSchG": _hinschg,
-    "WhistleblowerRL": _whistleblower,
     "EUDR": _eudr,
     "Vernichtungsverbot": _vernichtungsverbot,
     "GreenClaims": _greenclaims,

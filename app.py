@@ -43,6 +43,7 @@ from i18n import (
     MATERIAL_LABELS,
     PRODUCT_CAT_LABELS,
     ROLE_LABELS,
+    SALES_MARKET_LABELS,
     SITE_TYPE_LABELS,
     normalize_lang,
     t,
@@ -67,6 +68,7 @@ from regulations import (
     MATERIALS,
     PRODUCT_CATEGORIES,
     REGULATIONS,
+    SALES_MARKETS,
     SITE_TYPES,
     VALUE_CHAIN_ROLES,
     application_for,
@@ -249,6 +251,7 @@ def _inject_globals():
         PRODUCT_CAT_LABELS=PRODUCT_CAT_LABELS,
         ROLE_LABELS=ROLE_LABELS,
         MATERIAL_LABELS=MATERIAL_LABELS,
+        SALES_MARKET_LABELS=SALES_MARKET_LABELS,
     )
 
 
@@ -507,6 +510,7 @@ def dashboard():
         PRODUCT_CATEGORIES=PRODUCT_CATEGORIES,
         VALUE_CHAIN_ROLES=VALUE_CHAIN_ROLES,
         MATERIALS=MATERIALS,
+        SALES_MARKETS=SALES_MARKETS,
         reg_count=len(REGULATIONS),
     )
 
@@ -538,6 +542,7 @@ def save_company():
         "employees": int(f.get("employees") or 0),
         "employees_de": int(f.get("employees_de") or 0),
         "revenue_eur": float(f.get("revenue_eur") or 0),
+        "revenue_eu_eur": float(f.get("revenue_eu_eur") or 0),
         "balance_sheet_eur": float(f.get("balance_sheet_eur") or 0),
         "legal_form": f.get("legal_form", LEGAL_FORMS[0]),
         "group_role": f.get("group_role", GROUP_ROLES[0]),
@@ -549,6 +554,7 @@ def save_company():
         "product_categories": f.getlist("product_categories"),
         "value_chain_roles": f.getlist("value_chain_roles"),
         "materials": f.getlist("materials"),
+        "sales_markets": f.getlist("sales_markets"),
         "sites": sites,
         "language": lang,
     }

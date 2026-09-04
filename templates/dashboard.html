@@ -43,6 +43,11 @@
         <input type="text" class="fmt-cur" data-hidden="revenue_eur" value="{{ '{:,.2f}'.format(company.get('revenue_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('revenue_eur',0)|float > 0 else '' }}" inputmode="decimal">
         <input type="hidden" name="revenue_eur" value="{{ company.get('revenue_eur',0)|float }}">
 
+        <label>{{ t("field_revenue_eu", lang) }}</label>
+        <input type="text" class="fmt-cur" data-hidden="revenue_eu_eur" value="{{ '{:,.2f}'.format(company.get('revenue_eu_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('revenue_eu_eur',0)|float > 0 else '' }}" inputmode="decimal">
+        <input type="hidden" name="revenue_eu_eur" value="{{ company.get('revenue_eu_eur',0)|float }}">
+        <p class="help-text">{{ t("field_revenue_eu_help", lang) }}</p>
+
         <label>{{ t("field_balance_sheet", lang) }}</label>
         <input type="text" class="fmt-cur" data-hidden="balance_sheet_eur" value="{{ '{:,.2f}'.format(company.get('balance_sheet_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('balance_sheet_eur',0)|float > 0 else '' }}" inputmode="decimal">
         <input type="hidden" name="balance_sheet_eur" value="{{ company.get('balance_sheet_eur',0)|float }}">
@@ -134,12 +139,26 @@
       {% endfor %}
     </div>
 
+    <!-- Absatzmaerkte -->
+    <hr>
+    <h3 style="margin-bottom:8px;">{{ t("section_markets", lang)|replace("#### ","") }}</h3>
+    <p class="help-text" style="margin-bottom:12px;">{{ t("markets_hint", lang) }}</p>
+    {% set existing_markets = company.get('sales_markets', []) or [] %}
+    <div class="grid-2 products-grid">
+      {% for v in SALES_MARKETS %}
+      <div class="checkbox-row">
+        <input type="checkbox" name="sales_markets" value="{{ v }}" id="market_{{ loop.index }}" {{ 'checked' if v in existing_markets }}>
+        <label for="market_{{ loop.index }}">{{ t_opt(v, SALES_MARKET_LABELS, lang) }}</label>
+      </div>
+      {% endfor %}
+    </div>
+
     <!-- Standorte -->
     <hr>
     <h3 style="margin-bottom:8px;">{{ t("section_sites", lang)|replace("#### ","") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("sites_hint", lang) }}</p>
     <div id="sites-container">
-      {% set sites = company.get('sites', []) or [{"type":"Hauptsitz","location":"Deutschland","count":0}] %}
+      {% set sites = company.get('sites', []) or [{"type": SITE_TYPES[0], "location":"Deutschland","count":0}] %}
       {% for s in sites %}
       <div class="site-row">
         <div class="site-col">
@@ -388,7 +407,7 @@ async function runAutofill() {
       if (firstRow) {
         const cnt = firstRow.querySelector('input[type=number]');
         if (cnt && (!cnt.value || cnt.value === '0')) {
-          firstRow.querySelector('select[name^="site_type_"]').value = 'Hauptsitz';
+          firstRow.querySelector('select[name^="site_type_"]').value = {{ SITE_TYPES[0]|tojson }};
           firstRow.querySelector('select[name^="site_location_"]').value = f.hq_location;
           cnt.value = '1';
           firstRow.style.outline = '2px solid #0070C0';

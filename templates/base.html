@@ -68,10 +68,30 @@
     .page-head h1 { font-size: 30px; line-height: 1.25; }
     .page-head .subtitle { color: var(--tm-muted); font-size: 16px; margin-top: 6px; }
 
-    /* Hinweis (Haftungsausschluss) */
+    /* Hinweis (Haftungsausschluss). Der erste Satz bleibt immer sichtbar,
+       der Rest steht in einem nativen <details> — so verdraengt der lange
+       Text die Anmeldemaske nicht und braucht kein Skript. */
     .disclaimer {
       background: var(--tm-box); border-left: 3px solid var(--tm-orange);
-      padding: 8px 12px; font-size: 13px; color: #000000; margin-bottom: 20px;
+      padding: 10px 14px; font-size: 13px; color: #000000; margin-bottom: 20px;
+    }
+    .disclaimer > summary {
+      cursor: pointer; list-style: none; font-size: 13px; line-height: 1.5;
+    }
+    .disclaimer > summary::-webkit-details-marker { display: none; }
+    .disclaimer > summary:focus-visible { outline: 2px solid var(--tm-link); outline-offset: 2px; }
+    .disclaimer-more {
+      display: block; margin-top: 6px; color: var(--tm-link);
+      text-decoration: underline; font-size: 12px;
+    }
+    .disclaimer[open] .disclaimer-more { display: none; }
+    .disclaimer-body { margin-top: 8px; }
+    .disclaimer-body p { margin-top: 8px; }
+
+    /* Hinweis ueber der Ergebnisliste */
+    .results-hint {
+      background: var(--tm-box); border-left: 3px solid var(--tm-blue);
+      padding: 10px 14px; font-size: 13px; color: #000000; margin-bottom: 20px;
     }
 
     /* Flash-Meldungen */
@@ -190,7 +210,8 @@
     /* Standort-Zeilen */
     .site-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: end; }
     .site-row select, .site-row input { margin-bottom: 0; }
-    .site-row .site-col { flex: 3; }
+    .site-row .site-col { flex: 3; min-width: 0; }
+    .site-row .site-col select { max-width: 100%; }
     .site-row .site-count { flex: 1; }
 
     /* Fortschritt */
@@ -288,7 +309,13 @@
       <div class="subtitle">{{ t("app_subtitle", lang) }}</div>
     </div>
 
-    <div class="disclaimer">{{ t("disclaimer", lang) }}</div>
+    <details class="disclaimer">
+      <summary>{{ t("disclaimer_lead", lang) }}<span class="disclaimer-more">{{ t("disclaimer_more", lang) }}</span></summary>
+      <div class="disclaimer-body">
+        <p>{{ t("disclaimer_body", lang) }}</p>
+        <p>{{ t("disclaimer_contact", lang) }}</p>
+      </div>
+    </details>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}

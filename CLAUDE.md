@@ -31,12 +31,12 @@
 | **Passwort vergessen → Admin-Reset-Link** (kein Mailversand; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert) | `/admin/passwort-resets`, `db.password_resets` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
 | Stammdaten-Frage "EU-Importeur / erstmaliges Inverkehrbringen" | `templates/dashboard.html`, `db.eu_importer` | ✅ |
-| LLM-Analyse über 20 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
+| LLM-Analyse über 19 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
 | **Datentrennung im globalen Cache** (siehe Invariante unten): der Prompt zeigt exakt die `relevant_fields` der Regulierung, der Firmenname steht nirgends darin, und der System-Prompt verbietet das Nennen eines Namens | `llm.py` `_format_profile`, `_SYSTEM_BASE` | ✅ |
 | **Handlungsplan je Karte**: "Gilt ab" mit unternehmensindividueller Frist (Phase-in) und aufklappbare "Erste Schritte" (2-4 kuratierte Stichpunkte + Leitlinien-Link) | `deadlines.py`, `regulations.py` `FIRST_STEPS_BY_REG_KEY`, `views.py` | ✅ |
 | **Schwellen-Naehe** ("Was waere wenn"): Hinweis, wenn das Profil ±20 % um eine Schwelle liegt (LkSG 1000, HinSchG 50, CSRD 1000/450 Mio., CSDDD 5000/1,5 Mrd.) | `thresholds.py`, `views.py` | ✅ |
-| **Deterministische Begruendungen ohne LLM** fuer die gekoppelten Regs (CSRD, CSRD_DE, TaxonomieVO, HinSchG, WhistleblowerRL, CSR-RUG): handgeschriebene Bausteine in 6 Sprachen, 0 LLM-Calls, fuer immer byte-stabil | `regulations.py` `coupling_verdict`, `i18n.py` `coupling_texts`, `llm.py` `deterministic_result` | ✅ |
+| **Deterministische Begruendungen ohne LLM** fuer die gekoppelten Regs (CSRD, CSRD_DE, TaxonomieVO, HinSchG, CSR-RUG): handgeschriebene Bausteine in 6 Sprachen, 0 LLM-Calls, fuer immer byte-stabil | `regulations.py` `coupling_verdict`, `i18n.py` `coupling_texts`, `llm.py` `deterministic_result` | ✅ |
 | Gesetzestext-Cache mit ETag / Last-Modified | `fetcher.py` `law_texts` | ✅ |
 | **Strukturbasierte Kontext-Auswahl** (Art. 1-3 + `key_article` + Schwellenwert-Abschnitte statt Blind-Kappung; Kopfzeilen `=== Art. 2 - … ===`) | `lawparse.py` `build_context`, `app.py` Phase 1 | ✅ |
 | **EUR-Lex-Fallback ueber publications.europa.eu** (EUR-Lex antwortet Server-Clients mit AWS-WAF-Challenge, HTTP 202 + leerer Body) | `fetcher.py` `_cellar_text` | ✅ |
@@ -46,7 +46,7 @@
 | **Erstkonsolidierung ≠ Notbehelf**: ist die einzige konsolidierte Fassung auf den ABl.-Tag datiert (z. B. ESG-Rating-VO), gibt es keine spaeteren Aenderungen — der Ursprungstext ist der geltende Text, es wird nicht gewarnt | `fetcher.py` `_is_initial_consolidation` | ✅ |
 | **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
 | **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
-| **Watchdog** (`python watchdog.py`): laedt alle 20 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
+| **Watchdog** (`python watchdog.py`): laedt alle 19 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
 | **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
 | **"Gesetzesstand vom …"** auf jeder Ergebnis-Karte | `app.py` `law_dates`, `views.py` | ✅ |
 | **PDF-Export im textil+mode-CD** (Logo, Verlaufskante, Statusfarben; gleicher Umfang wie das frühere CSV plus Kopfbereich und Zusammenfassung). Chinesisch nutzt die nicht eingebettete CID-Schrift STSong-Light — siehe Modul-Docstring | `/download-pdf`, `pdfexport.py` | ✅ |
@@ -115,6 +115,35 @@ Angenehmer Nebeneffekt: das Modell kann keine Zahl mehr aus einem fremden Feld
 importieren. Vor der Umstellung las das LLM beim LkSG „Total employees: 1200" und
 begruendete damit „1.200 Arbeitnehmer im Inland" — obwohl das Gesetz auf die
 900 Inlandsbeschaeftigten abstellt.
+
+---
+
+### Text- und Feldaenderungen vom 04.09.2026
+
+- **Haftungshinweis** dreigeteilt: `disclaimer_lead` (immer sichtbar),
+  `disclaimer_body` und `disclaimer_contact` im aufklappbaren `<details>`
+  (`templates/base.html`). Der alte Schluessel `disclaimer` ist entfallen.
+  Fuer die PDF-Fusszeile gibt es die Kurzform `disclaimer_short`, am Anfang des
+  PDF steht `pdf_disclaimer`.
+- **Neue Profilfelder:** `revenue_eu_eur` (Nettoumsatz in der EU) und
+  `sales_markets` (Absatzmaerkte, Mehrfachauswahl `SALES_MARKETS`). Beide sind
+  ueber `COMPANY_EXTRA_COLUMNS` idempotent migriert.
+- **`csrd_status()` wertet den EU-Umsatz aus**: Art. 40a der Bilanzrichtlinie
+  stellt fuer Drittland-Unternehmen auf den in der Union erzielten Nettoumsatz
+  ab. Fehlt die Angabe (Altprofile), faellt die Pruefung auf den weltweiten
+  Umsatz zurueck und benennt die Luecke im Baustein
+  `csrd_drittland_ohne_eu_umsatz`.
+- **`SITE_TYPES[0]`** heisst nicht mehr "Hauptsitz", sondern
+  "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmaessigen Sitz
+  oder Zweigniederlassung". Altprofile werden in `db._SITE_TYPE_RENAMES` beim
+  Lesen und Schreiben auf den neuen Wert gehoben — eine reine Umbenennung, damit
+  der Standort nicht durch `_known` herausfaellt.
+- **Ergebniskategorien** heissen in der Anzeige "Relevant" / "Pruefen" /
+  "Nicht einschlaegig" (`views.I18N`). Die internen Werte `ja` / `moeglich` /
+  `nein` sind unveraendert.
+- **Whistleblower-Richtlinie gestrichen** (19 statt 20 Regulierungen). Das
+  HinSchG bleibt und ist unveraendert an `hinschg_status` gekoppelt.
+- `_PROMPT_VERSION` steht auf `v8-2026-09-04`; der Cache formuliert einmalig neu.
 
 ---
 
@@ -243,8 +272,8 @@ gleicher Tokenverbrauch, **keine Denk-Token**.
 
 | Metrik | Wert |
 |---|---|
-| Regulierungen gesamt | 20 |
-| davon ohne LLM entschieden (Textbausteine) | 6 |
+| Regulierungen gesamt | 19 |
+| davon ohne LLM entschieden (Textbausteine) | 5 |
 | LLM-Aufrufe je Durchlauf | 14 |
 | Eingabe-Token | 93.533 |
 | Ausgabe-Token | 1.885 |
@@ -280,7 +309,7 @@ Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER
 
 ### Regulierungen — statische Metadaten (`regulations.py`)
 
-- `REGULATIONS` — 20 Einträge mit `key`, `name`, `full_name`, `url`, `text_url`, `scope`, `criteria`, `key_article`
+- `REGULATIONS` — 19 Einträge mit `key`, `name`, `full_name`, `url`, `text_url`, `scope`, `criteria`, `key_article`
 - `GUIDELINES_BY_REG_KEY` — je Regulierung eine Liste kuratierter offizieller Leitlinien (EU-Kommission, BAFA, EFRAG, ESMA, IDW, BfJ, DRSC)
 - `PUBLISHED_BY_REG_KEY` — Veröffentlichungsdatum je Reg (OJ-Datum bzw. BGBl.-Datum), Format `DD.MM.YYYY`
 
@@ -319,7 +348,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `lawparse.py` | Zerlegt Gesetzestexte in Artikel-/§-/Anhang-Abschnitte und baut daraus den LLM-Kontext (Anwendungsbereich statt Praeambel) |
 | `test_lawparse.py` | Tests dazu — laufen gegen eine Kopie der DB (`data/esg_lawparse_test.db`), nie gegen `data/esg.db` |
 | `test_cache_stability.py` | Beweist die Wortstabilitaet der Begruendungen (6 Szenarien, eigene DB `data/esg_cache_test.db`). Ohne Argument mit Platzhalter statt LLM (kostenlos), mit `--live` echte Calls |
-| `regulations.py` | 20 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
+| `regulations.py` | 19 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
 | `watchdog.py` | Wöchentlicher Aktualitäts-Wächter (Cron auf dem VPS), schreibt `watchdog_runs` |
 | `i18n.py` | Übersetzungen (6 Sprachen) |
 | `db.py` | SQLite-Schema, Migrationen, Cache-Zugriff |
@@ -332,7 +361,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
 | `templates/dashboard.html` | Hauptseite (Stammdaten + "Jetzt prüfen" + "Regulierungsliste"-Button) |
-| `templates/regulierungsliste.html` | Tabelle aller 20 Regs + Guidelines + Stand |
+| `templates/regulierungsliste.html` | Tabelle aller 19 Regs + Guidelines + Stand |
 | `templates/login.html`, `fullscreen.html`, `analysis.html` | Auth, Fullscreen, Progress-Page |
 | `static/images/textil-mode-logo.png` | offizielles textil+mode-Logo (1925x437) |
 | `Dockerfile` | Python 3.12-slim + Gunicorn; **muss `static/` und `templates/` kopieren** |
@@ -407,9 +436,9 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 
 1. https://ki-textil-mode.de/esg/ (bzw. Legacy https://schuckert.cloud/regulierungs-check) → Login-Seite laedt, Logo oben links sichtbar, Footer "© 2026 · Alle Rechte vorbehalten".
 2. Nach Login: Dashboard mit Button "Regulierungsliste" oben rechts neben "Jetzt pruefen". Rechts in der Rechts-Spalte die Checkbox "EU-Importeur / erstmaliges Inverkehrbringen in der EU".
-3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 20 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
+3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 19 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
 4. Footer unten rechts: `<details>` "Hinweis" → auf Klick Popover mit Claude-Code-/Codex-Text.
-5. "Jetzt pruefen" laeuft bis 20/20 durch, keine rote ✕-Fehlerkarte. "Greifende Stelle" max. ~280 Zeichen.
+5. "Jetzt pruefen" laeuft bis 19/19 durch, keine rote ✕-Fehlerkarte. "Greifende Stelle" max. ~280 Zeichen.
 
 ---
 

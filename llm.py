@@ -97,7 +97,8 @@ _PROFILE_LABELS: dict[str, str] = {
     "group_role": "Group structure",
     "employees": "Total employees",
     "employees_de": "Employees in Germany",
-    "revenue_eur": "Net revenue (EUR/year)",
+    "revenue_eur": "Net revenue worldwide (EUR/year)",
+    "revenue_eu_eur": "Net revenue in the EU (EUR/year)",
     "balance_sheet_eur": "Balance sheet total (EUR)",
     "branch": "Industry",
     "b2c": "B2C business",
@@ -108,6 +109,7 @@ _PROFILE_LABELS: dict[str, str] = {
     "product_categories": "Product categories",
     "value_chain_roles": "Role(s) in the value chain",
     "materials": "Materials used",
+    "sales_markets": "Sales markets",
     "sites": "Sites",
 }
 
@@ -173,10 +175,11 @@ def _format_profile(profile: dict, reg: dict) -> str:
 
 # Mehrfachauswahl-Felder: im Prompt als Aufzaehlung, im Cache-Schluessel
 # sortiert (die Reihenfolge im Formular ist bedeutungslos).
-_LIST_FIELDS = frozenset({"product_categories", "value_chain_roles", "materials"})
+_LIST_FIELDS = frozenset({"product_categories", "value_chain_roles", "materials",
+                          "sales_markets"})
 _BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer"})
 _INT_FIELDS = frozenset({"employees", "employees_de"})
-_FLOAT_FIELDS = frozenset({"revenue_eur", "balance_sheet_eur"})
+_FLOAT_FIELDS = frozenset({"revenue_eur", "revenue_eu_eur", "balance_sheet_eur"})
 
 
 def _stable_value(field: str, value):
@@ -216,7 +219,9 @@ def profile_hash(profile: dict, reg: dict) -> str:
 # v6: Profilschema erweitert (Rolle in der Wertschoepfungskette, Materialien)
 # und Produktkategorien vollstaendig ausgetauscht — alte Begruendungen
 # beruhen auf Angaben, die es so nicht mehr gibt.
-_PROMPT_VERSION = "v7-2026-09-04"
+# v8: Profilschema erneut erweitert (Nettoumsatz in der EU, Absatzmaerkte),
+# Produktkategorie "Verpackungen" und das Wolle-Material umbenannt.
+_PROMPT_VERSION = "v8-2026-09-04"
 
 
 def _model_id() -> str:
@@ -404,7 +409,7 @@ def deterministic_result(reg: dict, profile: dict, language: str) -> dict | None
     """Ergebnis ohne LLM, wo die Rechtslage die Antwort bereits festlegt.
 
     Betrifft die per Kopplung entschiedenen Regulierungen (CSRD, CSRD_DE,
-    Taxonomie-VO, HinSchG, Whistleblower-RL) sowie das CSR-RUG, dessen Merkmale
+    Taxonomie-VO, HinSchG) sowie das CSR-RUG, dessen Merkmale
     § 289b Abs. 1 HGB abschliessend nennt. Struktur identisch zu `_enrich`.
     None heisst: dieser Fall gehoert weiterhin dem LLM.
     """

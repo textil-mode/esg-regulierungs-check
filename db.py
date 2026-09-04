@@ -12,7 +12,8 @@ from typing import Optional
 
 import bcrypt
 
-from regulations import MATERIALS, PRODUCT_CATEGORIES, VALUE_CHAIN_ROLES
+from regulations import (MATERIALS, PRODUCT_CATEGORIES, SALES_MARKETS, SITE_TYPES,
+                         VALUE_CHAIN_ROLES)
 
 
 def _configured_db_path() -> Path:
@@ -49,7 +50,27 @@ COMPANY_EXTRA_COLUMNS = [
     ("eu_importer", "INTEGER DEFAULT 0"),
     ("value_chain_roles_json", "TEXT"),
     ("materials_json", "TEXT"),
+    # Nettoumsatz in der EU (Art. 40a Bilanzrichtlinie, Art. 2 Abs. 2 CSDDD
+    # stellen fuer Drittland-Unternehmen darauf ab, nicht auf den weltweiten).
+    ("revenue_eu_eur", "REAL DEFAULT 0"),
+    ("sales_markets_json", "TEXT"),
 ]
+
+# Umbenannte Auswahlwerte: alter Wert -> heutiger Wert. Anders als bei den
+# Mehrfachauswahlen wird hier nichts weggefiltert, sondern derselbe Sachverhalt
+# unter seinem neuen Namen weitergefuehrt. Nur echte Umbenennungen gehoeren
+# hier hinein — keine inhaltliche Umdeutung.
+_SITE_TYPE_RENAMES = {"Hauptsitz": SITE_TYPES[0]}
+
+
+def _rename_sites(sites: list) -> list:
+    """Standort-Typen aus Altprofilen auf die heutigen Bezeichnungen heben."""
+    out = []
+    for s in sites or []:
+        s = dict(s)
+        s["type"] = _SITE_TYPE_RENAMES.get(s.get("type"), s.get("type"))
+        out.append(s)
+    return out
 
 
 def _migrate_companies(c: sqlite3.Connection) -> None:
@@ -556,7 +577,7 @@ def get_company(user_id: int) -> Optional[dict]:
     if not row:
         return None
     data = dict(row)
-    data["sites"] = json.loads(data.pop("sites_json") or "[]")
+    data["sites"] = _rename_sites(json.loads(data.pop("sites_json") or "[]"))
     # Auswahllisten: nur noch bekannte Werte durchlassen. Die Produkt-
     # kategorien wurden am 02.09.2026 vollstaendig ausgetauscht; aeltere
     # Profile tragen Werte, die es nicht mehr gibt ("Kaffee / Kakao",
@@ -572,6 +593,8 @@ def get_company(user_id: int) -> Optional[dict]:
         json.loads(data.pop("value_chain_roles_json") or "[]"), VALUE_CHAIN_ROLES)
     data["materials"] = _known(
         json.loads(data.pop("materials_json") or "[]"), MATERIALS)
+    data["sales_markets"] = _known(
+        json.loads(data.pop("sales_markets_json") or "[]"), SALES_MARKETS)
     data["b2c"] = bool(data.get("b2c"))
     data["listed"] = bool(data.get("listed"))
     data["env_claims"] = bool(data.get("env_claims"))
@@ -580,13 +603,15 @@ def get_company(user_id: int) -> Optional[dict]:
 
 
 def upsert_company(user_id: int, data: dict) -> None:
-    sites_json = json.dumps(data.get("sites", []), ensure_ascii=False)
+    sites_json = json.dumps(_rename_sites(data.get("sites", [])), ensure_ascii=False)
     products_json = json.dumps(
         _known(data.get("product_categories"), PRODUCT_CATEGORIES), ensure_ascii=False)
     roles_json = json.dumps(
         _known(data.get("value_chain_roles"), VALUE_CHAIN_ROLES), ensure_ascii=False)
     materials_json = json.dumps(
         _known(data.get("materials"), MATERIALS), ensure_ascii=False)
+    markets_json = json.dumps(
+        _known(data.get("sales_markets"), SALES_MARKETS), ensure_ascii=False)
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute(
@@ -595,9 +620,10 @@ def upsert_company(user_id: int, data: dict) -> None:
                 user_id, name, employees, revenue_eur, branch, b2c, listed,
                 sites_json, updated_at, balance_sheet_eur, legal_form, group_role,
                 env_claims, product_categories_json, employees_de, language,
-                eu_importer, value_chain_roles_json, materials_json
+                eu_importer, value_chain_roles_json, materials_json,
+                revenue_eu_eur, sales_markets_json
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 name=excluded.name,
                 employees=excluded.employees,
@@ -616,7 +642,9 @@ def upsert_company(user_id: int, data: dict) -> None:
                 language=excluded.language,
                 eu_importer=excluded.eu_importer,
                 value_chain_roles_json=excluded.value_chain_roles_json,
-                materials_json=excluded.materials_json
+                materials_json=excluded.materials_json,
+                revenue_eu_eur=excluded.revenue_eu_eur,
+                sales_markets_json=excluded.sales_markets_json
             """,
             (
                 user_id,
@@ -638,6 +666,8 @@ def upsert_company(user_id: int, data: dict) -> None:
                 1 if data.get("eu_importer") else 0,
                 roles_json,
                 materials_json,
+                float(data.get("revenue_eu_eur") or 0),
+                markets_json,
             ),
         )
 

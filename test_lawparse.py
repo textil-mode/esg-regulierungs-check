@@ -205,7 +205,7 @@ def test_sources_deliver_fulltext() -> None:
 
 
 def test_all_regulations_fit() -> None:
-    print("\n[build_context — alle 20 Regulierungen]")
+    print("\n[build_context — alle Regulierungen]")
     for reg in REGULATIONS:
         cached = fetcher.get_cached_text(reg["key"], "de") or {}
         raw = cached.get("text") or ""
