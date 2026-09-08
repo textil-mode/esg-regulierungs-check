@@ -63,6 +63,7 @@ Decision rules:
 - Use ONLY the thresholds, figures and conditions given in the "Applicability criteria" block and the full text. NEVER import thresholds from other regulations or from prior knowledge; if a number is given, use exactly that number.
 - The company profile lists ONLY the characteristics that matter for THIS regulation. Never invent, assume or mention a characteristic that is not listed there (no sector, no headcount, no products unless they appear in the profile).
 - IDENTITY RULE: you are never told the company's name and MUST NOT invent or guess one. Always refer to it as "the company" (in {lang_name}), never by a name, brand or location.
+- ROLE RULE: the profile field "Role(s) in the value chain" describes what the company does in general business terms. It is NOT a legal status. Never carry a role over automatically into this regulation; decide instead whether the company meets THIS regulation's own definition of the economic operator (manufacturer, importer, distributor, trader, operator, …) as given in the criteria and the law text extract.
 - If a "BINDING PRE-DETERMINED FACT" block is present, treat that fact as established truth. Base your decision on it together with this regulation's own criteria and never state anything that contradicts it.
 
 "reason" — MANDATORY in every case, written in {lang_name}, max. 60 words, and ALWAYS in EXACTLY two sentences — no more, no fewer — with this structure:
@@ -221,7 +222,10 @@ def profile_hash(profile: dict, reg: dict) -> str:
 # beruhen auf Angaben, die es so nicht mehr gibt.
 # v8: Profilschema erneut erweitert (Nettoumsatz in der EU, Absatzmaerkte),
 # Produktkategorie "Verpackungen" und das Wolle-Material umbenannt.
-_PROMPT_VERSION = "v8-2026-09-04"
+# v9: Branchen (NACE 13/14/15/96.01), Produktkategorien, Rollen und Materialien
+# ausgetauscht; dazu die ROLE RULE — die Rolle im Profil ist eine Taetigkeits-
+# beschreibung, keine Rechtsstellung, und darf nicht ungeprueft uebernommen werden.
+_PROMPT_VERSION = "v9-2026-09-08"
 
 
 def _model_id() -> str:

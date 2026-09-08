@@ -990,32 +990,32 @@ def relevant_fields_for(reg: dict) -> tuple[str, ...]:
 # Branchen: sprachneutrale Keys (= DE-String mit Umlauten) für DB-Persistenz.
 # Übersetzungen: siehe i18n.BRANCH_LABELS
 BRANCHES = [
-    "Land-/Forstwirtschaft, Fischerei",
-    "Bergbau / Gewinnung von Steinen und Erden",
-    "Verarbeitendes Gewerbe / Industrie",
-    "Chemie / Pharma",
-    "Metallverarbeitung / Maschinenbau",
-    "Automobil / Fahrzeugbau",
-    "Elektronik / Elektrotechnik",
-    "Textil / Bekleidung / Leder",
-    "Lebensmittel / Getränke",
-    "Möbel / Holz / Papier",
-    "Energieversorgung",
-    "Wasser- / Abfallwirtschaft",
-    "Bauwirtschaft",
-    "Handel (Groß-/Einzelhandel)",
-    "Verkehr / Logistik",
-    "Gastgewerbe / Tourismus",
-    "Information / Telekommunikation / IT",
-    "Finanzdienstleistungen",
-    "Versicherungen",
-    "Immobilien",
-    "Beratung / Recht / Wirtschaftsprüfung",
-    "Forschung / Entwicklung",
-    "Bildung",
-    "Gesundheit / Soziales",
-    "Kunst / Unterhaltung / Medien",
-    "Sonstige Dienstleistungen",
+    # NACE 13 - Herstellung von Textilien
+    "Spinnstoffaufbereitung und Spinnerei",
+    "Weberei",
+    "Veredlung von Textilien und Bekleidung",
+    "Herstellung von gewirktem und gestricktem Stoff",
+    "Herstellung von konfektionierten Textilwaren (ohne Bekleidung)",
+    "Herstellung von Teppichen",
+    "Herstellung von Seilerwaren",
+    "Herstellung von Vliesstoff und Erzeugnissen daraus (ohne Bekleidung)",
+    "Herstellung von technischen Textilien",
+    "Herstellung von sonstigen Textilwaren a. n. g.",
+    # NACE 14 - Herstellung von Bekleidung
+    "Herstellung von Lederbekleidung",
+    "Herstellung von Arbeits- und Berufsbekleidung",
+    "Herstellung von sonstiger Oberbekleidung",
+    "Herstellung von Wäsche",
+    "Herstellung von sonstiger Bekleidung und Bekleidungszubehör a. n. g.",
+    "Herstellung von Pelzwaren",
+    "Herstellung von Strumpfwaren",
+    "Herstellung von sonstiger Bekleidung aus gewirktem und gestricktem Stoff",
+    # NACE 15 - Herstellung von Leder, Lederwaren und Schuhen
+    "Herstellung von Leder und Lederfaserstoff; Zurichtung und Färben von Fellen",
+    "Lederverarbeitung (ohne Herstellung von Lederbekleidung)",
+    "Herstellung von Schuhen",
+    # NACE 96.01
+    "Wäscherei und chemische Reinigung",
 ]
 
 # Standort-Typen: sprachneutrale Keys (= DE-String) fuer die DB-Persistenz.
@@ -1066,19 +1066,19 @@ GROUP_ROLES = [
 # was hier nicht mehr steht, damit weder Formular noch LLM-Prompt noch der
 # Cache-Schluessel einen unbekannten Wert sehen (siehe dort).
 PRODUCT_CATEGORIES = [
-    "Verpackungen von Produkten / Versand- oder Transportverpackungen",
-    "Holz",
-    "Holzprodukte",
-    "Papier",
-    "Kautschuk/Gummi",
-    "Bekleidung",
-    "Heimtextilien",
-    "technische Textilien",
-    "PSA",
+    "Textile Vor- und Zwischenprodukte – Fasern, Garne, Gewebe, Gestricke, Vliesstoffe",
+    "Bekleidung und Bekleidungszubehör",
     "Schuhe",
-    "Lederwaren",
-    "textile Medizinprodukte",
-    "Mobiltech / Textilien für Mobilität und Transport",
+    "Lederwaren und Accessoires",
+    "Heim- und Haustextilien",
+    "Schutztextilien / PSA",
+    "Medizin- und Gesundheitstextilien",
+    "Mobilitäts- und Transporttextilien – Automotive, Luft- und Raumfahrt, Bahn, Schifffahrt",
+    "Industrie- und Filtertextilien – Filter, Förderbänder, technische Gewebe, textile Maschinenkomponenten",
+    "Bau- und Geotextilien – Bautextilien, Membranen, Gewebe für Erd-/Straßenbau",
+    "Agrartextilien – Netze, Vliese, Abdeckungen etc.",
+    "Sport- und Freizeittextilien",
+    "Sonstige technische Textilien",
 ]
 
 # Rolle in der Wertschoepfungskette (Mehrfachauswahl).
@@ -1089,12 +1089,12 @@ PRODUCT_CATEGORIES = [
 # EmpCo-Vorgaben an denjenigen, der die Umweltaussage gegenueber Verbrauchern
 # macht. Uebersetzungen: siehe i18n.ROLE_LABELS.
 VALUE_CHAIN_ROLES = [
-    "Hersteller",
-    "Marke",
-    "Importeur",
-    "Händler",
-    "Onlinehändler",
+    "Hersteller (stellt Produkte selbst her oder lässt sie herstellen und vermarktet sie unter eigenem Namen/eigener Marke)",
+    "Importeur (bringt Produkte aus einem Drittstaat auf den EU-Markt)",
+    "Händler/Vertreiber (stellt Produkte anderer Unternehmen auf dem Markt bereit)",
+    "Markeninhaber / Vertrieb unter eigener Marke",
     "Zulieferer",
+    "Online-/Fernabsatz",
 ]
 
 # Eingesetzte Materialien (Mehrfachauswahl).
@@ -1104,15 +1104,35 @@ VALUE_CHAIN_ROLES = [
 # und fuer die Oekodesign-Anforderungen die chemische Ausruestung (PFAS).
 # Uebersetzungen: siehe i18n.MATERIAL_LABELS.
 MATERIALS = [
-    "Baumwolle und andere Naturfasern",
-    "Materialien tierischen Ursprungs (außer Leder), z. B. Wolle",
-    "Leder bzw. Rindererzeugnisse",
-    "Naturkautschuk",
+    # Naturfasern
+    "Baumwolle",
+    "Sonstige pflanzliche Naturfasern (z. B. Flachs/Leinen, Hanf, Jute)",
+    "Tierische Fasern (z. B. Wolle, Kaschmir, Mohair, Alpaka, Seide)",
+    # Chemiefasern
     "Zellulosebasierte Chemiefasern (z. B. Viskose, Modal, Lyocell)",
-    "Synthetische Fasern",
+    "Synthetische Chemiefasern (z. B. Polyester, Polyamid, Polyacryl, Elastan)",
+    # Weitere Materialien
+    "Leder / Rindererzeugnisse",
+    "Naturkautschuk",
     "Recyclingmaterialien",
-    "Besondere chemische Ausrüstungen (ohne PFAS, z. B. Flammschutz, Wasserabweisung)",
+    "Sonstige Materialien",
+    # Chemische Ausruestungen / Behandlungen
+    "Wasser-, öl- oder schmutzabweisende Ausrüstung",
+    "Flammhemmende / flammwidrige Ausrüstung",
+    "Antimikrobielle / biozide Ausrüstung",
     "PFAS-haltige Ausrüstung",
+    "Sonstige besondere chemische Ausrüstung",
+    "Nicht bekannt / kann nicht ausgeschlossen werden",
+]
+
+# Gliederung der Materialliste fuer das Formular (nur Darstellung; gespeichert,
+# an das LLM gereicht und gecacht wird weiterhin die flache Liste `MATERIALS`).
+# Uebersetzung der Ueberschriften: siehe i18n.MATERIAL_GROUP_LABELS.
+MATERIAL_GROUPS = [
+    ("Naturfasern", MATERIALS[0:3]),
+    ("Chemiefasern", MATERIALS[3:5]),
+    ("Weitere Materialien", MATERIALS[5:9]),
+    ("Chemische Ausrüstungen / Behandlungen", MATERIALS[9:]),
 ]
 
 # Absatzmaerkte (Mehrfachauswahl).

@@ -67,6 +67,13 @@
     .page-head { padding: 24px 0 18px; }
     .page-head h1 { font-size: 30px; line-height: 1.25; }
     .page-head .subtitle { color: var(--tm-muted); font-size: 16px; margin-top: 6px; }
+    .beta-badge {
+      display: inline-block; margin-left: 10px; padding: 2px 8px; vertical-align: middle;
+      border: 1px solid var(--tm-link); border-radius: 3px;
+      font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--tm-link);
+    }
+    .beta-hint { color: var(--tm-muted); font-size: 13px; margin-top: 6px; }
 
     /* Hinweis (Haftungsausschluss). Der erste Satz bleibt immer sichtbar,
        der Rest steht in einem nativen <details> — so verdraengt der lange
@@ -135,6 +142,7 @@
     /* Engeres Raster fuer Produktkategorien-Checkboxen */
     .products-grid { gap: 6px 20px; }
     .products-grid .checkbox-row { margin-bottom: 0; }
+    .material-group { margin: 16px 0 6px; font-size: 14px; }
 
     /* Abschnitte */
     .section { background: #FFFFFF; border: 1px solid var(--tm-line); padding: 22px 24px; margin-bottom: 22px; }
@@ -305,8 +313,9 @@
     <div class="tm-accent"></div>
 
     <div class="page-head">
-      <h1>{{ t("app_title", lang) }}</h1>
+      <h1>{{ t("app_title", lang) }}<span class="beta-badge">{{ t("beta_badge", lang) }}</span></h1>
       <div class="subtitle">{{ t("app_subtitle", lang) }}</div>
+      <div class="beta-hint">{{ t("beta_hint", lang) }}</div>
     </div>
 
     <details class="disclaimer">

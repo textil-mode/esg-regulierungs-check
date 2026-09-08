@@ -12,8 +12,8 @@ from typing import Optional
 
 import bcrypt
 
-from regulations import (MATERIALS, PRODUCT_CATEGORIES, SALES_MARKETS, SITE_TYPES,
-                         VALUE_CHAIN_ROLES)
+from regulations import (BRANCHES, MATERIALS, PRODUCT_CATEGORIES, SALES_MARKETS,
+                         SITE_TYPES, VALUE_CHAIN_ROLES)
 
 
 def _configured_db_path() -> Path:
@@ -595,6 +595,14 @@ def get_company(user_id: int) -> Optional[dict]:
         json.loads(data.pop("materials_json") or "[]"), MATERIALS)
     data["sales_markets"] = _known(
         json.loads(data.pop("sales_markets_json") or "[]"), SALES_MARKETS)
+    # Die Branchenliste wurde am 08.09.2026 auf die NACE-Klassen der Textil-,
+    # Bekleidungs- und Lederwirtschaft umgestellt. Eine Branche aus einem
+    # Altprofil steht nicht mehr im Formular; wuerde sie durchgereicht, stuende
+    # sie im LLM-Prompt und im Cache-Schluessel, waere aber unsichtbar und beim
+    # naechsten Speichern verschwunden. Deshalb hier auf den ersten gueltigen
+    # Wert setzen — dieselbe Auswahl, die das Formular dann anzeigt.
+    if data.get("branch") not in BRANCHES:
+        data["branch"] = BRANCHES[0]
     data["b2c"] = bool(data.get("b2c"))
     data["listed"] = bool(data.get("listed"))
     data["env_claims"] = bool(data.get("env_claims"))

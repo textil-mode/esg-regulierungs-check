@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 
+<!-- Kenntnisnahme des Hinweises. Steht direkt unter dem Haftungshinweis aus
+     base.html; die Anmelde- und Registrier-Schaltflaechen bleiben gesperrt,
+     bis das Kaestchen gesetzt ist. -->
+<div class="section" style="max-width:440px;padding:12px 14px;">
+  <div class="checkbox-row" style="margin-bottom:0;">
+    <input type="checkbox" id="ack" onchange="toggleAck()">
+    <label for="ack">{{ t("login_ack", lang) }}</label>
+  </div>
+</div>
+
 <div class="tabs">
   <button type="button" class="tab active" onclick="switchTab('login')">{{ t("tab_login", lang) }}</button>
   <button type="button" class="tab" onclick="switchTab('signup')">{{ t("tab_signup", lang) }}</button>
@@ -15,7 +25,7 @@
       <input type="email" name="email" required autocomplete="new-email" placeholder=" ">
       <label>{{ t("password", lang) }}</label>
       <input type="password" name="password" required autocomplete="new-password" placeholder=" ">
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:6px;">{{ t("btn_login", lang) }}</button>
+      <button type="submit" class="btn btn-primary ack-gated" style="width:100%;margin-top:6px;" disabled title="{{ t('login_ack_required', lang) }}">{{ t("btn_login", lang) }}</button>
     </form>
     <p style="margin:12px 0 0;font-size:13px;">
       <button type="button" class="linklike" onclick="switchTab('forgot')">{{ t("link_forgot", lang) }}</button>
@@ -51,12 +61,16 @@
       <input type="password" name="password" required minlength="8" autocomplete="new-password" placeholder=" ">
       <label>{{ t("password_repeat", lang) }}</label>
       <input type="password" name="password2" required minlength="8" autocomplete="new-password" placeholder=" ">
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:6px;">{{ t("btn_signup", lang) }}</button>
+      <button type="submit" class="btn btn-primary ack-gated" style="width:100%;margin-top:6px;" disabled title="{{ t('login_ack_required', lang) }}">{{ t("btn_signup", lang) }}</button>
     </form>
   </div>
 </div>
 
 <script>
+function toggleAck() {
+  const ok = document.getElementById('ack').checked;
+  document.querySelectorAll('.ack-gated').forEach(b => { b.disabled = !ok; });
+}
 function switchTab(name) {
   // "forgot" ist kein eigener Reiter — der Login-Reiter bleibt dann aktiv.
   const tabIndex = (name === 'signup') ? 1 : 0;
@@ -66,6 +80,7 @@ function switchTab(name) {
 }
 // Browser-Autofill leeren
 window.addEventListener('DOMContentLoaded', () => {
+  toggleAck();
   setTimeout(() => {
     document.querySelectorAll('input[type="email"], input[type="password"]').forEach(el => { el.value = ''; });
   }, 100);

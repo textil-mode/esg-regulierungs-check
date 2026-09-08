@@ -125,8 +125,10 @@ Rules for enum fields: pick EXACTLY one of the listed strings (verbatim, includi
 umlauts) or null. When in doubt between two enum values, return null instead.
 - "legal_form": map e.g. "Aktiengesellschaft"/"SE" -> "AG / SE".
 - "branch": pick the MOST SPECIFIC listed industry the sources clearly name
-  (e.g. a fashion/apparel company -> "Textil / Bekleidung / Leder", NOT the
-  generic "Verarbeitendes Gewerbe / Industrie").
+  (e.g. a company weaving fabrics -> "Weberei", a shoe manufacturer ->
+  "Herstellung von Schuhen"). The list contains only NACE classes 13, 14, 15
+  and 96.01; if the sources do not clearly place the company in one of them,
+  return null.
 - "group_role": only if the sources explicitly describe the group structure
   (e.g. "Muttergesellschaft des Konzerns", "Tochter von X"); otherwise null.
 - "product_categories": only categories the company itself manufactures or

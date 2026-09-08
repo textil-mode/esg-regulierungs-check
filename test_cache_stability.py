@@ -60,7 +60,7 @@ PROFILE = {
     "employees_de": 900,
     "revenue_eur": 600_000_000.0,
     "balance_sheet_eur": 300_000_000.0,
-    "branch": "Textil / Bekleidung / Leder",
+    "branch": "Herstellung von sonstiger Oberbekleidung",
     "b2c": True,
     "listed": False,
     "env_claims": True,
@@ -68,9 +68,12 @@ PROFILE = {
     "legal_form": "GmbH",
     "group_role": "Eigenständig (kein Konzern)",
     "sites": [{"type": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung", "location": "Deutschland", "count": 1}],
-    "product_categories": ["Bekleidung"],
-    "value_chain_roles": ["Hersteller", "Marke"],
-    "materials": ["Baumwolle und andere Naturfasern"],
+    "product_categories": ["Bekleidung und Bekleidungszubehör"],
+    "value_chain_roles": [
+        "Hersteller (stellt Produkte selbst her oder lässt sie herstellen und vermarktet sie unter eigenem Namen/eigener Marke)",
+        "Markeninhaber / Vertrieb unter eigener Marke",
+    ],
+    "materials": ["Baumwolle"],
     "language": "de",
 }
 

@@ -59,8 +59,8 @@
 | **KI-Autofill Stammdaten** (Button "✨ KI-generiert ausfüllen": Wikipedia + Website → nur explizit belegte Felder) | `autofill.py`, `/api/autofill`, `templates/dashboard.html` | ✅ |
 | **Deterministische Ergebnisse** (seed=42 + topK=1; `_PROMPT_VERSION` in `reg_hash` invalidiert Cache bei Prompt-Änderungen) | `llm.py` | ✅ |
 | **Begründung immer in UI-Sprache** (auch bei englischem Gesetzestext), Zitat bleibt Original | `llm.py` `_SYSTEM_BASE` | ✅ |
-| **Kennzahl-Hervorhebung** in "Greifende Stelle" (Zahl+Einheit leicht rot, Passage-Box mit Gold-Rand) | `views.py` `_highlight_kennzahlen`, `base.html` | ✅ |
-| "Greifende Stelle" auf 280 Zeichen gekappt (+ " …"). Das statische `key_article` wird NICHT mehr vorangestellt — die Begruendungstexte tragen die Fundstelle seit Prompt v5 selbst, sonst stuenden zwei widerspruechliche Angaben da und die Kappung griffe nur auf den halben Text | `views.py` `_shorten_passage`, `_card_html` | ✅ |
+| **Kennzahl-Hervorhebung** in "Passage" (Zahl+Einheit leicht rot, Passage-Box mit Gold-Rand) | `views.py` `_highlight_kennzahlen`, `base.html` | ✅ |
+| "Passage" auf 280 Zeichen gekappt (+ " …"). Das statische `key_article` wird NICHT mehr vorangestellt — die Begruendungstexte tragen die Fundstelle seit Prompt v5 selbst, sonst stuenden zwei widerspruechliche Angaben da und die Kappung griffe nur auf den halben Text | `views.py` `_shorten_passage`, `_card_html` | ✅ |
 | Fehler-Regulierung als rote ✕-Karte sichtbar | `views.py` `APPLIES_ORDER` + `BADGE_STYLES` | ✅ |
 | i18n (DE / EN / ES / FR / IT / ZH) | `i18n.py` | ✅ |
 
@@ -144,6 +144,48 @@ begruendete damit „1.200 Arbeitnehmer im Inland" — obwohl das Gesetz auf die
 - **Whistleblower-Richtlinie gestrichen** (19 statt 20 Regulierungen). Das
   HinSchG bleibt und ist unveraendert an `hinschg_status` gekoppelt.
 - `_PROMPT_VERSION` steht auf `v8-2026-09-04`; der Cache formuliert einmalig neu.
+
+---
+
+### Text- und Feldaenderungen vom 08.09.2026
+
+- **Anmeldeseite:** unter dem Haftungshinweis steht ein Kaestchen
+  "Ich habe den Hinweis gelesen und zur Kenntnis genommen." (`login_ack`).
+  Solange es leer ist, sind die Schaltflaechen "Anmelden" und "Registrieren"
+  gesperrt (`.ack-gated` in `templates/login.html`). Die Kenntnisnahme ist eine
+  Bedienhilfe, keine Zugangssperre — sie wirkt nur im Browser. "Passwort
+  vergessen" bleibt bewusst frei bedienbar.
+- **Beta-Kennzeichnung:** Abzeichen "Beta-Version" neben dem Seitentitel plus
+  Satz darunter (`beta_badge`, `beta_hint` in `templates/base.html`), auf jeder
+  Seite sichtbar.
+- **`BRANCHES` vollstaendig ausgetauscht:** nur noch die NACE-Klassen 13, 14, 15
+  und 96.01 (22 Eintraege), jeweils ohne Codenummer. Von den vom Nutzer
+  genannten Ebenen sind die Blattklassen uebernommen; wo Gruppe und Klasse
+  denselben Wortlaut haben (13.1/13.10, 13.2/13.20, …), waere ein zweiter
+  Eintrag ein Duplikat gewesen.
+  **Folge:** `regulations._FINANCIAL_BRANCHES` ("Finanzdienstleistungen",
+  "Versicherungen") kann nicht mehr zutreffen. Der Code dafuer in
+  `regulations.py` und `deadlines.py` steht noch, laeuft aber ins Leere.
+- **`PRODUCT_CATEGORIES` ausgetauscht** (13 Warengruppen der Textil- und
+  Modewirtschaft). Die Kategorie "Verpackungen …" ist entfallen; die PPWR wird
+  jetzt allein ueber Rolle, Absatzmaerkte und die uebrigen Profilfelder
+  beurteilt.
+- **`VALUE_CHAIN_ROLES` ausgetauscht** (6 Rollen mit erlaeuterndem Klammerzusatz).
+  Darueber steht neu `roles_note`: die rechtliche Definition kann je Regulierung
+  abweichen. Dazu im System-Prompt die **ROLE RULE** — die Rolle ist eine
+  Taetigkeitsbeschreibung, keine Rechtsstellung, und darf nicht ungeprueft als
+  Herstellereigenschaft uebernommen werden.
+- **`MATERIALS` ausgetauscht** (15 Eintraege). Neu ist `MATERIAL_GROUPS` in
+  `regulations.py`: eine reine Darstellungsgliederung (Naturfasern,
+  Chemiefasern, Weitere Materialien, Chemische Ausruestungen / Behandlungen).
+  Gespeichert, an das LLM gereicht und gecacht wird weiterhin die flache Liste.
+- **Ergebniskarten:** das Feld "Greifende Stelle" heisst auf Deutsch jetzt
+  "Passage" (`views.I18N`). Die anderen Sprachen sind unveraendert.
+- **Altprofile:** `db.get_company()` setzt eine Branche, die es nicht mehr gibt,
+  auf `BRANCHES[0]` — dieselbe Auswahl, die das Formular dann zeigt. Die
+  Mehrfachauswahlen filtert wie bisher `db._known`. Gespeichert bleiben die
+  alten Werte, bis der Nutzer das naechste Mal speichert.
+- `_PROMPT_VERSION` steht auf `v9-2026-09-08`; der Cache formuliert einmalig neu.
 
 ---
 
@@ -446,7 +488,7 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 2. Nach Login: Dashboard mit Button "Regulierungsliste" oben rechts neben "Jetzt pruefen". Rechts in der Rechts-Spalte die Checkbox "EU-Importeur / erstmaliges Inverkehrbringen in der EU".
 3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 19 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
 4. Footer unten rechts: `<details>` "Hinweis" → auf Klick Popover mit Claude-Code-/Codex-Text.
-5. "Jetzt pruefen" laeuft bis 19/19 durch, keine rote ✕-Fehlerkarte. "Greifende Stelle" max. ~280 Zeichen.
+5. "Jetzt pruefen" laeuft bis 19/19 durch, keine rote ✕-Fehlerkarte. "Passage" max. ~280 Zeichen.
 
 ---
 

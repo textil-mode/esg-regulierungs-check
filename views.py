@@ -22,7 +22,7 @@ I18N = {
         "applies_label": {"ja": "RELEVANT", "moeglich": "PRÜFEN", "nein": "NICHT EINSCHLÄGIG", "error": "FEHLER"},
         "reason": "Begründung",
         "reason_missing": "Keine Begründung verfügbar.",
-        "passage": "Greifende Stelle",
+        "passage": "Passage",
     },
     "en": {
         "metric_yes": "Relevant",

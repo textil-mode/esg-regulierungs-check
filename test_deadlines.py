@@ -24,7 +24,7 @@ KLEINBETRIEB = {
     "employees": 35,
     "employees_de": 35,
     "revenue_eur": 4_000_000,
-    "branch": "Textil / Bekleidung / Leder",
+    "branch": "Herstellung von sonstiger Oberbekleidung",
     "legal_form": "GmbH",
     "group_role": "Eigenständig (kein Konzern)",
     "listed": False,
@@ -32,9 +32,12 @@ KLEINBETRIEB = {
     "env_claims": True,
     "eu_importer": False,
     "sites": [{"type": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung", "location": "Deutschland", "count": 35}],
-    "product_categories": ["Bekleidung", "Schuhe"],
-    "value_chain_roles": ["Hersteller", "Marke"],
-    "materials": ["Baumwolle und andere Naturfasern"],
+    "product_categories": ["Bekleidung und Bekleidungszubehör", "Schuhe"],
+    "value_chain_roles": [
+        "Hersteller (stellt Produkte selbst her oder lässt sie herstellen und vermarktet sie unter eigenem Namen/eigener Marke)",
+        "Markeninhaber / Vertrieb unter eigener Marke",
+    ],
+    "materials": ["Baumwolle"],
     "language": "de",
 }
 
@@ -43,7 +46,7 @@ MITTELSTAND_1100 = {
     "employees": 1_100,
     "employees_de": 1_100,
     "revenue_eur": 210_000_000,
-    "branch": "Textil / Bekleidung / Leder",
+    "branch": "Herstellung von sonstiger Oberbekleidung",
     "legal_form": "GmbH & Co. KG",
     "group_role": "Eigenständig (kein Konzern)",
     "listed": False,
@@ -51,9 +54,12 @@ MITTELSTAND_1100 = {
     "env_claims": True,
     "eu_importer": True,
     "sites": [{"type": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung", "location": "Deutschland", "count": 1100}],
-    "product_categories": ["Bekleidung", "Schuhe"],
-    "value_chain_roles": ["Hersteller", "Marke"],
-    "materials": ["Baumwolle und andere Naturfasern"],
+    "product_categories": ["Bekleidung und Bekleidungszubehör", "Schuhe"],
+    "value_chain_roles": [
+        "Hersteller (stellt Produkte selbst her oder lässt sie herstellen und vermarktet sie unter eigenem Namen/eigener Marke)",
+        "Markeninhaber / Vertrieb unter eigener Marke",
+    ],
+    "materials": ["Baumwolle"],
     "language": "de",
 }
 
@@ -62,7 +68,7 @@ GROSSKONZERN = {
     "employees": 12_000,
     "employees_de": 6_500,
     "revenue_eur": 3_200_000_000,
-    "branch": "Textil / Bekleidung / Leder",
+    "branch": "Herstellung von sonstiger Oberbekleidung",
     "legal_form": "AG / SE",
     "group_role": "Mutterunternehmen mit Sitz in EU",
     "listed": True,
@@ -70,9 +76,12 @@ GROSSKONZERN = {
     "env_claims": True,
     "eu_importer": True,
     "sites": [{"type": "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung", "location": "Deutschland", "count": 6500}],
-    "product_categories": ["Bekleidung", "Schuhe"],
-    "value_chain_roles": ["Hersteller", "Marke"],
-    "materials": ["Baumwolle und andere Naturfasern"],
+    "product_categories": ["Bekleidung und Bekleidungszubehör", "Schuhe"],
+    "value_chain_roles": [
+        "Hersteller (stellt Produkte selbst her oder lässt sie herstellen und vermarktet sie unter eigenem Namen/eigener Marke)",
+        "Markeninhaber / Vertrieb unter eigener Marke",
+    ],
+    "materials": ["Baumwolle"],
     "language": "de",
 }
 

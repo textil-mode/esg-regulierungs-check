@@ -114,6 +114,7 @@
     <!-- Rolle in der Wertschöpfungskette -->
     <hr>
     <h3 style="margin-bottom:8px;">{{ t("section_roles", lang)|replace("#### ","") }}</h3>
+    <p class="help-text" style="margin-bottom:12px;">{{ t("roles_note", lang) }}</p>
     <p class="help-text" style="margin-bottom:12px;">{{ t("roles_hint", lang) }}</p>
     {% set existing_roles = company.get('value_chain_roles', []) or [] %}
     <div class="grid-2 products-grid">
@@ -130,14 +131,18 @@
     <h3 style="margin-bottom:8px;">{{ t("section_materials", lang)|replace("#### ","") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("materials_hint", lang) }}</p>
     {% set existing_materials = company.get('materials', []) or [] %}
+    {% for group, values in MATERIAL_GROUPS %}
+    {% set g = loop.index %}
+    <h4 class="material-group">{{ t_opt(group, MATERIAL_GROUP_LABELS, lang) }}</h4>
     <div class="grid-2 products-grid">
-      {% for v in MATERIALS %}
+      {% for v in values %}
       <div class="checkbox-row">
-        <input type="checkbox" name="materials" value="{{ v }}" id="mat_{{ loop.index }}" {{ 'checked' if v in existing_materials }}>
-        <label for="mat_{{ loop.index }}">{{ t_opt(v, MATERIAL_LABELS, lang) }}</label>
+        <input type="checkbox" name="materials" value="{{ v }}" id="mat_{{ g }}_{{ loop.index }}" {{ 'checked' if v in existing_materials }}>
+        <label for="mat_{{ g }}_{{ loop.index }}">{{ t_opt(v, MATERIAL_LABELS, lang) }}</label>
       </div>
       {% endfor %}
     </div>
+    {% endfor %}
 
     <!-- Absatzmaerkte -->
     <hr>
