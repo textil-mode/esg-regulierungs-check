@@ -71,7 +71,7 @@
 `PRODUCT_CATEGORIES` in `regulations.py` wurde vollstaendig ausgetauscht (jetzt
 Verpackungen, Holz, Holzprodukte, Papier, Kautschuk/Gummi, Bekleidung,
 Heimtextilien, technische Textilien, PSA, Schuhe, Lederwaren, textile
-Medizinprodukte, Automotive-Textilien). Dazu kamen zwei weitere
+Medizinprodukte, Mobiltech / Textilien fuer Mobilitaet und Transport). Dazu kamen zwei weitere
 Mehrfachauswahlen: `VALUE_CHAIN_ROLES` (Rolle in der Wertschoepfungskette) und
 `MATERIALS`.
 

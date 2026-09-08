@@ -1078,7 +1078,7 @@ PRODUCT_CATEGORIES = [
     "Schuhe",
     "Lederwaren",
     "textile Medizinprodukte",
-    "Automotive-Textilien",
+    "Mobiltech / Textilien für Mobilität und Transport",
 ]
 
 # Rolle in der Wertschoepfungskette (Mehrfachauswahl).

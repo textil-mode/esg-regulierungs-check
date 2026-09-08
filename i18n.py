@@ -3564,9 +3564,13 @@ PRODUCT_CAT_LABELS: dict[str, dict[str, str]] = {
         "es": "Productos sanitarios textiles", "fr": "Dispositifs médicaux textiles",
         "it": "Dispositivi medici tessili", "zh": "纺织类医疗器械",
     },
-    "Automotive-Textilien": {
-        "de": "Automotive-Textilien", "en": "Automotive textiles", "es": "Textiles para automoción",
-        "fr": "Textiles pour l'automobile", "it": "Tessili per l'automotive", "zh": "汽车用纺织品",
+    "Mobiltech / Textilien für Mobilität und Transport": {
+        "de": "Mobiltech / Textilien für Mobilität und Transport",
+        "en": "Mobiltech / textiles for mobility and transport",
+        "es": "Mobiltech / textiles para movilidad y transporte",
+        "fr": "Mobiltech / textiles pour la mobilité et le transport",
+        "it": "Mobiltech / tessili per mobilità e trasporti",
+        "zh": "Mobiltech / 交通运输用纺织品",
     },
 }
 
