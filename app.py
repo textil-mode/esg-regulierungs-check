@@ -614,6 +614,9 @@ def autofill_api():
     if not uid:
         return Response(json.dumps({"error": "not authenticated"}), status=401,
                         mimetype="application/json")
+    if not db.take_quota("autofill", str(uid), db.AUTOFILL_MAX_PER_HOUR):
+        return Response(json.dumps({"error": t("err_quota", _lang())}), status=429,
+                        mimetype="application/json")
     payload = request.get_json(silent=True) or {}
     name = (payload.get("name") or "").strip()
     if not name:
@@ -727,6 +730,10 @@ def run_analysis_page():
     lang = _lang()
     company = db.get_company(uid)
     if not company or not company.get("employees"):
+        return redirect(url_for("dashboard"))
+
+    if not db.take_quota("analysis", str(uid), db.ANALYSIS_MAX_PER_HOUR):
+        flash(t("err_quota", lang), "error")
         return redirect(url_for("dashboard"))
 
     # Analyse im Background-Thread starten

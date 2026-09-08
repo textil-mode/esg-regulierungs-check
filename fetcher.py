@@ -7,13 +7,16 @@ from __future__ import annotations
 
 import hashlib
 import io
+import ipaddress
 import os
 import re
+import socket
 import sqlite3
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 from bs4 import BeautifulSoup
@@ -759,6 +762,87 @@ def _guideline_key(url: str) -> str:
     return "GUIDE:" + _hashlib.sha256(url.encode("utf-8")).hexdigest()[:20]
 
 
+# ---------------------------------------------------------------------------
+# Schutz vor Anfragen an interne Adressen (SSRF)
+# ---------------------------------------------------------------------------
+# Das KI-Autofill laedt die Unternehmenswebsite, die bei Wikidata unter der
+# Eigenschaft P856 steht. Wikidata kann jeder bearbeiten — ohne Pruefung liesse
+# sich der Server so dazu bringen, `http://127.0.0.1:8080/` oder die
+# Cloud-Metadaten unter `169.254.169.254` abzurufen. Die Anfrage kaeme von
+# innen und ginge an der Firewall vorbei.
+#
+# Geprueft wird bei JEDEM Sprung: eine erlaubte Weiterleitung auf eine interne
+# Adresse waere sonst dieselbe Luecke mit einem Zwischenschritt.
+#
+# Restrisiko, bewusst getragen: zwischen Namensaufloesung und Verbindungsaufbau
+# koennte ein Angreifer den DNS-Eintrag wechseln (DNS-Rebinding). Dagegen hilft
+# nur, die geprüfte IP direkt zu verbinden und den Hostnamen im Host-Header zu
+# fuehren — das bricht die TLS-Pruefung und steht in keinem Verhaeltnis zu
+# einem Formular, das oeffentliche Firmenwebsites liest.
+_ERLAUBTE_SCHEMATA = frozenset({"http", "https"})
+_MAX_WEITERLEITUNGEN = 5
+
+
+class UnsichereAdresse(ValueError):
+    """Ziel zeigt nicht ins oeffentliche Internet."""
+
+
+def _adresse_ist_oeffentlich(host: str) -> bool:
+    """True, wenn der Name ausschliesslich auf oeffentliche IPs zeigt.
+
+    Streng: schon EINE interne Adresse unter den aufgeloesten laesst das Ziel
+    durchfallen. Wer einen Namen auf 127.0.0.1 und eine oeffentliche IP zeigen
+    laesst, koennte sonst wuerfeln, welche verwendet wird.
+    """
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return False
+    if not infos:
+        return False
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            return False
+        # Deckt 127/8, 10/8, 172.16/12, 192.168/16, 169.254/16, ::1, fc00::/7
+        # und die Sonderbereiche gleich mit ab.
+        if (ip.is_private or ip.is_loopback or ip.is_link_local
+                or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+            return False
+    return True
+
+
+def _pruefe_ziel(url: str) -> None:
+    """Wirft `UnsichereAdresse`, wenn die URL nicht nach draussen zeigt."""
+    teile = urlsplit(url)
+    if teile.scheme.lower() not in _ERLAUBTE_SCHEMATA:
+        raise UnsichereAdresse(f"Protokoll nicht erlaubt: {teile.scheme or '(keins)'}")
+    if not teile.hostname:
+        raise UnsichereAdresse("Adresse ohne Hostnamen")
+    if not _adresse_ist_oeffentlich(teile.hostname):
+        raise UnsichereAdresse(f"Ziel zeigt nicht ins oeffentliche Netz: {teile.hostname}")
+
+
+def _get_geprueft(client: "httpx.Client", url: str) -> "httpx.Response":
+    """GET mit Zielpruefung vor jedem Sprung.
+
+    Ersetzt `follow_redirects=True`: httpx wuerde der Weiterleitung folgen, ohne
+    das neue Ziel noch einmal anzusehen.
+    """
+    _pruefe_ziel(url)
+    for _ in range(_MAX_WEITERLEITUNGEN + 1):
+        resp = client.get(url)
+        if not resp.is_redirect:
+            return resp
+        ziel = resp.headers.get("location")
+        if not ziel:
+            return resp
+        url = urljoin(str(resp.url), ziel)
+        _pruefe_ziel(url)
+    raise UnsichereAdresse("Zu viele Weiterleitungen")
+
+
 def fetch_url_text(url: str, *, language: str = "de", force: bool = False,
                     timeout: float = 30.0) -> dict:
     """Laedt eine beliebige URL (HTML/PDF), cached sie in der `law_texts`-Tabelle.
@@ -789,8 +873,10 @@ def fetch_url_text(url: str, *, language: str = "de", force: bool = False,
             headers["If-Modified-Since"] = row["last_modified"]
 
     try:
-        with httpx.Client(timeout=timeout, follow_redirects=True, headers=headers) as client:
-            resp = client.get(url)
+        # follow_redirects bewusst aus: `_get_geprueft` sieht sich jedes
+        # Weiterleitungsziel einzeln an (SSRF, siehe oben).
+        with httpx.Client(timeout=timeout, follow_redirects=False, headers=headers) as client:
+            resp = _get_geprueft(client, url)
     except Exception as e:  # noqa: BLE001
         if row:
             return {"text": row["text"], "fetched_at": row["fetched_at"],

@@ -504,6 +504,34 @@ def record_reset_token_failure(ip: str) -> None:
 RESET_TTL_HOURS = 24
 
 
+# ---------- Bremse fuer kostenpflichtige Endpunkte ----------
+# `/api/autofill` und `/run-analysis` rufen das Sprachmodell auf und kosten damit
+# Geld. Beide sind angemeldeten Nutzern zugaenglich; ohne Deckel kann ein Konto
+# sie in Schleife aufrufen. Das ist keine Datenluecke, sondern eine Rechnung —
+# beim Autofill zusaetzlich der Hebel, um viele fremde Adressen abzurufen.
+#
+# Bewusst grosszuegig: Ein normaler Durchlauf braucht ein Autofill und eine
+# Analyse. Wer 20 bzw. 30 Mal in der Stunde kommt, arbeitet nicht mehr.
+# Gezaehlt wird in derselben Tabelle wie die Fehlversuche beim Anmelden; die
+# Aufraeumroutine (`_prune`, 3 Stunden) deckt das Stundenfenster mit ab.
+QUOTA_WINDOW_MIN = 60
+AUTOFILL_MAX_PER_HOUR = 20
+ANALYSIS_MAX_PER_HOUR = 30
+
+
+def take_quota(scope: str, subject: str, limit: int,
+               window_min: int = QUOTA_WINDOW_MIN) -> bool:
+    """Verbucht einen Aufruf. True, wenn er noch im Kontingent lag.
+
+    Verbucht wird auch der abgelehnte Versuch — sonst koennte man am Deckel
+    entlang beliebig oft anklopfen und das Fenster liefe nie voll.
+    """
+    with _conn() as c:
+        anzahl, _ = _attempt_stats(c, scope, subject, window_min)
+        _record_attempt(c, scope, subject)
+        return anzahl < limit
+
+
 def _token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 

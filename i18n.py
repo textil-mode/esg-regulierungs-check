@@ -203,6 +203,14 @@ UI: dict[str, dict[str, str]] = {
         "it": "Il suo account e tutti i dati associati sono stati eliminati.",
         "zh": "您的账户及全部相关数据已被删除。",
     },
+    "err_quota": {
+        "de": "Sie haben diese Funktion in der letzten Stunde sehr oft genutzt. Bitte versuchen Sie es später noch einmal.",
+        "en": "You have used this function very often in the past hour. Please try again later.",
+        "es": "Ha utilizado esta función muy a menudo en la última hora. Inténtelo de nuevo más tarde.",
+        "fr": "Vous avez utilisé cette fonction très souvent au cours de la dernière heure. Veuillez réessayer plus tard.",
+        "it": "Ha utilizzato questa funzione molto spesso nell'ultima ora. Riprovi più tardi.",
+        "zh": "您在过去一小时内非常频繁地使用了此功能，请稍后再试。",
+    },
     "hinweis_label": {
         "de": "Hinweis",
         "en": "Note",
