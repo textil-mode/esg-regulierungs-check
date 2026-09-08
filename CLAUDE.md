@@ -523,6 +523,20 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 - **`analysis_cache` wächst unbegrenzt.** Je Gesetzesänderung bleibt eine alte Zeile je
   Profil-Hash liegen (die None-Fallback-Logik lebt davon). Bei ~500 Byte pro Zeile
   unkritisch; wenn es je stört, die ältesten Zeilen je `(reg_key, profile_hash)` kappen.
+- **Verarbeitungsort der LLM-Anfragen ist nicht zugesagt** (Entscheidung steht aus).
+  Die App ruft `generativelanguage.googleapis.com` — einen globalen Endpunkt ohne
+  Ortsbindung; Googles Bedingungen behalten sich die Verarbeitung in jedem Land vor,
+  in dem Google Einrichtungen unterhaelt. Ausweg waere Vertex AI ueber den
+  EU-Multiregion-Endpunkt `https://aiplatform.eu.rep.googleapis.com` (Standort `eu`);
+  `gemini-3.1-flash-lite` ist laut Googles Residenz-Tabelle dafuer freigegeben, ein
+  Modellwechsel also nicht noetig. Kosten: +10 % (2,88 statt 2,62 ct je Lauf).
+  Aufwand: eigener `vertex`-Zweig in `llm.py` (gleicher Anfragekoerper, andere
+  Adresse, Dienstkonto statt API-Schluessel) plus Google-Cloud-Projekt.
+  Vollstaendige Entscheidungsvorlage mit Quellen und Zahlen:
+  https://claude.ai/code/artifact/6bcacb83-e671-4f4b-9529-1114212a6521
+  Vor einer Umsetzung zu klaeren: Google-Cloud-Konto des Verbandes, ob dem
+  Datenschutz die EU als Ganzes genuegt (Frankfurt allein traegt dieses Modell
+  nicht), und der Auftragsverarbeitungsvertrag.
 - Einige Guideline-URLs sind Landing-Pages (nicht direkt der Leitfaden-PDF). Feintuning später.
 - Beim nächsten Deploy: Hostinger-Pull-Konfig auf `ghcr.io/textil-mode/…` umstellen (siehe CI/CD).
 - Empfehlung: Budget-Alert in Google Cloud Billing setzen (z. B. 5 €/Monat).
