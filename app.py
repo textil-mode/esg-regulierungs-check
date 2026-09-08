@@ -370,6 +370,29 @@ def change_password():
     return render_template("password_change.html")
 
 
+@app.route("/konto-loeschen", methods=["POST"])
+def delete_account():
+    """Loescht das eigene Konto (Art. 17 DSGVO) — nur mit dem Passwort.
+
+    Die Passwortabfrage ist hier keine Foermelei: der Vorgang ist endgueltig,
+    und ohne sie genuegte ein fremder Griff an einen offenen Rechner. Das
+    Formular fragt zusaetzlich im Browser nach.
+    """
+    redir = _require_login()
+    if redir:
+        return redir
+
+    lang = _lang()
+    if not db.check_password(_uid(), request.form.get("current_password", "")):
+        flash(t("err_pw_current_wrong", lang), "error")
+        return redirect(url_for("change_password"))
+
+    db.delete_user(_uid())
+    session.clear()
+    flash(t("ok_account_deleted", lang), "success")
+    return redirect(url_for("login"))
+
+
 @app.route("/passwort-zuruecksetzen/<token>", methods=["GET", "POST"])
 def reset_password(token: str):
     lang = _lang()

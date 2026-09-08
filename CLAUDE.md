@@ -28,6 +28,8 @@
 | Login / Registrierung (bcrypt, SQLite) | `app.py`, `db.py` | ✅ |
 | **Bremse gegen Passwort-Durchprobieren** (5 Fehlversuche je Konto+IP in 15 min mit sich verdoppelnder Wartezeit, zusätzlich 30/Stunde je IP; persistent in `login_attempts`) — siehe eigenen Abschnitt unten | `db.py` `begin_login_attempt`, `app.py` `/login` | ✅ |
 | **Passwort ändern** (eingeloggt, altes PW nötig) | `/passwort-aendern`, `templates/password_change.html` | ✅ |
+| **Konto löschen** (eingeloggt, Passwort + Browser-Rückfrage; entfernt users/companies/analyses/password_resets per Kaskade und die Fehlversuche zur E-Mail; `analysis_cache` bleibt, weil anonym und geteilt) | `/konto-loeschen`, `db.delete_user` | ✅ |
+| **Datenschutzerklärung** der Anwendung (Hosting, Google-Gemini-Übermittlung, Autofill, Löschung) — nur Deutsch, bewusst nicht in `i18n.py` | `/datenschutz`, `templates/datenschutz.html` | ✅ |
 | **Passwort vergessen → Admin-Reset-Link** (kein Mailversand; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert) | `/admin/passwort-resets`, `db.password_resets` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
 | Stammdaten-Frage "EU-Importeur / erstmaliges Inverkehrbringen" | `templates/dashboard.html`, `db.eu_importer` | ✅ |

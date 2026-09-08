@@ -233,6 +233,32 @@ def get_user_by_email(email: str) -> Optional[dict]:
     return dict(row) if row else None
 
 
+def delete_user(user_id: int) -> bool:
+    """Loescht ein Konto mit allem, was daran haengt (Art. 17 DSGVO).
+
+    Betroffen sind `users`, `companies`, `analyses`, `password_resets` sowie
+    die Fehlversuche der Login-Bremse zu dieser E-Mail-Adresse. Die ersten
+    vier haengen per `ON DELETE CASCADE` am Konto, `login_attempts` nicht —
+    dort steht die Adresse als Text, nicht als Fremdschluessel.
+
+    `analysis_cache` bleibt bewusst unberuehrt: die Zeilen tragen keinen
+    Personenbezug (Schluessel ist ein Hash der Merkmale, gespeichert ist nur
+    die Begruendung ohne Firmennamen) und werden von allen Nutzern geteilt.
+    Sie zu loeschen wuerde fremde Ergebnisse verwerfen, ohne hier etwas zu
+    schuetzen.
+
+    Rueckgabe: True, wenn es das Konto gab.
+    """
+    with _conn() as c:
+        row = c.execute("SELECT email FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not row:
+            return False
+        c.execute("DELETE FROM login_attempts WHERE scope = 'account' AND subject = ?",
+                  (row["email"].strip().lower(),))
+        c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    return True
+
+
 def set_password(user_id: int, password: str) -> None:
     """Setzt ein neues Passwort und entwertet alle offenen Reset-Links."""
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(BCRYPT_ROUNDS)).decode()
