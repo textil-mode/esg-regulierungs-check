@@ -523,6 +523,21 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 - **`analysis_cache` wächst unbegrenzt.** Je Gesetzesänderung bleibt eine alte Zeile je
   Profil-Hash liegen (die None-Fallback-Logik lebt davon). Bei ~500 Byte pro Zeile
   unkritisch; wenn es je stört, die ältesten Zeilen je `(reg_key, profile_hash)` kappen.
+- **Sicherheitsstand 08.09.2026** (Bericht: `../sicherheitsbericht-2026-09-08.md`).
+  Behoben und live: SSRF im KI-Autofill (`fetcher._pruefe_ziel`/`_get_geprueft`),
+  Bremse fuer `/api/autofill` (20/h) und `/run-analysis` (30/h) ueber
+  `db.take_quota`, pypdf 6.16.1 + flask 3.1.3, Schutz-Header in nginx.
+  **Offen und bewusst so belassen:** die Registrierung meldet weiterhin, wenn
+  eine Adresse schon vergeben ist — damit laesst sich abfragen, welche
+  Unternehmen die Anwendung nutzen (Nutzerentscheidung vom 08.09.2026).
+  Ebenfalls offen: Passwort-Mindestlaenge 8 statt 12, kein CSRF-Token
+  (SameSite=Lax deckt den Hauptweg), kein `session.clear()` beim Anmelden.
+- **nginx-Falle:** Ein `location`-Block mit eigenem `add_header` erbt **keinen**
+  Header mehr aus dem `server`-Block. HSTS steht deshalb in `/esg/` und
+  `/regulierungs-check/` ausdruecklich noch einmal. Wer dort Header aendert,
+  prueft danach mit `curl -sI`, dass HSTS noch da ist.
+  Sicherungen: `/root/ki-textil-mode.de.bak-2026-09-08`,
+  `/root/nginx-sites-enabled-default.bak-2026-09-08`.
 - **Verarbeitungsort der LLM-Anfragen ist nicht zugesagt** (Entscheidung steht aus).
   Die App ruft `generativelanguage.googleapis.com` — einen globalen Endpunkt ohne
   Ortsbindung; Googles Bedingungen behalten sich die Verarbeitung in jedem Land vor,
