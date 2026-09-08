@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block content %}
+
+{#
+  Datenschutzerklaerung fuer den ESG-Regulierungs-Check.
+
+  Bewusst NICHT ueber i18n.py: es ist ein Rechtstext, der als Ganzes von der
+  Rechtsabteilung freigegeben wird. Eine Uebersetzung waere eine eigene,
+  ebenfalls freizugebende Fassung — sie kaeme sonst als unbemerkte Variante
+  in Umlauf. Massgeblich ist die deutsche Fassung.
+
+  Die Angaben beschreiben den Stand der Anwendung. Wer an der Verarbeitung
+  etwas aendert (anderes LLM, anderer Hoster, neue Felder, Protokollierung),
+  aendert diesen Text mit.
+#}
+<div class="section legal-page">
+  <h2 style="margin-top:0;">Datenschutzerklärung ESG-Regulierungs-Check</h2>
+  <p class="legal-meta">Stand: 8. September 2026</p>
+
+  <p>
+    Diese Erklärung gilt für den ESG-Regulierungs-Check unter
+    <em>ki-textil-mode.de/esg</em> und <em>schuckert.cloud/regulierungs-check</em>.
+    Für den übrigen Internetauftritt des Verbandes gilt die
+    <a href="https://www.textil-mode.de/de/datenschutz/" target="_blank" rel="noopener noreferrer">allgemeine Datenschutzerklärung von textil+mode</a>.
+  </p>
+
+  <h3>1. Verantwortlicher</h3>
+  <p>
+    Gesamtverband der deutschen Textil- und Modeindustrie e.&nbsp;V.<br>
+    Wallstraße 58/59, 10179 Berlin<br>
+    Telefon +49 30 726220-0<br>
+    E-Mail: info@textil-mode.de
+  </p>
+  <p>
+    In Datenschutzfragen erreichen Sie uns unter
+    <em>datenschutz@textil-mode.de</em>.
+  </p>
+
+  <h3>2. Welche Daten wir verarbeiten</h3>
+
+  <h4>2.1 Zugangsdaten</h4>
+  <p>
+    Bei der Registrierung erheben wir Ihre E-Mail-Adresse und ein von Ihnen
+    gewähltes Passwort sowie den Zeitpunkt der Registrierung. Das Passwort
+    speichern wir ausschließlich als bcrypt-Hash; es lässt sich daraus nicht
+    zurückrechnen, und wir können es nicht einsehen.
+  </p>
+
+  <h4>2.2 Unternehmensangaben</h4>
+  <p>
+    Sie tragen die Merkmale Ihres Unternehmens selbst ein: Bezeichnung,
+    Beschäftigtenzahl weltweit und in Deutschland, Nettoumsatz weltweit und in
+    der EU, Bilanzsumme, Rechtsform, Konzernstellung, Branche,
+    Produktkategorien, Rolle in der Wertschöpfungskette, eingesetzte
+    Materialien, Absatzmärkte, Standorte sowie die Angaben zu
+    Endkundengeschäft, Kapitalmarktorientierung, Umweltaussagen im Marketing
+    und zur Einfuhr in die EU.
+  </p>
+  <p>
+    Für die Bezeichnung des Unternehmens empfehlen wir ein Pseudonym. Die
+    Auswertung braucht den echten Namen nicht — er geht in die Prüfung nicht
+    ein (siehe Ziffer&nbsp;5).
+  </p>
+
+  <h4>2.3 Prüfergebnisse</h4>
+  <p>
+    Das Ergebnis einer Prüfung speichern wir Ihrem Konto zugeordnet, damit Sie
+    es beim nächsten Aufruf wiederfinden und als PDF herunterladen können.
+  </p>
+
+  <h4>2.4 Fehlgeschlagene Anmeldeversuche</h4>
+  <p>
+    Um das Durchprobieren von Passwörtern zu unterbinden, speichern wir zu
+    jedem fehlgeschlagenen Anmeldeversuch die eingegebene E-Mail-Adresse, die
+    IP-Adresse und den Zeitpunkt. Diese Einträge löschen wir automatisch nach
+    drei Stunden.
+  </p>
+
+  <h4>2.5 Zurücksetzen des Passworts</h4>
+  <p>
+    Fordern Sie ein neues Passwort an, speichern wir den Zeitpunkt der
+    Anforderung sowie einen Hashwert des einmalig gültigen Links und dessen
+    Ablaufzeitpunkt. Der Link selbst wird nicht gespeichert.
+  </p>
+
+  <h4>2.6 Server-Protokolle</h4>
+  <p>
+    Der Webserver protokolliert beim Abruf technisch bedingt IP-Adresse,
+    Zeitpunkt, aufgerufene Adresse, Statuscode, übertragene Datenmenge,
+    verweisende Seite und Browserkennung.
+  </p>
+
+  <h3>3. Zwecke und Rechtsgrundlagen</h3>
+  <table class="legal-table">
+    <tr><th>Verarbeitung</th><th>Zweck</th><th>Rechtsgrundlage</th></tr>
+    <tr>
+      <td>Zugangsdaten, Unternehmensangaben, Prüfergebnisse</td>
+      <td>Bereitstellung des ESG-Regulierungs-Checks für Sie als angemeldete Nutzerin oder angemeldeten Nutzer</td>
+      <td>Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des Nutzungsverhältnisses)</td>
+    </tr>
+    <tr>
+      <td>Anmeldeversuche, Server-Protokolle</td>
+      <td>Abwehr von Angriffen, Betriebssicherheit, Fehlersuche</td>
+      <td>Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren Betrieb)</td>
+    </tr>
+    <tr>
+      <td>Zurücksetzen des Passworts</td>
+      <td>Wiederherstellung des Zugangs</td>
+      <td>Art. 6 Abs. 1 lit. b DSGVO</td>
+    </tr>
+    <tr>
+      <td>Automatisches Ausfüllen der Stammdaten (freiwillig)</td>
+      <td>Vorbelegung des Formulars aus öffentlichen Quellen</td>
+      <td>Art. 6 Abs. 1 lit. a DSGVO (Ihre Einwilligung durch Betätigen der Schaltfläche)</td>
+    </tr>
+  </table>
+
+  <h3>4. Hosting</h3>
+  <p>
+    Die Anwendung läuft auf einem virtuellen Server der Hostinger
+    International Ltd. Der Server steht in einem Rechenzentrum in
+    Frankfurt&nbsp;am&nbsp;Main, Deutschland. Ihre Zugangsdaten,
+    Unternehmensangaben und Prüfergebnisse liegen dort in einer
+    SQLite-Datenbank innerhalb der Anwendung; sie verlassen den Server nur in
+    dem unter Ziffer&nbsp;5 und&nbsp;6 beschriebenen Umfang. Mit dem Anbieter
+    besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.
+  </p>
+
+  <h3>5. Auswertung durch künstliche Intelligenz</h3>
+  <p>
+    Die Einschätzung, welche Regulierungen für Ihr Unternehmen einschlägig
+    sein könnten, erstellt ein Sprachmodell des Anbieters Google
+    (<em>Gemini</em>, aufgerufen über die Schnittstelle
+    <em>generativelanguage.googleapis.com</em>). Das Modell läuft nicht auf
+    unserem Server, sondern bei Google. Bei jeder Prüfung werden dorthin
+    übertragen:
+  </p>
+  <ul>
+    <li>der Text der jeweiligen Regulierung, und</li>
+    <li>diejenigen Merkmale Ihres Unternehmensprofils, die für genau diese
+        Regulierung Bedeutung haben (etwa Beschäftigtenzahl, Umsatz,
+        Rechtsform, Branche, Materialien).</li>
+  </ul>
+  <p>
+    <strong>Nicht übertragen werden</strong> Ihre E-Mail-Adresse, Ihr Passwort
+    und die von Ihnen eingetragene Bezeichnung des Unternehmens. Die Anwendung
+    stellt technisch sicher, dass die Bezeichnung in keiner Anfrage enthalten
+    ist, und weist das Modell zusätzlich an, kein Unternehmen namentlich zu
+    benennen.
+  </p>
+  <p>
+    Die Antworten des Modells speichern wir zwischen. Der Schlüssel dieses
+    Zwischenspeichers ist ein Hashwert der übermittelten Merkmale; zwei
+    Unternehmen mit derselben Ausgangslage erhalten deshalb dieselbe
+    Begründung. Ein Rückschluss auf ein bestimmtes Unternehmen ist daraus
+    nicht möglich.
+  </p>
+  <p>
+    Die Übermittlung an Google kann eine Verarbeitung außerhalb der
+    Europäischen Union nach sich ziehen. Google stützt sich hierfür auf die
+    Standardvertragsklauseln der EU-Kommission und auf den
+    EU-US Data Privacy Framework. Einzelheiten finden Sie in den
+    Datenschutzhinweisen von Google.
+  </p>
+
+  <h3>6. Automatisches Ausfüllen der Stammdaten</h3>
+  <p>
+    Sie können die Stammdaten wahlweise automatisch vorbelegen lassen. Nur in
+    diesem Fall — und nur, wenn Sie die Schaltfläche betätigen — wird die von
+    Ihnen eingetragene Bezeichnung des Unternehmens an Wikipedia und Wikidata
+    übermittelt, gegebenenfalls die dort verzeichnete Unternehmenswebsite
+    abgerufen und der gefundene Text zusammen mit der Bezeichnung an das unter
+    Ziffer&nbsp;5 genannte Sprachmodell gesendet. Wenn Sie das nicht möchten,
+    füllen Sie das Formular von Hand aus; die Prüfung selbst funktioniert
+    unabhängig davon.
+  </p>
+
+  <h3>7. Cookies</h3>
+  <p>
+    Wir setzen ein einziges Cookie. Es hält Ihre Anmeldung und Ihre
+    Sprachwahl fest, ist signiert und für die Nutzung der Anwendung technisch
+    erforderlich. Eine Einwilligung ist dafür nicht nötig
+    (§ 25 Abs. 2 Nr. 2 TDDDG). Wir verwenden keine Cookies zur Reichweiten-
+    messung, keine Analysedienste und keine Werbenetzwerke.
+  </p>
+
+  <h3>8. Speicherdauer</h3>
+  <ul>
+    <li>Zugangsdaten, Unternehmensangaben und Prüfergebnisse: bis Sie die
+        Löschung Ihres Kontos verlangen.</li>
+    <li>Fehlgeschlagene Anmeldeversuche: drei Stunden.</li>
+    <li>Anforderungen zum Zurücksetzen des Passworts: der Link verfällt nach
+        24 Stunden; der Vorgang bleibt zur Nachvollziehbarkeit gespeichert,
+        bis das Konto gelöscht wird.</li>
+    <li>Server-Protokolle: bis zu sieben Tage.</li>
+  </ul>
+
+  <h3>9. Empfänger</h3>
+  <p>
+    Über die unter Ziffer&nbsp;4 bis&nbsp;6 genannten Dienstleister hinaus
+    geben wir Ihre Daten nicht weiter. Ein Verkauf oder eine Überlassung zu
+    Werbezwecken findet nicht statt.
+  </p>
+
+  <h3>10. Ihre Rechte</h3>
+  <p>
+    Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung
+    (Art. 16 DSGVO), Löschung (Art. 17 DSGVO), Einschränkung der Verarbeitung
+    (Art. 18 DSGVO) und Datenübertragbarkeit (Art. 20 DSGVO). Soweit wir die
+    Verarbeitung auf ein berechtigtes Interesse stützen, können Sie ihr nach
+    Art. 21 DSGVO widersprechen. Eine erteilte Einwilligung können Sie
+    jederzeit mit Wirkung für die Zukunft widerrufen.
+  </p>
+  <p>
+    Wenden Sie sich dazu an <em>datenschutz@textil-mode.de</em>. Die Löschung
+    Ihres Kontos samt aller Unternehmensangaben und Prüfergebnisse nehmen wir
+    auf Ihre Nachricht hin vor.
+  </p>
+  <p>
+    Unabhängig davon steht Ihnen ein Beschwerderecht bei einer
+    Datenschutz-Aufsichtsbehörde zu, für uns die Berliner Beauftragte für
+    Datenschutz und Informationsfreiheit, Alt-Moabit 59-61, 10555 Berlin.
+  </p>
+
+  <h3>11. Keine automatisierte Entscheidung im Einzelfall</h3>
+  <p>
+    Die Prüfergebnisse sind eine unverbindliche erste Orientierung. Es ergeht
+    keine Entscheidung, die Ihnen gegenüber rechtliche Wirkung entfaltet oder
+    Sie in ähnlicher Weise erheblich beeinträchtigt; eine automatisierte
+    Entscheidungsfindung im Sinne des Art. 22 DSGVO liegt nicht vor. Die
+    Ergebnisse werden von einer künstlichen Intelligenz erzeugt und können
+    unvollständig oder unrichtig sein.
+  </p>
+</div>
+
+{% endblock %}

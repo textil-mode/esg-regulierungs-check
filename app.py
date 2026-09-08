@@ -480,6 +480,21 @@ def set_language():
 
 
 # ---------------------------------------------------------------------------
+# Rechtstexte
+# ---------------------------------------------------------------------------
+@app.route("/datenschutz")
+def privacy():
+    """Datenschutzerklaerung — bewusst ohne Anmeldung erreichbar.
+
+    Sie beschreibt die Verarbeitung DIESER Anwendung (Konto, Unternehmens-
+    profil, Auswertung durch das Sprachmodell bei Google) und tritt damit
+    neben die allgemeine Erklaerung des Verbandes, die den Internetauftritt
+    abdeckt. Das Impressum verweist dagegen unveraendert auf textil-mode.de.
+    """
+    return render_template("datenschutz.html")
+
+
+# ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
 @app.route("/dashboard")
