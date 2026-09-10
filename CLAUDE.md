@@ -33,7 +33,7 @@
 | **Passwort vergessen → Admin-Reset-Link** (kein Mailversand; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert) | `/admin/passwort-resets`, `db.password_resets` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
 | Stammdaten-Frage "EU-Importeur / erstmaliges Inverkehrbringen" | `templates/dashboard.html`, `db.eu_importer` | ✅ |
-| LLM-Analyse über 19 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
+| LLM-Analyse über 17 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
 | **Datentrennung im globalen Cache** (siehe Invariante unten): der Prompt zeigt exakt die `relevant_fields` der Regulierung, der Firmenname steht nirgends darin, und der System-Prompt verbietet das Nennen eines Namens | `llm.py` `_format_profile`, `_SYSTEM_BASE` | ✅ |
 | **Handlungsplan je Karte**: "Gilt ab" mit unternehmensindividueller Frist (Phase-in) und aufklappbare "Erste Schritte" (2-4 kuratierte Stichpunkte + Leitlinien-Link) | `deadlines.py`, `regulations.py` `FIRST_STEPS_BY_REG_KEY`, `views.py` | ✅ |
@@ -48,7 +48,7 @@
 | **Erstkonsolidierung ≠ Notbehelf**: ist die einzige konsolidierte Fassung auf den ABl.-Tag datiert (z. B. ESG-Rating-VO), gibt es keine spaeteren Aenderungen — der Ursprungstext ist der geltende Text, es wird nicht gewarnt | `fetcher.py` `_is_initial_consolidation` | ✅ |
 | **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
 | **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
-| **Watchdog** (`python watchdog.py`): laedt alle 19 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
+| **Watchdog** (`python watchdog.py`): laedt alle 17 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
 | **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
 | **"Gesetzesstand vom …"** auf jeder Ergebnis-Karte | `app.py` `law_dates`, `views.py` | ✅ |
 | **PDF-Export im textil+mode-CD** (Logo, Verlaufskante, Statusfarben; gleicher Umfang wie das frühere CSV plus Kopfbereich und Zusammenfassung). Chinesisch nutzt die nicht eingebettete CID-Schrift STSong-Light — siehe Modul-Docstring | `/download-pdf`, `pdfexport.py` | ✅ |
@@ -400,7 +400,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `lawparse.py` | Zerlegt Gesetzestexte in Artikel-/§-/Anhang-Abschnitte und baut daraus den LLM-Kontext (Anwendungsbereich statt Praeambel) |
 | `test_lawparse.py` | Tests dazu — laufen gegen eine Kopie der DB (`data/esg_lawparse_test.db`), nie gegen `data/esg.db` |
 | `test_cache_stability.py` | Beweist die Wortstabilitaet der Begruendungen (6 Szenarien, eigene DB `data/esg_cache_test.db`). Ohne Argument mit Platzhalter statt LLM (kostenlos), mit `--live` echte Calls |
-| `regulations.py` | 19 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
+| `regulations.py` | 17 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
 | `watchdog.py` | Wöchentlicher Aktualitäts-Wächter (Cron auf dem VPS), schreibt `watchdog_runs` |
 | `i18n.py` | Übersetzungen (6 Sprachen) |
 | `db.py` | SQLite-Schema, Migrationen, Cache-Zugriff |

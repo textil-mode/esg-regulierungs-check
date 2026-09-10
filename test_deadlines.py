@@ -141,7 +141,6 @@ ERWARTET: list[tuple[str, dict, str, str]] = [
     ("FLR", GROSSKONZERN, "14.12.2027", "Art. 39 VO (EU) 2024/3015"),
     ("RightToRepair", KLEINBETRIEB, "31.07.2026", "Art. 22 Abs. 1 UAbs. 3"),
     ("Oekodesign", MITTELSTAND_1100, "18.07.2024", "Art. 80 VO (EU) 2024/1781"),
-    ("SFDR", GROSSKONZERN, "10.03.2021", "Art. 20 Abs. 2 VO (EU) 2019/2088"),
     ("MinRohSorgG", GROSSKONZERN, "07.05.2020", "Art. 3 MinRohSorgG-Artikelgesetz"),
 
     # Vernichtungsverbot: Art. 25 Abs. 1 VO (EU) 2024/1781, Groessenklassen

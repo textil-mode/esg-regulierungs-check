@@ -2206,76 +2206,7 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
         "zh": "依据授权条例 (EU) 2021/2178 计算营业额、资本性支出和运营支出的比例，并在规定表格中披露（第 8 条）。",
     },
     # --- SFDR ---
-    "sfdr_1": {
-        "de": "Finanzprodukte einstufen und die Angaben nach Art. 6, 8 oder 9 festlegen.",
-        "en": "Classify financial products and determine the disclosures under Art. 6, 8 or 9.",
-        "es": "Clasificar los productos financieros y definir la información según los art. 6, 8 o 9.",
-        "fr": "Classer les produits financiers et définir les informations au titre des art. 6, 8 ou 9.",
-        "it": "Classificare i prodotti finanziari e definire le informazioni ai sensi degli art. 6, 8 o 9.",
-        "zh": "对金融产品进行分类，并确定第 6、8 或 9 条项下的披露内容。",
-    },
-    "sfdr_2": {
-        "de": "Strategien zur Einbeziehung von Nachhaltigkeitsrisiken und die Vergütungspolitik auf "
-              "der Website offenlegen (Art. 3, 5).",
-        "en": "Publish policies on the integration of sustainability risks and the remuneration policy "
-              "on the website (Art. 3, 5).",
-        "es": "Publicar en la web las políticas de integración de riesgos de sostenibilidad y la "
-              "política de remuneración (art. 3, 5).",
-        "fr": "Publier sur le site web les politiques d'intégration des risques de durabilité et la "
-              "politique de rémunération (art. 3, 5).",
-        "it": "Pubblicare sul sito le politiche di integrazione dei rischi di sostenibilità e la "
-              "politica di remunerazione (art. 3, 5).",
-        "zh": "在网站上披露可持续性风险纳入策略及薪酬政策（第 3、5 条）。",
-    },
-    "sfdr_3": {
-        "de": "Erklärung zu den wichtigsten nachteiligen Nachhaltigkeitsauswirkungen abgeben oder das "
-              "Unterlassen begründen (Art. 4).",
-        "en": "Publish a statement on principal adverse sustainability impacts or explain why not "
-              "(Art. 4).",
-        "es": "Publicar una declaración sobre las principales incidencias adversas en materia de "
-              "sostenibilidad o explicar por qué no (art. 4).",
-        "fr": "Publier une déclaration sur les principales incidences négatives en matière de durabilité "
-              "ou expliquer son abstention (art. 4).",
-        "it": "Pubblicare una dichiarazione sui principali effetti negativi per la sostenibilità o "
-              "spiegarne la mancanza (art. 4).",
-        "zh": "发布主要不利可持续性影响声明，或说明不发布的理由（第 4 条）。",
-    },
     # --- ESG-Rating-Verordnung ---
-    "esgrating_1": {
-        "de": "Prüfen, ob eigene Bewertungen als ESG-Rating im Sinne des Art. 3 gelten; bewertete "
-              "Unternehmen selbst sind nicht erfasst.",
-        "en": "Check whether your own assessments qualify as ESG ratings under Art. 3; rated companies "
-              "themselves are not covered.",
-        "es": "Comprobar si las propias valoraciones constituyen una calificación ESG conforme al art. 3; "
-              "las empresas calificadas no están sujetas.",
-        "fr": "Vérifier si vos propres évaluations constituent une notation ESG au sens de l'art. 3 ; "
-              "les entreprises notées ne sont pas visées.",
-        "it": "Verificare se le proprie valutazioni costituiscono un rating ESG ai sensi dell'art. 3; le "
-              "imprese valutate non rientrano nell'ambito.",
-        "zh": "核查自身评估是否构成第 3 条所指的 ESG 评级；被评级企业本身不在适用范围内。",
-    },
-    "esgrating_2": {
-        "de": "Zulassung bei der ESMA vorbereiten und die organisatorischen Anforderungen an "
-              "Unabhängigkeit und Interessenkonflikte umsetzen (Art. 4 ff., Anhang III).",
-        "en": "Prepare authorisation by ESMA and implement the organisational requirements on "
-              "independence and conflicts of interest (Art. 4 et seq., Annex III).",
-        "es": "Preparar la autorización ante la ESMA e implantar los requisitos organizativos de "
-              "independencia y conflictos de interés (art. 4 y ss., anexo III).",
-        "fr": "Préparer l'agrément auprès de l'AEMF et mettre en œuvre les exigences organisationnelles "
-              "d'indépendance et de conflits d'intérêts (art. 4 et suiv., annexe III).",
-        "it": "Preparare l'autorizzazione presso l'ESMA e attuare i requisiti organizzativi su "
-              "indipendenza e conflitti di interesse (art. 4 ss., allegato III).",
-        "zh": "准备向 ESMA 申请授权，并落实关于独立性和利益冲突的组织性要求（第 4 条及以下、附件三）。",
-    },
-    "esgrating_3": {
-        "de": "Methoden, Modelle und Grundannahmen offenlegen und laufend aktuell halten (Anhang I).",
-        "en": "Disclose methodologies, models and key assumptions and keep them up to date (Annex I).",
-        "es": "Divulgar metodologías, modelos e hipótesis fundamentales y mantenerlos actualizados "
-              "(anexo I).",
-        "fr": "Publier les méthodologies, modèles et hypothèses clés et les tenir à jour (annexe I).",
-        "it": "Divulgare metodologie, modelli e ipotesi di base e mantenerli aggiornati (allegato I).",
-        "zh": "披露方法论、模型和基本假设，并持续保持更新（附件一）。",
-    },
     # --- HinSchG ---
     "hinschg_1": {
         "de": "Interne Meldestelle einrichten und die dafür zuständige Person oder Organisationseinheit "

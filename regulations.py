@@ -226,43 +226,6 @@ REGULATIONS = [
     },
     {
         "nr": 10,
-        "key": "SFDR",
-        "relevant_fields": ["branch"],
-        "name": "SFDR – EU-Offenlegungsverordnung",
-        "full_name": "Verordnung (EU) 2019/2088 - nachhaltigkeitsbezogene Offenlegungspflichten",
-        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32019R2088&locale=de",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02019R2088",
-        "scope": "EU",
-        "criteria": (
-            "Gilt ausschließlich für Finanzmarktteilnehmer (Vermögensverwalter, Versicherer, AIFM, UCITS) "
-            "und Finanzberater. Nicht für Realwirtschaft. "
-            "Anwendbar wenn Branche = Finanzdienstleistungen/Versicherungen."
-        ),
-        "key_article": "Art. 2, 3",
-    },
-    {
-        "nr": 11,
-        "key": "ESGRatingVO",
-        "relevant_fields": ["branch"],
-        "name": "ESG-Rating-VO – EU-Regeln für ESG-Ratinganbieter",
-        "full_name": "Verordnung (EU) 2024/3005 - ESG-Ratings",
-        # Zu dieser Verordnung fuehrt EUR-Lex KEINE konsolidierte Fassung: die
-        # datumslose ID `02024R3005` antwortet mit "The requested document does
-        # not exist", und Cellar liefert zu `02024R3005-20241212` 404 (geprueft
-        # 02.09.2026). Deshalb steht hier der Ursprungsrechtsakt `32024R3005` —
-        # mangels Aenderungen ist er zugleich der geltende Text. `_cellar_text`
-        # behandelt eine `3…`-ID direkt als gewuenschte Fassung und warnt nicht.
-        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32024R3005&locale=de",
-        "text_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R3005",
-        "scope": "EU",
-        "criteria": (
-            "Gilt für Anbieter von ESG-Ratings mit Tätigkeit in der EU. "
-            "Nicht für bewertete Unternehmen selbst. Relevant nur bei Branche = ESG-Rating-Anbieter."
-        ),
-        "key_article": "Art. 2",
-    },
-    {
-        "nr": 12,
         "key": "HinSchG",
         "relevant_fields": ["employees_de", "branch"],
         "name": "HinSchG – deutsches Hinweisgeberschutzgesetz",
@@ -279,7 +242,7 @@ REGULATIONS = [
         "key_article": "§ 12 HinSchG",
     },
     {
-        "nr": 13,
+        "nr": 11,
         "key": "RightToRepair",
         "relevant_fields": ["product_categories", "branch", "eu_importer", "sales_markets"],
         "name": "Right to Repair – EU-Reparaturrichtlinie",
@@ -295,7 +258,7 @@ REGULATIONS = [
         "key_article": "Art. 2, 5",
     },
     {
-        "nr": 14,
+        "nr": 12,
         "key": "Oekodesign",
         # `materials`, weil die Oekodesign-Anforderungen an Stoffen ansetzen
         # (u. a. besorgniserregende chemische Ausruestungen).
@@ -314,7 +277,7 @@ REGULATIONS = [
         "key_article": "Art. 1, 2",
     },
     {
-        "nr": 15,
+        "nr": 13,
         "key": "Vernichtungsverbot",
         "relevant_fields": [
             "employees", "revenue_eur", "balance_sheet_eur",
@@ -367,7 +330,7 @@ REGULATIONS = [
         "key_article": "Art. 2 (Ausnahmen), Art. 3 (Dokumentation)",
     },
     {
-        "nr": 16,
+        "nr": 14,
         "key": "PPWR",
         "relevant_fields": ["product_categories", "value_chain_roles",
                             "branch", "eu_importer", "sales_markets"],
@@ -384,7 +347,7 @@ REGULATIONS = [
         "key_article": "Art. 1, 3",
     },
     {
-        "nr": 17,
+        "nr": 15,
         "key": "MinRohSorgG",
         "relevant_fields": ["product_categories", "eu_importer", "sites"],
         "name": "MinRohSorgG – Sorgfaltspflichten für mineralische Rohstoffe",
@@ -400,7 +363,7 @@ REGULATIONS = [
         "key_article": "§ 3 MinRohSorgG",
     },
     {
-        "nr": 18,
+        "nr": 16,
         "key": "EmpCo",
         "relevant_fields": ["b2c", "env_claims", "value_chain_roles", "sales_markets"],
         "name": "EmpCo – EU-Greenwashing-Richtlinie (UWG)",
@@ -415,7 +378,7 @@ REGULATIONS = [
         "key_article": "Art. 1",
     },
     {
-        "nr": 19,
+        "nr": 17,
         "key": "GreenClaims",
         "relevant_fields": ["b2c", "env_claims", "employees", "revenue_eur"],
         # Kein "(Entwurf)" im Namen: der Zusatz stuende auch in der englischen
@@ -491,14 +454,6 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "EU-Kommission – EU-Taxonomie",
          "url": "https://finance.ec.europa.eu/sustainable-finance/tools-and-standards/eu-taxonomy-sustainable-activities_en"},
     ],
-    "SFDR": [
-        {"name": "EU-Kommission – SFDR Offenlegungspflichten",
-         "url": "https://finance.ec.europa.eu/sustainable-finance/disclosures/sustainability-related-disclosure-financial-services-sector_en"},
-    ],
-    "ESGRatingVO": [
-        {"name": "ESMA – ESG Rating Providers",
-         "url": "https://www.esma.europa.eu/esmas-activities/investors-and-issuers/esg-rating-providers"},
-    ],
     "HinSchG": [
         {"name": "Bundesamt für Justiz – Externe Meldestelle (HinSchG)",
          "url": "https://www.bundesjustizamt.de/DE/MeldestelledesBundes/MeldestelledesBundes_node.html"},
@@ -565,8 +520,6 @@ FIRST_STEPS_BY_REG_KEY: dict[str, list[str]] = {
     "NFRD": ["nfrd_1", "nfrd_2"],
     "CSR-RUG": ["csr_rug_1", "csr_rug_2", "csr_rug_3"],
     "TaxonomieVO": ["taxonomie_1", "taxonomie_2", "taxonomie_3"],
-    "SFDR": ["sfdr_1", "sfdr_2", "sfdr_3"],
-    "ESGRatingVO": ["esgrating_1", "esgrating_2", "esgrating_3"],
     "HinSchG": ["hinschg_1", "hinschg_2", "hinschg_3", "hinschg_4"],
     "RightToRepair": ["r2r_1", "r2r_2", "r2r_3"],
     "Oekodesign": ["oekodesign_1", "oekodesign_2", "oekodesign_3"],
@@ -608,8 +561,6 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     "NFRD":            "15.11.2014",
     "CSR-RUG":         "11.04.2017",
     "TaxonomieVO":     "22.06.2020",
-    "SFDR":            "09.12.2019",
-    "ESGRatingVO":     "12.12.2024",
     "HinSchG":         "02.06.2023",
     "RightToRepair":   "10.07.2024",
     "Oekodesign":      "28.06.2024",
@@ -681,9 +632,7 @@ APPLICATION_BY_REG_KEY: dict[str, dict] = {
     # Art. 27 Abs. 2 VO (EU) 2020/852.
     "TaxonomieVO":     {"applies_from": "01.01.2022", "note": "taxonomie"},
     # Art. 20 Abs. 2 VO (EU) 2019/2088.
-    "SFDR":            {"applies_from": "10.03.2021"},
     # Art. 53 VO (EU) 2024/3005.
-    "ESGRatingVO":     {"applies_from": "02.07.2026"},
     # Art. 26 Abs. 1 RL (EU) 2019/1937 (Abs. 2: 50-249 Beschaeftigte ab 17.12.2023).
     # Art. 10 Abs. 2 HinSchG-Artikelgesetz.
     "HinSchG":         {"applies_from": "02.07.2023"},
