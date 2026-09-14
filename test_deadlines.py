@@ -153,7 +153,6 @@ ERWARTET: list[tuple[str, dict, str, str]] = [
 
     # Ohne bestimmbares Datum.
     ("CSRD_DE", GROSSKONZERN, "", "Gesetzgebungsverfahren nicht abgeschlossen"),
-    ("GreenClaims", KLEINBETRIEB, "", "Ruecknahme angekuendigt"),
 ]
 
 

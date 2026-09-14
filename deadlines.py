@@ -222,11 +222,6 @@ def _vernichtungsverbot(profile: dict, today: date | None) -> dict:
     return {"gilt_ab": _VERNICHTUNG_MITTEL, "hinweis": "vernichtung_mittel"}
 
 
-def _greenclaims(profile: dict, today: date | None) -> dict:
-    """Green Claims: Ruecknahme angekuendigt, kein Anwendungsbeginn."""
-    return {"gilt_ab": "", "hinweis": "greenclaims"}
-
-
 _RULES = {
     "CSDDD": _csddd,
     "LkSG": _lksg,
@@ -236,7 +231,6 @@ _RULES = {
     "HinSchG": _hinschg,
     "EUDR": _eudr,
     "Vernichtungsverbot": _vernichtungsverbot,
-    "GreenClaims": _greenclaims,
 }
 
 

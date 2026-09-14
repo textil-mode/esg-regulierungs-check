@@ -1426,19 +1426,6 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
               "concorrenza sleale (UWG).",
         "zh": "自该日起，各成员国开始适用相关规则；在德国通过《反不正当竞争法》(UWG) 实施。",
     },
-    "greenclaims": {
-        "de": "Die EU-Kommission hat am 20.06.2025 angekündigt, den Vorschlag zurückzuziehen; förmlich "
-              "zurückgenommen ist er nicht. Es bestehen derzeit keine Pflichten aus diesem Entwurf.",
-        "en": "On 20.06.2025 the EU Commission announced its intention to withdraw the proposal; it has not "
-              "been formally withdrawn. No obligations currently arise from this draft.",
-        "es": "El 20.06.2025 la Comisión anunció su intención de retirar la propuesta; formalmente no ha sido "
-              "retirada. Actualmente no derivan obligaciones de este proyecto.",
-        "fr": "Le 20.06.2025, la Commission a annoncé son intention de retirer la proposition ; elle n'a pas "
-              "été formellement retirée. Aucune obligation ne découle actuellement de ce projet.",
-        "it": "Il 20.06.2025 la Commissione ha annunciato l'intenzione di ritirare la proposta; formalmente "
-              "non è stata ritirata. Da questo progetto non derivano attualmente obblighi.",
-        "zh": "欧盟委员会于 2025 年 6 月 20 日宣布拟撤回该提案，但尚未正式撤回。目前该草案不产生任何义务。",
-    },
 }
 
 
@@ -2527,32 +2514,6 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
         "zh": "为每一项环保宣称留存证据，并保持证据持续更新。",
     },
     # --- Green Claims (Entwurf) ---
-    "greenclaims_1": {
-        "de": "Aus dem Entwurf ergeben sich derzeit keine Pflichten; das Verfahren ruht seit der "
-              "angekündigten Rücknahme und ist nur zu beobachten.",
-        "en": "The draft currently creates no obligations; the procedure has been dormant since the "
-              "announced withdrawal and merely needs to be monitored.",
-        "es": "El proyecto no genera actualmente obligaciones; el procedimiento está paralizado desde la "
-              "retirada anunciada y solo debe seguirse.",
-        "fr": "Le projet ne crée actuellement aucune obligation ; la procédure est suspendue depuis le "
-              "retrait annoncé et doit seulement être suivie.",
-        "it": "Dalla bozza non derivano attualmente obblighi; la procedura è sospesa dal ritiro "
-              "annunciato e va solo monitorata.",
-        "zh": "该草案目前不产生任何义务；自宣布拟撤回后程序处于停滞状态，只需持续关注。",
-    },
-    "greenclaims_2": {
-        "de": "Umweltaussagen bereits heute nach der EmpCo-Richtlinie beziehungsweise dem UWG belegen — "
-              "diese Regeln gelten unabhängig vom Entwurf.",
-        "en": "Substantiate environmental claims already today under the EmpCo Directive or the German "
-              "UWG — those rules apply irrespective of the draft.",
-        "es": "Fundamentar ya hoy las alegaciones ambientales conforme a la Directiva EmpCo o la UWG "
-              "alemana: esas reglas se aplican con independencia del proyecto.",
-        "fr": "Étayer dès aujourd'hui les allégations environnementales au titre de la directive EmpCo "
-              "ou de l'UWG allemande : ces règles s'appliquent indépendamment du projet.",
-        "it": "Documentare già oggi le asserzioni ambientali secondo la direttiva EmpCo o la UWG tedesca: "
-              "tali regole valgono a prescindere dalla bozza.",
-        "zh": "现在即应依据 EmpCo 指令或德国《反不正当竞争法》为环保宣称提供依据——这些规则与该草案无关，独立适用。",
-    },
 }
 
 
@@ -3673,8 +3634,8 @@ ROLE_LABELS: dict[str, dict[str, str]] = {
         "it": "Distributore (mette a disposizione sul mercato prodotti di altre imprese)",
         "zh": "经销商/分销商（在市场上提供其他企业的产品）",
     },
-    "Markeninhaber / Vertrieb unter eigener Marke": {
-        "de": "Markeninhaber / Vertrieb unter eigener Marke",
+    "Markeninhaber / Vertrieb unter eigener oder lizenzierter Marke": {
+        "de": "Markeninhaber / Vertrieb unter eigener oder lizenzierter Marke",
         "en": "Brand owner / sales under own brand",
         "es": "Titular de la marca / venta bajo marca propia",
         "fr": "Titulaire de la marque / vente sous marque propre",

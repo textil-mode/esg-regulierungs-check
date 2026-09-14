@@ -377,28 +377,6 @@ REGULATIONS = [
         ),
         "key_article": "Art. 1",
     },
-    {
-        "nr": 17,
-        "key": "GreenClaims",
-        "relevant_fields": ["b2c", "env_claims", "employees", "revenue_eur"],
-        # Kein "(Entwurf)" im Namen: der Zusatz stuende auch in der englischen
-        # und franzoesischen Tabelle auf Deutsch. Den Entwurfscharakter tragen
-        # der Status-Badge und der Stand-Hinweis, beide uebersetzt.
-        "name": "Green Claims – EU-Richtlinie zu Umweltaussagen (Entwurf)",
-        "full_name": "Vorschlag Richtlinie - Begründung/Kommunikation ausdrücklicher Umweltaussagen",
-        "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A52023PC0166&locale=de",
-        "text_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:52023PC0166",
-        "scope": "EU",
-        "criteria": (
-            "Entwurf, nicht in Kraft. Die EU-Kommission hat am 20.06.2025 angekündigt, den Vorschlag "
-            "zurückzuziehen; förmlich zurückgenommen ist er bislang nicht, das Verfahren ruht. "
-            "Für Unternehmen ergeben sich daraus derzeit KEINE unmittelbaren Pflichten — die Regeln zu "
-            "Umweltaussagen greifen aktuell über die EmpCo-Richtlinie (EU) 2024/825 bzw. das UWG. "
-            "Bei Verabschiedung würde sie B2C-Unternehmen mit ausdrücklichen Umweltaussagen treffen; "
-            "Kleinstunternehmen (<10 MA & Umsatz <2 Mio EUR) wären ausgenommen."
-        ),
-        "key_article": "Art. 1, 3",
-    },
 ]
 
 
@@ -484,10 +462,6 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "EU-Kommission – Nachhaltiger Konsum / Stärkung der Verbraucher für den grünen Wandel",
          "url": "https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/sustainable-consumption_en"},
     ],
-    "GreenClaims": [
-        {"name": "EU-Kommission – Green Claims",
-         "url": "https://environment.ec.europa.eu/topics/circular-economy/green-claims_en"},
-    ],
 }
 
 
@@ -527,7 +501,6 @@ FIRST_STEPS_BY_REG_KEY: dict[str, list[str]] = {
     "PPWR": ["ppwr_1", "ppwr_2", "ppwr_3"],
     "MinRohSorgG": ["minroh_1", "minroh_2", "minroh_3"],
     "EmpCo": ["empco_1", "empco_2", "empco_3", "empco_4"],
-    "GreenClaims": ["greenclaims_1", "greenclaims_2"],
 }
 
 
@@ -570,13 +543,12 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     "MinRohSorgG":     "18.12.2020",
     "EmpCo":           "06.03.2024",
     # Datum des Kommissionsvorschlags COM(2023) 166 final.
-    "GreenClaims":     "22.03.2023",
 }
 
 # Regulierungen, deren Datum oben nur ein Entwurfsstand ist (keine Verkuendung).
 # Die Liste ersetzt die frueheren deutschen Freitexte "Entwurf 2025" /
 # "Entwurf 22.03.2023", die auch in EN/FR/ES/IT/ZH auf Deutsch erschienen.
-DRAFT_PUBLISHED: frozenset[str] = frozenset({"CSRD_DE", "GreenClaims"})
+DRAFT_PUBLISHED: frozenset[str] = frozenset({"CSRD_DE"})
 
 
 def published_for(reg_key: str) -> str:
@@ -651,7 +623,6 @@ APPLICATION_BY_REG_KEY: dict[str, dict] = {
     # Art. 4 Abs. 1 UAbs. 2 RL (EU) 2024/825.
     "EmpCo":           {"applies_from": "27.09.2026", "note": "empco"},
     # Kommission hat die Ruecknahme am 20.06.2025 angekuendigt, aber nicht vollzogen.
-    "GreenClaims":     {"applies_from": "", "status": STATUS_RUECKZUG, "note": "greenclaims"},
 }
 
 
@@ -1041,7 +1012,7 @@ VALUE_CHAIN_ROLES = [
     "Hersteller (stellt Produkte selbst her oder lässt sie herstellen und vermarktet sie unter eigenem Namen/eigener Marke)",
     "Importeur (bringt Produkte aus einem Drittstaat auf den EU-Markt)",
     "Händler/Vertreiber (stellt Produkte anderer Unternehmen auf dem Markt bereit)",
-    "Markeninhaber / Vertrieb unter eigener Marke",
+    "Markeninhaber / Vertrieb unter eigener oder lizenzierter Marke",
     "Zulieferer",
     "Online-/Fernabsatz",
 ]
