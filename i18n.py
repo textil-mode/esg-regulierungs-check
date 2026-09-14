@@ -837,12 +837,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "营销中的环境声明 / 可持续性标签",
     },
     "field_env_claims_help": {
-        "de": "Wichtig für EmpCo-Richtlinie und Green Claims.",
-        "en": "Important for EmpCo Directive and Green Claims.",
-        "es": "Importante para la Directiva EmpCo y Green Claims.",
-        "fr": "Important pour la directive EmpCo et Green Claims.",
-        "it": "Importante per la direttiva EmpCo e Green Claims.",
-        "zh": "对 EmpCo 指令和绿色声明很重要。",
+        "de": "Wichtig für die EmpCo-Richtlinie: Sie regelt seit dem 27.09.2026 im UWG, welche Umweltaussagen und Siegel noch zulässig sind.",
+        "en": "Important for the EmpCo Directive, which since 27 September 2026 governs which environmental claims and labels remain permissible.",
+        "es": "Importante para la Directiva EmpCo, que desde el 27/09/2026 regula qué afirmaciones ambientales y sellos siguen siendo admisibles.",
+        "fr": "Important pour la directive EmpCo, qui régit depuis le 27/09/2026 quelles allégations environnementales et labels restent admissibles.",
+        "it": "Importante per la direttiva EmpCo, che dal 27/09/2026 disciplina quali dichiarazioni ambientali e marchi restano ammissibili.",
+        "zh": "对 EmpCo 指令很重要：自 2026 年 9 月 27 日起，该指令规定哪些环境声明和标签仍然允许使用。",
     },
     "field_eu_importer": {
         "de": "EU-Importeur / erstmaliges Inverkehrbringen in der EU",
@@ -2523,7 +2523,6 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
         "it": "Documentare una prova per ogni asserzione ambientale e mantenerla aggiornata.",
         "zh": "为每一项环保宣称留存证据，并保持证据持续更新。",
     },
-    # --- Green Claims (Entwurf) ---
 }
 
 

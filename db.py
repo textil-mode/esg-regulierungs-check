@@ -62,6 +62,13 @@ COMPANY_EXTRA_COLUMNS = [
 # hier hinein — keine inhaltliche Umdeutung.
 _SITE_TYPE_RENAMES = {"Hauptsitz": SITE_TYPES[0]}
 
+# Dasselbe fuer Mehrfachauswahlen. `_known` wirft unbekannte Werte weg — eine
+# blosse Umbenennung wuerde die Angabe des Nutzers also stillschweigend loeschen.
+_VALUE_RENAMES = {
+    "Markeninhaber / Vertrieb unter eigener Marke":
+        "Markeninhaber / Vertrieb unter eigener oder lizenzierter Marke",
+}
+
 
 def _rename_sites(sites: list) -> list:
     """Standort-Typen aus Altprofilen auf die heutigen Bezeichnungen heben."""
@@ -620,8 +627,12 @@ def user_for_reset_token(token: str) -> Optional[dict]:
 
 # ---------- Company ----------
 def _known(values, allowed) -> list[str]:
-    """Nur Werte, die es in der aktuellen Auswahlliste noch gibt (Reihenfolge der Liste)."""
-    chosen = set(values or ())
+    """Nur Werte, die es in der aktuellen Auswahlliste noch gibt (Reihenfolge der Liste).
+
+    Umbenannte Werte werden vorher auf ihre heutige Schreibweise gehoben, damit
+    eine reine Umbenennung die Angabe nicht verwirft (siehe `_VALUE_RENAMES`).
+    """
+    chosen = {_VALUE_RENAMES.get(v, v) for v in (values or ())}
     return [v for v in allowed if v in chosen]
 
 
