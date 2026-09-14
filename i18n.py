@@ -77,6 +77,16 @@ UI: dict[str, dict[str, str]] = {
         "it": "Lingua",
         "zh": "语言",
     },
+    # Beschriftung des Fragezeichens, das eine Ausfuellhilfe oeffnet. Steht als
+    # aria-label am Schalter, damit Screenreader nicht nur "Fragezeichen" lesen.
+    "help_label": {
+        "de": "Erläuterung anzeigen",
+        "en": "Show explanation",
+        "es": "Mostrar explicación",
+        "fr": "Afficher l'explication",
+        "it": "Mostra la spiegazione",
+        "zh": "显示说明",
+    },
     # Haftungshinweis in drei Bausteinen: `disclaimer_lead` bleibt sichtbar,
     # `disclaimer_body` und `disclaimer_contact` stehen im aufklappbaren Teil.
     # So verdraengt der lange Text die Anmeldemaske nicht.
@@ -3845,6 +3855,207 @@ SALES_MARKET_LABELS: dict[str, dict[str, str]] = {
 }
 
 
+# ---------- Ausfuellhilfen / Erlaeuterungen zu Fachbegriffen ----------
+#
+# Eigene Struktur neben `UI`, weil diese Texte laenger sind und eine andere
+# Aufgabe haben: sie erklaeren einen Begriff, statt eine Oberflaeche zu
+# beschriften. Der Schluessel ist kurz und feldbezogen; ausgegeben werden sie
+# ueber `t_help()`.
+#
+# Fachliche Leitplanken (bewusst so formuliert):
+#   - keine Rechtsberatung, keine erfundenen Pflichten;
+#   - wo eine Norm gemeint ist, wird sie genannt, der Satz bleibt aber auch
+#     ohne Kenntnis der Norm verstaendlich;
+#   - wo die Gesetze unterschiedlich zaehlen (Beschaeftigte), sagt der Text das
+#     und raet zur hoeheren Angabe, statt eine Scheinregel zu erfinden.
+FIELD_HELP: dict[str, dict[str, str]] = {
+    "employees_total": {
+        "de": "Kopfzahl aller Beschäftigten weltweit, nicht Vollzeitäquivalente — Teilzeitkräfte zählen als volle Person, Tochtergesellschaften zählen mit. Als Näherung genügt der Durchschnitt des letzten Geschäftsjahres. Sind Sie unsicher, geben Sie die höhere Zahl an: die Prüfung soll eher zu viel als zu wenig anzeigen.",
+        "en": "Head count of all employees worldwide, not full-time equivalents — part-time staff count as one person each, and subsidiaries count too. The average over the last financial year is a sufficient approximation. If in doubt, enter the higher figure: the check should flag too much rather than too little.",
+        "es": "Número de personas empleadas en todo el mundo, no equivalentes a jornada completa: el personal a tiempo parcial cuenta como una persona y las filiales también se suman. Basta con la media del último ejercicio. En caso de duda, indique la cifra más alta: la verificación debe señalar de más antes que de menos.",
+        "fr": "Nombre de personnes employées dans le monde, et non d'équivalents temps plein : le personnel à temps partiel compte pour une personne entière et les filiales sont incluses. La moyenne du dernier exercice suffit comme approximation. En cas de doute, indiquez le chiffre le plus élevé : la vérification doit plutôt signaler trop que trop peu.",
+        "it": "Numero di persone occupate a livello mondiale, non equivalenti a tempo pieno: il personale a tempo parziale conta come una persona intera e le società controllate si sommano. Come approssimazione basta la media dell'ultimo esercizio. Nel dubbio indichi il valore più alto: la verifica deve segnalare piuttosto in eccesso che in difetto.",
+        "zh": "指全球全体员工的人数，而非全职当量——兼职人员按一人计，子公司员工一并计入。取上一财政年度的平均值即可。若不确定，请填写较高的数字：宁可多提示，也不要漏掉。",
+    },
+    "employees_de": {
+        "de": "Beschäftigte, die in Deutschland arbeiten. Ins Ausland entsandte Mitarbeitende zählen weiter mit; Leiharbeitskräfte rechnet das Lieferkettengesetz ab einer Einsatzdauer von mehr als sechs Monaten hinzu (§ 1 Abs. 3 LkSG). Ist Ihr Unternehmen Konzernmutter, zählen die Inlandsbeschäftigten der konzernangehörigen Gesellschaften mit.",
+        "en": "Employees working in Germany. Staff posted abroad still count; the German Supply Chain Act adds temporary agency workers once their assignment exceeds six months (§ 1(3) LkSG). If your company is the parent of a group, the domestic employees of the group companies count as well.",
+        "es": "Personas empleadas que trabajan en Alemania. El personal desplazado al extranjero sigue contando; la Ley alemana de cadenas de suministro suma a los trabajadores cedidos por empresas de trabajo temporal cuando su asignación supera los seis meses (§ 1, apdo. 3, LkSG). Si su empresa es la matriz de un grupo, cuentan también las personas empleadas en Alemania por las sociedades del grupo.",
+        "fr": "Personnes employées qui travaillent en Allemagne. Le personnel détaché à l'étranger continue de compter ; la loi allemande sur le devoir de vigilance ajoute les intérimaires dès que leur mission dépasse six mois (§ 1, al. 3, LkSG). Si votre entreprise est la société mère d'un groupe, les salariés en Allemagne des sociétés du groupe comptent également.",
+        "it": "Persone occupate che lavorano in Germania. Il personale distaccato all'estero continua a contare; la legge tedesca sulle catene di fornitura aggiunge i lavoratori somministrati quando l'impiego supera i sei mesi (§ 1, comma 3, LkSG). Se la sua azienda è la capogruppo, contano anche i dipendenti in Germania delle società del gruppo.",
+        "zh": "在德国工作的员工。外派至境外的员工仍计入；德国供应链法规定，派遣员工派驻时间超过六个月的也应计入（LkSG 第 1 条第 3 款）。若贵公司是集团母公司，集团内各公司在德国的员工也一并计入。",
+    },
+    "revenue": {
+        "de": "Umsatzerlöse ohne Umsatzsteuer aus dem letzten abgeschlossenen Geschäftsjahr — also die Erlöse aus dem Verkauf von Waren und Dienstleistungen der gewöhnlichen Geschäftstätigkeit, abzüglich Rabatten und Retouren. Im Konzern ist der konsolidierte Umsatz des Konzernabschlusses gemeint, nicht allein der der Muttergesellschaft.",
+        "en": "Net turnover excluding VAT for the last completed financial year — revenue from selling goods and services in the ordinary course of business, less discounts and returns. For a group this means the consolidated turnover of the group accounts, not only that of the parent company.",
+        "es": "Cifra de negocios neta sin IVA del último ejercicio cerrado, es decir, los ingresos por la venta de bienes y servicios de la actividad ordinaria, menos descuentos y devoluciones. En un grupo se refiere a la cifra consolidada de las cuentas del grupo, no solo a la de la sociedad matriz.",
+        "fr": "Chiffre d'affaires net hors TVA du dernier exercice clos, c'est-à-dire les produits de la vente de biens et de services relevant de l'activité ordinaire, déduction faite des remises et des retours. Pour un groupe, il s'agit du chiffre d'affaires consolidé des comptes du groupe, et non du seul chiffre de la société mère.",
+        "it": "Ricavi netti al netto dell'IVA dell'ultimo esercizio chiuso, ossia i ricavi dalla vendita di beni e servizi dell'attività ordinaria, dedotti sconti e resi. Per un gruppo si intende il fatturato consolidato del bilancio di gruppo, non solo quello della capogruppo.",
+        "zh": "上一个已结束财政年度的不含增值税净营业额，即日常经营中销售商品和服务所得收入，扣除折扣和退货。对集团而言，指合并报表的合并营业额，而非仅母公司的营业额。",
+    },
+    "revenue_eu": {
+        "de": "Der Teil des Nettoumsatzes, der auf Abnehmer in der EU entfällt — unabhängig davon, wo Ihr Unternehmen seinen Sitz hat. Bei einer Gruppe mit Muttergesellschaft außerhalb der EU ist der in der Union erzielte Umsatz der gesamten Gruppe gemeint. Setzen Sie ausschließlich in der EU ab, entspricht der Wert dem weltweiten Nettoumsatz.",
+        "en": "The part of net turnover generated with customers in the EU, regardless of where your company is based. For a group whose parent is outside the EU this means the turnover of the whole group in the Union. If you sell only within the EU, the figure equals worldwide net turnover.",
+        "es": "La parte de la cifra de negocios neta obtenida con clientes en la UE, con independencia de dónde tenga su sede la empresa. En un grupo con matriz fuera de la UE se refiere a la cifra obtenida en la Unión por todo el grupo. Si solo vende en la UE, el importe coincide con la cifra de negocios mundial.",
+        "fr": "La part du chiffre d'affaires net réalisée auprès de clients dans l'UE, quel que soit le siège de votre entreprise. Pour un groupe dont la société mère est hors de l'UE, il s'agit du chiffre d'affaires réalisé dans l'Union par l'ensemble du groupe. Si vous ne vendez que dans l'UE, le montant est égal au chiffre d'affaires mondial.",
+        "it": "La parte dei ricavi netti realizzata con clienti nell'UE, indipendentemente da dove ha sede la sua azienda. Per un gruppo con capogruppo fuori dall'UE si intende il fatturato realizzato nell'Unione dall'intero gruppo. Se vende solo nell'UE, l'importo coincide con il fatturato netto mondiale.",
+        "zh": "净营业额中来自欧盟客户的部分，与贵公司注册地无关。若集团母公司位于欧盟境外，则指整个集团在欧盟境内实现的营业额。若仅在欧盟销售，该数额即等于全球净营业额。",
+    },
+    "balance_sheet": {
+        "de": "Die Schlusssumme der Aktivseite Ihrer Bilanz zum Ende des letzten Geschäftsjahres — Anlage- und Umlaufvermögen zusammen. Im Konzern die Bilanzsumme des Konzernabschlusses. Der Wert steht im Jahresabschluss unter der Aktivseite; er ist keine Schätzgröße.",
+        "en": "The total of the assets side of your balance sheet at the end of the last financial year — fixed and current assets together. For a group, the balance sheet total of the consolidated accounts. The figure is stated at the foot of the assets side of the annual accounts; it is not an estimate.",
+        "es": "La suma final del activo de su balance al cierre del último ejercicio: inmovilizado y activo corriente juntos. En un grupo, el total del balance de las cuentas consolidadas. La cifra figura al pie del activo en las cuentas anuales; no es una estimación.",
+        "fr": "Le total de l'actif de votre bilan à la clôture du dernier exercice — immobilisations et actif circulant réunis. Pour un groupe, le total du bilan des comptes consolidés. Le chiffre figure au bas de l'actif dans les comptes annuels ; ce n'est pas une estimation.",
+        "it": "Il totale dell'attivo del suo bilancio alla chiusura dell'ultimo esercizio: immobilizzazioni e attivo circolante insieme. Per un gruppo, il totale di bilancio del bilancio consolidato. Il valore è riportato in calce all'attivo nel bilancio d'esercizio; non è una stima.",
+        "zh": "上一财政年度末资产负债表资产方的合计数，即固定资产与流动资产之和。对集团而言，为合并报表的资产总额。该数字列示于年度报表资产方的末尾，不是估算值。",
+    },
+    "legal_form": {
+        "de": "Wählen Sie die Form, unter der Ihr Unternehmen im Handelsregister eingetragen ist. Die Rechtsform entscheidet mit über die Berichtspflichten: Die Nachhaltigkeitsberichterstattung trifft vor allem Kapitalgesellschaften wie AG, SE und GmbH sowie ihnen gleichgestellte Personenhandelsgesellschaften — etwa die GmbH & Co. KG, bei der keine natürliche Person voll haftet (§ 264a HGB).",
+        "en": "Choose the form under which your company is entered in the commercial register. The legal form helps determine reporting duties: sustainability reporting applies above all to limited companies such as AG, SE and GmbH, and to partnerships treated as equivalent — for instance the GmbH & Co. KG, in which no natural person has unlimited liability (§ 264a of the German Commercial Code).",
+        "es": "Elija la forma con la que su empresa está inscrita en el registro mercantil. La forma jurídica influye en las obligaciones de información: la información sobre sostenibilidad afecta sobre todo a sociedades de capital como AG, SE y GmbH, y a las sociedades personalistas equiparadas, por ejemplo la GmbH & Co. KG, en la que ninguna persona física responde de forma ilimitada (§ 264a del Código de Comercio alemán).",
+        "fr": "Choisissez la forme sous laquelle votre entreprise est inscrite au registre du commerce. La forme juridique conditionne en partie les obligations de publication : le reporting de durabilité vise surtout les sociétés de capitaux telles que AG, SE et GmbH, ainsi que les sociétés de personnes assimilées — par exemple la GmbH & Co. KG, dans laquelle aucune personne physique n'est indéfiniment responsable (§ 264a du code de commerce allemand).",
+        "it": "Scelga la forma con cui la sua azienda è iscritta nel registro delle imprese. La forma giuridica concorre a determinare gli obblighi di rendicontazione: la rendicontazione di sostenibilità riguarda soprattutto le società di capitali come AG, SE e GmbH e le società di persone equiparate, ad esempio la GmbH & Co. KG, in cui nessuna persona fisica risponde illimitatamente (§ 264a del codice di commercio tedesco).",
+        "zh": "请选择贵公司在商业登记簿中登记的法律形式。法律形式影响报告义务：可持续发展报告主要适用于 AG、SE、GmbH 等资合公司，以及与之同等对待的人合公司——例如无自然人承担无限责任的 GmbH & Co. KG（《德国商法典》第 264a 条）。",
+    },
+    "branch": {
+        "de": "Die Auswahl folgt der amtlichen Wirtschaftszweig-Gliederung (NACE) für Textil, Bekleidung, Leder und Schuhe sowie Wäscherei und chemische Reinigung. Wählen Sie die Tätigkeit, die den größten Teil Ihres Umsatzes trägt — Nebentätigkeiten bilden Sie weiter unten über Produktkategorien und Rollen ab.",
+        "en": "The list follows the official industry classification (NACE) for textiles, clothing, leather and footwear as well as laundry and dry cleaning. Choose the activity that accounts for most of your turnover — secondary activities are captured further down via product categories and roles.",
+        "es": "La lista sigue la clasificación oficial de actividades económicas (NACE) para textil, confección, cuero y calzado, así como lavandería y limpieza en seco. Elija la actividad que aporta la mayor parte de su cifra de negocios; las actividades secundarias se recogen más abajo en las categorías de productos y en las funciones.",
+        "fr": "La liste suit la nomenclature officielle des activités (NACE) pour le textile, l'habillement, le cuir et la chaussure ainsi que la blanchisserie et le nettoyage à sec. Choisissez l'activité qui représente la plus grande part de votre chiffre d'affaires ; les activités secondaires sont saisies plus bas via les catégories de produits et les rôles.",
+        "it": "L'elenco segue la classificazione ufficiale delle attività economiche (NACE) per tessile, abbigliamento, pelle e calzature nonché lavanderia e pulitura a secco. Scelga l'attività che genera la quota maggiore del fatturato; le attività secondarie si indicano più in basso tramite categorie di prodotto e ruoli.",
+        "zh": "该列表依据官方经济活动分类（NACE），涵盖纺织、服装、皮革与鞋类以及洗涤和干洗。请选择占营业额比重最大的活动；次要业务可在下方的产品类别和角色中体现。",
+    },
+    "group_role": {
+        "de": "Mutterunternehmen ist, wer beherrschenden Einfluss auf mindestens ein anderes Unternehmen ausübt und einen Konzernabschluss aufstellt; Tochter ist das beherrschte Unternehmen. Entscheidend ist der Sitz der obersten Muttergesellschaft: Sitzt sie außerhalb der EU, wird die Gruppe in der Regel nicht über den weltweiten, sondern über den in der EU erzielten Umsatz erfasst. Ohne verbundene Unternehmen wählen Sie die erste Option.",
+        "en": "A parent is a company that exercises controlling influence over at least one other company and draws up consolidated accounts; the subsidiary is the controlled company. What matters is where the ultimate parent is based: if it sits outside the EU, the group is as a rule captured through turnover generated in the EU rather than worldwide turnover. With no affiliated companies, choose the first option.",
+        "es": "Es sociedad matriz quien ejerce influencia dominante sobre al menos otra empresa y formula cuentas consolidadas; la filial es la empresa dominada. Lo decisivo es dónde tiene su sede la matriz última: si está fuera de la UE, por regla general el grupo se somete a la cifra de negocios obtenida en la UE y no a la mundial. Si no hay empresas vinculadas, elija la primera opción.",
+        "fr": "Est société mère celle qui exerce une influence dominante sur au moins une autre entreprise et établit des comptes consolidés ; la filiale est l'entreprise contrôlée. Ce qui compte est le siège de la société mère ultime : s'il se trouve hors de l'UE, le groupe est en règle générale appréhendé par le chiffre d'affaires réalisé dans l'UE et non par le chiffre d'affaires mondial. En l'absence d'entreprises liées, choisissez la première option.",
+        "it": "È capogruppo chi esercita un'influenza dominante su almeno un'altra impresa e redige il bilancio consolidato; la controllata è l'impresa dominata. Ciò che conta è la sede della capogruppo ultima: se si trova fuori dall'UE, di norma il gruppo viene considerato in base al fatturato realizzato nell'UE e non a quello mondiale. In assenza di imprese collegate scelga la prima opzione.",
+        "zh": "母公司是指对至少一家其他企业行使控制性影响并编制合并报表的企业；子公司则是被控制的企业。关键在于最终母公司的所在地：若其位于欧盟境外，集团通常按在欧盟境内实现的营业额而非全球营业额加以认定。若没有关联企业，请选择第一项。",
+    },
+    "b2c": {
+        "de": "Kreuzen Sie an, wenn Sie Waren an private Endverbraucher verkaufen — im eigenen Laden, im Online-Shop oder im Fernabsatz. Verkauf allein an Handel, Industrie oder öffentliche Auftraggeber ist kein B2C. Verbraucherbezogene Vorgaben wie die EmpCo-Richtlinie und das Recht auf Reparatur knüpfen hieran an.",
+        "en": "Tick this if you sell goods to private end consumers — in your own shop, in an online shop or by distance selling. Selling only to retailers, industry or public purchasers is not B2C. Consumer-facing rules such as the EmpCo Directive and the right to repair attach to this.",
+        "es": "Marque esta casilla si vende bienes a consumidores finales particulares, ya sea en tienda propia, en tienda en línea o a distancia. Vender únicamente a comercio, industria o entidades públicas no es B2C. Normas dirigidas al consumidor, como la Directiva EmpCo y el derecho a reparar, se vinculan a esto.",
+        "fr": "Cochez si vous vendez des biens à des consommateurs finaux privés — en boutique, en boutique en ligne ou à distance. Vendre uniquement au commerce, à l'industrie ou à des acheteurs publics n'est pas du B2C. Des règles destinées aux consommateurs, comme la directive EmpCo et le droit à la réparation, s'y rattachent.",
+        "it": "Selezioni la casella se vende beni a consumatori finali privati, in negozio proprio, in un negozio online o a distanza. Vendere solo a commercio, industria o committenti pubblici non è B2C. Regole rivolte ai consumatori, come la direttiva EmpCo e il diritto alla riparazione, si ricollegano a questo.",
+        "zh": "如果贵公司向私人最终消费者销售商品——无论是自有门店、网店还是远程销售——请勾选此项。仅向贸易商、工业客户或公共采购方销售不属于 B2C。面向消费者的规定（如 EmpCo 指令和维修权）以此为连接点。",
+    },
+    "listed": {
+        "de": "Gemeint ist die Kapitalmarktorientierung nach § 264d HGB: Ihr Unternehmen hat Wertpapiere ausgegeben, die an einem organisierten Markt gehandelt werden — Aktien genügen, eine Anleihe aber ebenso. Beispiel: eine GmbH in Familienbesitz ist es nicht; eine GmbH, deren Anleihe an der Börse notiert ist, schon. Der Freiverkehr zählt nicht als organisierter Markt.",
+        "en": "This refers to capital-market orientation under § 264d of the German Commercial Code: your company has issued securities traded on a regulated market — shares qualify, but so does a single bond. Example: a family-owned GmbH is not capital-market oriented; a GmbH whose bond is listed on an exchange is. The open market (Freiverkehr) does not count as a regulated market.",
+        "es": "Se refiere a la orientación al mercado de capitales según el § 264d del Código de Comercio alemán: su empresa ha emitido valores negociados en un mercado regulado; valen tanto las acciones como un simple empréstito. Ejemplo: una GmbH de propiedad familiar no lo es; una GmbH cuyo bono cotiza en bolsa, sí. El mercado no regulado (Freiverkehr) no cuenta como mercado regulado.",
+        "fr": "Il s'agit de l'orientation vers le marché des capitaux au sens du § 264d du code de commerce allemand : votre entreprise a émis des titres négociés sur un marché réglementé — des actions, mais aussi un simple emprunt obligataire. Exemple : une GmbH détenue par une famille ne l'est pas ; une GmbH dont l'obligation est cotée en bourse, si. Le marché libre (Freiverkehr) ne compte pas comme marché réglementé.",
+        "it": "Si intende l'orientamento al mercato dei capitali ai sensi del § 264d del codice di commercio tedesco: la sua azienda ha emesso titoli negoziati in un mercato regolamentato; valgono sia le azioni sia una semplice obbligazione. Esempio: una GmbH a proprietà familiare non lo è; una GmbH la cui obbligazione è quotata in borsa sì. Il mercato non regolamentato (Freiverkehr) non conta come mercato regolamentato.",
+        "zh": "指《德国商法典》第 264d 条意义上的面向资本市场：贵公司发行的证券在受监管市场交易——股票可以，仅有一只债券同样算。例如：家族持股的 GmbH 不属于此类；而其债券在证券交易所挂牌的 GmbH 则属于。场外交易市场（Freiverkehr）不算受监管市场。",
+    },
+    "env_claims": {
+        "de": "Gemeint sind Aussagen über Umwelt- oder Klimaeigenschaften in Werbung, auf dem Produkt oder auf der Verpackung — etwa „klimaneutral“, „aus recyceltem Material“ oder „umweltfreundlich“ — sowie eigene und fremde Nachhaltigkeitssiegel. Schon ein einzelner Hinweis auf dem Etikett genügt. Ob eine solche Aussage zulässig ist, hängt davon ab, wie sie belegt ist; hier geben Sie nur an, ob es sie überhaupt gibt.",
+        "en": "This covers statements about environmental or climate properties in advertising, on the product or on the packaging — such as “climate neutral”, “made from recycled material” or “environmentally friendly” — as well as your own and third-party sustainability labels. A single note on the label is enough. Whether such a statement is permissible depends on how it is substantiated; here you only state whether it exists at all.",
+        "es": "Se trata de afirmaciones sobre propiedades ambientales o climáticas en la publicidad, en el producto o en el envase —por ejemplo «climáticamente neutro», «de material reciclado» o «respetuoso con el medio ambiente»— así como de sellos de sostenibilidad propios o ajenos. Basta con una sola indicación en la etiqueta. Que tal afirmación sea admisible depende de cómo esté acreditada; aquí solo indica si existe.",
+        "fr": "Sont visées les allégations portant sur des propriétés environnementales ou climatiques dans la publicité, sur le produit ou sur l'emballage — par exemple « neutre en carbone », « en matière recyclée » ou « écologique » — ainsi que les labels de durabilité, propres ou tiers. Une seule mention sur l'étiquette suffit. Le caractère licite d'une telle allégation dépend de sa justification ; ici, vous indiquez seulement si elle existe.",
+        "it": "Si intendono le dichiarazioni su proprietà ambientali o climatiche nella pubblicità, sul prodotto o sulla confezione — ad esempio «climaticamente neutro», «in materiale riciclato» o «ecologico» — nonché i marchi di sostenibilità propri o di terzi. Basta una sola indicazione sull'etichetta. Se una simile dichiarazione sia ammissibile dipende da come è documentata; qui indica solo se esiste.",
+        "zh": "指在广告、产品或包装上关于环境或气候特性的表述——例如“气候中和”“采用再生材料”“环保”——以及自有或第三方的可持续性标识。标签上出现一处即可。此类表述是否被允许取决于其证明依据；此处仅需说明是否存在。",
+    },
+    "eu_importer": {
+        "de": "„Inverkehrbringen“ ist die erstmalige Bereitstellung eines Produkts auf dem EU-Markt — der Moment, in dem die Ware zum ersten Mal innerhalb der Union verkauft oder abgegeben wird. Wer ausschließlich Ware weiterverkauft, die bereits ein anderes Unternehmen eingeführt hat, ist Händler und nicht Importeur. Beispiel: Sie lassen in Asien fertigen und führen die Ware selbst in die EU ein — dann trifft das hier zu.",
+        "en": "“Placing on the market” is the first making available of a product on the EU market — the moment the goods are sold or supplied within the Union for the first time. Anyone who only resells goods that another company has already imported is a distributor, not an importer. Example: you have goods made in Asia and import them into the EU yourself — then this applies to you.",
+        "es": "«Introducción en el mercado» es la primera comercialización de un producto en el mercado de la UE, es decir, el momento en que la mercancía se vende o entrega por primera vez dentro de la Unión. Quien solo revende mercancía que otra empresa ya ha importado es distribuidor, no importador. Ejemplo: usted manda fabricar en Asia e introduce la mercancía en la UE por su cuenta; entonces esto le aplica.",
+        "fr": "La « mise sur le marché » est la première mise à disposition d'un produit sur le marché de l'UE, c'est-à-dire le moment où la marchandise est vendue ou remise pour la première fois dans l'Union. Celui qui se contente de revendre une marchandise déjà importée par une autre entreprise est distributeur et non importateur. Exemple : vous faites fabriquer en Asie et importez vous-même la marchandise dans l'UE — alors cette case vous concerne.",
+        "it": "L'«immissione sul mercato» è la prima messa a disposizione di un prodotto sul mercato UE, cioè il momento in cui la merce viene venduta o ceduta per la prima volta all'interno dell'Unione. Chi si limita a rivendere merce già importata da un'altra impresa è distributore e non importatore. Esempio: fa produrre in Asia e importa lei stesso la merce nell'UE — allora questa casella la riguarda.",
+        "zh": "“投放市场”是指产品首次在欧盟市场上提供，即货物首次在欧盟境内被出售或交付的时点。仅转售已由其他企业进口的货物者属于经销商，而非进口商。例如：贵公司在亚洲委托生产并自行将货物输入欧盟——则此项适用。",
+    },
+    "products": {
+        "de": "Kreuzen Sie alles an, was Ihr Unternehmen herstellt, einführt oder vertreibt — auch dann, wenn es nur einen kleinen Teil des Sortiments ausmacht. Produktbezogene Pflichten hängen an der einzelnen Warengruppe, nicht am Schwerpunkt Ihres Geschäfts. Fehlt eine Gruppe, wählen Sie die nächstliegende.",
+        "en": "Tick everything your company makes, imports or sells — even where it accounts for only a small part of the range. Product-related duties attach to the individual product group, not to the main focus of your business. If a group is missing, choose the closest one.",
+        "es": "Marque todo lo que su empresa fabrica, importa o distribuye, aunque represente solo una pequeña parte del surtido. Las obligaciones sobre productos se vinculan a cada grupo de mercancías y no al foco principal de su negocio. Si falta un grupo, elija el más próximo.",
+        "fr": "Cochez tout ce que votre entreprise fabrique, importe ou distribue, même si cela ne représente qu'une petite part de l'assortiment. Les obligations liées aux produits se rattachent à chaque groupe de marchandises et non à l'activité principale. Si un groupe manque, choisissez le plus proche.",
+        "it": "Selezioni tutto ciò che la sua azienda produce, importa o distribuisce, anche se rappresenta solo una piccola parte dell'assortimento. Gli obblighi sui prodotti si ricollegano al singolo gruppo merceologico e non al fulcro della sua attività. Se manca un gruppo, scelga quello più vicino.",
+        "zh": "请勾选贵公司生产、进口或销售的全部品类，即使其在产品组合中占比很小。与产品相关的义务针对具体品类，而非业务重心。如缺少某一品类，请选择最接近的一项。",
+    },
+    "roles": {
+        "de": "Eine Rolle beschreibt, was Ihr Unternehmen mit dem Produkt tut; mehrere Rollen zugleich sind der Normalfall. Hersteller ist auch, wer fertigen lässt und unter eigenem Namen vertreibt; Markeninhaber verkauft fremd gefertigte Ware unter eigener oder lizenzierter Marke; Händler stellt Ware anderer Unternehmen bereit, ohne sie selbst einzuführen.",
+        "en": "A role describes what your company does with the product; holding several roles at once is the normal case. A manufacturer is also anyone who has goods made and sells them under their own name; a brand owner sells externally made goods under their own or a licensed brand; a distributor makes other companies' goods available without importing them.",
+        "es": "Una función describe lo que su empresa hace con el producto; lo normal es desempeñar varias a la vez. También es fabricante quien manda fabricar y comercializa bajo su propio nombre; el titular de la marca vende mercancía fabricada por terceros bajo marca propia o licenciada; el distribuidor comercializa mercancía de otras empresas sin importarla él mismo.",
+        "fr": "Un rôle décrit ce que votre entreprise fait du produit ; en cumuler plusieurs est le cas normal. Est aussi fabricant celui qui fait fabriquer et commercialise sous son propre nom ; le titulaire de la marque vend des marchandises fabriquées par des tiers sous sa marque propre ou sous licence ; le distributeur met à disposition des marchandises d'autres entreprises sans les importer lui-même.",
+        "it": "Un ruolo descrive che cosa fa la sua azienda con il prodotto; ricoprirne più di uno è la norma. È fabbricante anche chi fa produrre e commercializza con il proprio nome; il titolare del marchio vende merce prodotta da terzi con marchio proprio o in licenza; il distributore mette a disposizione merce di altre imprese senza importarla direttamente.",
+        "zh": "角色描述贵公司对产品所做的事情；同时承担多个角色是常态。委托他人生产并以自有名义销售者同样属于制造商；品牌持有人以自有或许可品牌销售由他方生产的商品；经销商提供其他企业的商品但不自行进口。",
+    },
+    "materials": {
+        "de": "Gemeint sind die Materialien, die tatsächlich in Ihren Produkten stecken — einschließlich Zukaufteilen und chemischer Ausrüstungen, die ein Lohnveredler aufbringt. Für einzelne Regulierungen entscheidet der Rohstoff, nicht das Endprodukt. Wissen Sie es für Teile des Sortiments nicht, wählen Sie zusätzlich „Nicht bekannt / kann nicht ausgeschlossen werden“.",
+        "en": "This means the materials actually contained in your products — including bought-in parts and chemical finishes applied by a contract finisher. For some regulations the raw material, not the finished product, is decisive. If you do not know for parts of the range, additionally tick “Not known / cannot be ruled out”.",
+        "es": "Se refiere a los materiales que realmente contienen sus productos, incluidas las piezas compradas y los acabados químicos que aplica un acabador externo. Para algunas regulaciones lo decisivo es la materia prima, no el producto final. Si lo desconoce para parte del surtido, marque además «No se conoce / no puede descartarse».",
+        "fr": "Il s'agit des matériaux réellement présents dans vos produits, y compris les pièces achetées et les apprêts chimiques appliqués par un façonnier. Pour certaines réglementations, c'est la matière première qui compte, et non le produit fini. Si vous l'ignorez pour une partie de l'assortiment, cochez en plus « Inconnu / ne peut être exclu ».",
+        "it": "Si intendono i materiali effettivamente presenti nei suoi prodotti, comprese le parti acquistate e i finissaggi chimici applicati da un terzista. Per alcune normative è determinante la materia prima e non il prodotto finito. Se non lo sa per una parte dell'assortimento, selezioni anche «Non noto / non può essere escluso».",
+        "zh": "指贵公司产品中实际含有的材料，包括外购部件以及由代加工方施加的化学整理。某些法规以原材料而非成品为准。若对部分产品并不清楚，请另行勾选“不清楚／无法排除”。",
+    },
+    "markets": {
+        "de": "Gemeint ist, wo Ihre Produkte an Kunden abgesetzt werden — nicht, wo sie hergestellt werden. Wer nach Deutschland oder in andere EU-/EWR-Staaten liefert, stellt dort Produkte auf dem Markt bereit; daran knüpfen die produktbezogenen Marktregeln an. Wer ausschließlich außerhalb der EU absetzt, wird von ihnen in der Regel nicht erfasst.",
+        "en": "This is about where your products are sold to customers — not where they are made. Anyone supplying Germany or other EU/EEA states makes products available on that market, which is what the product-related market rules attach to. Anyone selling exclusively outside the EU is as a rule not covered by them.",
+        "es": "Se trata de dónde se venden sus productos a los clientes, no de dónde se fabrican. Quien suministra a Alemania o a otros Estados de la UE/EEE comercializa allí productos, y es a eso a lo que se vinculan las normas de mercado sobre productos. Quien vende exclusivamente fuera de la UE, por regla general, no queda sujeto a ellas.",
+        "fr": "Il s'agit du lieu où vos produits sont vendus aux clients, et non du lieu de fabrication. Celui qui livre en Allemagne ou dans d'autres États de l'UE/EEE y met des produits à disposition sur le marché, ce à quoi se rattachent les règles de marché relatives aux produits. Celui qui vend exclusivement hors de l'UE n'y est en règle générale pas soumis.",
+        "it": "Si intende dove i suoi prodotti vengono venduti ai clienti, non dove vengono fabbricati. Chi fornisce la Germania o altri Stati UE/SEE mette lì a disposizione prodotti sul mercato, ed è a questo che si ricollegano le regole di mercato sui prodotti. Chi vende esclusivamente fuori dall'UE di norma non vi è soggetto.",
+        "zh": "此处指产品销往何处，而非在何处生产。向德国或其他欧盟／欧洲经济区国家供货，即在当地市场提供产品，与产品相关的市场规则以此为连接点。仅在欧盟境外销售者通常不受其约束。",
+    },
+    "sites": {
+        "de": "Erfassen Sie je Zeile eine Art von Standort mit Region und Anzahl. Der erste Typ fasst die Anknüpfungspunkte der Lieferketten-Vorschriften zusammen — Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßiger Sitz oder Zweigniederlassung. Beispiel: eine GmbH mit Verwaltung in Deutschland trägt dort „1“ ein und legt für ein Lager in Polen eine zweite Zeile an.",
+        "en": "Record one kind of site per row, with region and number. The first type gathers the connecting factors used by the supply chain rules — head office, principal place of business, administrative seat, registered office or branch. Example: a GmbH with its administration in Germany enters “1” there and adds a second row for a warehouse in Poland.",
+        "es": "Registre por fila un tipo de ubicación, con región y cantidad. El primer tipo reúne los puntos de conexión de las normas sobre cadenas de suministro: administración central, establecimiento principal, sede administrativa, domicilio social o sucursal. Ejemplo: una GmbH con su administración en Alemania indica allí «1» y añade una segunda fila para un almacén en Polonia.",
+        "fr": "Saisissez un type de site par ligne, avec la région et le nombre. Le premier type regroupe les points de rattachement des règles sur les chaînes d'approvisionnement : administration centrale, principal établissement, siège administratif, siège statutaire ou succursale. Exemple : une GmbH dont l'administration est en Allemagne y inscrit « 1 » et ajoute une deuxième ligne pour un entrepôt en Pologne.",
+        "it": "Indichi per ogni riga un tipo di sede, con regione e numero. Il primo tipo raccoglie i criteri di collegamento delle norme sulle catene di fornitura: amministrazione centrale, sede principale, sede amministrativa, sede legale o succursale. Esempio: una GmbH con l'amministrazione in Germania indica lì «1» e aggiunge una seconda riga per un magazzino in Polonia.",
+        "zh": "每一行填写一类场所，并注明地区和数量。第一类汇总了供应链法规的各种连接点——总部、主要营业地、行政所在地、章程登记地或分支机构。例如：行政管理设在德国的 GmbH 在该行填“1”，并为波兰的仓库另加一行。",
+    },
+    "metric_yes": {
+        "de": "Nach Ihren Angaben spricht alles dafür, dass diese Regulierung Ihr Unternehmen erfasst. Die Karte nennt die Fundstelle, den Anwendungsbeginn und erste Schritte. Eine rechtliche Prüfung des Einzelfalls ersetzt das nicht.",
+        "en": "On the basis of your entries, everything points to this regulation covering your company. The card gives the source passage, the date of application and first steps. It does not replace a legal review of the individual case.",
+        "es": "Según sus datos, todo apunta a que esta regulación afecta a su empresa. La tarjeta indica el pasaje de referencia, la fecha de aplicación y los primeros pasos. No sustituye a un examen jurídico del caso concreto.",
+        "fr": "D'après vos indications, tout indique que cette réglementation s'applique à votre entreprise. La fiche indique le passage de référence, la date d'application et les premières étapes. Cela ne remplace pas un examen juridique du cas d'espèce.",
+        "it": "In base ai suoi dati, tutto indica che questa normativa riguarda la sua azienda. La scheda riporta il passaggio di riferimento, la data di applicazione e i primi passi. Non sostituisce un esame giuridico del caso concreto.",
+        "zh": "根据贵公司填写的信息，种种迹象表明该法规适用于贵公司。卡片中列出了依据条款、适用起始日期和首批行动步骤。这不能替代针对个案的法律审查。",
+    },
+    "metric_maybe": {
+        "de": "Die Angaben reichen für eine eindeutige Antwort nicht aus, oder Ihr Unternehmen liegt nahe an einer Schwelle. Prüfen Sie diese Fälle zuerst — hier entscheidet sich, ob Aufwand entsteht. Oft genügt eine genauere Angabe im Formular.",
+        "en": "Your entries are not enough for a clear answer, or your company is close to a threshold. Look at these cases first — this is where it is decided whether any effort arises. Often a more precise entry in the form is enough.",
+        "es": "Los datos no bastan para una respuesta clara, o su empresa está cerca de un umbral. Revise primero estos casos: aquí se decide si surge carga de trabajo. A menudo basta con una indicación más precisa en el formulario.",
+        "fr": "Vos indications ne suffisent pas pour une réponse claire, ou votre entreprise est proche d'un seuil. Examinez ces cas en premier : c'est là que se décide l'existence d'une charge. Souvent, une indication plus précise dans le formulaire suffit.",
+        "it": "I dati non bastano per una risposta univoca, oppure la sua azienda è vicina a una soglia. Esamini prima questi casi: qui si decide se sorgono oneri. Spesso basta un'indicazione più precisa nel modulo.",
+        "zh": "所填信息不足以给出明确结论，或贵公司接近某一门槛。请优先查看这些情形——是否产生工作量在此决定。通常在表单中填写得更精确即可澄清。",
+    },
+    "metric_no": {
+        "de": "Nach Ihren Angaben greift diese Regulierung derzeit nicht. Das ist eine Momentaufnahme: Wachsen Beschäftigtenzahl oder Umsatz, kommen Produkte oder Absatzmärkte hinzu, kann sich das Ergebnis ändern. Prüfen Sie deshalb nach größeren Veränderungen erneut.",
+        "en": "On the basis of your entries this regulation currently does not apply. That is a snapshot: if headcount or turnover grow, or products or markets are added, the result can change. Run the check again after major changes.",
+        "es": "Según sus datos, esta regulación no se aplica por ahora. Es una instantánea: si crecen la plantilla o la cifra de negocios, o se añaden productos o mercados, el resultado puede cambiar. Vuelva a verificar tras cambios importantes.",
+        "fr": "D'après vos indications, cette réglementation ne s'applique pas actuellement. Il s'agit d'un instantané : si l'effectif ou le chiffre d'affaires augmentent, ou si des produits ou des marchés s'ajoutent, le résultat peut changer. Refaites la vérification après des changements importants.",
+        "it": "In base ai suoi dati questa normativa al momento non si applica. È un'istantanea: se crescono organico o fatturato, o si aggiungono prodotti o mercati, il risultato può cambiare. Ripeta la verifica dopo cambiamenti rilevanti.",
+        "zh": "根据所填信息，该法规目前不适用。这只是当前状况：若员工人数或营业额增长，或新增产品或销售市场，结论可能改变。发生较大变化后请重新检查。",
+    },
+    "deadline": {
+        "de": "Der Zeitpunkt, ab dem die Regulierung für ein Unternehmen mit Ihrem Profil gilt. Viele Vorschriften starten gestaffelt nach Größe; hier steht die Stufe, die zu Ihren Angaben passt — nicht das allgemeine Inkrafttreten. Steht statt eines Datums ein Hinweis, ist der Anwendungsbeginn noch offen.",
+        "en": "The point from which the regulation applies to a company with your profile. Many rules phase in by size; what is shown here is the stage that matches your entries — not the general entry into force. Where a note appears instead of a date, the start of application is still open.",
+        "es": "El momento a partir del cual la regulación se aplica a una empresa con su perfil. Muchas normas se aplican de forma escalonada según el tamaño; aquí figura el escalón que corresponde a sus datos, no la entrada en vigor general. Si en lugar de una fecha aparece una indicación, el inicio de aplicación sigue abierto.",
+        "fr": "Le moment à partir duquel la réglementation s'applique à une entreprise ayant votre profil. De nombreuses règles s'appliquent par paliers selon la taille ; figure ici le palier correspondant à vos indications, et non l'entrée en vigueur générale. Si une mention remplace la date, le début d'application reste ouvert.",
+        "it": "Il momento a partire dal quale la normativa si applica a un'impresa con il suo profilo. Molte norme si applicano per scaglioni in base alla dimensione; qui compare lo scaglione che corrisponde ai suoi dati, non l'entrata in vigore generale. Se al posto della data compare una nota, l'inizio dell'applicazione è ancora aperto.",
+        "zh": "指该法规对与贵公司情况相符的企业开始适用的时间。许多规定按规模分阶段实施；此处显示的是与所填信息相符的阶段，而非一般生效日期。若显示的不是日期而是说明，则适用起始时间尚未确定。",
+    },
+    "passage": {
+        "de": "Die Stelle im Gesetzestext, auf die sich die Einschätzung stützt — sinngemäß wiedergegeben und auf rund 280 Zeichen gekürzt. Zahlen mit Schwellenbezug sind rot hervorgehoben. Den vollen Wortlaut erreichen Sie über den Link im Titel der Karte.",
+        "en": "The passage of the legal text on which the assessment rests — rendered in substance and shortened to about 280 characters. Figures relating to thresholds are highlighted in red. The full wording is available via the link in the card title.",
+        "es": "El pasaje del texto legal en el que se apoya la valoración, reproducido en lo esencial y acortado a unos 280 caracteres. Las cifras relacionadas con umbrales aparecen destacadas en rojo. El texto íntegro está disponible a través del enlace del título de la tarjeta.",
+        "fr": "Le passage du texte légal sur lequel repose l'appréciation, restitué dans sa substance et raccourci à environ 280 caractères. Les chiffres relatifs aux seuils sont surlignés en rouge. Le texte intégral est accessible par le lien dans le titre de la fiche.",
+        "it": "Il passaggio del testo normativo su cui si fonda la valutazione, riportato nella sostanza e abbreviato a circa 280 caratteri. Le cifre riferite a soglie sono evidenziate in rosso. Il testo integrale è raggiungibile tramite il link nel titolo della scheda.",
+        "zh": "该评估所依据的法律条文段落，按其含义转述并截取至约 280 个字符。与门槛有关的数字以红色标出。完整原文可通过卡片标题中的链接查看。",
+    },
+    "law_state": {
+        "de": "Das Datum, an dem die Anwendung den zugrunde liegenden Gesetzestext zuletzt von der amtlichen Quelle geladen hat. Genutzt wird, soweit vorhanden, die konsolidierte Fassung — also der Text einschließlich späterer Änderungen. Ein älteres Datum heißt nicht, dass der Text veraltet ist, sondern nur, dass seither kein neuer Abruf stattgefunden hat.",
+        "en": "The date on which the application last downloaded the underlying legal text from the official source. Where available, the consolidated version is used — the text including later amendments. An older date does not mean the text is out of date, only that no new retrieval has taken place since.",
+        "es": "La fecha en la que la aplicación descargó por última vez el texto legal de la fuente oficial. Se utiliza, cuando existe, la versión consolidada, es decir, el texto con las modificaciones posteriores. Una fecha antigua no significa que el texto esté desfasado, sino solo que desde entonces no ha habido una nueva descarga.",
+        "fr": "La date à laquelle l'application a téléchargé pour la dernière fois le texte légal depuis la source officielle. La version consolidée est utilisée lorsqu'elle existe, c'est-à-dire le texte intégrant les modifications ultérieures. Une date ancienne ne signifie pas que le texte est périmé, mais seulement qu'aucun nouveau téléchargement n'a eu lieu depuis.",
+        "it": "La data in cui l'applicazione ha scaricato per l'ultima volta il testo normativo dalla fonte ufficiale. Ove disponibile viene usata la versione consolidata, cioè il testo comprensivo delle modifiche successive. Una data meno recente non significa che il testo sia superato, ma solo che da allora non è avvenuto un nuovo scaricamento.",
+        "zh": "本应用最近一次从官方来源下载相关法律文本的日期。如有合并版本，则使用合并版，即包含后续修订的文本。日期较早并不意味着文本过时，只说明此后未再进行新的抓取。",
+    },
+}
+
+
 # ---------- Helper ----------
 def t(key: str, lang: str = "de") -> str:
     entry = UI.get(key, {})
@@ -3898,6 +4109,14 @@ def t_threshold_hint(hint: dict, lang: str = "de") -> str:
         employees_de=fmt_int(values.get("employees_de"), lang),
         revenue=fmt_eur(values.get("revenue_eur"), lang),
     )
+
+
+def t_help(key: str, lang: str = "de") -> str:
+    """Erlaeuterungstext zu einem Feld/Begriff; leer, wenn es keinen gibt."""
+    entry = FIELD_HELP.get(key)
+    if not entry:
+        return ""
+    return entry.get(lang) or entry.get("de", "")
 
 
 def normalize_lang(lang: str | None) -> str:

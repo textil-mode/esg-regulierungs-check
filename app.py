@@ -49,6 +49,7 @@ from i18n import (
     normalize_lang,
     t,
     t_applies_note,
+    t_help,
     t_opt,
     t_status,
 )
@@ -243,6 +244,7 @@ def _inject_globals():
     return dict(
         t=t,
         t_opt=t_opt,
+        t_help=t_help,
         lang=lang,
         LANGUAGES=LANGUAGES,
         BRANCH_LABELS=BRANCH_LABELS,

@@ -1,4 +1,14 @@
 {% extends "base.html" %}
+
+{# Ausfuellhilfe zu einem Fachbegriff: unauffaelliges Fragezeichen neben der
+   Beschriftung, das eine kurze Erlaeuterung oeffnet. Texte stehen in
+   `i18n.FIELD_HELP` (alle 6 Sprachen), Aussehen und Bedienung in base.html.
+   Gibt es zu einem Schluessel keinen Text, entsteht auch kein Fragezeichen. #}
+{% macro fh(key) -%}
+{%- set txt = t_help(key, lang) -%}
+{%- if txt -%}<span class="fh"><button type="button" class="fh-btn" aria-expanded="false" aria-label="{{ t('help_label', lang) }}" aria-describedby="fh-{{ key }}">?</button><span class="fh-box" id="fh-{{ key }}" role="tooltip">{{ txt }}</span></span>{%- endif -%}
+{%- endmacro %}
+
 {% block content %}
 
 <!-- 1. Unternehmensdaten (einklappbar) -->
@@ -30,30 +40,30 @@
         <label>{{ t("field_name", lang) }}</label>
         <input type="text" name="name" value="{{ company.get('name','') or '' }}">
 
-        <label>{{ t("field_employees_total", lang) }}</label>
+        <div class="label-row"><label>{{ t("field_employees_total", lang) }}</label>{{ fh("employees_total") }}</div>
         <input type="text" class="fmt-int" data-hidden="employees" value="{{ '{:,}'.format(company.get('employees',0)|int).replace(',', ' ') if company.get('employees',0)|int > 0 else '' }}" inputmode="numeric">
         <input type="hidden" name="employees" value="{{ company.get('employees',0)|int }}">
 
-        <label>{{ t("field_employees_de", lang) }}</label>
+        <div class="label-row"><label>{{ t("field_employees_de", lang) }}</label>{{ fh("employees_de") }}</div>
         <input type="text" class="fmt-int" data-hidden="employees_de" value="{{ '{:,}'.format(company.get('employees_de',0)|int).replace(',', ' ') if company.get('employees_de',0)|int > 0 else '' }}" inputmode="numeric">
         <input type="hidden" name="employees_de" value="{{ company.get('employees_de',0)|int }}">
         <p class="help-text">{{ t("field_employees_de_help", lang) }}</p>
 
-        <label>{{ t("field_revenue", lang) }}</label>
+        <div class="label-row"><label>{{ t("field_revenue", lang) }}</label>{{ fh("revenue") }}</div>
         <input type="text" class="fmt-cur" data-hidden="revenue_eur" value="{{ '{:,.2f}'.format(company.get('revenue_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('revenue_eur',0)|float > 0 else '' }}" inputmode="decimal">
         <input type="hidden" name="revenue_eur" value="{{ company.get('revenue_eur',0)|float }}">
 
-        <label>{{ t("field_revenue_eu", lang) }}</label>
+        <div class="label-row"><label>{{ t("field_revenue_eu", lang) }}</label>{{ fh("revenue_eu") }}</div>
         <input type="text" class="fmt-cur" data-hidden="revenue_eu_eur" value="{{ '{:,.2f}'.format(company.get('revenue_eu_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('revenue_eu_eur',0)|float > 0 else '' }}" inputmode="decimal">
         <input type="hidden" name="revenue_eu_eur" value="{{ company.get('revenue_eu_eur',0)|float }}">
         <p class="help-text">{{ t("field_revenue_eu_help", lang) }}</p>
 
-        <label>{{ t("field_balance_sheet", lang) }}</label>
+        <div class="label-row"><label>{{ t("field_balance_sheet", lang) }}</label>{{ fh("balance_sheet") }}</div>
         <input type="text" class="fmt-cur" data-hidden="balance_sheet_eur" value="{{ '{:,.2f}'.format(company.get('balance_sheet_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('balance_sheet_eur',0)|float > 0 else '' }}" inputmode="decimal">
         <input type="hidden" name="balance_sheet_eur" value="{{ company.get('balance_sheet_eur',0)|float }}">
         <p class="help-text">{{ t("field_balance_help", lang) }}</p>
 
-        <label>{{ t("field_legal_form", lang) }}</label>
+        <div class="label-row"><label>{{ t("field_legal_form", lang) }}</label>{{ fh("legal_form") }}</div>
         <select name="legal_form">
           {% for v in LEGAL_FORMS %}
           <option value="{{ v }}" {{ 'selected' if company.get('legal_form')==v }}>{{ t_opt(v, LEGAL_FORM_LABELS, lang) }}</option>
@@ -61,14 +71,14 @@
         </select>
       </div>
       <div>
-        <label>{{ t("field_branch", lang) }}</label>
+        <div class="label-row"><label>{{ t("field_branch", lang) }}</label>{{ fh("branch") }}</div>
         <select name="branch">
           {% for v in BRANCHES %}
           <option value="{{ v }}" {{ 'selected' if company.get('branch')==v }}>{{ t_opt(v, BRANCH_LABELS, lang) }}</option>
           {% endfor %}
         </select>
 
-        <label>{{ t("field_group_role", lang) }}</label>
+        <div class="label-row"><label>{{ t("field_group_role", lang) }}</label>{{ fh("group_role") }}</div>
         <select name="group_role">
           {% for v in GROUP_ROLES %}
           <option value="{{ v }}" {{ 'selected' if company.get('group_role')==v }}>{{ t_opt(v, GROUP_ROLE_LABELS, lang) }}</option>
@@ -77,21 +87,21 @@
 
         <div class="checkbox-row">
           <input type="checkbox" id="b2c" name="b2c" {{ 'checked' if company.get('b2c') }}>
-          <label for="b2c">{{ t("field_b2c", lang) }}</label>
+          <label for="b2c">{{ t("field_b2c", lang) }}</label>{{ fh("b2c") }}
         </div>
         <div class="checkbox-row">
           <input type="checkbox" id="listed" name="listed" {{ 'checked' if company.get('listed') }}>
-          <label for="listed">{{ t("field_listed", lang) }}</label>
+          <label for="listed">{{ t("field_listed", lang) }}</label>{{ fh("listed") }}
         </div>
         <div class="checkbox-row">
           <input type="checkbox" id="env_claims" name="env_claims" {{ 'checked' if company.get('env_claims') }}>
-          <label for="env_claims">{{ t("field_env_claims", lang) }}</label>
+          <label for="env_claims">{{ t("field_env_claims", lang) }}</label>{{ fh("env_claims") }}
         </div>
         <p class="help-text">{{ t("field_env_claims_help", lang) }}</p>
 
         <div class="checkbox-row" style="margin-top:12px;">
           <input type="checkbox" id="eu_importer" name="eu_importer" {{ 'checked' if company.get('eu_importer') }}>
-          <label for="eu_importer">{{ t("field_eu_importer", lang) }}</label>
+          <label for="eu_importer">{{ t("field_eu_importer", lang) }}</label>{{ fh("eu_importer") }}
         </div>
         <p class="help-text">{{ t("field_eu_importer_help", lang) }}</p>
       </div>
@@ -99,7 +109,7 @@
 
     <!-- Produktkategorien -->
     <hr>
-    <h3 style="margin-bottom:8px;">{{ t("section_products", lang)|replace("#### ","") }}</h3>
+    <h3 style="margin-bottom:8px;">{{ t("section_products", lang)|replace("#### ","") }} {{ fh("products") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("products_hint", lang) }}</p>
     {% set existing_prods = company.get('product_categories', []) or [] %}
     <div class="grid-2 products-grid">
@@ -113,7 +123,7 @@
 
     <!-- Rolle in der Wertschöpfungskette -->
     <hr>
-    <h3 style="margin-bottom:8px;">{{ t("section_roles", lang)|replace("#### ","") }}</h3>
+    <h3 style="margin-bottom:8px;">{{ t("section_roles", lang)|replace("#### ","") }} {{ fh("roles") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("roles_note", lang) }}</p>
     <p class="help-text" style="margin-bottom:12px;">{{ t("roles_hint", lang) }}</p>
     {% set existing_roles = company.get('value_chain_roles', []) or [] %}
@@ -128,7 +138,7 @@
 
     <!-- Materialien -->
     <hr>
-    <h3 style="margin-bottom:8px;">{{ t("section_materials", lang)|replace("#### ","") }}</h3>
+    <h3 style="margin-bottom:8px;">{{ t("section_materials", lang)|replace("#### ","") }} {{ fh("materials") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("materials_hint", lang) }}</p>
     {% set existing_materials = company.get('materials', []) or [] %}
     {% for group, values in MATERIAL_GROUPS %}
@@ -146,7 +156,7 @@
 
     <!-- Absatzmaerkte -->
     <hr>
-    <h3 style="margin-bottom:8px;">{{ t("section_markets", lang)|replace("#### ","") }}</h3>
+    <h3 style="margin-bottom:8px;">{{ t("section_markets", lang)|replace("#### ","") }} {{ fh("markets") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("markets_hint", lang) }}</p>
     {% set existing_markets = company.get('sales_markets', []) or [] %}
     <div class="grid-2 products-grid">
@@ -160,7 +170,7 @@
 
     <!-- Standorte -->
     <hr>
-    <h3 style="margin-bottom:8px;">{{ t("section_sites", lang)|replace("#### ","") }}</h3>
+    <h3 style="margin-bottom:8px;">{{ t("section_sites", lang)|replace("#### ","") }} {{ fh("sites") }}</h3>
     <p class="help-text" style="margin-bottom:12px;">{{ t("sites_hint", lang) }}</p>
     <div id="sites-container">
       {% set sites = company.get('sites', []) or [{"type": SITE_TYPES[0], "location":"Deutschland","count":0}] %}

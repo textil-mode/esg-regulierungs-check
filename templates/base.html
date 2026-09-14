@@ -154,6 +154,47 @@
     .section-box input[type="text"], .section-box input[type="number"], .section-box select { background: #FFFFFF; }
     hr { border: none; border-top: 1px solid var(--tm-line); margin: 22px 0; }
 
+    /* ---------------------------------------------------------------
+       Ausfuellhilfen: ein schlichtes Fragezeichen neben der Beschriftung,
+       das eine kurze Erlaeuterung oeffnet. Kein Emoji (CD-Vorgabe), keine
+       Bibliothek, Grund weiss mit dezentem Rahmen.
+
+       Warum Schalter + kleines Skript statt reinem CSS oder <details>:
+       CSS-Hover hat auf Touchgeraeten keinen Zustand, <details> kennt
+       umgekehrt kein Hover — und keines von beiden bewahrt den Kasten
+       davor, am rechten Bildschirmrand abgeschnitten zu werden. Das Skript
+       steht einmal unten in dieser Datei und arbeitet delegiert, damit es
+       auch fuer die in `views.py` erzeugten Ergebniskarten greift.
+       --------------------------------------------------------------- */
+    .fh { position: relative; display: inline-block; vertical-align: middle; line-height: 0; }
+    .fh-btn {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; padding: 0;
+      border: 1px solid var(--tm-link); border-radius: 50%;
+      background: #FFFFFF; color: var(--tm-link);
+      font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: 700;
+      line-height: 1; cursor: help;
+    }
+    /* Unsichtbare Vergroesserung der Trefferflaeche auf rund 34 px —
+       18 px waeren mit dem Finger kaum zu treffen. */
+    .fh-btn::before { content: ""; position: absolute; inset: -8px; }
+    .fh-btn:hover, .fh-btn[aria-expanded="true"] { background: var(--tm-link); color: #FFFFFF; }
+    .fh-btn:focus-visible { outline: 2px solid var(--tm-navy); outline-offset: 3px; }
+    .fh-box {
+      display: none; position: absolute; z-index: 60; top: calc(100% + 8px); left: 0;
+      width: max-content; max-width: min(320px, calc(100vw - 32px));
+      background: #FFFFFF; border: 1px solid var(--tm-line); border-left: 3px solid var(--tm-link);
+      padding: 10px 12px; font-size: 13px; font-weight: 400; line-height: 1.5;
+      color: #000000; text-align: left; white-space: normal;
+    }
+    .fh.is-open .fh-box { display: block; }
+    @media (max-width: 480px) { .fh-box { max-width: calc(100vw - 28px); } }
+
+    /* Beschriftung und Fragezeichen in einer Zeile; der Schalter darf nicht
+       IN das <label> (Formularsteuerung im Label ist nicht zulaessig). */
+    .label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+    .label-row label { margin-bottom: 0; }
+
     /* Checkbox-Zeile */
     .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
     .checkbox-row input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--tm-navy); }
@@ -372,5 +413,113 @@
       </details>
     </div>
   </div>
+
+  <script>
+  /* Ausfuellhilfen (.fh) — delegiert, damit auch nachtraeglich eingefuegte
+     Ergebniskarten funktionieren.
+       Desktop (feiner Zeiger): Hover oeffnet, Wegziehen schliesst.
+       Touch:                   Tippen oeffnet, erneutes Tippen oder ein Tipp
+                                daneben schliesst.
+       Tastatur:                Tab auf das Fragezeichen, Enter/Leertaste
+                                oeffnet, Esc schliesst und gibt den Fokus
+                                zurueck.
+     Der Kasten wird nach dem Oeffnen gemessen und, wenn er sonst ueber den
+     rechten Rand liefe, nach links geschoben — bei 375 px der Regelfall. */
+  (function () {
+    var open = null;
+    var fine = !!(window.matchMedia &&
+                  window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+
+    function box(fh) { return fh.querySelector('.fh-box'); }
+    function btn(fh) { return fh.querySelector('.fh-btn'); }
+
+    function clamp(fh) {
+      var b = box(fh);
+      if (!b) return;
+      b.style.transform = '';
+      var r = b.getBoundingClientRect();
+      // documentElement.clientWidth, nicht window.innerWidth: nur ersteres ist
+      // die Breite, in der absolut positionierte Elemente liegen (ohne
+      // Bildlaufleiste, und bei Zoom/Geraete-Emulation die richtige Groesse).
+      var vw = document.documentElement.clientWidth || window.innerWidth;
+      var over = r.right - (vw - 10);
+      if (over > 0) {
+        // Nie weiter nach links als bis zum linken Rand.
+        b.style.transform = 'translateX(-' + Math.min(over, Math.max(r.left - 10, 0)) + 'px)';
+      }
+    }
+
+    function show(fh) {
+      if (open && open !== fh) hide(open);
+      fh.classList.add('is-open');
+      var t = btn(fh);
+      if (t) t.setAttribute('aria-expanded', 'true');
+      open = fh;
+      clamp(fh);
+    }
+
+    function hide(fh) {
+      if (!fh) return;
+      fh.classList.remove('is-open');
+      var t = btn(fh);
+      if (t) t.setAttribute('aria-expanded', 'false');
+      if (open === fh) open = null;
+    }
+
+    function nearest(target, sel) {
+      return (target && target.closest) ? target.closest(sel) : null;
+    }
+
+    document.addEventListener('click', function (e) {
+      var t = nearest(e.target, '.fh-btn');
+      if (t) {
+        e.preventDefault();
+        e.stopPropagation();
+        var fh = t.parentNode;
+        // Mit Maus uebernimmt der Hover das Schliessen; ein Klick soll dort
+        // nicht sofort wieder zumachen, was der Zeiger gerade geoeffnet hat.
+        if (fine) show(fh);
+        else if (fh.classList.contains('is-open')) hide(fh);
+        else show(fh);
+        return;
+      }
+      if (open && !nearest(e.target, '.fh')) hide(open);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' && e.key !== 'Esc') return;
+      if (!open) return;
+      var t = btn(open);
+      hide(open);
+      if (t) t.focus();
+    });
+
+    // Fokus verlaesst die Hilfe (z. B. per Tabulator) -> schliessen.
+    document.addEventListener('focusout', function (e) {
+      var t = nearest(e.target, '.fh-btn');
+      if (!t) return;
+      var fh = t.parentNode;
+      window.setTimeout(function () {
+        if (open === fh && !fh.contains(document.activeElement)) hide(fh);
+      }, 0);
+    });
+
+    if (fine) {
+      document.addEventListener('mouseover', function (e) {
+        var fh = nearest(e.target, '.fh');
+        if (fh) show(fh);
+      });
+      document.addEventListener('mouseout', function (e) {
+        var fh = nearest(e.target, '.fh');
+        if (!fh) return;
+        if (e.relatedTarget && fh.contains(e.relatedTarget)) return;
+        if (fh.contains(document.activeElement)) return;   // per Tastatur offen
+        hide(fh);
+      });
+    }
+
+    window.addEventListener('resize', function () { if (open) clamp(open); });
+  })();
+  </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ import re
 from html import escape
 
 from deadlines import deadline_for
-from i18n import t, t_deadline_note, t_first_step, t_threshold_hint
+from i18n import t, t_deadline_note, t_first_step, t_help, t_threshold_hint
 from regulations import application_for, first_steps_for, first_steps_link
 from thresholds import near_thresholds
 
@@ -107,6 +107,26 @@ def _highlight_kennzahlen(escaped_text: str) -> str:
     )
 
 
+def _help_html(key: str, language: str, suffix: str = "") -> str:
+    """Fragezeichen mit kurzer Erlaeuterung.
+
+    Erzeugt dieselben Bausteine wie das Jinja-Makro `fh()` in
+    `templates/dashboard.html`; Aussehen und Bedienung (Hover, Tippen,
+    Tastatur, Esc) stehen einmal in `templates/base.html`. `suffix` haelt die
+    id eindeutig, weil "Gilt ab", "Passage" und "Gesetzesstand" auf jeder
+    Karte erneut vorkommen.
+    """
+    txt = t_help(key, language)
+    if not txt:
+        return ""
+    return (
+        '<span class="fh"><button type="button" class="fh-btn" aria-expanded="false"'
+        f' aria-label="{escape(t("help_label", language))}"'
+        f' aria-describedby="fh-{key}{suffix}">?</button>'
+        f'<span class="fh-box" id="fh-{key}{suffix}" role="tooltip">{escape(txt)}</span></span>'
+    )
+
+
 def _shorten_passage(text: str) -> str:
     """Kurzform fuer das 'Greifende Stelle'-Feld.
 
@@ -166,7 +186,7 @@ _NO_DATE_BY_HINT = {
 }
 
 
-def _deadline_html(reg_key: str, profile: dict, language: str) -> str:
+def _deadline_html(reg_key: str, profile: dict, language: str, suffix: str = "") -> str:
     """Block 'Gilt ab' fuer genau dieses Unternehmen.
 
     Ohne bestimmbares Datum traegt die Zeile ein anderes Label: "Gilt ab:
@@ -179,7 +199,7 @@ def _deadline_html(reg_key: str, profile: dict, language: str) -> str:
     label, value, note = parts
     note_html = f'\n    <div class="reg-deadline-note">{escape(note)}</div>' if note else ""
     return (f'\n  <div class="reg-deadline">'
-            f'<strong>{escape(label)}:</strong> '
+            f'<strong>{escape(label)}:</strong> {_help_html("deadline", language, suffix)} '
             f'{escape(value)}{note_html}\n  </div>')
 
 
@@ -245,14 +265,15 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de",
     nr = r.get("nr", "")
     as_of = _iso_to_display(r.get("law_as_of") or "")
     as_of_html = (
-        f'\n  <div class="reg-asof">{escape(t("law_state_of", language))} {escape(as_of)}</div>'
+        f'\n  <div class="reg-asof">{escape(t("law_state_of", language))} {escape(as_of)} {_help_html("law_state", language, f"-{nr}")}</div>'
         if as_of else ""
     )
     # Handlungsplan nur, wo die Regulierung greifen kann und das Profil vorliegt.
     reg_key = r.get("key") or ""
     plan_html = ""
     if profile and reg_key and a in _PLAN_APPLIES:
-        plan_html = _deadline_html(reg_key, profile, language) + _steps_html(reg_key, language)
+        plan_html = (_deadline_html(reg_key, profile, language, f"-{nr}")
+                     + _steps_html(reg_key, language))
     return f"""
 <div class="reg-card">
   <div class="reg-card-header">
@@ -262,11 +283,11 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de",
     <span class="reg-full">— {full}</span>
   </div>
   <div class="reg-reason"><strong>{escape(lang_dict['reason'])}:</strong> {reason}</div>{plan_html}
-  <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> <em>{passage}</em></div>{as_of_html}
+  <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> {_help_html("passage", language, f"-{nr}")} <em>{passage}</em></div>{as_of_html}
 </div>"""
 
 
-def _metrics_html(shown: list[dict], lang_dict: dict) -> str:
+def _metrics_html(shown: list[dict], lang_dict: dict, language: str = "de") -> str:
     # Gleiche Normalisierung wie Filter, Sortierung und Karten: sonst zaehlt
     # ein gross geschriebenes "JA" die sichtbare Karte nicht mit.
     applies = [(r.get("applies") or "").lower() for r in shown]
@@ -275,9 +296,9 @@ def _metrics_html(shown: list[dict], lang_dict: dict) -> str:
     no = sum(1 for a in applies if a == "nein")
     return f"""
 <div class="metrics">
-  <div class="metric metric-yes"><div class="metric-value">{yes}</div><div class="metric-label">{escape(lang_dict['metric_yes'])}</div></div>
-  <div class="metric metric-maybe"><div class="metric-value">{maybe}</div><div class="metric-label">{escape(lang_dict['metric_maybe'])}</div></div>
-  <div class="metric metric-no"><div class="metric-value">{no}</div><div class="metric-label">{escape(lang_dict['metric_no'])}</div></div>
+  <div class="metric metric-yes"><div class="metric-value">{yes}</div><div class="metric-label">{escape(lang_dict['metric_yes'])} {_help_html("metric_yes", language)}</div></div>
+  <div class="metric metric-maybe"><div class="metric-value">{maybe}</div><div class="metric-label">{escape(lang_dict['metric_maybe'])} {_help_html("metric_maybe", language)}</div></div>
+  <div class="metric metric-no"><div class="metric-value">{no}</div><div class="metric-label">{escape(lang_dict['metric_no'])} {_help_html("metric_no", language)}</div></div>
 </div>"""
 
 
@@ -295,7 +316,7 @@ def render_cards_html(results: list[dict], language: str = "de",
     if not shown:
         return '<p class="no-results">—</p>'
 
-    parts = [_metrics_html(shown, lang_dict), _results_hint_html(language)]
+    parts = [_metrics_html(shown, lang_dict, language), _results_hint_html(language)]
     if profile:
         threshold_html = _thresholds_html(profile, language)
         if threshold_html:
