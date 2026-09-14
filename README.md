@@ -82,10 +82,12 @@ Eine SQLite-Datei (`data/esg.db`) mit Tabellen:
 
 ## Die 16 Regulierungen
 
-CSDDD, LkSG, EUDR, FLR, CSRD, CSRD-DE, NFRD, CSR-RUG, Taxonomie-VO, SFDR,
-ESG-Rating-VO, HinSchG, Right to Repair, Oekodesign-VO,
-Vernichtungsverbot unverkaufter Konsumgueter (Del. VO (EU) 2026/296), PPWR,
-MinRohSorgG, EmpCo, Green Claims (Entwurf).
+CSDDD, LkSG, EUDR, FLR, CSRD, CSRD-DE, NFRD, CSR-RUG, Taxonomie-VO, HinSchG,
+Right to Repair, Oekodesign-VO, Vernichtungsverbot unverkaufter Konsumgueter
+(Del. VO (EU) 2026/296), PPWR, MinRohSorgG, EmpCo.
+
+Die massgebliche Liste steht in `regulations.py` (`REGULATIONS`) — diese
+Aufzaehlung ist nur eine Lesehilfe.
 
 ## Hinweise
 

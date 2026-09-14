@@ -413,7 +413,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
 | `templates/dashboard.html` | Hauptseite (Stammdaten + "Jetzt prüfen" + "Regulierungsliste"-Button) |
-| `templates/regulierungsliste.html` | Tabelle aller 19 Regs + Guidelines + Stand |
+| `templates/regulierungsliste.html` | Tabelle aller Regs + Guidelines + Stand |
 | `templates/login.html`, `fullscreen.html`, `analysis.html` | Auth, Fullscreen, Progress-Page |
 | `static/images/textil-mode-logo.png` | offizielles textil+mode-Logo (1925x437) |
 | `Dockerfile` | Python 3.12-slim + Gunicorn; **muss `static/` und `templates/` kopieren** |
