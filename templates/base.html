@@ -169,15 +169,16 @@
     .fh { position: relative; display: inline-block; vertical-align: middle; line-height: 0; }
     .fh-btn {
       position: relative; display: inline-flex; align-items: center; justify-content: center;
-      width: 18px; height: 18px; padding: 0;
+      width: 14px; height: 14px; padding: 0;
       border: 1px solid var(--tm-link); border-radius: 50%;
       background: #FFFFFF; color: var(--tm-link);
-      font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: 700;
+      font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: 700;
       line-height: 1; cursor: help;
     }
-    /* Unsichtbare Vergroesserung der Trefferflaeche auf rund 34 px —
-       18 px waeren mit dem Finger kaum zu treffen. */
-    .fh-btn::before { content: ""; position: absolute; inset: -8px; }
+    /* Unsichtbare Vergroesserung der Trefferflaeche auf rund 34 px — das Symbol
+       selbst ist bewusst klein und zurueckhaltend, mit dem Finger waere es so
+       aber nicht zu treffen. Die Flaeche bleibt deshalb unveraendert gross. */
+    .fh-btn::before { content: ""; position: absolute; inset: -10px; }
     .fh-btn:hover, .fh-btn[aria-expanded="true"] { background: var(--tm-link); color: #FFFFFF; }
     .fh-btn:focus-visible { outline: 2px solid var(--tm-navy); outline-offset: 3px; }
     .fh-box {
