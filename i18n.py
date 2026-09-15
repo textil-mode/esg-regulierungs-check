@@ -761,14 +761,6 @@ UI: dict[str, dict[str, str]] = {
         "it": "di cui dipendenti in Germania",
         "zh": "其中在德国的员工",
     },
-    "field_employees_de_help": {
-        "de": "Wichtig für LkSG (>1000 Inland) und HinSchG (≥50 Inland).",
-        "en": "Important for LkSG (>1000 domestic) and HinSchG (≥50 domestic).",
-        "es": "Importante para LkSG (>1000 nacionales) y HinSchG (≥50 nacionales).",
-        "fr": "Important pour LkSG (>1000 nationaux) et HinSchG (≥50 nationaux).",
-        "it": "Importante per LkSG (>1000 nazionali) e HinSchG (≥50 nazionali).",
-        "zh": "对 LkSG(>1000 本国)和 HinSchG(≥50 本国)重要。",
-    },
     "field_revenue": {
         "de": "Nettoumsatz weltweit pro Jahr (EUR)",
         "en": "Net revenue worldwide per year (EUR)",
@@ -785,14 +777,6 @@ UI: dict[str, dict[str, str]] = {
         "it": "Ricavi netti annui nell'UE (EUR)",
         "zh": "欧盟境内年度净收入(欧元)",
     },
-    "field_revenue_eu_help": {
-        "de": "Maßgeblich für Unternehmen aus Drittländern: CSRD (Art. 40a Bilanzrichtlinie, mehr als 450 Mio. EUR) und CSDDD (Art. 2 Abs. 2, mehr als 1,5 Mrd. EUR) stellen dort auf den Umsatz in der Union ab.",
-        "en": "Decisive for third-country companies: CSRD (Art. 40a Accounting Directive, more than EUR 450 million) and CSDDD (Art. 2(2), more than EUR 1.5 billion) rely on turnover in the Union.",
-        "es": "Determinante para empresas de terceros países: la CSRD (art. 40a de la Directiva contable, más de 450 millones EUR) y la CSDDD (art. 2, apdo. 2, más de 1500 millones EUR) se basan en la cifra de negocios en la Unión.",
-        "fr": "Déterminant pour les entreprises de pays tiers : la CSRD (art. 40a de la directive comptable, plus de 450 millions EUR) et la CSDDD (art. 2, par. 2, plus de 1,5 milliard EUR) se fondent sur le chiffre d'affaires réalisé dans l'Union.",
-        "it": "Determinante per le imprese di paesi terzi: la CSRD (art. 40a della direttiva contabile, oltre 450 milioni di EUR) e la CSDDD (art. 2, par. 2, oltre 1,5 miliardi di EUR) si basano sul fatturato realizzato nell'Unione.",
-        "zh": "对第三国企业具有决定意义：CSRD（《会计指令》第 40a 条，超过 4.5 亿欧元）与 CSDDD（第 2 条第 2 款，超过 15 亿欧元）均以在欧盟境内的营业额为准。",
-    },
     "field_balance_sheet": {
         "de": "Bilanzsumme (EUR)",
         "en": "Balance sheet total (EUR)",
@@ -800,14 +784,6 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Total du bilan (EUR)",
         "it": "Totale di bilancio (EUR)",
         "zh": "资产负债表总额(欧元)",
-    },
-    "field_balance_help": {
-        "de": "Relevant für CSRD-Schwelle (25 Mio Bilanzsumme ODER 50 Mio Umsatz).",
-        "en": "Relevant for CSRD threshold (25M balance OR 50M revenue).",
-        "es": "Relevante para el umbral CSRD (25M balance O 50M ingresos).",
-        "fr": "Pertinent pour le seuil CSRD (25M bilan OU 50M CA).",
-        "it": "Rilevante per la soglia CSRD (25M bilancio O 50M ricavi).",
-        "zh": "与 CSRD 门槛相关(2500 万资产负债表或 5000 万收入)。",
     },
     "field_legal_form": {"de": "Rechtsform", "en": "Legal form", "es": "Forma jurídica", "fr": "Forme juridique", "it": "Forma giuridica", "zh": "法律形式"},
     "field_branch": {"de": "Branche", "en": "Industry", "es": "Sector", "fr": "Secteur", "it": "Settore", "zh": "行业"},
@@ -836,14 +812,6 @@ UI: dict[str, dict[str, str]] = {
         "it": "Dichiarazioni ambientali / marchi di sostenibilità nel marketing",
         "zh": "营销中的环境声明 / 可持续性标签",
     },
-    "field_env_claims_help": {
-        "de": "Wichtig für die EmpCo-Richtlinie: Sie regelt seit dem 27.09.2026 im UWG, welche Umweltaussagen und Siegel noch zulässig sind.",
-        "en": "Important for the EmpCo Directive, which since 27 September 2026 governs which environmental claims and labels remain permissible.",
-        "es": "Importante para la Directiva EmpCo, que desde el 27/09/2026 regula qué afirmaciones ambientales y sellos siguen siendo admisibles.",
-        "fr": "Important pour la directive EmpCo, qui régit depuis le 27/09/2026 quelles allégations environnementales et labels restent admissibles.",
-        "it": "Importante per la direttiva EmpCo, che dal 27/09/2026 disciplina quali dichiarazioni ambientali e marchi restano ammissibili.",
-        "zh": "对 EmpCo 指令很重要：自 2026 年 9 月 27 日起，该指令规定哪些环境声明和标签仍然允许使用。",
-    },
     "field_eu_importer": {
         "de": "Import von Produkten aus Nicht-EU-Ländern",
         "en": "Import of products from non-EU countries",
@@ -851,14 +819,6 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Importation de produits en provenance de pays hors UE",
         "it": "Importazione di prodotti da paesi extra-UE",
         "zh": "从非欧盟国家进口产品",
-    },
-    "field_eu_importer_help": {
-        "de": "Führt Ihr Unternehmen Produkte aus Drittländern in die EU ein und stellt diese auf dem EU-Markt bereit bzw. bringt sie erstmals in Verkehr? Relevant u.a. für EUDR, FLR, PPWR, Ökodesign-VO, MinRohSorgG.",
-        "en": "Does your company import products from third countries into the EU and make them available on the EU market or place them on the market for the first time? Relevant for EUDR, FLR, PPWR, Ecodesign Regulation, MinRohSorgG.",
-        "es": "¿Su empresa importa productos de terceros países a la UE y los comercializa en el mercado de la UE o los introduce por primera vez en el mercado? Relevante para EUDR, FLR, PPWR, Reglamento de Ecodiseño, MinRohSorgG.",
-        "fr": "Votre entreprise importe-t-elle des produits de pays tiers dans l'UE et les met-elle à disposition sur le marché de l'UE ou les place-t-elle pour la première fois sur le marché ? Pertinent pour EUDR, FLR, PPWR, règlement Écoconception, MinRohSorgG.",
-        "it": "La vostra azienda importa prodotti da paesi terzi nell'UE e li mette a disposizione sul mercato UE o li immette sul mercato per la prima volta? Rilevante per EUDR, FLR, PPWR, Regolamento Ecodesign, MinRohSorgG.",
-        "zh": "贵公司是否从第三国向欧盟进口产品，并在欧盟市场上提供或首次投放市场？涉及 EUDR、FLR、PPWR、生态设计条例、MinRohSorgG 等。",
     },
 
     # Product categories / sites
@@ -894,14 +854,6 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Sélection multiple possible. Détermine si les obligations liées aux produits pèsent sur votre entreprise : EUDR, PPWR, EmpCo et l'interdiction de destruction.",
         "it": "Selezione multipla possibile. Determina se gli obblighi sui prodotti ricadono sulla vostra impresa: EUDR, PPWR, EmpCo e il divieto di distruzione.",
         "zh": "可多选。用于判断与产品相关的义务是否落在贵公司身上——如 EUDR、PPWR、EmpCo 及销毁禁令。",
-    },
-    "roles_note": {
-        "de": "Hinweis: Die rechtliche Definition der einzelnen Unternehmensrollen kann je nach Regulierung abweichen. Der ESG-Regulierungs-Check berücksichtigt bei der Bewertung die jeweilige Definition der betreffenden Regulierung.",
-        "en": "Note: the legal definition of each company role can differ from regulation to regulation. The ESG Regulation Check applies the definition used by the regulation in question.",
-        "es": "Nota: la definición jurídica de cada función empresarial puede variar según la regulación. La Verificación de Regulaciones ESG aplica en cada caso la definición de la regulación correspondiente.",
-        "fr": "Remarque : la définition juridique de chaque rôle d'entreprise peut varier d'une réglementation à l'autre. La Vérification des Réglementations ESG applique la définition propre à la réglementation concernée.",
-        "it": "Nota: la definizione giuridica di ciascun ruolo aziendale può variare a seconda della normativa. La Verifica delle Normative ESG applica di volta in volta la definizione della normativa in questione.",
-        "zh": "提示：各企业角色的法律定义可能因法规而异。ESG 法规检查在评估时采用相应法规各自的定义。",
     },
     "section_materials": {
         "de": "#### Materialien",

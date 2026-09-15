@@ -47,7 +47,6 @@
         <div class="label-row"><label>{{ t("field_employees_de", lang) }}</label>{{ fh("employees_de") }}</div>
         <input type="text" class="fmt-int" data-hidden="employees_de" value="{{ '{:,}'.format(company.get('employees_de',0)|int).replace(',', ' ') if company.get('employees_de',0)|int > 0 else '' }}" inputmode="numeric">
         <input type="hidden" name="employees_de" value="{{ company.get('employees_de',0)|int }}">
-        <p class="help-text">{{ t("field_employees_de_help", lang) }}</p>
 
         <div class="label-row"><label>{{ t("field_revenue", lang) }}</label>{{ fh("revenue") }}</div>
         <input type="text" class="fmt-cur" data-hidden="revenue_eur" value="{{ '{:,.2f}'.format(company.get('revenue_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('revenue_eur',0)|float > 0 else '' }}" inputmode="decimal">
@@ -56,12 +55,10 @@
         <div class="label-row"><label>{{ t("field_revenue_eu", lang) }}</label>{{ fh("revenue_eu") }}</div>
         <input type="text" class="fmt-cur" data-hidden="revenue_eu_eur" value="{{ '{:,.2f}'.format(company.get('revenue_eu_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('revenue_eu_eur',0)|float > 0 else '' }}" inputmode="decimal">
         <input type="hidden" name="revenue_eu_eur" value="{{ company.get('revenue_eu_eur',0)|float }}">
-        <p class="help-text">{{ t("field_revenue_eu_help", lang) }}</p>
 
         <div class="label-row"><label>{{ t("field_balance_sheet", lang) }}</label>{{ fh("balance_sheet") }}</div>
         <input type="text" class="fmt-cur" data-hidden="balance_sheet_eur" value="{{ '{:,.2f}'.format(company.get('balance_sheet_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('balance_sheet_eur',0)|float > 0 else '' }}" inputmode="decimal">
         <input type="hidden" name="balance_sheet_eur" value="{{ company.get('balance_sheet_eur',0)|float }}">
-        <p class="help-text">{{ t("field_balance_help", lang) }}</p>
 
         <div class="label-row"><label>{{ t("field_legal_form", lang) }}</label>{{ fh("legal_form") }}</div>
         <select name="legal_form">
@@ -97,13 +94,11 @@
           <input type="checkbox" id="env_claims" name="env_claims" {{ 'checked' if company.get('env_claims') }}>
           <label for="env_claims">{{ t("field_env_claims", lang) }}</label>{{ fh("env_claims") }}
         </div>
-        <p class="help-text">{{ t("field_env_claims_help", lang) }}</p>
 
         <div class="checkbox-row" style="margin-top:12px;">
           <input type="checkbox" id="eu_importer" name="eu_importer" {{ 'checked' if company.get('eu_importer') }}>
           <label for="eu_importer">{{ t("field_eu_importer", lang) }}</label>{{ fh("eu_importer") }}
         </div>
-        <p class="help-text">{{ t("field_eu_importer_help", lang) }}</p>
       </div>
     </div>
 
@@ -124,7 +119,6 @@
     <!-- Rolle in der Wertschöpfungskette -->
     <hr>
     <h3 style="margin-bottom:8px;">{{ t("section_roles", lang)|replace("#### ","") }} {{ fh("roles") }}</h3>
-    <p class="help-text" style="margin-bottom:12px;">{{ t("roles_note", lang) }}</p>
     <p class="help-text" style="margin-bottom:12px;">{{ t("roles_hint", lang) }}</p>
     {% set existing_roles = company.get('value_chain_roles', []) or [] %}
     <div class="grid-2 products-grid">
