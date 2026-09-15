@@ -32,7 +32,7 @@
 | **Datenschutzerklärung** der Anwendung (Hosting, Google-Gemini-Übermittlung, Autofill, Löschung) — nur Deutsch, bewusst nicht in `i18n.py` | `/datenschutz`, `templates/datenschutz.html` | ✅ |
 | **Passwort vergessen → Admin-Reset-Link** (kein Mailversand; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert) | `/admin/passwort-resets`, `db.password_resets` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
-| Stammdaten-Frage "EU-Importeur / erstmaliges Inverkehrbringen" | `templates/dashboard.html`, `db.eu_importer` | ✅ |
+| Stammdaten-Frage "Import von Produkten aus Nicht-EU-Ländern" (internes Feld weiterhin `eu_importer`) | `templates/dashboard.html`, `db.eu_importer` | ✅ |
 | LLM-Analyse über 16 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
 | **Datentrennung im globalen Cache** (siehe Invariante unten): der Prompt zeigt exakt die `relevant_fields` der Regulierung, der Firmenname steht nirgends darin, und der System-Prompt verbietet das Nennen eines Namens | `llm.py` `_format_profile`, `_SYSTEM_BASE` | ✅ |
@@ -188,6 +188,39 @@ begruendete damit „1.200 Arbeitnehmer im Inland" — obwohl das Gesetz auf die
   Mehrfachauswahlen filtert wie bisher `db._known`. Gespeichert bleiben die
   alten Werte, bis der Nutzer das naechste Mal speichert.
 - `_PROMPT_VERSION` steht auf `v9-2026-09-08`; der Cache formuliert einmalig neu.
+
+---
+
+### Text- und Listenaenderungen vom 15.09.2026
+
+- **Ausfuellhilfen (`i18n.FIELD_HELP`)**: 16 der 23 Texte durch woertliche
+  Vorgaben des Nutzers ersetzt (`employees_total`, `employees_de`, `revenue`,
+  `revenue_eu`, `balance_sheet`, `legal_form`, `branch`, `group_role`, `listed`,
+  `env_claims`, `eu_importer`, `products`, `roles`, `materials`, `markets`,
+  `sites`) — die deutschen Fassungen sind zeichengenau zu uebernehmen, die
+  uebrigen fuenf Sprachen sind Uebersetzungen davon. Die sieben Texte zu den
+  Ergebniskarten (`b2c`, `metric_*`, `deadline`, `passage`, `law_state`) sind
+  unveraendert. Reine Oberflaeche: `_PROMPT_VERSION` wurde NICHT hochgezaehlt.
+- **Feldbezeichnung**: `field_eu_importer` heisst jetzt "Import von Produkten
+  aus Nicht-EU-Laendern" (alle 6 Sprachen). Der interne Feldname `eu_importer`
+  in `relevant_fields` und im Cache-Schluessel bleibt unveraendert.
+- **`VALUE_CHAIN_ROLES`**: "Online-/Fernabsatz" gestrichen (jetzt 5 Rollen),
+  ebenso aus `i18n.ROLE_LABELS`. Der Wert kam in keiner Entscheidungsfunktion
+  und in keinem `criteria`-Text vor.
+- **`SITE_TYPES`**: vollstaendig ersetzt (6 Werte, Unternehmenssitz und
+  Zweigniederlassung jetzt getrennt, Vertriebsbuero und Filiale zum
+  Vertriebsstandort zusammengefasst), `i18n.SITE_TYPE_LABELS` entsprechend neu.
+  `db._SITE_TYPE_RENAMES` bildet alle sechs Altwerte ab, damit gespeicherte
+  Standorte samt Anzahl und Region erhalten bleiben. Zwei Zuordnungen sind
+  fachlich unscharf und in `db.py` begruendet (alter Sammelwert Hauptsitz +
+  Zweigniederlassung -> Unternehmenssitz; "Filiale / Niederlassung" ->
+  Zweigniederlassung).
+- **Cache**: `sites` und `value_chain_roles` stehen in `relevant_fields`, die
+  Listenaenderung verschiebt also den `profile_hash`. Betroffene Profile treffen
+  bei **CSDDD, LkSG, MinRohSorgG** (ueber `sites`) und **EUDR, FLR, Oekodesign,
+  Vernichtungsverbot, PPWR, EmpCo** (ueber `value_chain_roles`) einmalig auf
+  einen Cache-Miss und lassen neu formulieren. Die alten Zeilen bleiben stehen,
+  werden aber nicht mehr getroffen. Die uebrigen Regulierungen sind unberuehrt.
 
 ---
 
@@ -487,7 +520,7 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 ## Verifikations-Checks (smoke-tests nach Deploy)
 
 1. https://ki-textil-mode.de/esg/ (bzw. Legacy https://schuckert.cloud/regulierungs-check) → Login-Seite laedt, Logo oben links sichtbar, Footer "© 2026 · Alle Rechte vorbehalten".
-2. Nach Login: Dashboard mit Button "Regulierungsliste" oben rechts neben "Jetzt pruefen". Rechts in der Rechts-Spalte die Checkbox "EU-Importeur / erstmaliges Inverkehrbringen in der EU".
+2. Nach Login: Dashboard mit Button "Regulierungsliste" oben rechts neben "Jetzt pruefen". Rechts in der Rechts-Spalte die Checkbox "Import von Produkten aus Nicht-EU-Ländern".
 3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 19 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
 4. Footer unten rechts: `<details>` "Hinweis" → auf Klick Popover mit Claude-Code-/Codex-Text.
 5. "Jetzt pruefen" laeuft bis 19/19 durch, keine rote ✕-Fehlerkarte. "Passage" max. ~280 Zeichen.

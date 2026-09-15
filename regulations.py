@@ -940,19 +940,19 @@ BRANCHES = [
 
 # Standort-Typen: sprachneutrale Keys (= DE-String) fuer die DB-Persistenz.
 #
-# Der erste Eintrag hiess bis 09/2026 schlicht "Hauptsitz". Die neue, laengere
-# Fassung nimmt die Anknuepfungspunkte auf, die § 1 LkSG und Art. 2 CSDDD
-# nennen (Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmaessiger
-# Sitz, Zweigniederlassung) — "Hauptsitz" allein deckt sie nicht ab.
-# Altprofile tragen den alten Wert; `db._SITE_TYPE_RENAMES` bildet ihn beim
-# Lesen und Schreiben auf den neuen ab (reine Umbenennung, keine Umdeutung).
+# Die Liste wurde am 15.09.2026 vollstaendig ersetzt: sie trennt jetzt den
+# Unternehmenssitz von der Zweigniederlassung (frueher ein gemeinsamer Wert)
+# und fasst Vertriebsbuero und Filiale zum Vertriebsstandort zusammen.
+# Altprofile tragen die alten Werte; `db._SITE_TYPE_RENAMES` hebt sie beim
+# Lesen und Schreiben auf die heutigen Bezeichnungen (siehe dort — zwei
+# Zuordnungen sind fachlich unscharf und dort begruendet).
 SITE_TYPES = [
-    "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung",
-    "Produktionsstätte",
-    "Vertriebsbüro",
-    "Lager / Logistikzentrum",
-    "Forschung / Entwicklung",
-    "Filiale / Niederlassung",
+    "Unternehmenssitz / Hauptverwaltung (einschließlich satzungsmäßigem Sitz, Hauptniederlassung und Verwaltungssitz)",
+    "Zweigniederlassung / Niederlassung (rechtlich oder organisatorisch verselbstständigte Niederlassungen)",
+    "Produktionsstätte / Werk (Herstellung, Verarbeitung oder Veredelung)",
+    "Lager / Logistikzentrum (Lagerung, Versand oder Distribution)",
+    "Vertriebsstandort / Verkaufsstelle (Vertriebsbüros, Showrooms, eigene Verkaufsstellen/Filialen)",
+    "Forschungs- und Entwicklungsstandort",
 ]
 
 LOCATIONS = ["Deutschland", "EU (ohne Deutschland)", "Weltweit (außerhalb EU)"]
@@ -1014,7 +1014,6 @@ VALUE_CHAIN_ROLES = [
     "Händler/Vertreiber (stellt Produkte anderer Unternehmen auf dem Markt bereit)",
     "Markeninhaber / Vertrieb unter eigener oder lizenzierter Marke",
     "Zulieferer",
-    "Online-/Fernabsatz",
 ]
 
 # Eingesetzte Materialien (Mehrfachauswahl).

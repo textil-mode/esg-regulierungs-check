@@ -60,7 +60,25 @@ COMPANY_EXTRA_COLUMNS = [
 # Mehrfachauswahlen wird hier nichts weggefiltert, sondern derselbe Sachverhalt
 # unter seinem neuen Namen weitergefuehrt. Nur echte Umbenennungen gehoeren
 # hier hinein — keine inhaltliche Umdeutung.
-_SITE_TYPE_RENAMES = {"Hauptsitz": SITE_TYPES[0]}
+# Zwei Zuordnungen sind fachlich nicht eindeutig und bewusst so entschieden:
+#   - "Hauptverwaltung, …, satzungsmaessigen Sitz oder Zweigniederlassung"
+#     fasste Hauptsitz UND Zweigniederlassung zusammen; die neue Liste trennt
+#     beides. Abgebildet wird auf den Hauptfall (Unternehmenssitz), weil das
+#     der zuerst genannte und bei weitem haeufigere Sachverhalt ist.
+#   - "Filiale / Niederlassung" passt auf Zweigniederlassung (Nr. 2) ebenso
+#     wie auf Vertriebsstandort (Nr. 5). Abgebildet wird auf Nr. 2, weil der
+#     Wert in allen fuenf Uebersetzungen als Zweigniederlassung gefuehrt wurde
+#     ("Branch office", "Sucursal", "Succursale", "Filiale", "分支机构") und
+#     fuer reine Verkaufsorte damals der eigene Wert "Vertriebsbuero" bestand.
+_SITE_TYPE_RENAMES = {
+    "Hauptsitz": SITE_TYPES[0],
+    "Hauptverwaltung, Hauptniederlassung, Verwaltungssitz, satzungsmäßigen Sitz oder Zweigniederlassung": SITE_TYPES[0],
+    "Filiale / Niederlassung": SITE_TYPES[1],
+    "Produktionsstätte": SITE_TYPES[2],
+    "Lager / Logistikzentrum": SITE_TYPES[3],
+    "Vertriebsbüro": SITE_TYPES[4],
+    "Forschung / Entwicklung": SITE_TYPES[5],
+}
 
 # Dasselbe fuer Mehrfachauswahlen. `_known` wirft unbekannte Werte weg — eine
 # blosse Umbenennung wuerde die Angabe des Nutzers also stillschweigend loeschen.
