@@ -356,6 +356,46 @@ def _mailversand_bereit() -> bool:
     return mailer.is_configured() and bool(_public_origin())
 
 
+def _send_reset_code(email: str, lang: str) -> None:
+    """Ticket anlegen, Zahlencode erzeugen, Mail verschicken — im Hintergrund.
+
+    Statt eines Links steht jetzt eine sechsstellige Zahl in der Mail. Grund:
+    Eine Nachricht mit Einmal-Link und Zufallstoken sieht fuer Phishing-Filter
+    aus wie ein Angriff. Microsoft 365 hat genau solche Mails am 24.09.2026
+    stillschweigend aussortiert — Brevo meldete „zugestellt", im Postfach kamen
+    sie nie an, auch nicht im Junk-Ordner.
+
+    Alles, was von der Existenz des Kontos abhaengt, passiert hier; die
+    Antwortzeit der Seite haengt deshalb nicht davon ab, ob es die Adresse
+    gibt. Die Funktion gibt nichts zurueck und laesst nichts nach aussen.
+    """
+    try:
+        user = db.get_user_by_email(email)
+        if not user:
+            return
+        # Der Admin-Weg bleibt die Rueckfallebene: das Ticket entsteht immer.
+        db.create_reset_request(email)
+        if not mailer.is_configured():
+            return
+
+        code, _expires = db.issue_reset_code(user["id"])
+        try:
+            message_id = mailer.send(
+                user["email"],
+                t("mail_code_subject", lang),
+                t("mail_code_body", lang).format(
+                    code=code, minuten=db.CODE_TTL_MIN
+                ),
+            )
+            db.log_mail(user["email"], "password_reset", "sent",
+                        message_id=message_id)
+        except Exception as exc:
+            db.log_mail(user["email"], "password_reset", "failed",
+                        error=str(exc)[:300])
+    except Exception:
+        app.logger.exception("Passwort-Reset-Mail fehlgeschlagen")
+
+
 def _send_reset_mail(email: str, lang: str, link_muster: str) -> None:
     """Ticket anlegen, Token erzeugen, Mail verschicken — im Hintergrund.
 
@@ -505,17 +545,17 @@ def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
     return None
 
 
-def _forgot_password(email: str, lang: str) -> int | None:
+def _forgot_password(email: str, lang: str):
+    """Gibt 429 (Bremse), eine Weiterleitung zur Code-Eingabe oder None zurueck."""
     """„Passwort vergessen" — Antwort unabhaengig davon, ob es das Konto gibt.
 
     Im Vordergrund passiert nur, was fuer jede Adresse gleich ist: die Bremse
-    verbuchen und das Link-Muster bauen. Der Rest laeuft im Thread.
+    verbuchen. Alles Kontoabhaengige laeuft im Thread.
 
-    Das Link-Muster setzt sich aus der festen `PUBLIC_BASE_URL` (Schema und
-    Host) und dem Pfad aus `url_for` zusammen; den Prefix `/esg` steuert die
-    PrefixMiddleware ueber `X-Script-Name` bei. Es wird HIER gebaut, weil es
-    dafuer den Request-Kontext braucht — im Thread gibt es keinen mehr.
-    Der Host stammt bewusst NICHT aus der Anfrage, siehe `_public_origin`.
+    Verschickt wird ein sechsstelliger Code, kein Link — siehe
+    `_send_reset_code`. Die Adresse wird in der Sitzung gemerkt, damit die
+    Eingabeseite sie vorausfuellen kann; sie ist kein Geheimnis und niemand
+    kommt damit an ein fremdes Konto (der Code steckt nur in der Mail).
     """
     ip = _client_ip()
     # Beide Deckel immer verbuchen (kein and-Kurzschluss), sonst laufen die
@@ -531,19 +571,18 @@ def _forgot_password(email: str, lang: str) -> int | None:
         flash(t("err_reset_throttled", lang), "error")
         return 429
 
-    origin = _public_origin()
-    link_muster = (
-        origin + url_for("reset_password", token=_TOKEN_PLATZHALTER)
-        if origin else ""
-    )
     threading.Thread(
-        target=_send_reset_mail, args=(email, lang, link_muster), daemon=True
+        target=_send_reset_code, args=(email, lang), daemon=True
     ).start()
-    # Bewusst immer dieselbe Meldung — sonst liesse sich abfragen, welche
-    # Adressen registriert sind.
-    flash(t("ok_reset_mail_sent" if _mailversand_bereit()
-            else "ok_reset_requested", lang), "success")
-    return None
+
+    if not mailer.is_configured():
+        # Ohne Postfach bleibt es beim Admin-Weg; die Eingabeseite waere leer.
+        flash(t("ok_reset_requested", lang), "success")
+        return None
+
+    session["reset_email"] = (email or "").strip()
+    flash(t("ok_reset_code_sent", lang), "success")
+    return redirect(url_for("reset_with_code"))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -585,7 +624,11 @@ def login():
                 flash(t("err_login_failed", lang), "error")
 
         elif action == "forgot":
-            status = _forgot_password(email, lang) or status
+            ergebnis = _forgot_password(email, lang)
+            if isinstance(ergebnis, int):
+                status = ergebnis
+            elif ergebnis is not None:
+                return ergebnis   # Weiterleitung auf die Code-Eingabe
 
         elif action == "signup":
             status = _signup(
@@ -659,6 +702,55 @@ def delete_account():
     session.clear()
     flash(t("ok_account_deleted", lang), "success")
     return redirect(url_for("login"))
+
+
+@app.route("/passwort-neu", methods=["GET", "POST"])
+def reset_with_code():
+    """Code aus der Mail eingeben und gleich das neue Passwort setzen.
+
+    Der Weg ueber einen Link in der Mail wurde abgeloest: solche Nachrichten
+    wurden von Phishing-Filtern aussortiert (siehe `_send_reset_code`). Die
+    Route mit Token bleibt fuer den Admin-Weg bestehen.
+
+    Gegen Durchprobieren wirken drei Dinge zusammen: der Code gilt nur
+    30 Minuten, nach fuenf Fehlversuchen ist er tot (`db.redeem_reset_code`),
+    und je Quell-IP sind nur begrenzt viele Versuche moeglich.
+    """
+    lang = _lang()
+    email = (request.form.get("email") or session.get("reset_email") or "").strip()
+
+    if request.method == "POST":
+        code = (request.form.get("code") or "").strip()
+        pw = request.form.get("password", "")
+        pw2 = request.form.get("password2", "")
+
+        ip = _client_ip()
+        if not db.take_quota("reset_code_ip", ip,
+                             db.RESET_MAIL_MAX_PER_IP * 3,
+                             db.RESET_MAIL_WINDOW_MIN):
+            flash(t("err_reset_throttled", lang), "error")
+            return render_template("password_new.html", email=email), 429
+
+        if len(pw) < 8:
+            flash(t("err_pw_short", lang), "error")
+        elif pw != pw2:
+            flash(t("err_pw_mismatch", lang), "error")
+        else:
+            uid = db.redeem_reset_code(email, code)
+            if not uid:
+                # Bewusst eine gemeinsame Meldung fuer falsch, abgelaufen und
+                # verbraucht: welcher Fall vorliegt, geht niemanden an, der
+                # den Code nicht hat.
+                flash(t("err_code_invalid", lang), "error")
+            else:
+                db.set_password(uid, pw)
+                db.consume_reset_code(uid)
+                _passwortwechsel_melden(email, lang)
+                session.pop("reset_email", None)
+                flash(t("ok_pw_changed", lang), "success")
+                return redirect(url_for("login"))
+
+    return render_template("password_new.html", email=email)
 
 
 @app.route("/passwort-zuruecksetzen/<token>", methods=["GET", "POST"])

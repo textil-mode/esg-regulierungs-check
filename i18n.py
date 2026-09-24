@@ -413,6 +413,135 @@ UI: dict[str, dict[str, str]] = {
     # ---- Text der Reset-Mail (reiner Text, kein HTML, keine Emojis) ----
     # `{link}` wird zur Laufzeit ersetzt; der Platzhalter muss in jeder
     # Sprache genau einmal vorkommen.
+    # --- Passwort vergessen: Zahlencode statt Link ----------------------
+    # Eine Mail mit Einmal-Link und Zufallstoken sieht fuer Phishing-Filter
+    # aus wie ein Angriff. Microsoft 365 hat genau solche Nachrichten am
+    # 24.09.2026 stillschweigend aussortiert: Brevo meldete zugestellt, im
+    # Postfach kamen sie nie an, auch nicht im Junk-Ordner. Eine Mail mit
+    # blosser Zahl passiert die Filter.
+    "mail_code_subject": {
+        "de": "ESG-Regulierungs-Check: Ihr Code zum Zurücksetzen",
+        "en": "ESG Regulation Check: your password reset code",
+        "es": "Verificación de Regulaciones ESG: su código de restablecimiento",
+        "fr": "Vérification des Réglementations ESG : votre code de réinitialisation",
+        "it": "Verifica delle Normative ESG: il Suo codice di reimpostazione",
+        "zh": "ESG 法规检查：您的重设密码代码",
+    },
+    "mail_code_body": {
+        "de": (
+            "Guten Tag,\n\n"
+            "für Ihr Konto beim ESG-Regulierungs-Check wurde ein neues Passwort "
+            "angefordert. Ihr Code lautet:\n\n"
+            "    {code}\n\n"
+            "Geben Sie ihn auf der Seite ein, auf der Sie die Anfrage gestellt "
+            "haben. Der Code gilt {minuten} Minuten und lässt sich nur einmal "
+            "verwenden.\n\n"
+            "Wenn Sie diese Anfrage nicht gestellt haben, können Sie die Nachricht "
+            "ignorieren. Ihr Passwort bleibt dann unverändert.\n\n"
+            "Mit freundlichen Grüßen\n"
+            "ESG-Regulierungs-Check"
+        ),
+        "en": (
+            "Hello,\n\n"
+            "A new password has been requested for your ESG Regulation Check "
+            "account. Your code is:\n\n"
+            "    {code}\n\n"
+            "Enter it on the page where you made the request. The code is valid "
+            "for {minuten} minutes and can only be used once.\n\n"
+            "If you did not make this request, you can ignore this message. "
+            "Your password will remain unchanged.\n\n"
+            "Kind regards\n"
+            "ESG Regulation Check"
+        ),
+        "es": (
+            "Buenos días:\n\n"
+            "Se ha solicitado una nueva contraseña para su cuenta de la "
+            "Verificación de Regulaciones ESG. Su código es:\n\n"
+            "    {code}\n\n"
+            "Introdúzcalo en la página desde la que realizó la solicitud. El "
+            "código es válido durante {minuten} minutos y solo puede utilizarse "
+            "una vez.\n\n"
+            "Si usted no ha realizado esta solicitud, puede ignorar este "
+            "mensaje. Su contraseña permanecerá sin cambios.\n\n"
+            "Atentamente,\n"
+            "Verificación de Regulaciones ESG"
+        ),
+        "fr": (
+            "Bonjour,\n\n"
+            "Un nouveau mot de passe a été demandé pour votre compte de la "
+            "Vérification des Réglementations ESG. Votre code est :\n\n"
+            "    {code}\n\n"
+            "Saisissez-le sur la page depuis laquelle vous avez fait la demande. "
+            "Le code est valable {minuten} minutes et ne peut être utilisé "
+            "qu'une seule fois.\n\n"
+            "Si vous n'êtes pas à l'origine de cette demande, vous pouvez "
+            "ignorer ce message. Votre mot de passe restera inchangé.\n\n"
+            "Cordialement,\n"
+            "Vérification des Réglementations ESG"
+        ),
+        "it": (
+            "Buongiorno,\n\n"
+            "È stata richiesta una nuova password per il Suo account della "
+            "Verifica delle Normative ESG. Il Suo codice è:\n\n"
+            "    {code}\n\n"
+            "Lo inserisca nella pagina da cui ha effettuato la richiesta. Il "
+            "codice è valido {minuten} minuti e può essere utilizzato una sola "
+            "volta.\n\n"
+            "Se non ha effettuato questa richiesta, può ignorare il messaggio. "
+            "La Sua password rimarrà invariata.\n\n"
+            "Cordiali saluti\n"
+            "Verifica delle Normative ESG"
+        ),
+        "zh": (
+            "您好：\n\n"
+            "有人为您在 ESG 法规检查的账户申请了新密码。您的代码为：\n\n"
+            "    {code}\n\n"
+            "请在提交申请的页面上输入该代码。代码有效期为 {minuten} 分钟，且只能使用一次。\n\n"
+            "如果这不是您本人的申请，可以忽略本邮件，您的密码不会发生变化。\n\n"
+            "此致\n"
+            "ESG 法规检查"
+        ),
+    },
+    "pw_code_title": {
+        "de": "Neues Passwort setzen",
+        "en": "Set a new password",
+        "es": "Establecer una nueva contraseña",
+        "fr": "Définir un nouveau mot de passe",
+        "it": "Impostare una nuova password",
+        "zh": "设置新密码",
+    },
+    "pw_code_hint": {
+        "de": "Besteht ein Konto zu dieser Adresse, haben wir Ihnen einen sechsstelligen Code geschickt. Er gilt 30 Minuten. Sehen Sie gegebenenfalls im Spam-Ordner nach.",
+        "en": "If an account exists for this address, we have sent you a six-digit code. It is valid for 30 minutes. Please also check your spam folder.",
+        "es": "Si existe una cuenta para esta dirección, le hemos enviado un código de seis dígitos. Es válido durante 30 minutos. Consulte también la carpeta de correo no deseado.",
+        "fr": "Si un compte existe pour cette adresse, nous vous avons envoyé un code à six chiffres. Il est valable 30 minutes. Pensez à vérifier votre dossier de courrier indésirable.",
+        "it": "Se esiste un account per questo indirizzo, Le abbiamo inviato un codice di sei cifre. È valido 30 minuti. Controlli eventualmente la cartella spam.",
+        "zh": "如果该邮箱已注册账户，我们已向您发送六位数代码，有效期 30 分钟。请注意查看垃圾邮件文件夹。",
+    },
+    "field_code": {
+        "de": "Code aus der E-Mail",
+        "en": "Code from the email",
+        "es": "Código del correo electrónico",
+        "fr": "Code reçu par e-mail",
+        "it": "Codice dall'e-mail",
+        "zh": "邮件中的代码",
+    },
+    "err_code_invalid": {
+        "de": "Der Code stimmt nicht, ist abgelaufen oder wurde bereits verwendet. Fordern Sie nötigenfalls einen neuen an.",
+        "en": "The code is incorrect, has expired or has already been used. Request a new one if needed.",
+        "es": "El código no es correcto, ha caducado o ya se ha utilizado. Solicite uno nuevo si es necesario.",
+        "fr": "Le code est incorrect, a expiré ou a déjà été utilisé. Demandez-en un nouveau si nécessaire.",
+        "it": "Il codice non è corretto, è scaduto o è già stato utilizzato. Se necessario, ne richieda uno nuovo.",
+        "zh": "代码错误、已过期或已使用。如有需要，请重新申请。",
+    },
+    "ok_reset_code_sent": {
+        "de": "Anfrage ist eingegangen. Besteht ein Konto zu dieser Adresse, erhalten Sie in Kürze eine E-Mail mit einem Code.",
+        "en": "Request received. If an account exists for this address, you will shortly receive an email containing a code.",
+        "es": "Solicitud recibida. Si existe una cuenta para esta dirección, recibirá en breve un correo electrónico con un código.",
+        "fr": "Demande reçue. Si un compte existe pour cette adresse, vous recevrez sous peu un e-mail contenant un code.",
+        "it": "Richiesta ricevuta. Se esiste un account per questo indirizzo, riceverà a breve un'e-mail con un codice.",
+        "zh": "申请已收到。如果该邮箱已注册账户，您将很快收到包含代码的邮件。",
+    },
     "mail_reset_subject": {
         "de": "ESG-Regulierungs-Check: Passwort zurücksetzen",
         "en": "ESG Regulation Check: reset your password",

@@ -170,6 +170,24 @@ def init_db() -> None:
                 used_at TEXT,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             );
+            -- Zahlencode fuer "Passwort vergessen". Ersetzt den Link in
+            -- der Mail: eine Nachricht mit Einmal-Link und Zufallstoken sieht
+            -- fuer Phishing-Filter aus wie ein Angriff und wurde von
+            -- Microsoft 365 stillschweigend aussortiert (24.09.2026). Eine
+            -- Mail mit blosser Zahl passiert die Filter.
+            -- Gespeichert wird nur der SHA-256-Hash des Codes.
+            CREATE TABLE IF NOT EXISTS reset_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                code_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                used_at TEXT,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_reset_codes_user
+                ON reset_codes (user_id, used_at);
             -- Fehlversuche beim Anmelden; persistent, damit ein Neustart
             -- des Containers keine laufende Sperre aufhebt.
             CREATE TABLE IF NOT EXISTS login_attempts (
@@ -800,6 +818,94 @@ def user_for_reset_token(token: str) -> Optional[dict]:
     if datetime.utcnow().isoformat() > (row["expires_at"] or ""):
         return None
     return {"id": row["user_id"], "email": row["email"]}
+
+
+# ---------- Zahlencode fuer "Passwort vergessen" ----------
+# Sechs Ziffern sind eine Million Moeglichkeiten — fuer sich genommen wenig.
+# Dagegen stehen drei Riegel, die zusammen wirken:
+#   1. kurze Gueltigkeit (30 Minuten),
+#   2. hoechstens CODE_MAX_ATTEMPTS Fehlversuche je Code, danach ist er tot,
+#   3. die Bremse je Quell-IP in app.py.
+# Wer raten will, hat damit eine Chance von 5 zu 1.000.000 je Code und kommt
+# ueber die IP-Bremse nicht an nennenswert viele Codes heran. Ein laengerer
+# Code waere sicherer, aber schwerer abzutippen; die Grenzen oben tragen das.
+CODE_TTL_MIN = 30
+CODE_MAX_ATTEMPTS = 5
+
+
+def _code_hash(code: str) -> str:
+    return hashlib.sha256(code.strip().encode()).hexdigest()
+
+
+def issue_reset_code(user_id: int) -> tuple[str, str]:
+    """Erzeugt einen sechsstelligen Code. Gibt (Klartext, Ablauf-ISO) zurueck.
+
+    Der Klartext steht nur in der Mail; gespeichert wird allein sein Hash.
+    Fuehrende Nullen bleiben erhalten — "004711" ist ein gueltiger Code.
+    """
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    now = datetime.utcnow()
+    expires = (now + timedelta(minutes=CODE_TTL_MIN)).isoformat()
+    with _conn() as c:
+        # Aeltere offene Codes desselben Kontos entwerten: es gilt immer nur
+        # der zuletzt angeforderte.
+        c.execute(
+            "UPDATE reset_codes SET used_at = ? WHERE user_id = ? AND used_at IS NULL",
+            (now.isoformat(), user_id),
+        )
+        c.execute(
+            """INSERT INTO reset_codes (user_id, code_hash, created_at, expires_at)
+               VALUES (?, ?, ?, ?)""",
+            (user_id, _code_hash(code), now.isoformat(), expires),
+        )
+        # Abgelaufenes wegraeumen (idempotent, kostet nichts).
+        c.execute("DELETE FROM reset_codes WHERE expires_at < ?",
+                  ((now - timedelta(days=1)).isoformat(),))
+    return code, expires
+
+
+def redeem_reset_code(email: str, code: str) -> Optional[int]:
+    """Prueft Adresse und Code. Gibt die Nutzer-ID zurueck oder None.
+
+    Der Code wird hier NICHT verbraucht — das geschieht erst, wenn das neue
+    Passwort tatsaechlich gesetzt ist (`consume_reset_code`). Sonst waere ein
+    Code verloren, nur weil die beiden Passwortfelder nicht uebereinstimmten.
+
+    Jeder Fehlversuch wird am Code selbst gezaehlt; nach CODE_MAX_ATTEMPTS ist
+    er tot, auch wenn er noch nicht abgelaufen waere.
+    """
+    email = (email or "").lower().strip()
+    code = (code or "").strip()
+    if not email or not code:
+        return None
+    now = datetime.utcnow().isoformat()
+    with _conn() as c:
+        row = c.execute(
+            """SELECT r.id, r.code_hash, r.expires_at, r.attempts, u.id AS user_id
+                 FROM reset_codes r
+                 JOIN users u ON u.id = r.user_id
+                WHERE u.email = ? AND r.used_at IS NULL
+             ORDER BY r.id DESC LIMIT 1""",
+            (email,),
+        ).fetchone()
+        if not row:
+            return None
+        if row["expires_at"] < now or row["attempts"] >= CODE_MAX_ATTEMPTS:
+            return None
+        if not secrets.compare_digest(row["code_hash"], _code_hash(code)):
+            c.execute("UPDATE reset_codes SET attempts = attempts + 1 WHERE id = ?",
+                      (row["id"],))
+            return None
+        return row["user_id"]
+
+
+def consume_reset_code(user_id: int) -> None:
+    """Entwertet die offenen Codes eines Kontos (nach erfolgreichem Setzen)."""
+    with _conn() as c:
+        c.execute(
+            "UPDATE reset_codes SET used_at = ? WHERE user_id = ? AND used_at IS NULL",
+            (datetime.utcnow().isoformat(), user_id),
+        )
 
 
 # ---------- Company ----------

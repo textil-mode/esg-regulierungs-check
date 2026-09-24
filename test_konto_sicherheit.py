@@ -282,10 +282,13 @@ with flaskapp.app.test_client() as client:
 
     eigen = client.post("/login", data={"action": "forgot", "email": BEKANNT},
                         headers={"Origin": BASIS})
-    pruefe(eigen.status_code in (200, 429), "eigener Origin: kommt durch")
+    # Seit dem Zahlencode leitet "Passwort vergessen" auf /passwort-neu
+    # weiter (302); die Bremse antwortet weiterhin mit 429.
+    pruefe(eigen.status_code in (200, 302, 303, 429),
+           "eigener Origin: kommt durch")
 
     ohne = client.post("/login", data={"action": "forgot", "email": BEKANNT})
-    pruefe(ohne.status_code in (200, 429),
+    pruefe(ohne.status_code in (200, 302, 303, 429),
            "ohne Origin und Referer (curl o. ae.): kommt durch")
 
     lesend = client.get("/login", headers={"Origin": "https://angreifer.example"})
