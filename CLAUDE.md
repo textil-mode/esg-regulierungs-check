@@ -515,11 +515,12 @@ Hostinger-Docker-Manager (Projekt `esg-regulierungs-check`, danach
 
 | Variable | Inhalt |
 |---|---|
-| `SMTP_HOST` | Mailserver des Postfachs (Hostinger: `smtp.hostinger.com`) |
+| `SMTP_HOST` | Mailserver des Versanddienstes — live `smtp-relay.brevo.com` |
 | `SMTP_PORT` | `587` (STARTTLS). Andere Ports werden nicht unterstützt — unverschlüsselt wird nie versendet |
-| `SMTP_USER` | Postfach-Adresse, hier `noreply@ki-textil-mode.de` |
-| `SMTP_PASSWORD` | Passwort dieses Postfachs |
-| `MAIL_FROM` | Absenderadresse, i. d. R. dieselbe wie `SMTP_USER` |
+| `SMTP_USER` | Brevo-Kennung (`…@smtp-brevo.com`), **nicht** die Absenderadresse |
+| `SMTP_PASSWORD` | Brevo-SMTP-Schlüssel (im Bitwarden-Tresor) |
+| `MAIL_FROM` | Absenderadresse `noreply@ki-textil-mode.de` (in Brevo als Sender verifiziert) |
+| `PUBLIC_BASE_URL` | Feste Adresse DIESER Instanz, Schema + Host ohne Pfad (`https://ki-textil-mode.de` bzw. `https://schuckert.cloud`). Der Reset-Link wird daraus gebaut; fehlt der Wert, wird **keine** Mail verschickt |
 | `MAIL_FROM_NAME` | Anzeigename, `ESG-Regulierungs-Check` |
 
 **Solange eine der vier Pflichtangaben (`SMTP_HOST`, `SMTP_USER`,
@@ -551,6 +552,42 @@ Hintergrund-Thread und ist durch `mailer.TIMEOUT_SEC` (15 s) begrenzt, damit
 ein stummer Mailserver keine Threads auflaufen lässt.
 
 Zum Ausschalten genügt es, die Variablen zu leeren.
+
+### Brevo — was im Betrieb schiefgehen kann
+
+Versandt wird seit dem 24.09.2026 über **Brevo** (kostenloser Tarif, 300 Mails
+am Tag). Die Domain `ki-textil-mode.de` ist dort per DKIM authentifiziert; die
+vier DNS-Einträge (TXT `brevo-code:…`, CNAME `brevo1/2._domainkey`, TXT
+`_dmarc`) stehen bei Cloudflare und müssen **„Nur DNS"** bleiben — mit
+eingeschaltetem Proxy bricht die DKIM-Auflösung. Ein SPF-Eintrag ist nicht
+nötig, Brevo nutzt den eigenen Return-Path.
+
+**Die häufigste Störung:** Brevo blockiert SMTP-Verbindungen von IP-Adressen,
+die nicht freigegeben sind, und schaltet diese Sperre beim Erzeugen eines
+Schlüssels selbsttätig scharf. Freigegeben ist nur `187.77.88.67`. Bekommt der
+VPS je eine neue Adresse, bricht der Versand **stillschweigend** ab: Die
+Anwendung antwortet normal weiter und legt die Anfrage als Ticket beim Admin
+ab, im Protokoll unter `/admin/passwort-resets` steht „failed" mit der
+abgelehnten Anmeldung. Nachtragen unter Security → Authorized IPs.
+
+Zugang einrichten oder wechseln: `/root/esg_mail_einrichten.sh` auf dem VPS —
+liest den Schlüssel unsichtbar ein, testet die Anmeldung, **bevor** etwas
+geändert wird, übergibt Werte nur per `--env-file` und nimmt einen Fehlstart
+zurück.
+
+### Der Reset-Link kommt aus `PUBLIC_BASE_URL`, nicht aus dem Request
+
+Bis zum 24.09.2026 baute `url_for(…, _external=True)` die Adresse aus dem
+`Host`-Kopf. Den setzt der Anfragende selbst: Wer für eine fremde Adresse ein
+neues Passwort anforderte und `Host: angreifer.example` mitgab, ließ dem
+rechtmäßigen Inhaber eine echte, DKIM-signierte Mail zustellen, deren Link auf
+einen fremden Server zeigte — ein Klick, und der Token war weg. Erreichbar
+wurde das erst durch den automatischen Versand.
+
+Wer daran etwas ändert, muss wissen: `PUBLIC_BASE_URL` ist **je Container**
+verschieden und darf **keinen Pfad** enthalten (den steuert `X-Script-Name`).
+Ohne den Wert verschickt die App gar nichts — bewusst, lieber keine Mail als
+ein Link mit fremdem Ziel.
 
 ---
 
@@ -611,17 +648,58 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
   Behoben und live: SSRF im KI-Autofill (`fetcher._pruefe_ziel`/`_get_geprueft`),
   Bremse fuer `/api/autofill` (20/h) und `/run-analysis` (30/h) ueber
   `db.take_quota`, pypdf 6.16.1 + flask 3.1.3, Schutz-Header in nginx.
-  **Offen und bewusst so belassen:** die Registrierung meldet weiterhin, wenn
-  eine Adresse schon vergeben ist — damit laesst sich abfragen, welche
-  Unternehmen die Anwendung nutzen (Nutzerentscheidung vom 08.09.2026).
-  Ebenfalls offen: Passwort-Mindestlaenge 8 statt 12, kein CSRF-Token
-  (SameSite=Lax deckt den Hauptweg), kein `session.clear()` beim Anmelden.
+  Die dort offen gelassenen Punkte sind am **24.09.2026** nachgezogen worden,
+  siehe naechster Absatz.
+- **Sicherheitsstand 24.09.2026** (voller Durchlauf, 1 hoher / 5 mittlere /
+  5 niedrige Funde, kein kritischer). Behoben und live:
+  - **Reset-Link aus `PUBLIC_BASE_URL`** statt aus dem `Host`-Kopf (eigener
+    Abschnitt oben) — der einzige hohe Fund, erst durch den automatischen
+    Versand erreichbar geworden.
+  - **Registrierung verraet keine Kontobestaende mehr**: gleiche Antwort,
+    gleiche Antwortzeit (gemessen Faktor 1,04), kein Auto-Login; was wirklich
+    war, erfaehrt nur der Inhaber der Adresse per Mail. Damit ist die
+    Entscheidung vom 08.09.2026 ueberholt (Nutzerentscheidung 24.09.2026).
+  - **Bremse bei der Registrierung** (5 je Quell-IP und Stunde). Bewusst nicht
+    je Adresse — das liesse sich nutzen, um eine fremde Registrierung zu
+    blockieren. Steht VOR dem Ausweichpfad ohne Mailversand, sonst entfiele
+    sie mit diesem geraeuschlos.
+  - **Nachricht an den Inhaber nach jeder Passwortaenderung.**
+  - **Versandprotokoll**: wird bei der Kontoloeschung mitgeloescht und nach
+    30 Tagen weggeraeumt (beim Schreiben, beim Lesen und beim Start — nur beim
+    Schreiben ueberlebten die Zeilen die Frist, wenn wochenlang keine Mail
+    rausgeht). In der Datenschutzerklaerung als Ziffer 2.7 und 4.1 aufgenommen.
+  - **Herkunftspruefung bei POST** statt allein `SameSite=Lax` (siehe die
+    nginx-Falle unten), **Umleitung in `/set-language` nur noch auf eigene
+    Pfade**, **Sitzung laeuft nach 12 Stunden Untaetigkeit ab**,
+    **`session.clear()` beim Anmelden**, **Compose-Vorlage bindet auf
+    127.0.0.1**.
+  - Belege: `test_konto_sicherheit.py` (32 Pruefungen).
+  **Offen und bewusst so belassen:** Passwort-Mindestlaenge 8 statt der
+  empfohlenen 12 (betrifft alle kuenftigen Passwoerter, deshalb eine
+  Produktentscheidung); DOM-XSS-Restrisiko im Autofill
+  (`templates/dashboard.html`, `innerHTML` mit Quellen-Links); Reset-Token
+  gilt 24 Stunden statt 30-60 Minuten; nach einem Reset laufen bestehende
+  Sitzungen weiter; `/logout` und `/run-analysis` sind GET und deshalb von der
+  Herkunftspruefung nicht erfasst.
 - **nginx-Falle:** Ein `location`-Block mit eigenem `add_header` erbt **keinen**
   Header mehr aus dem `server`-Block. HSTS steht deshalb in `/esg/` und
   `/regulierungs-check/` ausdruecklich noch einmal. Wer dort Header aendert,
   prueft danach mit `curl -sI`, dass HSTS noch da ist.
   Sicherungen: `/root/ki-textil-mode.de.bak-2026-09-08`,
   `/root/nginx-sites-enabled-default.bak-2026-09-08`.
+- **Zweite nginx-Falle (seit 24.09.2026):** Die Herkunftsprüfung bei POST
+  (`app._herkunft_pruefen`) vergleicht den `Origin` des Browsers gegen
+  `PUBLIC_BASE_URL` **und** gegen den `Host` der Anfrage. Der zweite Wert deckt
+  die `www.`-Varianten ab und setzt voraus, dass nginx `proxy_set_header Host
+  $host` weiterreicht. Wer daraus `$proxy_host` macht oder eine Umleitung
+  www→ohne-www einbaut, bekommt auf der betroffenen Domain **403 auf jeden
+  POST** — Anmeldung, Registrierung, Stammdaten speichern, Autofill. Kein Test
+  sieht das, weil es an der Serverkonfiguration hängt. Nach jedem Eingriff
+  einmal anmelden und Stammdaten speichern.
+- **Logformat trägt seit 24.09.2026 den `$host`** (`/etc/nginx/nginx.conf`,
+  `log_format mit_host`). Zweck: messen, unter welchen Namen der Standard-Server
+  angesprochen wird, bevor unbekannte Hostnamen mit `return 444;` abgewiesen
+  werden. Sicherung: `/root/nginx.conf.bak-2026-09-24`.
 - **Verarbeitungsort der LLM-Anfragen ist nicht zugesagt** (Entscheidung steht aus).
   Die App ruft `generativelanguage.googleapis.com` — einen globalen Endpunkt ohne
   Ortsbindung; Googles Bedingungen behalten sich die Verarbeitung in jedem Land vor,

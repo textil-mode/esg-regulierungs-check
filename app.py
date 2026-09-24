@@ -127,6 +127,11 @@ app.config.update(
     # Eine Sitzung gilt nicht unbegrenzt. Ohne diese Grenze bliebe ein einmal
     # ausgestelltes Cookie gueltig, bis das Sitzungsgeheimnis wechselt — auch
     # auf einem Rechner, an dem laengst jemand anderes sitzt (Befund N3).
+    # Gemessen wird Untaetigkeit, nicht Gesamtdauer: Flask erneuert das Cookie
+    # bei jeder Anfrage (SESSION_REFRESH_EACH_REQUEST). Wer arbeitet, bleibt
+    # also angemeldet; wer aufsteht, ist nach zwoelf Stunden draussen. Fuer
+    # Anmeldungen, die es vor dieser Aenderung schon gab, greift die Frist
+    # nicht — deren Cookie kennt sie nicht; sie endet beim naechsten Anmelden.
     PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
 )
 app.session_interface = ProxyAwareSessionInterface()
@@ -438,6 +443,15 @@ def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
         flash(t("err_pw_mismatch", lang), "error")
         return None
 
+    # Deckel je Quell-IP: sonst legt ein Skript beliebig viele Konten an und
+    # hebt die kontobezogenen LLM-Kontingente auf (Befund M2). Steht bewusst
+    # VOR dem Ausweichpfad unten — sonst entfiele die Bremse geraeuschlos
+    # mit, sobald der Mailweg einmal ausfaellt.
+    if not db.take_quota("signup_ip", _client_ip(),
+                         db.SIGNUP_MAX_PER_IP, db.SIGNUP_WINDOW_MIN):
+        flash(t("err_signup_throttled", lang), "error")
+        return 429
+
     # Ohne Mailweg gaebe es keine Rueckmeldung, ob das Konto nun besteht. Dann
     # bleibt es beim alten, offenen Verhalten — unschoen, aber benutzbar.
     if not _mailversand_bereit():
@@ -449,13 +463,6 @@ def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
         session["user_email"] = email
         flash(t("ok_account_created", lang), "success")
         return None
-
-    # Deckel je Quell-IP: sonst legt ein Skript beliebig viele Konten an und
-    # hebt die kontobezogenen LLM-Kontingente auf (Befund M2).
-    if not db.take_quota("signup_ip", _client_ip(),
-                         db.SIGNUP_MAX_PER_IP, db.SIGNUP_WINDOW_MIN):
-        flash(t("err_signup_throttled", lang), "error")
-        return 429
 
     anmeldelink = _public_origin() + url_for("login")
 
@@ -473,8 +480,16 @@ def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
             _mail_im_hintergrund(email, "mail_signup_subject",
                                  "mail_signup_body", anmeldelink,
                                  "signup", lang)
-        except Exception:
+        except Exception as exc:
+            # Die Seite hat bereits „Bitte pruefen Sie Ihr Postfach" gezeigt.
+            # Scheitert es hier — etwa weil zwei Anfragen dieselbe Adresse
+            # gleichzeitig anlegen und eine am UNIQUE-Index auflaeuft —, bliebe
+            # es sonst eine stille Niete. Der Admin sieht es im Protokoll.
             app.logger.exception("Registrierung fehlgeschlagen")
+            try:
+                db.log_mail(email, "signup", "failed", error=str(exc)[:300])
+            except Exception:
+                pass
 
     threading.Thread(target=arbeit, daemon=True).start()
     flash(t("ok_signup_check_mail", lang), "success")

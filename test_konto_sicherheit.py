@@ -231,18 +231,40 @@ pruefe(all(z["recipient"] != BEKANNT for z in rest),
 pruefe(any(z["recipient"] == "fremd@example.org" for z in rest),
        "fremde Eintraege bleiben unberuehrt")
 
-# Alteintrag ueber der Aufbewahrungsfrist wird beim naechsten Schreiben entfernt.
-alt = (datetime.utcnow() - timedelta(days=db.MAIL_LOG_KEEP_DAYS + 1)).isoformat()
-with sqlite3.connect(TEST_DB) as c:
-    c.execute("""INSERT INTO mail_log
-                     (logged_at, recipient, purpose, status, message_id, error)
-                 VALUES (?, 'uralt@example.org', 'password_reset', 'sent', 'm3', NULL)""",
-              (alt,))
-pruefe(any(z["recipient"] == "uralt@example.org" for z in db.list_mail_log()),
+# Alteintrag ueber der Aufbewahrungsfrist. Das Aufraeumen haengt nicht mehr
+# allein am naechsten Versand: sonst ueberlebten die Zeilen die zugesagte Frist,
+# wenn wochenlang keine Mail rausgeht.
+def _alteintrag_setzen() -> int:
+    alt = (datetime.utcnow() - timedelta(days=db.MAIL_LOG_KEEP_DAYS + 1)).isoformat()
+    with sqlite3.connect(TEST_DB) as c:
+        c.execute("""INSERT INTO mail_log
+                         (logged_at, recipient, purpose, status, message_id, error)
+                     VALUES (?, 'uralt@example.org', 'password_reset', 'sent',
+                             'm3', NULL)""", (alt,))
+        return c.execute(
+            "SELECT COUNT(*) FROM mail_log WHERE recipient = 'uralt@example.org'"
+        ).fetchone()[0]
+
+
+def _alteintraege() -> int:
+    with sqlite3.connect(TEST_DB) as c:
+        return c.execute(
+            "SELECT COUNT(*) FROM mail_log WHERE recipient = 'uralt@example.org'"
+        ).fetchone()[0]
+
+
+pruefe(_alteintrag_setzen() == 1,
        f"ein {db.MAIL_LOG_KEEP_DAYS + 1} Tage alter Eintrag liegt vor")
 db.log_mail("neu@example.org", "password_reset", "sent", message_id="m4")
-pruefe(all(z["recipient"] != "uralt@example.org" for z in db.list_mail_log()),
-       f"er wird nach {db.MAIL_LOG_KEEP_DAYS} Tagen weggeraeumt")
+pruefe(_alteintraege() == 0, "beim Schreiben wird er weggeraeumt")
+
+_alteintrag_setzen()
+db.list_mail_log()
+pruefe(_alteintraege() == 0, "auch blosses Lesen raeumt ihn weg")
+
+_alteintrag_setzen()
+db.prune_mail_log()
+pruefe(_alteintraege() == 0, "und der ausdrueckliche Aufruf ebenfalls")
 BEKANNT_ID = db.create_user(BEKANNT, PW)   # fuer die folgenden Bloecke
 
 # ---------------------------------------------------------------------------

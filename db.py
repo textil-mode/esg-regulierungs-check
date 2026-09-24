@@ -211,6 +211,7 @@ def init_db() -> None:
         _migrate_companies(c)
         # Altlasten der Login-Bremse wegraeumen (idempotent).
         _prune(c)
+        _prune_mail_log(c)
 
 
 # ---------- Users ----------
@@ -598,13 +599,28 @@ MAIL_LOG_KEEP_DAYS = 30
 
 
 # ---------- Zustellprotokoll ----------
+def _prune_mail_log(c: sqlite3.Connection) -> None:
+    """Eintraege ueber der Aufbewahrungsfrist wegraeumen.
+
+    Laeuft bei jedem Schreiben UND bei jedem Lesen sowie beim Start. Nur beim
+    Schreiben genuegte nicht: geht wochenlang keine Mail raus, ueberlebten die
+    Eintraege die Frist, die die Datenschutzerklaerung zusagt.
+    """
+    cutoff = (datetime.utcnow() - timedelta(days=MAIL_LOG_KEEP_DAYS)).isoformat()
+    c.execute("DELETE FROM mail_log WHERE logged_at < ?", (cutoff,))
+
+
+def prune_mail_log() -> None:
+    """Raeumt abgelaufene Protokollzeilen weg (idempotent)."""
+    with _conn() as c:
+        _prune_mail_log(c)
+
+
 def log_mail(recipient: str, purpose: str, status: str,
              message_id: str | None = None, error: str | None = None) -> None:
     """Haelt fest, ob eine Mail rausging. NIE Betreff, Text oder Link."""
     with _conn() as c:
-        cutoff = (datetime.utcnow()
-                  - timedelta(days=MAIL_LOG_KEEP_DAYS)).isoformat()
-        c.execute("DELETE FROM mail_log WHERE logged_at < ?", (cutoff,))
+        _prune_mail_log(c)
         c.execute(
             """INSERT INTO mail_log
                    (logged_at, recipient, purpose, status, message_id, error)
@@ -617,6 +633,7 @@ def log_mail(recipient: str, purpose: str, status: str,
 def list_mail_log(limit: int = 25) -> list[dict]:
     """Die juengsten Zustellversuche fuer die Admin-Seite, neueste zuerst."""
     with _conn() as c:
+        _prune_mail_log(c)
         rows = c.execute(
             """SELECT logged_at, recipient, purpose, status, message_id, error
                FROM mail_log ORDER BY logged_at DESC, id DESC LIMIT ?""",

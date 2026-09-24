@@ -68,12 +68,22 @@
     es beim nächsten Aufruf wiederfinden und als PDF herunterladen können.
   </p>
 
-  <h4>2.4 Fehlgeschlagene Anmeldeversuche</h4>
+  <h4>2.4 Missbrauchsabwehr: Anmeldeversuche und Nutzungshäufigkeit</h4>
   <p>
     Um das Durchprobieren von Passwörtern zu unterbinden, speichern wir zu
     jedem fehlgeschlagenen Anmeldeversuch die eingegebene E-Mail-Adresse, die
-    IP-Adresse und den Zeitpunkt. Diese Einträge löschen wir automatisch nach
-    drei Stunden.
+    IP-Adresse und den Zeitpunkt.
+  </p>
+  <p>
+    Damit niemand unsere Dienste in Schleife aufrufen oder massenhaft Konten
+    anlegen kann, zählen wir außerdem mit, wie oft von einer IP-Adresse aus
+    registriert, ein neues Passwort angefordert, die Stammdaten automatisch
+    ausgefüllt und eine Prüfung gestartet wird. Gespeichert werden dabei die
+    IP-Adresse, der Anlass und der Zeitpunkt – auch dann, wenn der Vorgang
+    gelingt. Ein Bezug zu Ihrem Konto entsteht dadurch nicht.
+  </p>
+  <p>
+    Alle diese Einträge löschen wir automatisch nach drei Stunden.
   </p>
 
   <h4>2.5 Zurücksetzen des Passworts</h4>
