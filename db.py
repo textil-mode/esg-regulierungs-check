@@ -293,7 +293,7 @@ def list_accounts() -> list[dict]:
     with _conn() as c:
         rows = c.execute(
             """SELECT u.id, u.email, u.created_at, u.last_login_at,
-                      co.name AS company_name, co.updated_at AS profile_updated,
+                      co.name AS company_name,
                       (SELECT COUNT(*) FROM analyses a WHERE a.user_id = u.id)
                           AS analyses_count,
                       (SELECT MAX(a.created_at) FROM analyses a

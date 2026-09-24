@@ -299,6 +299,11 @@ def _inject_globals():
         t_opt=t_opt,
         t_help=t_help,
         lang=lang,
+        # Das Menue prueft die Adresse nicht mehr selbst. Sie stand sonst ein
+        # zweites Mal fest im Template — wer `ADMIN_EMAILS` erweitert, haette
+        # sonst einen Admin ohne Menuepunkte (oder umgekehrt tote Links).
+        # Den Zugang regeln weiterhin die Routen, nicht diese Anzeige.
+        is_admin=_is_admin(),
         LANGUAGES=LANGUAGES,
         BRANCH_LABELS=BRANCH_LABELS,
         SITE_TYPE_LABELS=SITE_TYPE_LABELS,
