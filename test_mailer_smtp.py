@@ -301,9 +301,12 @@ if fehler:
 print("Alle Pruefungen bestanden.")
 
 # ---------------------------------------------------------------------------
-print("\nZusatz: Kein Oeffnungs- und Klick-Tracking (24.09.2026)")
+print("\nZusatz: Was WIR verschicken, ist reiner Text (24.09.2026)")
 # ---------------------------------------------------------------------------
-# Brevo haengt sonst von sich aus einen Zaehl-Link an den Anfang der Mail.
+# Der Versanddienst haengt an jede Nachricht ein Zaehlpixel; abschalten
+# laesst sich das dort nur im Unternehmenstarif (siehe mailer.py). Was WIR
+# uebergeben, muss deshalb umso sauberer sein: reiner Text, kein HTML,
+# kein eigener Link.
 import email as _email  # noqa: E402
 
 _fang: list = []
@@ -347,11 +350,12 @@ finally:
 
 pruefe(len(_fang) == 1, "die Nachricht wurde uebergeben")
 if _fang:
-    kopf = {k.lower(): v for k, v in _fang[0].items()}
-    pruefe(kopf.get("x-mailin-track") == "0",
-           "der Kopf X-Mailin-Track: 0 ist gesetzt")
-    pruefe("sendibt" not in _fang[0].get_content(),
-           "im Text steht kein Zaehl-Link")
+    pruefe(_fang[0].get_content_type() == "text/plain",
+           "die Nachricht ist reiner Text, kein HTML")
+    inhalt = _fang[0].get_content()
+    pruefe("sendibt" not in inhalt and "http" not in inhalt,
+           "wir selbst haengen keinerlei Link an")
+    pruefe("123456" in inhalt, "der Code steht darin")
 
 print("\n" + "=" * 62)
 if fehler:

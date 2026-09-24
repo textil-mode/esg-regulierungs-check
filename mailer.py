@@ -124,16 +124,13 @@ def send(recipient: str, subject: str, text: str) -> str | None:
     # Eigene Kennung statt einer vom Server vergebenen: sie steht schon vor
     # dem Versand fest und taucht so im Protokoll wie in der Mail auf.
     nachricht["Message-ID"] = make_msgid(domain=absender.rpartition("@")[2] or None)
-    # Kein Oeffnungs- und Klick-Tracking. Brevo haengt sonst von sich aus einen
-    # Zaehl-Link auf sendibt3.com an den Anfang jeder Nachricht (gesehen am
-    # 24.09.2026). Das will hier niemand: Es widerspricht der Zusage in der
-    # Datenschutzerklaerung, es misst das Leseverhalten von Mitgliedern ohne
-    # deren Einwilligung, und ein fremder Weiterleitungs-Link in einer Mail,
-    # die ohnehin nach Phishing aussieht, gefaehrdet genau die Zustellbarkeit,
-    # derentwegen der Zahlencode eingefuehrt wurde.
-    # Der Header wirkt je Nachricht und haengt nicht an einer Kontoeinstellung,
-    # die jemand unbemerkt zurueckstellen koennte.
-    nachricht["X-Mailin-Track"] = "0"
+    # Hier steht bewusst KEIN Kopf gegen das Oeffnungs-Tracking. Brevo haengt
+    # im SMTP-Relay von sich aus einen Zaehl-Link auf sendibt3.com an jede
+    # Nachricht; `X-Mailin-Track: 0` wurde am 24.09.2026 an einer echten Mail
+    # ausprobiert und blieb wirkungslos. Nach Auskunft des Anbieters laesst
+    # sich das Tracking nur auf Anfrage und nur in einem Unternehmenstarif
+    # abschalten. Wer den Versanddienst wechselt, prueft das neu — mehrere
+    # Anbieter (etwa Amazon SES oder Mailgun) koennen es ab Werk.
     # Umlaute: set_content kodiert Text als UTF-8, den Betreff erledigt die
     # Header-Kodierung von EmailMessage (RFC 2047).
     nachricht.set_content(text, subtype="plain", charset="utf-8")
