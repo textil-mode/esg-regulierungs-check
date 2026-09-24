@@ -299,3 +299,64 @@ if fehler:
         print("  - " + f)
     sys.exit(1)
 print("Alle Pruefungen bestanden.")
+
+# ---------------------------------------------------------------------------
+print("\nZusatz: Kein Oeffnungs- und Klick-Tracking (24.09.2026)")
+# ---------------------------------------------------------------------------
+# Brevo haengt sonst von sich aus einen Zaehl-Link an den Anfang der Mail.
+import email as _email  # noqa: E402
+
+_fang: list = []
+
+
+class _FangSMTP:
+    def __init__(self, *a, **k):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def ehlo(self):
+        return (250, b"ok")
+
+    def has_extn(self, name):
+        return True
+
+    def starttls(self, context=None):
+        return (220, b"ok")
+
+    def login(self, user, pw):
+        return (235, b"ok")
+
+    def send_message(self, nachricht):
+        _fang.append(nachricht)
+
+
+_echtes_smtp = smtplib.SMTP
+smtplib.SMTP = _FangSMTP
+for _v, _w in (("SMTP_HOST", "mail.example"), ("SMTP_USER", "u"),
+               ("SMTP_PASSWORD", "p"), ("MAIL_FROM", "noreply@example.org")):
+    os.environ[_v] = _w
+try:
+    mailer.send("empfaenger@example.org", "Betreff", "Ihr Code lautet: 123456")
+finally:
+    smtplib.SMTP = _echtes_smtp
+
+pruefe(len(_fang) == 1, "die Nachricht wurde uebergeben")
+if _fang:
+    kopf = {k.lower(): v for k, v in _fang[0].items()}
+    pruefe(kopf.get("x-mailin-track") == "0",
+           "der Kopf X-Mailin-Track: 0 ist gesetzt")
+    pruefe("sendibt" not in _fang[0].get_content(),
+           "im Text steht kein Zaehl-Link")
+
+print("\n" + "=" * 62)
+if fehler:
+    print(f"FEHLGESCHLAGEN: {len(fehler)} Pruefung(en)")
+    for f in fehler:
+        print("  -", f)
+    sys.exit(1)
+print("Alle Pruefungen bestanden.")
