@@ -68,7 +68,50 @@
   <p style="color:#5A5A5A;margin-bottom:0;">{{ t("admin_no_requests", lang) }}</p>
   {% endif %}
 
+</div>
+
+<div class="section">
+  <h3 style="margin-top:0;">{{ t("admin_mail_log", lang) }}</h3>
+  {% if not mail_ready %}
+  <p style="font-size:13px;color:#5A5A5A;max-width:640px;">{{ t("admin_mail_off", lang) }}</p>
+  {% endif %}
+  {% if mail_log %}
+  <div style="overflow-x:auto;">
+  <table class="reg-table">
+    <thead>
+      <tr>
+        <th>{{ t("admin_mail_time", lang) }}</th>
+        <th>{{ t("email", lang) }}</th>
+        <th>{{ t("admin_status", lang) }}</th>
+        <th>{{ t("admin_mail_id", lang) }}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for m in mail_log %}
+    <tr>
+      <td style="color:#5A5A5A;">{{ m.logged_at[:16].replace("T", " ") }}</td>
+      <td>{{ m.recipient }}</td>
+      <td>
+        {% if m.status == "sent" %}
+          <span class="badge-status badge-mail-sent">{{ t("admin_mail_state_sent", lang) }}</span>
+        {% else %}
+          <span class="badge-status badge-mail-failed">{{ t("admin_mail_state_failed", lang) }}</span>
+          <div style="font-size:12px;color:#A32020;margin-top:4px;">{{ m.error }}</div>
+        {% endif %}
+      </td>
+      <td style="color:#5A5A5A;font-family:monospace;font-size:12px;">{{ m.message_id or "—" }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p style="color:#5A5A5A;margin-bottom:0;">{{ t("admin_mail_none", lang) }}</p>
+  {% endif %}
+
 <style>
+  .badge-mail-sent { background: #0070C0; color: #FFFFFF; }
+  .badge-mail-failed { background: #A32020; color: #FFFFFF; }
   /* Eigene Zustandsfarben: die Reset-Zustaende haben nichts mit dem
      Regulierungs-Status zu tun und sollen sich nicht mitverschieben,
      wenn dort die Palette wechselt. */

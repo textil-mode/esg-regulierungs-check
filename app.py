@@ -34,6 +34,7 @@ from flask import (  # noqa: E402
 from flask.sessions import SecureCookieSessionInterface
 
 import db
+import mailer
 from i18n import (
     BRANCH_LABELS,
     GROUP_ROLE_LABELS,
@@ -270,6 +271,82 @@ def index():
     return redirect(url_for("login"))
 
 
+# Platzhalter im Link-Muster. Der Thread setzt den echten Token erst ein,
+# wenn feststeht, dass es das Konto gibt (siehe _forgot_password).
+_TOKEN_PLATZHALTER = "TOKEN-PLATZHALTER"
+
+
+def _send_reset_mail(email: str, lang: str, link_muster: str) -> None:
+    """Ticket anlegen, Token erzeugen, Mail verschicken — im Hintergrund.
+
+    Alles, was von der Existenz des Kontos abhaengt, passiert hier. Die
+    Antwortzeit der Anmeldeseite haengt deshalb nicht davon ab, ob es die
+    Adresse gibt. Die Funktion laesst nichts nach aussen dringen: sie gibt
+    nichts zurueck und wirft nichts, was die Anfrage noch erreichen koennte.
+    """
+    try:
+        user = db.get_user_by_email(email)
+        if not user:
+            return
+        # Der Admin-Weg bleibt die Rueckfallebene: das Ticket entsteht immer.
+        db.create_reset_request(email)
+        if not mailer.is_configured():
+            return  # Ohne Zugangsdaten bleibt es beim heutigen Weg.
+
+        token, _expires = db.issue_reset_token(user["id"])
+        link = link_muster.replace(_TOKEN_PLATZHALTER, token)
+        try:
+            message_id = mailer.send(
+                user["email"],
+                t("mail_reset_subject", lang),
+                t("mail_reset_body", lang).format(link=link),
+            )
+            db.log_mail(user["email"], "password_reset", "sent", message_id=message_id)
+        except Exception as exc:  # Versand gescheitert -> nur ins Protokoll
+            db.log_mail(
+                user["email"], "password_reset", "failed", error=str(exc)[:300]
+            )
+    except Exception:
+        # Ein Fehler hier darf die Anmeldeseite nie beruehren.
+        app.logger.exception("Passwort-Reset-Mail fehlgeschlagen")
+
+
+def _forgot_password(email: str, lang: str) -> int | None:
+    """„Passwort vergessen" — Antwort unabhaengig davon, ob es das Konto gibt.
+
+    Im Vordergrund passiert nur, was fuer jede Adresse gleich ist: die Bremse
+    verbuchen und das Link-Muster bauen. Der Rest laeuft im Thread.
+
+    Das Link-Muster kommt aus `url_for(..., _external=True)` und traegt damit
+    Schema und Prefix, die die PrefixMiddleware aus `X-Forwarded-Proto` und
+    `X-Script-Name` ableitet (https und /esg). Es wird HIER gebaut, weil es
+    dafuer den Request-Kontext braucht — im Thread gibt es keinen mehr.
+    """
+    ip = _client_ip()
+    # Beide Deckel immer verbuchen (kein and-Kurzschluss), sonst laufen die
+    # Fenster nicht voll. Gezaehlt wird die Anforderung, nicht der Versand.
+    adresse_frei = db.take_quota(
+        "reset_mail_addr", (email or "").lower().strip(),
+        db.RESET_MAIL_MAX_PER_ADDRESS, db.RESET_MAIL_WINDOW_MIN,
+    )
+    ip_frei = db.take_quota(
+        "reset_mail_ip", ip, db.RESET_MAIL_MAX_PER_IP, db.RESET_MAIL_WINDOW_MIN,
+    )
+    if not (adresse_frei and ip_frei):
+        flash(t("err_reset_throttled", lang), "error")
+        return 429
+
+    link_muster = url_for("reset_password", token=_TOKEN_PLATZHALTER, _external=True)
+    threading.Thread(
+        target=_send_reset_mail, args=(email, lang, link_muster), daemon=True
+    ).start()
+    # Bewusst immer dieselbe Meldung — sonst liesse sich abfragen, welche
+    # Adressen registriert sind.
+    flash(t("ok_reset_mail_sent" if mailer.is_configured()
+            else "ok_reset_requested", lang), "success")
+    return None
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     lang = _lang()
@@ -304,10 +381,7 @@ def login():
                 flash(t("err_login_failed", lang), "error")
 
         elif action == "forgot":
-            # Bewusst immer dieselbe Meldung — sonst liesse sich abfragen,
-            # welche Adressen registriert sind.
-            db.create_reset_request(email)
-            flash(t("ok_reset_requested", lang), "success")
+            status = _forgot_password(email, lang) or status
 
         elif action == "signup":
             pw2 = request.form.get("password2", "")
@@ -454,7 +528,11 @@ def admin_resets():
             }
 
     return render_template(
-        "admin_resets.html", requests=db.list_open_resets(), issued=issued
+        "admin_resets.html",
+        requests=db.list_open_resets(),
+        issued=issued,
+        mail_log=db.list_mail_log(),
+        mail_ready=mailer.is_configured(),
     )
 
 

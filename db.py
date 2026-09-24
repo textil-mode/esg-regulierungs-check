@@ -172,6 +172,20 @@ def init_db() -> None:
             -- `scope` und hilft einer reinen Altersabfrage nicht.
             CREATE INDEX IF NOT EXISTS idx_login_attempts_age
                 ON login_attempts (attempted_at);
+            -- Zustellprotokoll des Mailversands. Bewusst ohne Betreff und
+            -- ohne Text: im Text steht der Reset-Link, und vom Token gehoert
+            -- nur der SHA-256-Hash in die Datenbank.
+            CREATE TABLE IF NOT EXISTS mail_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                logged_at TEXT NOT NULL,
+                recipient TEXT NOT NULL,
+                purpose TEXT NOT NULL,      -- 'password_reset'
+                status TEXT NOT NULL,       -- 'sent' | 'failed'
+                message_id TEXT,
+                error TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_mail_log_time
+                ON mail_log (logged_at);
             CREATE TABLE IF NOT EXISTS watchdog_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 started_at TEXT NOT NULL,
@@ -527,6 +541,55 @@ def record_reset_token_failure(ip: str) -> None:
 
 # ---------- Passwort-Reset ----------
 RESET_TTL_HOURS = 24
+
+# Bremse gegen Mail-Fluten beim „Passwort vergessen".
+#
+# Ohne Deckel kann jemand ein fremdes Postfach zumuellen (die Adresse muss er
+# nur kennen) oder das Versandkontingent aufbrauchen. Gezaehlt wird mit
+# `take_quota` in derselben Tabelle wie die Fehlversuche beim Anmelden — das
+# ist das vorhandene Muster, es gleitet, ueberlebt Neustarts und wird von
+# `_prune` mit aufgeraeumt.
+#
+# Zwei Deckel, wie bei der Login-Bremse, weil jeder allein umgehbar waere:
+#  * je Adresse — schuetzt das Postfach des Betroffenen, auch wenn der
+#    Absender seine IP wechselt;
+#  * je Quell-IP — schuetzt das Versandkontingent, wenn jemand viele
+#    verschiedene Adressen durchklappert.
+#
+# Gezaehlt wird die **Anforderung**, nicht der Versand: ob es das Konto gibt,
+# darf hier keine Rolle spielen, sonst verriete allein das Einsetzen der
+# Bremse, welche Adressen registriert sind.
+#
+# Drei Anforderungen je Stunde reichen fuer jeden ehrlichen Fall (Mail im
+# Spam-Ordner, Tippfehler in der Adresse); der Link gilt ohnehin 24 Stunden.
+RESET_MAIL_WINDOW_MIN = 60
+RESET_MAIL_MAX_PER_ADDRESS = 3
+RESET_MAIL_MAX_PER_IP = 10
+
+
+# ---------- Zustellprotokoll ----------
+def log_mail(recipient: str, purpose: str, status: str,
+             message_id: str | None = None, error: str | None = None) -> None:
+    """Haelt fest, ob eine Mail rausging. NIE Betreff, Text oder Link."""
+    with _conn() as c:
+        c.execute(
+            """INSERT INTO mail_log
+                   (logged_at, recipient, purpose, status, message_id, error)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (datetime.utcnow().isoformat(), recipient, purpose, status,
+             message_id, (error or None)),
+        )
+
+
+def list_mail_log(limit: int = 25) -> list[dict]:
+    """Die juengsten Zustellversuche fuer die Admin-Seite, neueste zuerst."""
+    with _conn() as c:
+        rows = c.execute(
+            """SELECT logged_at, recipient, purpose, status, message_id, error
+               FROM mail_log ORDER BY logged_at DESC, id DESC LIMIT ?""",
+            (int(limit),),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 # ---------- Bremse fuer kostenpflichtige Endpunkte ----------

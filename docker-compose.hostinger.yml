@@ -20,6 +20,10 @@ services:
       - LLM_CONCURRENCY=8
       - LLM_RPM=150
       - FULLTEXT_MAX_CHARS=25000
+      # Mailversand des Passwort-Reset-Links. Fehlen beide Werte, faellt die
+      # Anwendung auf den Admin-Weg (/admin/passwort-resets) zurueck.
+      - AGENTMAIL_API_KEY=<im-hostinger-ui-gesetzt>
+      - AGENTMAIL_INBOX_ID=<im-hostinger-ui-gesetzt>
       # Cache-Groesse je Gesetzestext. Muss deutlich groesser sein als
       # FULLTEXT_MAX_CHARS, weil lawparse.py den Anwendungsbereich erst aus
       # dem vollstaendigen Text auswaehlt. Default im Code: 400000.

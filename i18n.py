@@ -369,6 +369,105 @@ UI: dict[str, dict[str, str]] = {
         "it": "Richiesta ricevuta. L'amministratore la contatterà.",
         "zh": "已收到请求。管理员将与您联系。",
     },
+    # Gilt, sobald AgentMail konfiguriert ist. Die Formulierung nennt bewusst
+    # keine Tatsache ueber das Konto („Besteht ein Konto …"), damit die Seite
+    # fuer bekannte und unbekannte Adressen dieselbe Auskunft gibt.
+    "ok_reset_mail_sent": {
+        "de": "Anfrage ist eingegangen. Besteht ein Konto zu dieser Adresse, erhalten Sie in Kürze eine E-Mail mit einem Link zum Zurücksetzen.",
+        "en": "Request received. If an account exists for this address, you will shortly receive an email containing a reset link.",
+        "es": "Solicitud recibida. Si existe una cuenta para esta dirección, recibirá en breve un correo electrónico con un enlace de restablecimiento.",
+        "fr": "Demande reçue. Si un compte existe pour cette adresse, vous recevrez sous peu un courriel contenant un lien de réinitialisation.",
+        "it": "Richiesta ricevuta. Se esiste un account per questo indirizzo, riceverà a breve un'e-mail con un collegamento per la reimpostazione.",
+        "zh": "已收到请求。如果该地址存在账户，您很快会收到一封含重置链接的电子邮件。",
+    },
+    "err_reset_throttled": {
+        "de": "Es wurden zu viele Anfragen gestellt. Bitte versuchen Sie es in einer Stunde erneut.",
+        "en": "Too many requests have been made. Please try again in an hour.",
+        "es": "Se han realizado demasiadas solicitudes. Vuelva a intentarlo en una hora.",
+        "fr": "Trop de demandes ont été envoyées. Veuillez réessayer dans une heure.",
+        "it": "Sono state inviate troppe richieste. La preghiamo di riprovare tra un'ora.",
+        "zh": "请求次数过多。请在一小时后重试。",
+    },
+    # ---- Text der Reset-Mail (reiner Text, kein HTML, keine Emojis) ----
+    # `{link}` wird zur Laufzeit ersetzt; der Platzhalter muss in jeder
+    # Sprache genau einmal vorkommen.
+    "mail_reset_subject": {
+        "de": "ESG-Regulierungs-Check: Passwort zurücksetzen",
+        "en": "ESG Regulation Check: reset your password",
+        "es": "Verificación de Regulaciones ESG: restablecer la contraseña",
+        "fr": "Vérification des Réglementations ESG : réinitialiser le mot de passe",
+        "it": "Verifica delle Normative ESG: reimpostare la password",
+        "zh": "ESG 法规检查：重置密码",
+    },
+    "mail_reset_body": {
+        "de": (
+            "Guten Tag,\n\n"
+            "für Ihr Konto beim ESG-Regulierungs-Check wurde ein neues Passwort "
+            "angefordert. Über den folgenden Link können Sie es setzen:\n\n"
+            "{link}\n\n"
+            "Der Link gilt 24 Stunden und lässt sich nur einmal verwenden.\n\n"
+            "Wenn Sie diese Anfrage nicht gestellt haben, können Sie die Nachricht "
+            "ignorieren. Ihr Passwort bleibt dann unverändert.\n\n"
+            "Mit freundlichen Grüßen\n"
+            "ESG-Regulierungs-Check"
+        ),
+        "en": (
+            "Hello,\n\n"
+            "A new password has been requested for your ESG Regulation Check "
+            "account. You can set one using the following link:\n\n"
+            "{link}\n\n"
+            "The link is valid for 24 hours and can only be used once.\n\n"
+            "If you did not make this request, you can ignore this message. "
+            "Your password will remain unchanged.\n\n"
+            "Kind regards\n"
+            "ESG Regulation Check"
+        ),
+        "es": (
+            "Buenos días:\n\n"
+            "Se ha solicitado una nueva contraseña para su cuenta de la "
+            "Verificación de Regulaciones ESG. Puede establecerla con el "
+            "siguiente enlace:\n\n"
+            "{link}\n\n"
+            "El enlace es válido durante 24 horas y solo puede utilizarse una vez.\n\n"
+            "Si usted no ha realizado esta solicitud, puede ignorar este mensaje. "
+            "Su contraseña permanecerá sin cambios.\n\n"
+            "Atentamente,\n"
+            "Verificación de Regulaciones ESG"
+        ),
+        "fr": (
+            "Bonjour,\n\n"
+            "Un nouveau mot de passe a été demandé pour votre compte de la "
+            "Vérification des Réglementations ESG. Vous pouvez le définir à "
+            "l'aide du lien suivant :\n\n"
+            "{link}\n\n"
+            "Ce lien est valable 24 heures et ne peut être utilisé qu'une seule fois.\n\n"
+            "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer "
+            "ce message. Votre mot de passe restera inchangé.\n\n"
+            "Cordialement,\n"
+            "Vérification des Réglementations ESG"
+        ),
+        "it": (
+            "Buongiorno,\n\n"
+            "È stata richiesta una nuova password per il Suo account della "
+            "Verifica delle Normative ESG. Può impostarla tramite il seguente "
+            "collegamento:\n\n"
+            "{link}\n\n"
+            "Il collegamento è valido per 24 ore e può essere utilizzato una sola volta.\n\n"
+            "Se non ha effettuato questa richiesta, può ignorare il messaggio. "
+            "La Sua password rimarrà invariata.\n\n"
+            "Cordiali saluti\n"
+            "Verifica delle Normative ESG"
+        ),
+        "zh": (
+            "您好：\n\n"
+            "有人为您在 ESG 法规检查的账户申请了新密码。您可以通过以下链接设置新密码：\n\n"
+            "{link}\n\n"
+            "该链接有效期为 24 小时，且只能使用一次。\n\n"
+            "如果这不是您本人的申请，可以忽略本邮件，您的密码不会发生变化。\n\n"
+            "此致\n"
+            "ESG 法规检查"
+        ),
+    },
     "pw_change_title": {
         "de": "Passwort ändern",
         "en": "Change password",
@@ -514,6 +613,62 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Aucune demande ouverte.",
         "it": "Nessuna richiesta aperta.",
         "zh": "没有待处理的请求。",
+    },
+    "admin_mail_log": {
+        "de": "Mailversand",
+        "en": "Mail delivery",
+        "es": "Envío de correo",
+        "fr": "Envoi des courriels",
+        "it": "Invio delle e-mail",
+        "zh": "邮件发送",
+    },
+    "admin_mail_none": {
+        "de": "Noch kein Versand protokolliert.",
+        "en": "No delivery recorded yet.",
+        "es": "Aún no se ha registrado ningún envío.",
+        "fr": "Aucun envoi enregistré pour l'instant.",
+        "it": "Nessun invio registrato finora.",
+        "zh": "尚未记录任何发送。",
+    },
+    "admin_mail_off": {
+        "de": "Der automatische Versand ist nicht eingerichtet (AGENTMAIL_API_KEY und AGENTMAIL_INBOX_ID fehlen). Anfragen landen weiterhin nur als Ticket in der Liste oben.",
+        "en": "Automatic delivery is not set up (AGENTMAIL_API_KEY and AGENTMAIL_INBOX_ID are missing). Requests continue to appear only as tickets in the list above.",
+        "es": "El envío automático no está configurado (faltan AGENTMAIL_API_KEY y AGENTMAIL_INBOX_ID). Las solicitudes siguen apareciendo solo como tickets en la lista anterior.",
+        "fr": "L'envoi automatique n'est pas configuré (AGENTMAIL_API_KEY et AGENTMAIL_INBOX_ID manquent). Les demandes continuent d'apparaître uniquement dans la liste ci-dessus.",
+        "it": "L'invio automatico non è configurato (mancano AGENTMAIL_API_KEY e AGENTMAIL_INBOX_ID). Le richieste continuano a comparire solo nell'elenco qui sopra.",
+        "zh": "尚未配置自动发送（缺少 AGENTMAIL_API_KEY 和 AGENTMAIL_INBOX_ID）。请求仍只会出现在上方列表中。",
+    },
+    "admin_mail_time": {
+        "de": "Zeitpunkt",
+        "en": "Time",
+        "es": "Momento",
+        "fr": "Horodatage",
+        "it": "Momento",
+        "zh": "时间",
+    },
+    "admin_mail_state_sent": {
+        "de": "versendet",
+        "en": "sent",
+        "es": "enviado",
+        "fr": "envoyé",
+        "it": "inviata",
+        "zh": "已发送",
+    },
+    "admin_mail_state_failed": {
+        "de": "fehlgeschlagen",
+        "en": "failed",
+        "es": "fallido",
+        "fr": "échec",
+        "it": "non riuscita",
+        "zh": "失败",
+    },
+    "admin_mail_id": {
+        "de": "Nachrichtenkennung",
+        "en": "Message ID",
+        "es": "Identificador del mensaje",
+        "fr": "Identifiant du message",
+        "it": "Identificativo del messaggio",
+        "zh": "邮件标识",
     },
     "admin_company": {
         "de": "Unternehmen",
