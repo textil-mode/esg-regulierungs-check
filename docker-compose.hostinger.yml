@@ -20,10 +20,16 @@ services:
       - LLM_CONCURRENCY=8
       - LLM_RPM=150
       - FULLTEXT_MAX_CHARS=25000
-      # Mailversand des Passwort-Reset-Links. Fehlen beide Werte, faellt die
-      # Anwendung auf den Admin-Weg (/admin/passwort-resets) zurueck.
-      - AGENTMAIL_API_KEY=<im-hostinger-ui-gesetzt>
-      - AGENTMAIL_INBOX_ID=<im-hostinger-ui-gesetzt>
+      # Mailversand des Passwort-Reset-Links ueber das Hostinger-Postfach
+      # noreply@ki-textil-mode.de (SMTP, Port 587 mit STARTTLS). Fehlt einer
+      # der vier Pflichtwerte, faellt die Anwendung auf den Admin-Weg
+      # (/admin/passwort-resets) zurueck.
+      - SMTP_HOST=<im-hostinger-ui-gesetzt>
+      - SMTP_PORT=587
+      - SMTP_USER=<im-hostinger-ui-gesetzt>
+      - SMTP_PASSWORD=<im-hostinger-ui-gesetzt>
+      - MAIL_FROM=<im-hostinger-ui-gesetzt>
+      - MAIL_FROM_NAME=ESG-Regulierungs-Check
       # Cache-Groesse je Gesetzestext. Muss deutlich groesser sein als
       # FULLTEXT_MAX_CHARS, weil lawparse.py den Anwendungsbereich erst aus
       # dem vollstaendigen Text auswaehlt. Default im Code: 400000.

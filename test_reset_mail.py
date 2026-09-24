@@ -28,8 +28,9 @@ if TEST_DB.exists():
     TEST_DB.unlink()
 os.environ["ESG_DB_PATH"] = str(TEST_DB)
 # Sicherstellen, dass kein echter Zugang aus der .env in den Test rutscht.
-os.environ["AGENTMAIL_API_KEY"] = ""
-os.environ["AGENTMAIL_INBOX_ID"] = ""
+for _var in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD",
+             "MAIL_FROM", "MAIL_FROM_NAME"):
+    os.environ[_var] = ""
 
 import db  # noqa: E402
 
@@ -61,11 +62,12 @@ versand_fehler = False      # schaltet die Attrappe auf Fehlschlag
 # ---------------------------------------------------------------------------
 def _attrappe(recipient: str, subject: str, text: str) -> str:
     if versand_fehler:
-        raise mailer.MailError("HTTP 503: Dienst nicht erreichbar")
+        raise mailer.MailError("Anmeldung am Mailserver abgelehnt (SMTP 535)")
     versandt.append({"to": recipient, "subject": subject, "text": text})
     return "msg_%03d" % len(versandt)
 
 
+_echte_pruefung = mailer.is_configured   # fuer die Gegenprobe in Block 6
 mailer.send = _attrappe
 _MAIL_AN = True
 mailer.is_configured = lambda: _MAIL_AN
@@ -308,8 +310,8 @@ pruefe(db.list_mail_log() == [], "das Protokoll bleibt leer")
 _mit_mail(True)
 
 # Gegenprobe mit dem echten (nicht konfigurierten) mailer:
-echt = mailer._config()
-pruefe(echt == ("", ""), "ohne Umgebungsvariablen meldet der Mailer keine Zugangsdaten")
+pruefe(_echte_pruefung() is False,
+       "ohne Umgebungsvariablen meldet der Mailer keinen Zugang")
 
 # ---------------------------------------------------------------------------
 print("\n7. Versandfehler: Nutzer sieht dasselbe, Admin sieht den Fehler")
@@ -320,7 +322,7 @@ kaputt = anfordern(KONTO)
 pruefe(warte_auf(lambda: db.list_mail_log() != []), "der Fehlschlag wird protokolliert")
 eintrag = (db.list_mail_log() or [{}])[0]
 pruefe(eintrag.get("status") == "failed", "Status im Protokoll ist 'failed'")
-pruefe("503" in (eintrag.get("error") or ""), "der Grund steht beim Eintrag")
+pruefe("535" in (eintrag.get("error") or ""), "der Grund steht beim Eintrag")
 pruefe(kaputt.get_data(as_text=True) == seite_bekannt,
        "der Nutzer bekommt dieselbe neutrale Seite wie im Erfolgsfall")
 versand_fehler = False

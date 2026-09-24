@@ -30,7 +30,7 @@
 | **Passwort ändern** (eingeloggt, altes PW nötig) | `/passwort-aendern`, `templates/password_change.html` | ✅ |
 | **Konto löschen** (eingeloggt, Passwort + Browser-Rückfrage; entfernt users/companies/analyses/password_resets per Kaskade und die Fehlversuche zur E-Mail; `analysis_cache` bleibt, weil anonym und geteilt) | `/konto-loeschen`, `db.delete_user` | ✅ |
 | **Datenschutzerklärung** der Anwendung (Hosting, Google-Gemini-Übermittlung, Autofill, Löschung) — nur Deutsch, bewusst nicht in `i18n.py` | `/datenschutz`, `templates/datenschutz.html` | ✅ |
-| **Passwort vergessen → Reset-Link per E-Mail** (AgentMail, Versand im Hintergrund-Thread; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert). Ohne `AGENTMAIL_*` faellt alles auf den Admin-Weg zurueck; Zustellprotokoll auf der Admin-Seite | `app._forgot_password`, `mailer.py`, `/admin/passwort-resets` | ✅ |
+| **Passwort vergessen → Reset-Link per E-Mail** (SMTP mit STARTTLS auf Port 587, Versand im Hintergrund-Thread; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert). Ohne `SMTP_*`/`MAIL_FROM` faellt alles auf den Admin-Weg zurueck; Zustellprotokoll auf der Admin-Seite | `app._forgot_password`, `mailer.py`, `/admin/passwort-resets` | ✅ |
 | **Bremse gegen Mail-Fluten** (3 Anfragen je Adresse und 10 je Quell-IP in 60 min, ueber `db.take_quota` in derselben Tabelle wie die Login-Bremse) | `db.RESET_MAIL_*`, `app._forgot_password` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
 | Stammdaten-Frage "Import von Produkten aus Nicht-EU-Ländern" (internes Feld weiterhin `eu_importer`) | `templates/dashboard.html`, `db.eu_importer` | ✅ |
@@ -442,7 +442,8 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `thresholds.py` | Erkennt Naehe zu Schwellenwerten (±20 %) fuer die "Was waere wenn"-Hinweise |
 | `test_deadlines.py` | Tests zu beidem plus CSR-RUG-Regel; ohne DB, Netz und LLM |
 | `test_login_throttle.py` | Tests zur Login-Bremse und zum Zeitgleichlauf beider Fehlerpfade (16 Blöcke, eigene DB `data/esg_login_test.db`, kein Netz, kein LLM) |
-| `mailer.py` | Mailversand über AgentMail (ein Versuch, kein Queue — Begründung im Modul-Docstring) |
+| `mailer.py` | Mailversand über SMTP mit STARTTLS (`smtplib`, ein Versuch, kein Queue — Begründung im Modul-Docstring) |
+| `test_mailer_smtp.py` | Tests zum SMTP-Weg (STARTTLS, Zeitgrenze, Umlaute, Fehlerübersetzung; Doppel statt echtem Server, kein Netz nach außen) |
 | `test_reset_mail.py` | Tests zum automatischen Reset-Mail-Versand (9 Blöcke, eigene DB `data/esg_mail_test.db`, Attrappe statt echtem Versand, kein Netz) |
 | `views.py` | Card-Renderer (Kennzahl-Hervorhebung, "Gilt ab", "Erste Schritte", Schwellen-Hinweise) |
 | `pdfexport.py` | PDF-Export der Ergebnisse (reportlab, textil+mode-CD) |
@@ -508,16 +509,21 @@ schwerer.
 
 ## Passwort-Reset per E-Mail — Betrieb
 
-Scharf geschaltet wird es allein über zwei Umgebungsvariablen im
+Scharf geschaltet wird es allein über die SMTP-Umgebungsvariablen im
 Hostinger-Docker-Manager (Projekt `esg-regulierungs-check`, danach
 **Bereitstellen**):
 
 | Variable | Inhalt |
 |---|---|
-| `AGENTMAIL_API_KEY` | API-Schlüssel des AgentMail-Kontos |
-| `AGENTMAIL_INBOX_ID` | Postfach, aus dem versendet wird (z. B. `…@agentmail.to`) |
+| `SMTP_HOST` | Mailserver des Postfachs (Hostinger: `smtp.hostinger.com`) |
+| `SMTP_PORT` | `587` (STARTTLS). Andere Ports werden nicht unterstützt — unverschlüsselt wird nie versendet |
+| `SMTP_USER` | Postfach-Adresse, hier `noreply@ki-textil-mode.de` |
+| `SMTP_PASSWORD` | Passwort dieses Postfachs |
+| `MAIL_FROM` | Absenderadresse, i. d. R. dieselbe wie `SMTP_USER` |
+| `MAIL_FROM_NAME` | Anzeigename, `ESG-Regulierungs-Check` |
 
-**Solange beide fehlen, ändert sich nichts**: die Anfrage landet wie bisher als
+**Solange eine der vier Pflichtangaben (`SMTP_HOST`, `SMTP_USER`,
+`SMTP_PASSWORD`, `MAIL_FROM`) fehlt, ändert sich nichts**: die Anfrage landet wie bisher als
 Ticket unter `/admin/passwort-resets`, der Admin erzeugt den Link von Hand. Die
 Anmeldeseite kann daran nicht scheitern — der ganze Versandpfad läuft in einem
 Hintergrund-Thread, und ein Fehler dort wird protokolliert, nie durchgereicht.
@@ -536,13 +542,15 @@ Wie es arbeitet (`app._forgot_password` → `app._send_reset_mail`):
    sichtbar unter `/admin/passwort-resets`. **Weder Token noch Link** stehen
    dort oder im Log.
 
-Bewusst **keine Warteschlange mit Wiederholversuchen** (anders als im
-Prompt-Katalog, dessen Cloudflare-Worker einen Cron-Trigger hat): Dieser Flask-
-Prozess hat keinen Wecker, und die Warteschlange müsste den fertigen Mailtext
-mit dem Klartext-Link speichern. Scheitert ein Versand, fordert der Nutzer neu
-an oder der Admin erzeugt den Link wie bisher.
+Bewusst **keine Warteschlange mit Wiederholversuchen**: Dieser Flask-Prozess
+hat keinen Wecker, und die Warteschlange müsste den fertigen Mailtext mit dem
+Klartext-Link speichern. Scheitert ein Versand, fordert der Nutzer neu an oder
+der Admin erzeugt den Link wie bisher. Dass SMTP synchron und damit langsamer
+ist als ein HTTP-Aufruf, ändert daran nichts: der Versand läuft im
+Hintergrund-Thread und ist durch `mailer.TIMEOUT_SEC` (15 s) begrenzt, damit
+ein stummer Mailserver keine Threads auflaufen lässt.
 
-Zum Ausschalten genügt es, die beiden Variablen zu leeren.
+Zum Ausschalten genügt es, die Variablen zu leeren.
 
 ---
 

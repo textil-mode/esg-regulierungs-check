@@ -369,7 +369,7 @@ UI: dict[str, dict[str, str]] = {
         "it": "Richiesta ricevuta. L'amministratore la contatterà.",
         "zh": "已收到请求。管理员将与您联系。",
     },
-    # Gilt, sobald AgentMail konfiguriert ist. Die Formulierung nennt bewusst
+    # Gilt, sobald der SMTP-Zugang konfiguriert ist. Die Formulierung nennt bewusst
     # keine Tatsache ueber das Konto („Besteht ein Konto …"), damit die Seite
     # fuer bekannte und unbekannte Adressen dieselbe Auskunft gibt.
     "ok_reset_mail_sent": {
@@ -631,12 +631,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "尚未记录任何发送。",
     },
     "admin_mail_off": {
-        "de": "Der automatische Versand ist nicht eingerichtet (AGENTMAIL_API_KEY und AGENTMAIL_INBOX_ID fehlen). Anfragen landen weiterhin nur als Ticket in der Liste oben.",
-        "en": "Automatic delivery is not set up (AGENTMAIL_API_KEY and AGENTMAIL_INBOX_ID are missing). Requests continue to appear only as tickets in the list above.",
-        "es": "El envío automático no está configurado (faltan AGENTMAIL_API_KEY y AGENTMAIL_INBOX_ID). Las solicitudes siguen apareciendo solo como tickets en la lista anterior.",
-        "fr": "L'envoi automatique n'est pas configuré (AGENTMAIL_API_KEY et AGENTMAIL_INBOX_ID manquent). Les demandes continuent d'apparaître uniquement dans la liste ci-dessus.",
-        "it": "L'invio automatico non è configurato (mancano AGENTMAIL_API_KEY e AGENTMAIL_INBOX_ID). Le richieste continuano a comparire solo nell'elenco qui sopra.",
-        "zh": "尚未配置自动发送（缺少 AGENTMAIL_API_KEY 和 AGENTMAIL_INBOX_ID）。请求仍只会出现在上方列表中。",
+        "de": "Der automatische Versand ist nicht eingerichtet (SMTP_HOST, SMTP_USER, SMTP_PASSWORD oder MAIL_FROM fehlen). Anfragen landen weiterhin nur als Ticket in der Liste oben.",
+        "en": "Automatic delivery is not set up (SMTP_HOST, SMTP_USER, SMTP_PASSWORD or MAIL_FROM are missing). Requests continue to appear only as tickets in the list above.",
+        "es": "El envío automático no está configurado (faltan SMTP_HOST, SMTP_USER, SMTP_PASSWORD o MAIL_FROM). Las solicitudes siguen apareciendo solo como tickets en la lista anterior.",
+        "fr": "L'envoi automatique n'est pas configuré (SMTP_HOST, SMTP_USER, SMTP_PASSWORD ou MAIL_FROM manquent). Les demandes continuent d'apparaître uniquement dans la liste ci-dessus.",
+        "it": "L'invio automatico non è configurato (mancano SMTP_HOST, SMTP_USER, SMTP_PASSWORD o MAIL_FROM). Le richieste continuano a comparire solo nell'elenco qui sopra.",
+        "zh": "尚未配置自动发送（缺少 SMTP_HOST、SMTP_USER、SMTP_PASSWORD 或 MAIL_FROM）。请求仍只会出现在上方列表中。",
     },
     "admin_mail_time": {
         "de": "Zeitpunkt",
