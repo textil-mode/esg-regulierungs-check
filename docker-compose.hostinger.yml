@@ -8,7 +8,11 @@ services:
     image: ghcr.io/textil-mode/esg-regulierungs-check:latest
     container_name: esg-regulierungs-check
     ports:
-      - "8082:8080"
+      # Nur auf die Loopback-Adresse binden — so, wie es live auch laeuft.
+      # Ohne das Praefix haengt die Anwendung direkt am Internet; dann kaeme
+      # jede Anfrage aus dem Docker-Netz und X-Real-IP waere frei waehlbar,
+      # womit sich Login- und Reset-Bremse umgehen liessen (Befund N4).
+      - "127.0.0.1:8082:8080"
     environment:
       # Optional: ohne diesen Wert erzeugt die App einmalig data/flask_secret
       # im Volume esg-data (ueberlebt Neustarts). Nie einen echten Key einchecken.

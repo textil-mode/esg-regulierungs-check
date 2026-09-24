@@ -11,7 +11,7 @@ import os
 import queue
 import secrets
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -124,6 +124,10 @@ app.secret_key = _secret_key()
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
+    # Eine Sitzung gilt nicht unbegrenzt. Ohne diese Grenze bliebe ein einmal
+    # ausgestelltes Cookie gueltig, bis das Sitzungsgeheimnis wechselt — auch
+    # auf einem Rechner, an dem laengst jemand anderes sitzt (Befund N3).
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
 )
 app.session_interface = ProxyAwareSessionInterface()
 
@@ -147,6 +151,48 @@ class PrefixMiddleware:
 
 
 app.wsgi_app = PrefixMiddleware(app.wsgi_app)
+
+
+@app.before_request
+def _herkunft_pruefen():
+    """Weist POSTs ab, die von einer fremden Seite ausgeloest wurden.
+
+    Bisher trug den Schutz allein `SameSite=Lax`. Das deckt den Normalfall,
+    haengt aber am Browser; ein CSRF-Token gibt es nirgends (Befund M5).
+    Diese Pruefung ist die kleine Loesung dazu: Ein Browser setzt `Origin`
+    bei jedem POST selbst und laesst es nicht faelschen — stammt es von
+    woanders, ist es keine Anfrage unseres Formulars.
+
+    Fehlen `Origin` und `Referer` ganz, wird durchgelassen: das sind
+    Werkzeuge wie curl, die keine fremden Sitzungscookies mitbringen, und
+    damit kein CSRF. Gemessen wird gegen die feste Adresse der Instanz und
+    gegen den Host der Anfrage — im CSRF-Fall laeuft die Anfrage auf unsere
+    Domain, der `Origin` des Angreifers passt dann zu keinem von beiden.
+    """
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return None
+
+    herkunft = request.headers.get("Origin") or ""
+    if not herkunft:
+        referer = request.headers.get("Referer") or ""
+        if not referer:
+            return None
+        teile = urlsplit(referer)
+        herkunft = f"{teile.scheme}://{teile.netloc}" if teile.netloc else ""
+
+    erlaubt = {_public_origin(), (request.host_url or "").rstrip("/")}
+    erlaubt.discard("")
+    if herkunft in erlaubt:
+        return None
+
+    app.logger.warning("POST mit fremder Herkunft abgewiesen: %s auf %s",
+                       herkunft[:100], request.path)
+    # Bewusst schlicht: Diese Antwort sieht praktisch nur, wer von einer
+    # fremden Seite aus sendet. Ein eigenes Template und sechs Uebersetzungen
+    # waeren dafuer Aufwand ohne Leser.
+    return Response("Anfrage von fremder Herkunft abgewiesen.",
+                    status=403, mimetype="text/plain; charset=utf-8")
+
 
 db.init_db()
 
@@ -335,6 +381,106 @@ def _send_reset_mail(email: str, lang: str, link_muster: str) -> None:
         app.logger.exception("Passwort-Reset-Mail fehlgeschlagen")
 
 
+def _mail_im_hintergrund(recipient: str, subject_key: str, body_key: str,
+                         link: str, purpose: str, lang: str) -> None:
+    """Verschickt eine Mail, ohne die Antwort aufzuhalten.
+
+    SMTP braucht ein bis zwei Sekunden; die soll niemand vor einer weissen
+    Seite absitzen. Fehler landen im Protokoll, nie beim Nutzer.
+    """
+    def arbeit() -> None:
+        try:
+            message_id = mailer.send(
+                recipient, t(subject_key, lang), t(body_key, lang).format(link=link)
+            )
+            db.log_mail(recipient, purpose, "sent", message_id=message_id)
+        except Exception as exc:
+            db.log_mail(recipient, purpose, "failed", error=str(exc)[:300])
+
+    threading.Thread(target=arbeit, daemon=True).start()
+
+
+def _passwortwechsel_melden(email: str, lang: str) -> None:
+    """Sagt dem Kontoinhaber, dass sein Passwort geaendert wurde.
+
+    Ohne diese Nachricht faellt eine stille Kontouebernahme erst beim
+    naechsten Anmeldeversuch auf (Befund M3, 24.09.2026).
+    """
+    if not (email and _mailversand_bereit()):
+        return
+    _mail_im_hintergrund(email, "mail_pw_changed_subject", "mail_pw_changed_body",
+                         _public_origin() + url_for("login"),
+                         "password_changed", lang)
+
+
+def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
+    """Registrierung — die Antwort verraet nicht, ob es die Adresse schon gibt.
+
+    Frueher meldete das Formular „E-Mail bereits vergeben". Wer eine Liste der
+    Mitgliedsunternehmen hat, konnte damit abfragen, wer das Werkzeug nutzt
+    (Befund M1, 24.09.2026). Jetzt steht in beiden Faellen derselbe Satz, und
+    was wirklich war, erfaehrt nur der Inhaber der Adresse — per Mail.
+
+    Deshalb wird hier auch niemand mehr automatisch angemeldet: ein Sprung ins
+    Dashboard waere der sichtbare Unterschied, den es nicht geben darf.
+
+    Die Formfehler unten (Adresse unplausibel, Passwort zu kurz oder ungleich)
+    bleiben sichtbar — sie haengen nur an der Eingabe, nicht am Kontobestand.
+    """
+    import re
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        flash(t("err_email_invalid", lang), "error")
+        return None
+    if len(pw) < 8:
+        flash(t("err_pw_short", lang), "error")
+        return None
+    if pw != pw2:
+        flash(t("err_pw_mismatch", lang), "error")
+        return None
+
+    # Ohne Mailweg gaebe es keine Rueckmeldung, ob das Konto nun besteht. Dann
+    # bleibt es beim alten, offenen Verhalten — unschoen, aber benutzbar.
+    if not _mailversand_bereit():
+        if db.email_exists(email):
+            flash(t("err_email_exists", lang), "error")
+            return None
+        session.clear()
+        session["user_id"] = db.create_user(email, pw)
+        session["user_email"] = email
+        flash(t("ok_account_created", lang), "success")
+        return None
+
+    # Deckel je Quell-IP: sonst legt ein Skript beliebig viele Konten an und
+    # hebt die kontobezogenen LLM-Kontingente auf (Befund M2).
+    if not db.take_quota("signup_ip", _client_ip(),
+                         db.SIGNUP_MAX_PER_IP, db.SIGNUP_WINDOW_MIN):
+        flash(t("err_signup_throttled", lang), "error")
+        return 429
+
+    anmeldelink = _public_origin() + url_for("login")
+
+    def arbeit() -> None:
+        # Alles Kontoabhaengige laeuft hier — auch das Anlegen selbst. Das
+        # bcrypt-Hashen dauert spuerbar laenger als ein blosses Nachschlagen;
+        # im Vordergrund waere die Antwortzeit der Verraeter.
+        try:
+            if db.email_exists(email):
+                _mail_im_hintergrund(email, "mail_exists_subject",
+                                     "mail_exists_body", anmeldelink,
+                                     "signup_exists", lang)
+                return
+            db.create_user(email, pw)
+            _mail_im_hintergrund(email, "mail_signup_subject",
+                                 "mail_signup_body", anmeldelink,
+                                 "signup", lang)
+        except Exception:
+            app.logger.exception("Registrierung fehlgeschlagen")
+
+    threading.Thread(target=arbeit, daemon=True).start()
+    flash(t("ok_signup_check_mail", lang), "success")
+    return None
+
+
 def _forgot_password(email: str, lang: str) -> int | None:
     """„Passwort vergessen" — Antwort unabhaengig davon, ob es das Konto gibt.
 
@@ -404,6 +550,11 @@ def login():
                     # dieser Adresse weg — die Sperre einer fremden Adresse
                     # (Angreifer) bleibt bestehen.
                     db.clear_login_failures(email, ip)
+                    # Nichts aus der vorigen Sitzung mitnehmen (Befund N5).
+                    session.clear()
+                    # Ohne `permanent` traegt das Cookie kein Ablaufdatum und
+                    # PERMANENT_SESSION_LIFETIME bliebe wirkungslos.
+                    session.permanent = True
                     session["user_id"] = uid
                     session["user_email"] = email
                     return redirect(url_for("dashboard"))
@@ -413,22 +564,9 @@ def login():
             status = _forgot_password(email, lang) or status
 
         elif action == "signup":
-            pw2 = request.form.get("password2", "")
-            import re
-            if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-                flash(t("err_email_invalid", lang), "error")
-            elif len(pw) < 8:
-                flash(t("err_pw_short", lang), "error")
-            elif pw != pw2:
-                flash(t("err_pw_mismatch", lang), "error")
-            elif db.email_exists(email):
-                flash(t("err_email_exists", lang), "error")
-            else:
-                uid = db.create_user(email, pw)
-                session["user_id"] = uid
-                session["user_email"] = email
-                flash(t("ok_account_created", lang), "success")
-                return redirect(url_for("dashboard"))
+            status = _signup(
+                email, pw, request.form.get("password2", ""), lang
+            ) or status
 
     return render_template("login.html"), status
 
@@ -469,6 +607,7 @@ def change_password():
             flash(t("err_pw_mismatch", lang), "error")
         else:
             db.set_password(_uid(), pw)
+            _passwortwechsel_melden(session.get("user_email") or "", lang)
             flash(t("ok_pw_changed", lang), "success")
             return redirect(url_for("dashboard"))
 
@@ -527,6 +666,7 @@ def reset_password(token: str):
         else:
             # set_password entwertet den Token gleich mit.
             db.set_password(user["id"], pw)
+            _passwortwechsel_melden(user["email"], lang)
             flash(t("ok_pw_changed", lang), "success")
             return redirect(url_for("login"))
 
@@ -611,7 +751,18 @@ def admin_reg_status():
 def set_language():
     lang = request.form.get("language", "de")
     session["ui_language"] = normalize_lang(lang)
-    return redirect(request.referrer or url_for("index"))
+    # Nur auf eigene Pfade zurueckspringen. `request.referrer` ungeprueft
+    # weiterzureichen machte die Sprachumschaltung zur offenen Weiterleitung:
+    # ein Link darauf haette auf eine beliebige fremde Seite gefuehrt, und
+    # zwar mit unserer Domain im sichtbaren Teil der Adresse (Befund N1).
+    ziel = urlsplit(request.referrer or "")
+    if ziel.path.startswith("/") and not ziel.netloc:
+        return redirect(ziel.path + (f"?{ziel.query}" if ziel.query else ""))
+    if ziel.netloc and f"{ziel.scheme}://{ziel.netloc}" in {
+        _public_origin(), (request.host_url or "").rstrip("/")
+    }:
+        return redirect(request.referrer)
+    return redirect(url_for("index"))
 
 
 # ---------------------------------------------------------------------------

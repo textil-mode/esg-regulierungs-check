@@ -294,6 +294,12 @@ def delete_user(user_id: int) -> bool:
             return False
         c.execute("DELETE FROM login_attempts WHERE scope = 'account' AND subject = ?",
                   (row["email"].strip().lower(),))
+        # Das Versandprotokoll haengt ebenfalls nicht am Fremdschluessel: dort
+        # steht die Adresse als Text. Ohne diese Zeile ueberlebte sie die
+        # Loeschung — die Datenschutzerklaerung verspricht aber, dass beim
+        # Loeschen alles geht (Art. 17 DSGVO, Befund M4 vom 24.09.2026).
+        c.execute("DELETE FROM mail_log WHERE lower(recipient) = ?",
+                  (row["email"].strip().lower(),))
         c.execute("DELETE FROM users WHERE id = ?", (user_id,))
     return True
 
@@ -577,12 +583,28 @@ RESET_MAIL_WINDOW_MIN = 60
 RESET_MAIL_MAX_PER_ADDRESS = 3
 RESET_MAIL_MAX_PER_IP = 10
 
+# Registrierung: Deckel je Quell-IP. Ohne ihn legt ein Skript beliebig viele
+# Konten an und hebt damit die kontobezogenen LLM-Kontingente auf
+# (AUTOFILL_MAX_PER_HOUR, ANALYSIS_MAX_PER_HOUR) — das ist keine Datenluecke,
+# sondern eine Rechnung. Bewusst nur je IP: eine Bremse je Adresse liesse sich
+# nutzen, um eine fremde Registrierung zu blockieren.
+SIGNUP_WINDOW_MIN = 60
+SIGNUP_MAX_PER_IP = 5
+
+# Wie lange das Versandprotokoll aufbewahrt wird. Es dient dem Admin zur
+# Kontrolle, ob eine Mail ankam — dafuer genuegen wenige Wochen. Danach ist
+# die gespeicherte Empfaengeradresse nur noch ein Datenbestand ohne Zweck.
+MAIL_LOG_KEEP_DAYS = 30
+
 
 # ---------- Zustellprotokoll ----------
 def log_mail(recipient: str, purpose: str, status: str,
              message_id: str | None = None, error: str | None = None) -> None:
     """Haelt fest, ob eine Mail rausging. NIE Betreff, Text oder Link."""
     with _conn() as c:
+        cutoff = (datetime.utcnow()
+                  - timedelta(days=MAIL_LOG_KEEP_DAYS)).isoformat()
+        c.execute("DELETE FROM mail_log WHERE logged_at < ?", (cutoff,))
         c.execute(
             """INSERT INTO mail_log
                    (logged_at, recipient, purpose, status, message_id, error)

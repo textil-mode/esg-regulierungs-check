@@ -186,9 +186,18 @@ if versandt:
     pruefe(db.verify_user(KONTO, START_PW) is None, "altes Passwort gilt nicht mehr")
     db.set_password(USER_ID, START_PW)  # fuer die folgenden Bloecke
 
+ruhe()
 protokoll = db.list_mail_log()
-pruefe(len(protokoll) == 1 and protokoll[0]["status"] == "sent",
+zwecke = {z["purpose"]: z["status"] for z in protokoll}
+pruefe(zwecke.get("password_reset") == "sent",
        "Protokoll vermerkt den Versand als erfolgreich")
+# Seit dem 24.09.2026 (Befund M3) geht nach dem Setzen zusaetzlich eine
+# Nachricht an den Inhaber — sonst faellt eine stille Uebernahme nicht auf.
+pruefe(zwecke.get("password_changed") == "sent",
+       "der Inhaber wird ueber die Passwortaenderung benachrichtigt")
+pruefe(all("passwort-zuruecksetzen" not in (z.get("error") or "")
+           for z in protokoll),
+       "im Protokoll steht weiterhin kein Link")
 pruefe(bool(protokoll and protokoll[0]["message_id"]),
        "die Nachrichtenkennung des Dienstes steht im Protokoll")
 

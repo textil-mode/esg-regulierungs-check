@@ -468,6 +468,264 @@ UI: dict[str, dict[str, str]] = {
             "ESG 法规检查"
         ),
     },
+    # --- Registrierung: die Antwort ist fuer jede Adresse gleich -----------
+    # Frueher stand hier "E-Mail bereits vergeben". Damit liess sich abfragen,
+    # welche Mitgliedsunternehmen das Werkzeug nutzen (Befund M1, 24.09.2026).
+    # Jetzt sieht der Absender in beiden Faellen dasselbe; was wirklich war,
+    # erfaehrt nur der Inhaber der Adresse — per Mail.
+    "ok_signup_check_mail": {
+        "de": ("Bitte prüfen Sie Ihr Postfach. Wir haben Ihnen eine Nachricht "
+               "an die angegebene Adresse geschickt."),
+        "en": ("Please check your inbox. We have sent a message to the address "
+               "you provided."),
+        "es": ("Consulte su bandeja de entrada. Hemos enviado un mensaje a la "
+               "dirección indicada."),
+        "fr": ("Veuillez consulter votre boîte de réception. Nous avons envoyé "
+               "un message à l'adresse indiquée."),
+        "it": ("Controlli la Sua casella di posta. Abbiamo inviato un messaggio "
+               "all'indirizzo indicato."),
+        "zh": "请查收邮件。我们已向您填写的地址发送了一封邮件。",
+    },
+    "err_signup_throttled": {
+        "de": ("Es wurden zu viele Konten von dieser Verbindung aus angelegt. "
+               "Bitte versuchen Sie es später erneut."),
+        "en": ("Too many accounts have been created from this connection. "
+               "Please try again later."),
+        "es": ("Se han creado demasiadas cuentas desde esta conexión. "
+               "Inténtelo de nuevo más tarde."),
+        "fr": ("Trop de comptes ont été créés depuis cette connexion. "
+               "Veuillez réessayer plus tard."),
+        "it": ("Sono stati creati troppi account da questa connessione. "
+               "Riprovi più tardi."),
+        "zh": "该网络创建的账户过多，请稍后再试。",
+    },
+    "mail_signup_subject": {
+        "de": "ESG-Regulierungs-Check: Ihr Konto ist angelegt",
+        "en": "ESG Regulation Check: your account has been created",
+        "es": "Verificación de Regulaciones ESG: su cuenta está creada",
+        "fr": "Vérification des Réglementations ESG : votre compte est créé",
+        "it": "Verifica delle Normative ESG: il Suo account è stato creato",
+        "zh": "ESG 法规检查：您的账户已创建",
+    },
+    "mail_signup_body": {
+        "de": (
+            "Guten Tag,\n\n"
+            "Ihr Konto beim ESG-Regulierungs-Check ist angelegt. Sie können "
+            "sich ab sofort anmelden:\n\n"
+            "{link}\n\n"
+            "Wenn Sie sich nicht registriert haben, können Sie die Nachricht "
+            "ignorieren.\n\n"
+            "Mit freundlichen Grüßen\n"
+            "ESG-Regulierungs-Check"
+        ),
+        "en": (
+            "Hello,\n\n"
+            "Your ESG Regulation Check account has been created. You can sign "
+            "in right away:\n\n"
+            "{link}\n\n"
+            "If you did not register, you can ignore this message.\n\n"
+            "Kind regards\n"
+            "ESG Regulation Check"
+        ),
+        "es": (
+            "Buenos días:\n\n"
+            "Su cuenta de la Verificación de Regulaciones ESG está creada. Ya "
+            "puede iniciar sesión:\n\n"
+            "{link}\n\n"
+            "Si usted no se ha registrado, puede ignorar este mensaje.\n\n"
+            "Atentamente,\n"
+            "Verificación de Regulaciones ESG"
+        ),
+        "fr": (
+            "Bonjour,\n\n"
+            "Votre compte de la Vérification des Réglementations ESG est créé. "
+            "Vous pouvez vous connecter dès maintenant :\n\n"
+            "{link}\n\n"
+            "Si vous ne vous êtes pas inscrit, vous pouvez ignorer ce message.\n\n"
+            "Cordialement,\n"
+            "Vérification des Réglementations ESG"
+        ),
+        "it": (
+            "Buongiorno,\n\n"
+            "Il Suo account della Verifica delle Normative ESG è stato creato. "
+            "Può accedere subito:\n\n"
+            "{link}\n\n"
+            "Se non si è registrato, può ignorare il messaggio.\n\n"
+            "Cordiali saluti\n"
+            "Verifica delle Normative ESG"
+        ),
+        "zh": (
+            "您好：\n\n"
+            "您在 ESG 法规检查的账户已创建，现在即可登录：\n\n"
+            "{link}\n\n"
+            "如果这不是您本人的注册，可以忽略本邮件。\n\n"
+            "此致\n"
+            "ESG 法规检查"
+        ),
+    },
+    # Antwort auf eine Registrierung mit bereits vergebener Adresse. Sie geht
+    # an den Inhaber, nicht an den Absender des Formulars — deshalb darf sie
+    # sagen, was Sache ist.
+    "mail_exists_subject": {
+        "de": "ESG-Regulierungs-Check: Es besteht bereits ein Konto",
+        "en": "ESG Regulation Check: an account already exists",
+        "es": "Verificación de Regulaciones ESG: ya existe una cuenta",
+        "fr": "Vérification des Réglementations ESG : un compte existe déjà",
+        "it": "Verifica delle Normative ESG: esiste già un account",
+        "zh": "ESG 法规检查：账户已存在",
+    },
+    "mail_exists_body": {
+        "de": (
+            "Guten Tag,\n\n"
+            "für diese Adresse wurde ein Konto beim ESG-Regulierungs-Check "
+            "angefordert — es besteht aber bereits eines. Sie können sich "
+            "wie gewohnt anmelden:\n\n"
+            "{link}\n\n"
+            "Falls Sie Ihr Passwort nicht mehr wissen, nutzen Sie dort "
+            "„Passwort vergessen“.\n\n"
+            "Wenn Sie das nicht waren, ist nichts geschehen: Es wurde kein "
+            "neues Konto angelegt und Ihr Passwort ist unverändert.\n\n"
+            "Mit freundlichen Grüßen\n"
+            "ESG-Regulierungs-Check"
+        ),
+        "en": (
+            "Hello,\n\n"
+            "Someone requested an ESG Regulation Check account for this "
+            "address, but one already exists. You can sign in as usual:\n\n"
+            "{link}\n\n"
+            "If you have forgotten your password, use “Forgot password” there.\n\n"
+            "If this was not you, nothing has happened: no new account was "
+            "created and your password is unchanged.\n\n"
+            "Kind regards\n"
+            "ESG Regulation Check"
+        ),
+        "es": (
+            "Buenos días:\n\n"
+            "Se ha solicitado una cuenta de la Verificación de Regulaciones ESG "
+            "para esta dirección, pero ya existe una. Puede iniciar sesión como "
+            "de costumbre:\n\n"
+            "{link}\n\n"
+            "Si ha olvidado su contraseña, utilice allí «¿Ha olvidado su "
+            "contraseña?».\n\n"
+            "Si no ha sido usted, no ha ocurrido nada: no se ha creado ninguna "
+            "cuenta nueva y su contraseña no ha cambiado.\n\n"
+            "Atentamente,\n"
+            "Verificación de Regulaciones ESG"
+        ),
+        "fr": (
+            "Bonjour,\n\n"
+            "Un compte de la Vérification des Réglementations ESG a été demandé "
+            "pour cette adresse, mais il en existe déjà un. Vous pouvez vous "
+            "connecter comme d'habitude :\n\n"
+            "{link}\n\n"
+            "Si vous avez oublié votre mot de passe, utilisez « Mot de passe "
+            "oublié ».\n\n"
+            "Si vous n'êtes pas à l'origine de cette demande, rien ne s'est "
+            "passé : aucun nouveau compte n'a été créé et votre mot de passe "
+            "reste inchangé.\n\n"
+            "Cordialement,\n"
+            "Vérification des Réglementations ESG"
+        ),
+        "it": (
+            "Buongiorno,\n\n"
+            "È stato richiesto un account della Verifica delle Normative ESG "
+            "per questo indirizzo, ma ne esiste già uno. Può accedere come di "
+            "consueto:\n\n"
+            "{link}\n\n"
+            "Se ha dimenticato la password, utilizzi “Password dimenticata”.\n\n"
+            "Se non è stato Lei, non è successo nulla: non è stato creato "
+            "alcun nuovo account e la Sua password è invariata.\n\n"
+            "Cordiali saluti\n"
+            "Verifica delle Normative ESG"
+        ),
+        "zh": (
+            "您好：\n\n"
+            "有人为此邮箱申请注册 ESG 法规检查账户，但该邮箱已有账户。您可以照常登录：\n\n"
+            "{link}\n\n"
+            "如果忘记密码，请在登录页面使用“忘记密码”。\n\n"
+            "如果这不是您本人的操作，则无需担心：系统没有创建新账户，您的密码也没有变化。\n\n"
+            "此致\n"
+            "ESG 法规检查"
+        ),
+    },
+    # Nach jeder Passwortaenderung. Eine stille Kontouebernahme faellt sonst
+    # erst beim naechsten Anmeldeversuch auf (Befund M3, 24.09.2026).
+    "mail_pw_changed_subject": {
+        "de": "ESG-Regulierungs-Check: Ihr Passwort wurde geändert",
+        "en": "ESG Regulation Check: your password was changed",
+        "es": "Verificación de Regulaciones ESG: su contraseña ha cambiado",
+        "fr": "Vérification des Réglementations ESG : votre mot de passe a été modifié",
+        "it": "Verifica delle Normative ESG: la Sua password è stata modificata",
+        "zh": "ESG 法规检查：您的密码已更改",
+    },
+    "mail_pw_changed_body": {
+        "de": (
+            "Guten Tag,\n\n"
+            "das Passwort Ihres Kontos beim ESG-Regulierungs-Check wurde "
+            "soeben geändert.\n\n"
+            "Wenn Sie das selbst waren, ist nichts weiter zu tun.\n\n"
+            "Wenn nicht, setzen Sie Ihr Passwort bitte umgehend über "
+            "„Passwort vergessen“ zurück und wenden Sie sich an uns:\n\n"
+            "{link}\n\n"
+            "Mit freundlichen Grüßen\n"
+            "ESG-Regulierungs-Check"
+        ),
+        "en": (
+            "Hello,\n\n"
+            "The password for your ESG Regulation Check account has just been "
+            "changed.\n\n"
+            "If this was you, there is nothing further to do.\n\n"
+            "If it was not, please reset your password immediately using "
+            "“Forgot password” and contact us:\n\n"
+            "{link}\n\n"
+            "Kind regards\n"
+            "ESG Regulation Check"
+        ),
+        "es": (
+            "Buenos días:\n\n"
+            "La contraseña de su cuenta de la Verificación de Regulaciones ESG "
+            "acaba de cambiarse.\n\n"
+            "Si ha sido usted, no tiene que hacer nada más.\n\n"
+            "Si no ha sido usted, restablezca su contraseña de inmediato con "
+            "«¿Ha olvidado su contraseña?» y póngase en contacto con "
+            "nosotros:\n\n"
+            "{link}\n\n"
+            "Atentamente,\n"
+            "Verificación de Regulaciones ESG"
+        ),
+        "fr": (
+            "Bonjour,\n\n"
+            "Le mot de passe de votre compte de la Vérification des "
+            "Réglementations ESG vient d'être modifié.\n\n"
+            "Si vous êtes à l'origine de cette modification, il n'y a rien "
+            "d'autre à faire.\n\n"
+            "Dans le cas contraire, réinitialisez immédiatement votre mot de "
+            "passe via « Mot de passe oublié » et contactez-nous :\n\n"
+            "{link}\n\n"
+            "Cordialement,\n"
+            "Vérification des Réglementations ESG"
+        ),
+        "it": (
+            "Buongiorno,\n\n"
+            "La password del Suo account della Verifica delle Normative ESG è "
+            "stata appena modificata.\n\n"
+            "Se è stato Lei, non deve fare altro.\n\n"
+            "In caso contrario, reimposti subito la password tramite "
+            "“Password dimenticata” e ci contatti:\n\n"
+            "{link}\n\n"
+            "Cordiali saluti\n"
+            "Verifica delle Normative ESG"
+        ),
+        "zh": (
+            "您好：\n\n"
+            "您在 ESG 法规检查账户的密码刚刚被更改。\n\n"
+            "如果是您本人操作，则无需进一步处理。\n\n"
+            "如果不是，请立即通过“忘记密码”重置密码，并与我们联系：\n\n"
+            "{link}\n\n"
+            "此致\n"
+            "ESG 法规检查"
+        ),
+    },
     "pw_change_title": {
         "de": "Passwort ändern",
         "en": "Change password",
