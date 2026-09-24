@@ -31,6 +31,10 @@ os.environ["ESG_DB_PATH"] = str(TEST_DB)
 for _var in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD",
              "MAIL_FROM", "MAIL_FROM_NAME"):
     os.environ[_var] = ""
+# Feste Adresse der Instanz. Der Reset-Link muss daraus entstehen und nicht
+# aus dem Host-Kopf der Anfrage (Block 5b).
+ECHTE_BASIS = "https://test.example"
+os.environ["PUBLIC_BASE_URL"] = ECHTE_BASIS
 
 import db  # noqa: E402
 
@@ -110,9 +114,12 @@ def _leeren() -> None:
     versandt.clear()
 
 
-def anfordern(email: str, ip: str = IP_A, https: bool = False, prefix: str = ""):
+def anfordern(email: str, ip: str = IP_A, https: bool = False, prefix: str = "",
+              host: str = ""):
     """Ein „Passwort vergessen" absetzen. Gibt die Antwort zurueck."""
     kopf = {}
+    if host:
+        kopf["Host"] = host
     umgebung = {"REMOTE_ADDR": ip}
     if https:
         # Wie hinter nginx: die Verbindung kommt vom Proxy (privates Netz),
@@ -282,7 +289,7 @@ pruefe(warte_auf(lambda: len(versandt) == 1), "Mail wuerde rausgehen")
 if versandt:
     zeile = [z for z in versandt[0]["text"].splitlines() if "passwort" in z][0].strip()
     print(f"    Link: {zeile[:60]}…")
-    pruefe(zeile.startswith("https://"), "der Link beginnt mit https")
+    pruefe(zeile.startswith(ECHTE_BASIS), "der Link traegt die feste Adresse")
     pruefe("/esg/passwort-zuruecksetzen/" in zeile, "der Pfad traegt den /esg-Prefix")
 
 _leeren()
@@ -292,6 +299,65 @@ if versandt:
     zeile = [z for z in versandt[0]["text"].splitlines() if "passwort" in z][0].strip()
     pruefe("/regulierungs-check/passwort-zuruecksetzen/" in zeile,
            "unter der Legacy-Domain traegt der Link deren Prefix")
+
+# ---------------------------------------------------------------------------
+print("\n5b. Ein gefaelschter Host-Kopf biegt den Link nicht um")
+# ---------------------------------------------------------------------------
+# Der Angriff: jemand fordert fuer eine fremde Adresse ein neues Passwort an
+# und setzt dabei Host: angreifer.example. Die Mail kaeme echt und signiert
+# beim Kontoinhaber an — zeigte der Link auf den fremden Server, genuegte ein
+# Klick zur Kontouebernahme.
+_leeren()
+anfordern(KONTO, https=True, prefix="/esg", host="angreifer.example")
+pruefe(warte_auf(lambda: len(versandt) == 1), "Mail wuerde rausgehen")
+if versandt:
+    text = versandt[0]["text"]
+    zeile = [z for z in text.splitlines() if "passwort" in z][0].strip()
+    print(f"    Link: {zeile[:60]}…")
+    pruefe("angreifer.example" not in text,
+           "der fremde Host steht nirgends in der Mail")
+    pruefe(zeile.startswith(ECHTE_BASIS + "/esg/passwort-zuruecksetzen/"),
+           "der Link zeigt weiterhin auf die eigene Adresse")
+
+# Auch der Link, den der Admin von Hand erzeugt, haengt nicht am Host-Kopf.
+_leeren()
+with flaskapp.app.test_client() as client:
+    with client.session_transaction() as sitzung:
+        sitzung["user_id"] = USER_ID
+    seite = client.post(
+        "/admin/passwort-resets", data={"email": KONTO},
+        headers={"Host": "angreifer.example"},
+    )
+    inhalt = seite.get_data(as_text=True)
+    if seite.status_code == 200:
+        pruefe("angreifer.example" not in inhalt,
+               "auch der Admin-Link nennt den fremden Host nicht")
+    else:
+        print(f"    (Admin-Seite nicht zugaenglich, Status {seite.status_code}"
+              " — Konto ist kein Admin; Codepfad per Blick geprueft)")
+_leeren()
+
+# ---------------------------------------------------------------------------
+print("\n5c. Ohne PUBLIC_BASE_URL wird gar nicht erst verschickt")
+# ---------------------------------------------------------------------------
+# Lieber kein Versand als ein Link, dessen Ziel aus der Anfrage stammt.
+os.environ["PUBLIC_BASE_URL"] = ""
+ohne_basis = anfordern(KONTO)
+ruhe()
+pruefe(ohne_basis.status_code == 200, "die Anmeldeseite antwortet mit 200")
+pruefe(not versandt, "ohne feste Adresse geht keine Mail raus")
+pruefe(offene_tokens() == 0, "es wird kein Token erzeugt")
+offen_ohne = db.list_open_resets()
+pruefe(len(offen_ohne) == 1, "die Anfrage landet als Ticket beim Admin")
+for _kaputt in ("javascript:alert(1)", "angreifer.example", "//angreifer.example"):
+    os.environ["PUBLIC_BASE_URL"] = _kaputt
+    pruefe(flaskapp._public_origin() == "",
+           f"unbrauchbarer Wert wird verworfen: {_kaputt}")
+os.environ["PUBLIC_BASE_URL"] = ECHTE_BASIS + "/esg/"
+pruefe(flaskapp._public_origin() == ECHTE_BASIS,
+       "ein mitgegebener Pfad wird abgeschnitten (sonst stuende er doppelt)")
+os.environ["PUBLIC_BASE_URL"] = ECHTE_BASIS
+_leeren()
 
 # ---------------------------------------------------------------------------
 print("\n6. Ohne Zugangsdaten: Anwendung laeuft, Ticket beim Admin")

@@ -30,6 +30,11 @@ services:
       - SMTP_PASSWORD=<im-hostinger-ui-gesetzt>
       - MAIL_FROM=<im-hostinger-ui-gesetzt>
       - MAIL_FROM_NAME=ESG-Regulierungs-Check
+      # Feste Adresse dieser Instanz (Schema + Host, ohne Pfad). Der Reset-Link
+      # wird daraus gebaut, nicht aus dem Host-Kopf der Anfrage — sonst laesst
+      # er sich auf einen fremden Server umbiegen. Ohne diesen Wert verschickt
+      # die App keine Reset-Mail. Je Container eigener Wert!
+      - PUBLIC_BASE_URL=https://schuckert.cloud
       # Cache-Groesse je Gesetzestext. Muss deutlich groesser sein als
       # FULLTEXT_MAX_CHARS, weil lawparse.py den Anwendungsbereich erst aus
       # dem vollstaendigen Text auswaehlt. Default im Code: 400000.

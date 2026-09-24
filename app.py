@@ -13,6 +13,7 @@ import secrets
 import threading
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 
@@ -276,6 +277,29 @@ def index():
 _TOKEN_PLATZHALTER = "TOKEN-PLATZHALTER"
 
 
+def _public_origin() -> str:
+    """Feste Adresse dieser Instanz aus `PUBLIC_BASE_URL` — nie aus der Anfrage.
+
+    Der Reset-Link entstand frueher aus `url_for(..., _external=True)` und damit
+    aus dem `Host`-Kopf. Den setzt der Anfragende selbst: die Mail kam echt und
+    signiert beim Kontoinhaber an, der Link zeigte aber auf einen fremden
+    Server, der den Token einsammelt (Sicherheitsdurchlauf 24.09.2026).
+
+    Genommen wird nur Schema und Host; ein versehentlich mitgegebener Pfad
+    wird verworfen, weil der Pfad aus `url_for` kommt und sonst doppelt stuende.
+    Ist nichts gesetzt, gibt es keinen Link — dann bleibt es beim Admin-Weg.
+    """
+    teile = urlsplit((os.getenv("PUBLIC_BASE_URL") or "").strip())
+    if teile.scheme in ("http", "https") and teile.netloc:
+        return f"{teile.scheme}://{teile.netloc}"
+    return ""
+
+
+def _mailversand_bereit() -> bool:
+    """Postfach-Zugang UND feste Adresse — sonst wird keine Mail verschickt."""
+    return mailer.is_configured() and bool(_public_origin())
+
+
 def _send_reset_mail(email: str, lang: str, link_muster: str) -> None:
     """Ticket anlegen, Token erzeugen, Mail verschicken — im Hintergrund.
 
@@ -290,8 +314,8 @@ def _send_reset_mail(email: str, lang: str, link_muster: str) -> None:
             return
         # Der Admin-Weg bleibt die Rueckfallebene: das Ticket entsteht immer.
         db.create_reset_request(email)
-        if not mailer.is_configured():
-            return  # Ohne Zugangsdaten bleibt es beim heutigen Weg.
+        if not (link_muster and mailer.is_configured()):
+            return  # Ohne Zugangsdaten oder feste Adresse: heutiger Weg.
 
         token, _expires = db.issue_reset_token(user["id"])
         link = link_muster.replace(_TOKEN_PLATZHALTER, token)
@@ -317,10 +341,11 @@ def _forgot_password(email: str, lang: str) -> int | None:
     Im Vordergrund passiert nur, was fuer jede Adresse gleich ist: die Bremse
     verbuchen und das Link-Muster bauen. Der Rest laeuft im Thread.
 
-    Das Link-Muster kommt aus `url_for(..., _external=True)` und traegt damit
-    Schema und Prefix, die die PrefixMiddleware aus `X-Forwarded-Proto` und
-    `X-Script-Name` ableitet (https und /esg). Es wird HIER gebaut, weil es
+    Das Link-Muster setzt sich aus der festen `PUBLIC_BASE_URL` (Schema und
+    Host) und dem Pfad aus `url_for` zusammen; den Prefix `/esg` steuert die
+    PrefixMiddleware ueber `X-Script-Name` bei. Es wird HIER gebaut, weil es
     dafuer den Request-Kontext braucht — im Thread gibt es keinen mehr.
+    Der Host stammt bewusst NICHT aus der Anfrage, siehe `_public_origin`.
     """
     ip = _client_ip()
     # Beide Deckel immer verbuchen (kein and-Kurzschluss), sonst laufen die
@@ -336,13 +361,17 @@ def _forgot_password(email: str, lang: str) -> int | None:
         flash(t("err_reset_throttled", lang), "error")
         return 429
 
-    link_muster = url_for("reset_password", token=_TOKEN_PLATZHALTER, _external=True)
+    origin = _public_origin()
+    link_muster = (
+        origin + url_for("reset_password", token=_TOKEN_PLATZHALTER)
+        if origin else ""
+    )
     threading.Thread(
         target=_send_reset_mail, args=(email, lang, link_muster), daemon=True
     ).start()
     # Bewusst immer dieselbe Meldung — sonst liesse sich abfragen, welche
     # Adressen registriert sind.
-    flash(t("ok_reset_mail_sent" if mailer.is_configured()
+    flash(t("ok_reset_mail_sent" if _mailversand_bereit()
             else "ok_reset_requested", lang), "success")
     return None
 
@@ -521,9 +550,12 @@ def admin_resets():
             flash(t("err_user_unknown", lang), "error")
         else:
             token, expires = db.issue_reset_token(user["id"])
+            pfad = url_for("reset_password", token=token)
             issued = {
                 "email": user["email"],
-                "url": url_for("reset_password", token=token, _external=True),
+                # Auch hier die feste Adresse: der Admin soll keinen Link
+                # weitergeben, dessen Host aus seiner eigenen Anfrage stammt.
+                "url": (_public_origin() or request.host_url.rstrip("/")) + pfad,
                 "expires": expires,
             }
 
@@ -532,7 +564,7 @@ def admin_resets():
         requests=db.list_open_resets(),
         issued=issued,
         mail_log=db.list_mail_log(),
-        mail_ready=mailer.is_configured(),
+        mail_ready=_mailversand_bereit(),
     )
 
 
