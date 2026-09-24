@@ -723,6 +723,38 @@ def admin_resets():
     )
 
 
+@app.route("/admin/konten")
+def admin_accounts():
+    """Wer nutzt das Werkzeug? Registrierung, letzte Anmeldung, Nutzung.
+
+    Seit die Registrierung nach aussen nicht mehr verraet, ob es eine Adresse
+    schon gibt, war der Kontobestand nur noch per `docker exec` einsehbar.
+    Diese Seite ersetzt das.
+    """
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+
+    konten = db.list_accounts()
+    heute = datetime.utcnow()
+    neu_30 = sum(
+        1 for k in konten
+        if (k.get("created_at") or "") >= (heute - timedelta(days=30)).isoformat()
+    )
+    aktiv_30 = sum(
+        1 for k in konten
+        if (k.get("last_login_at") or "") >= (heute - timedelta(days=30)).isoformat()
+    )
+    return render_template(
+        "admin_konten.html",
+        konten=konten,
+        neu_30=neu_30,
+        aktiv_30=aktiv_30,
+    )
+
+
 @app.route("/admin/regulierungs-status")
 def admin_reg_status():
     """Gesetzesstand, Watchdog-Lauf und erkannte Textaenderungen je Regulierung."""

@@ -345,13 +345,35 @@ UI: dict[str, dict[str, str]] = {
         "it": "Password dimenticata",
         "zh": "忘记密码",
     },
+    # Stand 24.09.2026: Die Anwendung verschickt den Link selbst. Der fruehere
+    # Text ("Diese Anwendung verschickt keine E-Mails") stimmte nicht mehr.
+    # Der Hinweis bleibt, weil er drei Dinge vorab klaert, die sonst niemand
+    # weiss: dass eine Mail kommt, wie lange der Link gilt, und dass sie im
+    # Spam-Ordner liegen kann. Bewusst neutral formuliert ("Besteht ein
+    # Konto") — die Seite darf nicht verraten, welche Adressen es gibt.
     "forgot_hint": {
-        "de": "Diese Anwendung verschickt keine E-Mails. Ihre Anfrage geht an die Administration, die Ihnen einen einmaligen Link zum Neusetzen zukommen lässt.",
-        "en": "This application does not send emails. Your request goes to the administrator, who will send you a one-time link to set a new password.",
-        "es": "Esta aplicación no envía correos. Su solicitud llega al administrador, que le enviará un enlace de un solo uso para establecer una nueva contraseña.",
-        "fr": "Cette application n'envoie pas d'e-mails. Votre demande est transmise à l'administrateur, qui vous enverra un lien à usage unique pour définir un nouveau mot de passe.",
-        "it": "Questa applicazione non invia e-mail. La richiesta arriva all'amministratore, che le invierà un link monouso per impostare una nuova password.",
-        "zh": "本应用不发送邮件。您的请求将转交管理员，管理员会向您发送一次性重设链接。",
+        "de": ("Geben Sie Ihre E-Mail-Adresse ein. Besteht ein Konto dazu, "
+               "erhalten Sie einen Link zum Neusetzen; er gilt 24 Stunden und "
+               "lässt sich einmal verwenden. Sehen Sie gegebenenfalls im "
+               "Spam-Ordner nach."),
+        "en": ("Enter your email address. If an account exists for it, you "
+               "will receive a link to set a new password; it is valid for "
+               "24 hours and can be used once. Please also check your spam "
+               "folder."),
+        "es": ("Introduzca su dirección de correo electrónico. Si existe una "
+               "cuenta asociada, recibirá un enlace para establecer una nueva "
+               "contraseña; es válido 24 horas y solo puede utilizarse una "
+               "vez. Consulte también la carpeta de correo no deseado."),
+        "fr": ("Saisissez votre adresse e-mail. Si un compte y est associé, "
+               "vous recevrez un lien pour définir un nouveau mot de passe ; "
+               "il est valable 24 heures et ne peut être utilisé qu'une fois. "
+               "Pensez à vérifier votre dossier de courrier indésirable."),
+        "it": ("Inserisca il Suo indirizzo e-mail. Se esiste un account "
+               "corrispondente, riceverà un collegamento per impostare una "
+               "nuova password; è valido 24 ore e può essere utilizzato una "
+               "sola volta. Controlli eventualmente la cartella spam."),
+        "zh": ("请输入您的邮箱地址。如果该邮箱已注册账户，您将收到一个重设密码的链接；"
+               "链接有效期为 24 小时，且只能使用一次。请注意查看垃圾邮件文件夹。"),
     },
     "btn_forgot": {
         "de": "Anfrage senden",
@@ -473,6 +495,94 @@ UI: dict[str, dict[str, str]] = {
     # welche Mitgliedsunternehmen das Werkzeug nutzen (Befund M1, 24.09.2026).
     # Jetzt sieht der Absender in beiden Faellen dasselbe; was wirklich war,
     # erfaehrt nur der Inhaber der Adresse — per Mail.
+    # --- Kontenuebersicht (nur Admin) -------------------------------------
+    "admin_accounts_title": {
+        "de": "Konten", "en": "Accounts", "es": "Cuentas",
+        "fr": "Comptes", "it": "Account", "zh": "账户",
+    },
+    "admin_accounts_hint": {
+        "de": ("Wer das Werkzeug nutzt. Die Registrierung verrät nach außen "
+               "bewusst nicht mehr, ob es eine Adresse schon gibt — hier steht "
+               "der tatsächliche Bestand."),
+        "en": ("Who uses the tool. Registration deliberately no longer reveals "
+               "whether an address already exists — this is the actual list."),
+        "es": ("Quién utiliza la herramienta. El registro ya no revela "
+               "deliberadamente si una dirección existe; esta es la lista real."),
+        "fr": ("Qui utilise l'outil. L'inscription ne révèle volontairement "
+               "plus si une adresse existe déjà — voici la liste réelle."),
+        "it": ("Chi utilizza lo strumento. La registrazione non rivela più "
+               "deliberatamente se un indirizzo esiste già: questo è l'elenco "
+               "effettivo."),
+        "zh": "谁在使用本工具。注册流程有意不再透露邮箱是否已存在，此处为实际名单。",
+    },
+    "admin_accounts_total": {
+        "de": "Konten insgesamt", "en": "Accounts in total",
+        "es": "Cuentas en total", "fr": "Comptes au total",
+        "it": "Account in totale", "zh": "账户总数",
+    },
+    "admin_accounts_new30": {
+        "de": "davon neu in 30 Tagen", "en": "new within 30 days",
+        "es": "nuevas en 30 días", "fr": "nouveaux en 30 jours",
+        "it": "nuovi in 30 giorni", "zh": "30 天内新增",
+    },
+    "admin_accounts_active30": {
+        "de": "in 30 Tagen angemeldet", "en": "signed in within 30 days",
+        "es": "con sesión en 30 días", "fr": "connectés en 30 jours",
+        "it": "con accesso in 30 giorni", "zh": "30 天内登录",
+    },
+    "admin_accounts_registered": {
+        "de": "Registriert", "en": "Registered", "es": "Registro",
+        "fr": "Inscription", "it": "Registrazione", "zh": "注册时间",
+    },
+    "admin_accounts_last_login": {
+        "de": "Zuletzt angemeldet", "en": "Last sign-in",
+        "es": "Último acceso", "fr": "Dernière connexion",
+        "it": "Ultimo accesso", "zh": "最近登录",
+    },
+    "admin_accounts_company": {
+        "de": "Unternehmen (Eigenangabe)", "en": "Company (self-reported)",
+        "es": "Empresa (autodeclarada)", "fr": "Entreprise (déclarative)",
+        "it": "Azienda (autodichiarata)", "zh": "企业（自行填写）",
+    },
+    "admin_accounts_checks": {
+        "de": "Prüfungen", "en": "Checks", "es": "Comprobaciones",
+        "fr": "Vérifications", "it": "Verifiche", "zh": "检查次数",
+    },
+    "admin_accounts_last_check": {
+        "de": "Letzte Prüfung", "en": "Last check", "es": "Última comprobación",
+        "fr": "Dernière vérification", "it": "Ultima verifica", "zh": "最近检查",
+    },
+    "admin_accounts_never": {
+        "de": "noch nie", "en": "never", "es": "nunca",
+        "fr": "jamais", "it": "mai", "zh": "从未",
+    },
+    "admin_accounts_unknown": {
+        "de": "nicht erfasst", "en": "not recorded", "es": "no registrado",
+        "fr": "non enregistré", "it": "non registrato", "zh": "未记录",
+    },
+    "admin_accounts_unknown_hint": {
+        "de": ("„nicht erfasst“ heißt: das Konto besteht seit vor dem "
+               "24.09.2026 und hat sich seitdem nicht angemeldet. Der "
+               "Zeitpunkt lässt sich nicht nachträglich ermitteln."),
+        "en": ("\u201cnot recorded\u201d means the account predates "
+               "24 Sept 2026 and has not signed in since. The time cannot be "
+               "reconstructed."),
+        "es": ("«no registrado» significa que la cuenta es anterior al "
+               "24/09/2026 y no ha iniciado sesión desde entonces. El momento "
+               "no puede reconstruirse."),
+        "fr": ("« non enregistré » signifie que le compte est antérieur au "
+               "24/09/2026 et ne s'est pas connecté depuis. La date ne peut "
+               "être reconstituée."),
+        "it": ("\u201cnon registrato\u201d significa che l'account è "
+               "anteriore al 24/09/2026 e non ha effettuato accessi da allora. "
+               "Il momento non è ricostruibile."),
+        "zh": "“未记录”表示该账户创建于 2026-09-24 之前且此后未登录，时间无法追溯。",
+    },
+    "admin_accounts_empty": {
+        "de": "Es besteht noch kein Konto.", "en": "No account exists yet.",
+        "es": "Todavía no hay ninguna cuenta.", "fr": "Aucun compte pour l'instant.",
+        "it": "Non esiste ancora alcun account.", "zh": "尚无账户。",
+    },
     "ok_signup_check_mail": {
         "de": ("Bitte prüfen Sie Ihr Postfach. Wir haben Ihnen eine Nachricht "
                "an die angegebene Adresse geschickt."),

@@ -354,6 +354,7 @@
         <a href="{{ url_for('dashboard') }}" class="{{ 'is-current' if request.endpoint == 'dashboard' }}">{{ t("nav_check", lang) }}</a>
         <a href="{{ url_for('regulations_list') }}" class="{{ 'is-current' if request.endpoint == 'regulations_list' }}">{{ t("btn_regulations_list", lang) }}</a>
         {% if session.get('user_email','')|lower == 'mschuckert@textil-mode.de' %}
+        <a href="{{ url_for('admin_accounts') }}" class="{{ 'is-current' if request.endpoint == 'admin_accounts' }}">{{ t("admin_accounts_title", lang) }}</a>
         <a href="{{ url_for('admin_resets') }}" class="{{ 'is-current' if request.endpoint == 'admin_resets' }}">{{ t("admin_resets_title", lang) }}</a>
         <a href="{{ url_for('admin_reg_status') }}" class="{{ 'is-current' if request.endpoint == 'admin_reg_status' }}">{{ t("admin_regstatus_title", lang) }}</a>
         {% endif %}

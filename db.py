@@ -105,6 +105,18 @@ def _migrate_companies(c: sqlite3.Connection) -> None:
             c.execute(f"ALTER TABLE companies ADD COLUMN {col} {ddl}")
 
 
+def _migrate_users(c: sqlite3.Connection) -> None:
+    """Ergaenzt `last_login_at` (idempotent).
+
+    Bestandskonten tragen NULL, bis sie sich das naechste Mal anmelden — der
+    Zeitpunkt laesst sich nicht rueckwirkend ermitteln. Die Kontenuebersicht
+    zeigt dafuer einen Strich, keine erfundene Angabe.
+    """
+    cols = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
+    if "last_login_at" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN last_login_at TEXT")
+
+
 def _migrate_analysis_cache(c: sqlite3.Connection) -> None:
     """Bringt `analysis_cache` auf das globale, gesetzesstand-feste Schema.
 
@@ -209,6 +221,7 @@ def init_db() -> None:
             """
         )
         _migrate_companies(c)
+        _migrate_users(c)
         # Altlasten der Login-Bremse wegraeumen (idempotent).
         _prune(c)
         _prune_mail_log(c)
@@ -255,8 +268,41 @@ def verify_user(email: str, password: str) -> Optional[int]:
         bcrypt.checkpw(password.encode(), _DUMMY_PW_HASH)
         return None
     if bcrypt.checkpw(password.encode(), row["pw_hash"].encode()):
+        # Zeitpunkt der letzten Anmeldung festhalten — mehr nicht. Weder die
+        # Adresse noch eine Historie: der Admin soll sehen, welche Konten noch
+        # benutzt werden, nicht wer wann woher gearbeitet hat.
+        with _conn() as c:
+            c.execute("UPDATE users SET last_login_at = ? WHERE id = ?",
+                      (datetime.utcnow().isoformat(), row["id"]))
         return row["id"]
     return None
+
+
+def list_accounts() -> list[dict]:
+    """Alle Konten fuer die Admin-Uebersicht, neueste Registrierung zuerst.
+
+    Ohne diese Liste sieht der Betreiber nicht, wer das Werkzeug ueberhaupt
+    nutzt — die Registrierung verraet das seit dem 24.09.2026 bewusst nicht
+    mehr nach aussen, und ein Blick in die Datenbank per `docker exec` war
+    der einzige Weg.
+
+    Bewusst NICHT enthalten: der Passwort-Hash und alles aus dem
+    Unternehmensprofil ausser dem selbstgewaehlten Namen. Wie viele
+    Beschaeftigte ein Mitglied hat, geht die Kontenliste nichts an.
+    """
+    with _conn() as c:
+        rows = c.execute(
+            """SELECT u.id, u.email, u.created_at, u.last_login_at,
+                      co.name AS company_name, co.updated_at AS profile_updated,
+                      (SELECT COUNT(*) FROM analyses a WHERE a.user_id = u.id)
+                          AS analyses_count,
+                      (SELECT MAX(a.created_at) FROM analyses a
+                        WHERE a.user_id = u.id) AS last_analysis
+                 FROM users u
+                 LEFT JOIN companies co ON co.user_id = u.id
+             ORDER BY u.created_at DESC, u.id DESC"""
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def email_exists(email: str) -> bool:

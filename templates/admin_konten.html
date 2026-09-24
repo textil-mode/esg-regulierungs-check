@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="section">
+  <h2 style="margin-top:0;">{{ t("admin_accounts_title", lang) }}</h2>
+  <p style="font-size:13px;color:#5A5A5A;max-width:680px;">{{ t("admin_accounts_hint", lang) }}</p>
+
+  <div style="display:flex;gap:28px;flex-wrap:wrap;background:#F2F2F2;padding:12px 16px;margin-bottom:18px;">
+    <div>
+      <div style="font-size:22px;font-weight:700;color:#0F3750;line-height:1.2;">{{ konten|length }}</div>
+      <div style="font-size:12px;color:#5A5A5A;">{{ t("admin_accounts_total", lang) }}</div>
+    </div>
+    <div>
+      <div style="font-size:22px;font-weight:700;color:#0F3750;line-height:1.2;">{{ neu_30 }}</div>
+      <div style="font-size:12px;color:#5A5A5A;">{{ t("admin_accounts_new30", lang) }}</div>
+    </div>
+    <div>
+      <div style="font-size:22px;font-weight:700;color:#0F3750;line-height:1.2;">{{ aktiv_30 }}</div>
+      <div style="font-size:12px;color:#5A5A5A;">{{ t("admin_accounts_active30", lang) }}</div>
+    </div>
+  </div>
+
+  {% if konten %}
+  <div style="overflow-x:auto;">
+  <table class="reg-table">
+    <thead>
+      <tr>
+        <th>{{ t("email", lang) }}</th>
+        <th>{{ t("admin_accounts_company", lang) }}</th>
+        <th>{{ t("admin_accounts_registered", lang) }}</th>
+        <th>{{ t("admin_accounts_last_login", lang) }}</th>
+        <th style="text-align:right;">{{ t("admin_accounts_checks", lang) }}</th>
+        <th>{{ t("admin_accounts_last_check", lang) }}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for k in konten %}
+    <tr>
+      <td>{{ k.email }}</td>
+      <td style="color:#5A5A5A;">{{ k.company_name or "—" }}</td>
+      <td style="color:#5A5A5A;white-space:nowrap;">{{ k.created_at[:16].replace("T", " ") if k.created_at else "—" }}</td>
+      <td style="color:#5A5A5A;white-space:nowrap;">
+        {% if k.last_login_at %}
+          {{ k.last_login_at[:16].replace("T", " ") }}
+        {% else %}
+          <span title="{{ t('admin_accounts_unknown_hint', lang) }}">{{ t("admin_accounts_unknown", lang) }}</span>
+        {% endif %}
+      </td>
+      <td style="text-align:right;{% if not k.analyses_count %}color:#5A5A5A;{% endif %}">{{ k.analyses_count }}</td>
+      <td style="color:#5A5A5A;white-space:nowrap;">
+        {{ k.last_analysis[:16].replace("T", " ") if k.last_analysis else t("admin_accounts_never", lang) }}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:12px;color:#5A5A5A;margin-top:10px;margin-bottom:0;">
+    {{ t("admin_accounts_unknown_hint", lang) }} &middot; UTC
+  </p>
+  {% else %}
+  <p style="color:#5A5A5A;margin-bottom:0;">{{ t("admin_accounts_empty", lang) }}</p>
+  {% endif %}
+</div>
+
+{% endblock %}
