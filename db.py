@@ -370,13 +370,23 @@ def delete_user(user_id: int) -> bool:
 
 
 def set_password(user_id: int, password: str) -> None:
-    """Setzt ein neues Passwort und entwertet alle offenen Reset-Links."""
+    """Setzt ein neues Passwort und entwertet alles, was noch offensteht.
+
+    Beides gehoert dazu: die Einmal-Links UND die Zahlencodes. Stand der Code
+    hier nicht mit drin, ueberlebte er jeden Passwortwechsel: Wer bemerkt, dass
+    jemand seinen Code kennt, und daraufhin sein Passwort aendert, waere bis zu
+    30 Minuten spaeter trotzdem uebernommen worden (Befund M1, 24.09.2026).
+    """
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(BCRYPT_ROUNDS)).decode()
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute("UPDATE users SET pw_hash = ? WHERE id = ?", (pw_hash, user_id))
         c.execute(
             "UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL",
+            (now, user_id),
+        )
+        c.execute(
+            "UPDATE reset_codes SET used_at = ? WHERE user_id = ? AND used_at IS NULL",
             (now, user_id),
         )
 
@@ -727,8 +737,13 @@ def take_quota(scope: str, subject: str, limit: int,
 
     Verbucht wird auch der abgelehnte Versuch — sonst koennte man am Deckel
     entlang beliebig oft anklopfen und das Fenster liefe nie voll.
+
+    Zaehlen und Verbuchen laufen unter `BEGIN IMMEDIATE`: ohne die Sperre
+    kommen gleichzeitige Aufrufe allesamt am Deckel vorbei, weil jeder noch
+    den alten Zaehlerstand liest (Befund M2, 24.09.2026).
     """
     with _conn() as c:
+        c.execute("BEGIN IMMEDIATE")
         anzahl, _ = _attempt_stats(c, scope, subject, window_min)
         _record_attempt(c, scope, subject)
         return anzahl < limit
@@ -880,6 +895,13 @@ def redeem_reset_code(email: str, code: str) -> Optional[int]:
         return None
     now = datetime.utcnow().isoformat()
     with _conn() as c:
+        # Lesen des Zaehlers und Hochzaehlen unter EINER Sperre — sonst kommen
+        # gleichzeitige Versuche samtlich an der Grenze vorbei (gemessen: 60
+        # parallele Versuche, alle 60 gezaehlt, keiner abgewiesen). Heute faellt
+        # es mit einem Worker und acht Threads kaum auf; wer die Threadzahl
+        # erhoeht, schaltet die Fuenfergrenze sonst unbemerkt ab. Dieselbe
+        # Falle war bei `begin_login_attempt` schon einmal zu schliessen.
+        c.execute("BEGIN IMMEDIATE")
         row = c.execute(
             """SELECT r.id, r.code_hash, r.expires_at, r.attempts, u.id AS user_id
                  FROM reset_codes r

@@ -310,6 +310,73 @@ pruefe(any(o["email"] == KONTO for o in offen),
 mailer.is_configured = lambda: True
 
 # ---------------------------------------------------------------------------
+print("\n11b. Ein Passwortwechsel entwertet offene Codes (Befund M1)")
+# ---------------------------------------------------------------------------
+# Wer merkt, dass jemand seinen Code kennt, und daraufhin das Passwort
+# aendert, darf danach nicht trotzdem uebernommen werden.
+_leeren()
+anfordern(KONTO, ip="203.0.113.150")
+ruhe()
+code = code_aus_mail()
+pruefe(bool(code), "ein Code liegt vor")
+db.set_password(USER_ID, "selbst-geaendert-2026")     # wie /passwort-aendern
+einloesen(KONTO, code, pw="uebernahme-Passwort-2026")
+pruefe(db.verify_user(KONTO, "uebernahme-Passwort-2026") is None,
+       "der Code greift nach dem Passwortwechsel nicht mehr")
+pruefe(db.verify_user(KONTO, "selbst-geaendert-2026") == USER_ID,
+       "das selbst gesetzte Passwort gilt weiterhin")
+db.set_password(USER_ID, START_PW)
+
+# Dasselbe fuer den Admin-Weg: ein dort gesetztes Passwort raeumt ebenfalls auf.
+_leeren()
+anfordern(KONTO, ip="203.0.113.151")
+ruhe()
+code = code_aus_mail()
+token, _ = db.issue_reset_token(USER_ID)
+with flaskapp.app.test_client() as client:
+    client.post(f"/passwort-zuruecksetzen/{token}",
+                data={"password": "adminweg-2026", "password2": "adminweg-2026"})
+einloesen(KONTO, code, pw="danach-noch-2026")
+pruefe(db.verify_user(KONTO, "danach-noch-2026") is None,
+       "auch nach dem Admin-Weg ist der Code tot")
+db.set_password(USER_ID, START_PW)
+
+# ---------------------------------------------------------------------------
+print("\n11c. Gleichzeitige Fehlversuche kommen nicht an der Grenze vorbei (M2)")
+# ---------------------------------------------------------------------------
+# Ohne Transaktionssperre las jeder gleichzeitige Versuch denselben alten
+# Zaehlerstand — 60 parallele Versuche wurden alle gezaehlt, keiner abgewiesen.
+_leeren()
+anfordern(KONTO, ip="203.0.113.152")
+ruhe()
+echt = code_aus_mail()
+falsch = "000000" if echt != "000000" else "111111"
+
+ergebnisse: list = []
+
+
+def _raten() -> None:
+    ergebnisse.append(db.redeem_reset_code(KONTO, falsch))
+
+
+faeden = [threading.Thread(target=_raten) for _ in range(20)]
+for f in faeden:
+    f.start()
+for f in faeden:
+    f.join()
+with sqlite3.connect(TEST_DB) as c:
+    gezaehlt = c.execute(
+        "SELECT attempts FROM reset_codes WHERE used_at IS NULL "
+        "ORDER BY id DESC LIMIT 1").fetchone()
+stand = gezaehlt[0] if gezaehlt else -1
+print(f"    20 gleichzeitige Fehlversuche -> attempts = {stand}")
+pruefe(stand <= db.CODE_MAX_ATTEMPTS,
+       f"der Zaehler bleibt bei hoechstens {db.CODE_MAX_ATTEMPTS}")
+pruefe(all(e is None for e in ergebnisse), "keiner der Versuche kam durch")
+pruefe(db.redeem_reset_code(KONTO, echt) is None,
+       "der Code ist danach tot — auch mit der richtigen Zahl")
+
+# ---------------------------------------------------------------------------
 print("\n12. Der Admin-Weg mit Einmal-Link besteht weiter")
 # ---------------------------------------------------------------------------
 # Er ist die Rueckfallebene, wenn der Mailversand klemmt — der Admin erzeugt
