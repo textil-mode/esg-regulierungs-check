@@ -562,6 +562,17 @@ RESET_TTL_HOURS = 24
 #
 # Drei Anforderungen je Stunde reichen fuer jeden ehrlichen Fall (Mail im
 # Spam-Ordner, Tippfehler in der Adresse); der Link gilt ohnehin 24 Stunden.
+#
+# Bewusst anders als die Login-Bremse: die Adressbremse haengt HIER an der
+# Adresse allein, nicht am Paar (Adresse, IP). Bei der Anmeldung schuetzt die
+# Bindung an die IP die Verfuegbarkeit des Kontos; hier ist das zu schuetzende
+# Gut ein fremdes Postfach, und das laesst sich nur adressweit schuetzen — wer
+# ueber mehrere Adressen verfuegt, wuerde eine (Adresse, IP)-Bremse sonst
+# einfach umlaufen. Der Preis ist ein kleiner Denial-of-Service: wer drei
+# Anfragen auf eine fremde Adresse absetzt, verhindert fuer eine Stunde, dass
+# der Inhaber sich eine Reset-Mail schicken laesst. Der Admin-Weg unter
+# /admin/passwort-resets bleibt in dieser Stunde offen, deshalb ist der Preis
+# tragbar.
 RESET_MAIL_WINDOW_MIN = 60
 RESET_MAIL_MAX_PER_ADDRESS = 3
 RESET_MAIL_MAX_PER_IP = 10
