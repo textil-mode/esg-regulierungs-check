@@ -515,11 +515,11 @@ Hostinger-Docker-Manager (Projekt `esg-regulierungs-check`, danach
 
 | Variable | Inhalt |
 |---|---|
-| `SMTP_HOST` | Mailserver des Versanddienstes — live `smtp-relay.brevo.com` |
+| `SMTP_HOST` | Mailserver — live `smtp.hostinger.com` |
 | `SMTP_PORT` | `587` (STARTTLS). Andere Ports werden nicht unterstützt — unverschlüsselt wird nie versendet |
-| `SMTP_USER` | Brevo-Kennung (`…@smtp-brevo.com`), **nicht** die Absenderadresse |
-| `SMTP_PASSWORD` | Brevo-SMTP-Schlüssel (im Bitwarden-Tresor) |
-| `MAIL_FROM` | Absenderadresse `noreply@ki-textil-mode.de` (in Brevo als Sender verifiziert) |
+| `SMTP_USER` | Postfach-Adresse `noreply@ki-textil-mode.de` |
+| `SMTP_PASSWORD` | Passwort des Postfachs (im Bitwarden-Tresor) |
+| `MAIL_FROM` | Absenderadresse, dieselbe wie `SMTP_USER` |
 | `PUBLIC_BASE_URL` | Feste Adresse DIESER Instanz, Schema + Host ohne Pfad (`https://ki-textil-mode.de` bzw. `https://schuckert.cloud`). Der Reset-Link wird daraus gebaut; fehlt der Wert, wird **keine** Mail verschickt |
 | `MAIL_FROM_NAME` | Anzeigename, `ESG-Regulierungs-Check` |
 
@@ -553,29 +553,42 @@ ein stummer Mailserver keine Threads auflaufen lässt.
 
 Zum Ausschalten genügt es, die Variablen zu leeren.
 
-### Brevo — was im Betrieb schiefgehen kann
+### Warum ein Postfach und kein Versanddienst (24.09.2026)
 
-Versandt wird seit dem 24.09.2026 über **Brevo** (kostenloser Tarif, 300 Mails
-am Tag). Die Domain `ki-textil-mode.de` ist dort per DKIM authentifiziert; die
-vier DNS-Einträge (TXT `brevo-code:…`, CNAME `brevo1/2._domainkey`, TXT
-`_dmarc`) stehen bei Cloudflare und müssen **„Nur DNS"** bleiben — mit
-eingeschaltetem Proxy bricht die DKIM-Auflösung. Ein SPF-Eintrag ist nicht
-nötig, Brevo nutzt den eigenen Return-Path.
+Versendet wird über ein gewöhnliches **Hostinger-Postfach**
+(`noreply@ki-textil-mode.de`, Starter Business Email, rund 19 € für vier
+Jahre). Davor lief es zwei Stunden lang über **Brevo** — kostenlos, aber mit
+zwei Haken, die erst an echten Mails sichtbar wurden:
 
-**Die häufigste Störung:** Brevo blockiert SMTP-Verbindungen von IP-Adressen,
-die nicht freigegeben sind, und schaltet diese Sperre beim Erzeugen eines
-Schlüssels selbsttätig scharf. Freigegeben ist nur `187.77.88.67`. Bekommt der
-VPS je eine neue Adresse, bricht der Versand **stillschweigend** ab: Die
-Anwendung antwortet normal weiter und legt die Anfrage als Ticket beim Admin
-ab, im Protokoll unter `/admin/passwort-resets` steht „failed" mit der
-abgelehnten Anmeldung. Nachtragen unter Security → Authorized IPs.
+1. **Brevo hängt an jede Nachricht ein Zählpixel** (Link auf `sendibt3.com`)
+   und misst damit, wann Empfänger ihre Post öffnen. Abschalten lässt sich das
+   im SMTP-Relay nicht — nach Auskunft des Anbieters nur auf Anfrage und nur
+   in einem Unternehmenstarif. `X-Mailin-Track: 0` wurde ausprobiert und blieb
+   wirkungslos. Für einen Verband, der ein ESG-Compliance-Werkzeug betreibt,
+   ist ungefragtes Öffnungs-Tracking bei Mitgliedern keine Option; die
+   Datenschutzerklärung sagte es auch anders zu.
+2. Der Zähl-Link ist ein Phishing-Merkmal mehr in einer Nachricht, die ohnehin
+   schon danach aussieht.
 
-Zugang einrichten oder wechseln: `/root/esg_mail_einrichten.sh` auf dem VPS —
-liest den Schlüssel unsichtbar ein, testet die Anmeldung, **bevor** etwas
-geändert wird, übergibt Werte nur per `--env-file` und nimmt einen Fehlstart
-zurück.
+**DNS für das Postfach** (alles bei Cloudflare, gesetzt am 24.09.2026):
+MX `mx1.hostinger.com` (5) und `mx2.hostinger.com` (10), SPF
+`v=spf1 include:_spf.mail.hostinger.com ~all`, DKIM als drei CNAMEs
+`hostingermail-a/b/c._domainkey` → `hostingermail-*.dkim.mail.hostinger.com`.
+**Die CNAMEs müssen „Nur DNS" sein** — mit Proxy bricht die DKIM-Auflösung.
 
-### Der Reset-Link kommt aus `PUBLIC_BASE_URL`, nicht aus dem Request
+**Wenn die Cloudflare-Oberfläche klemmt** (ist sie an dem Tag): Die
+Dashboard-Schnittstelle lässt sich aus dem angemeldeten Browser heraus
+ansprechen, `fetch('/api/v4/zones?name=…', {credentials:'include'})` und dann
+`POST /api/v4/zones/<id>/dns_records`. Sauberer wäre ein API-Token im
+Bitwarden-Tresor — bislang gibt es keinen.
+
+Zugang einrichten oder wechseln: `/root/esg_mail_umstellen.sh <host> <benutzer>`
+auf dem VPS — liest das Passwort unsichtbar ein, testet die Anmeldung, **bevor**
+etwas geändert wird, übergibt Werte nur per `--env-file` und nimmt einen
+Fehlstart zurück. `/root/esg_mail_einrichten.sh` ist der ältere Zwilling mit
+fest eingetragenen Brevo-Werten.
+
+### Passwort vergessen: Zahlencode, und `PUBLIC_BASE_URL` statt Host-Kopf
 
 Bis zum 24.09.2026 baute `url_for(…, _external=True)` die Adresse aus dem
 `Host`-Kopf. Den setzt der Anfragende selbst: Wer für eine fremde Adresse ein
