@@ -81,6 +81,13 @@ function switchTab(name) {
 // Browser-Autofill leeren
 window.addEventListener('DOMContentLoaded', () => {
   toggleAck();
+  // Aus einer E-Mail heraus direkt beim Zurücksetzen landen. Ohne das
+  // versprach die Mail ("setzen Sie Ihr Passwort über 'Passwort vergessen'
+  // zurück:") einen Link, der nur zum Anmeldeformular führte — man musste
+  // selbst weitersuchen.
+  if (new URLSearchParams(window.location.search).has('passwort-vergessen')) {
+    switchTab('forgot');
+  }
   setTimeout(() => {
     document.querySelectorAll('input[type="email"], input[type="password"]').forEach(el => { el.value = ''; });
   }, 100);

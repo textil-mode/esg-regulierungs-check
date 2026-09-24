@@ -418,8 +418,12 @@ def _passwortwechsel_melden(email: str, lang: str) -> None:
     """
     if not (email and _mailversand_bereit()):
         return
+    # Der Link fuehrt direkt auf das geoeffnete Formular „Passwort vergessen".
+    # Zeigte er nur auf die Anmeldeseite, versprach der Satz davor etwas, das
+    # der Link nicht einloeste (gemeldet am 24.09.2026).
     _mail_im_hintergrund(email, "mail_pw_changed_subject", "mail_pw_changed_body",
-                         _public_origin() + url_for("login"),
+                         _public_origin() + url_for("login")
+                         + "?passwort-vergessen=1",
                          "password_changed", lang)
 
 
