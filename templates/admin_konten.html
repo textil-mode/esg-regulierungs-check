@@ -59,6 +59,7 @@
   </div>
 
   {% if konten %}
+  {% macro zeitpunkt(wert) %}{{ wert[:10] }}<span class="uhrzeit">{{ wert[11:16] }}</span>{% endmacro %}
   <div style="overflow-x:auto;">
   <table class="reg-table sortable" id="konten">
     <thead>
@@ -75,32 +76,32 @@
     <tbody>
     {% for k in konten %}
     <tr>
-      <td>{{ k.email }}</td>
-      <td style="color:#5A5A5A;" data-sort-value="{{ k.company_name or '' }}">{{ k.company_name or "—" }}</td>
-      <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.created_at or '' }}">{{ k.created_at[:16].replace("T", " ") if k.created_at else "—" }}</td>
+      <td style="overflow-wrap:anywhere;">{{ k.email }}</td>
+      <td style="color:#5A5A5A;overflow-wrap:anywhere;" data-sort-value="{{ k.company_name or '' }}">{{ k.company_name or "—" }}</td>
+      <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.created_at or '' }}">{{ zeitpunkt(k.created_at) if k.created_at else "—" }}</td>
       <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.last_login_at or '' }}">
         {% if k.last_login_at %}
-          {{ k.last_login_at[:16].replace("T", " ") }}
+          {{ zeitpunkt(k.last_login_at) }}
         {% else %}
           <span title="{{ t('admin_accounts_unknown_hint', lang) }}">{{ t("admin_accounts_unknown", lang) }}</span>
         {% endif %}
       </td>
       <td style="text-align:right;{% if not k.analyses_count %}color:#5A5A5A;{% endif %}" data-sort-value="{{ k.analyses_count or 0 }}">{{ k.analyses_count }}</td>
       <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.last_analysis or '' }}">
-        {{ k.last_analysis[:16].replace("T", " ") if k.last_analysis else t("admin_accounts_never", lang) }}
+        {{ zeitpunkt(k.last_analysis) if k.last_analysis else t("admin_accounts_never", lang) }}
       </td>
       {% set fest = k.email in stamm_admins %}
       {% set rolle = t("admin_role_fixed", lang) if fest else (t("admin_role_admin", lang) if k.is_admin else "") %}
-      <td style="white-space:nowrap;" data-sort-value="{{ rolle }}">
-        {% if rolle %}<span class="rollen-abzeichen">{{ rolle }}</span>{% else %}<span style="color:#5A5A5A;">—</span>{% endif %}
+      <td data-sort-value="{{ rolle }}"><div class="rollen-zelle">
+        {% if rolle %}<span class="rollen-abzeichen">{{ rolle }}</span>{% elif not darf_rollen %}<span style="color:#5A5A5A;">—</span>{% endif %}
         {% if darf_rollen and not fest %}
-        <form method="post" action="{{ url_for('admin_set_role', user_id=k.id) }}" style="display:inline;margin-left:8px;"
+        <form method="post" action="{{ url_for('admin_set_role', user_id=k.id) }}"
               onsubmit="return confirm({{ t('admin_role_confirm_revoke' if k.is_admin else 'admin_role_confirm_grant', lang)|tojson|forceescape }});">
           <input type="hidden" name="recht" value="{{ 'entziehen' if k.is_admin else 'erteilen' }}">
           <button type="submit" class="btn {{ 'btn-danger' if k.is_admin else 'btn-secondary' }} btn-sm">{{ t('admin_role_btn_revoke' if k.is_admin else 'admin_role_btn_grant', lang) }}</button>
         </form>
         {% endif %}
-      </td>
+      </div></td>
     </tr>
     {% endfor %}
     </tbody>
@@ -115,7 +116,10 @@
 </div>
 
 <style>
-  .rollen-abzeichen { display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 700;
+  .uhrzeit { display: block; font-size: 12px; }
+  .rollen-zelle { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .rollen-zelle .btn { white-space: nowrap; }
+  .rollen-abzeichen { display: inline-block; white-space: nowrap; padding: 2px 8px; font-size: 12px; font-weight: 700;
                       color: #fff; background: var(--tm-navy); border-radius: 3px; }
   .sort-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit;
               cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-align: inherit; }
