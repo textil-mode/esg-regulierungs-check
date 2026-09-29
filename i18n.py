@@ -1577,6 +1577,15 @@ UI: dict[str, dict[str, str]] = {
     # Analysis progress
     "step1": {"de": "Schritt 1/2: Gesetzestexte aktualisieren", "en": "Step 1/2: Updating law texts", "es": "Paso 1/2: Actualizar textos legales", "fr": "Étape 1/2 : Mise à jour des textes", "it": "Passo 1/2: aggiornamento testi", "zh": "步骤 1/2:更新法律文本"},
     "step2": {"de": "Schritt 2/2: Analyse via LLM", "en": "Step 2/2: LLM analysis", "es": "Paso 2/2: análisis LLM", "fr": "Étape 2/2 : analyse LLM", "it": "Passo 2/2: analisi LLM", "zh": "步骤 2/2:LLM 分析"},
+    "analysis_waiting": {"de": "ausstehend", "en": "pending", "es": "pendiente", "fr": "en attente", "it": "in attesa", "zh": "待处理"},
+    "analysis_slow": {
+        "de": "Das KI-Modell ist gerade stark ausgelastet. Die Anwendung versucht es automatisch erneut und weicht bei Bedarf auf ein anderes Modell aus. Das kann einige Minuten dauern - bitte die Seite geöffnet lassen.",
+        "en": "The AI model is currently under heavy load. The application retries automatically and switches to another model if needed. This may take a few minutes - please keep this page open.",
+        "es": "El modelo de IA está muy solicitado en este momento. La aplicación lo reintenta automáticamente y, si es necesario, cambia a otro modelo. Puede tardar unos minutos: mantenga esta página abierta.",
+        "fr": "Le modèle d'IA est actuellement très sollicité. L'application réessaie automatiquement et passe si nécessaire à un autre modèle. Cela peut prendre quelques minutes - veuillez laisser cette page ouverte.",
+        "it": "Il modello di IA è al momento molto carico. L'applicazione riprova automaticamente e, se necessario, passa a un altro modello. Può richiedere alcuni minuti: lasciare aperta questa pagina.",
+        "zh": "AI 模型当前负载较高。应用程序会自动重试,必要时切换到其他模型。这可能需要几分钟,请保持此页面打开。",
+    },
     "law_check_progress": {
         "de": "Gesetzestext {i}/{n}: {name} ({lang}) wird geprüft …",
         "en": "Law text {i}/{n}: {name} ({lang}) being checked …",

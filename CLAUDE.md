@@ -387,6 +387,37 @@ Texte zweier Modelle nebeneinander.
 
 Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER` und Modell ändern → Bereitstellen.
 
+### Ausweichmodelle bei Lastspitzen (28.09.2026)
+
+Anlass: `gemini-3.1-flash-lite` antwortete minutenlang mit `503 high demand`. NFRD
+scheiterte nach sechs Versuchen, die Fortschrittsanzeige stand auf „EmpCo 15/16“
+(sie nannte die zuletzt **fertige** Regulierung), und die rote Fehlerkarte zeigte die
+Anfrage-Adresse samt `?key=…`, also den API-Schlüssel, im Browser und im Container-Log.
+
+- **Schlüssel im Kopf** `x-goog-api-key`, nicht mehr in der Adresse. Fehlertexte laufen
+  zusätzlich durch ein `re.sub` auf `key=***`.
+- **Ausweichen** (`llm._analyze_one`, nur Provider `google`): Der erste Fehlschlag (503/429)
+  bleibt beim Hauptmodell, ab dem zweiten geht es reihum durch
+  `GOOGLE_FALLBACK_MODELS` (Voreinstellung `gemini-3.5-flash-lite,gemini-3.6-flash`,
+  `-` schaltet ab). Ein anderes Modell wird sofort gefragt, gewartet wird erst, wenn die
+  Runde wieder beim Hauptmodell ankommt; mit Ausweichmodellen 9 statt 6 Versuche
+  (≈ 3 min Wartezeit bei Dauerlast). Scheitert ein Ausweichmodell aus anderem Grund
+  (400/404), geht es ebenfalls weiter.
+- **Ausweichmodelle ohne Denkmodus** (`thinkingBudget: 0`). `gemini-3.5-flash-lite` lehnt
+  die Angabe mit „Request contains an invalid argument“ ab — nach jedem 400 wird deshalb
+  einmal ohne `thinkingConfig` wiederholt. `gemini-3.6-flash` denkt ohne die Angabe
+  (gemessen 264 Denk-Token für eine Mini-Frage), mit ihr 0.
+- **Nicht im Cache:** Ergebnisse eines Ausweichmodells tragen `_fallback_model`; app.py
+  zeigt und speichert sie, schreibt sie aber nicht in `analysis_cache` (dessen Schlüssel
+  nennt das Hauptmodell). **Folge:** Der nächste Lauf fragt dafür wieder das
+  Hauptmodell, der Text kann sich also einmalig ändern — nach einer Lastspitze schlägt
+  ein Byte-Vergleich zweier Läufe erwartbar fehl.
+- **Fortschritt:** Der Status trägt `waiting` (noch ausstehende Regulierungen), die Seite
+  zeigt „ausstehend: …“ und nach 40 s ohne Fortschritt den Hinweis `analysis_slow`.
+- Belege: `test_llm_fallback.py` (28 Prüfungen, kein Netz). Live am 28.09. gegengeprüft:
+  Hauptmodell künstlich gesperrt, 3.5-flash-lite überlastet, 3.6-flash lieferte NFRD
+  und EmpCo nach je 21 s.
+
 **Empfehlung:** in Google Cloud Billing einen Budget-Alert (z. B. 5 €/Monat) setzen, falls die Nutzung stark wächst.
 
 ---

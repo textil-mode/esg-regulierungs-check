@@ -513,6 +513,13 @@ class LLMClient:
             if not self.api_key:
                 raise RuntimeError("GOOGLE_API_KEY fehlt.")
             self.base_url = "https://generativelanguage.googleapis.com/v1beta"
+            # Ausweichmodelle fuer Lastspitzen (503 "high demand") und
+            # modellbezogene Kontingente (429). Am 28.09.2026 war das Hauptmodell
+            # ueber Minuten nicht erreichbar, waehrend andere Modelle lieferten.
+            # "-" schaltet das Ausweichen ab.
+            fb = os.getenv("GOOGLE_FALLBACK_MODELS", "gemini-3.5-flash-lite,gemini-3.6-flash")
+            self.fallback_models = [m.strip() for m in fb.split(",")
+                                    if m.strip() and m.strip() not in ("-", self.model)]
         elif self.provider == "anthropic":
             from anthropic import AsyncAnthropic
             key = os.getenv("ANTHROPIC_API_KEY")
@@ -524,7 +531,14 @@ class LLMClient:
         else:
             raise RuntimeError(f"Unbekannter LLM_PROVIDER: {self.provider}")
 
-    async def ask(self, system: str, user: str, max_tokens: int = 1500, json_mode: bool = True) -> str:
+    def models(self) -> list[str | None]:
+        """Hauptmodell zuerst, dann die Ausweichmodelle (None = Provider-Default)."""
+        if self.provider == "google":
+            return [self.model, *self.fallback_models]
+        return [None]
+
+    async def ask(self, system: str, user: str, max_tokens: int = 1500, json_mode: bool = True,
+                  model: str | None = None) -> str:
         if self.provider in ("ollama", "openai"):
             kwargs: dict = {
                 "model": self.model,
@@ -552,7 +566,12 @@ class LLMClient:
             return resp.choices[0].message.content or ""
         elif self.provider == "google":
             import httpx as _httpx
-            url = f"{self.base_url}/models/{self.model}:generateContent?key={self.api_key}"
+            use_model = model or self.model
+            # Schluessel im Kopf, nicht in der Adresse: httpx nennt die Adresse in
+            # jeder Fehlermeldung, und die landete bis 28.09.2026 samt Schluessel
+            # im Container-Log und auf der roten Fehlerkarte im Browser.
+            url = f"{self.base_url}/models/{use_model}:generateContent"
+            headers = {"x-goog-api-key": self.api_key}
             body = {
                 "systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
@@ -567,8 +586,18 @@ class LLMClient:
                     "responseMimeType": "application/json" if json_mode else "text/plain",
                 },
             }
+            if use_model != self.model:
+                # Die Ausweichmodelle (Flash) denken sonst mit: langsamer und
+                # teurer, ohne dass die Einordnung davon profitiert. Kennt ein
+                # Modell die Angabe nicht (400), geht es ohne sie weiter — die
+                # Meldung nennt den Grund nicht immer (gemini-3.5-flash-lite:
+                # nur "Request contains an invalid argument").
+                body["generationConfig"]["thinkingConfig"] = {"thinkingBudget": 0}
             async with _httpx.AsyncClient(timeout=90) as client:
-                resp = await client.post(url, json=body)
+                resp = await client.post(url, json=body, headers=headers)
+                if resp.status_code == 400 and "thinkingConfig" in body["generationConfig"]:
+                    del body["generationConfig"]["thinkingConfig"]
+                    resp = await client.post(url, json=body, headers=headers)
                 resp.raise_for_status()
                 return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
         else:  # anthropic
@@ -610,31 +639,52 @@ async def _analyze_one(client: LLMClient, reg: dict, fulltext: str,
     )
     last_error: str | None = None
     key = reg.get("key", "?")
+    models = client.models() if hasattr(client, "models") else [None]
+    model_idx = 0
+
+    def _done(res: dict) -> dict:
+        # Ergebnis eines Ausweichmodells markieren: app.py legt es NICHT in den
+        # Cache, denn dessen Schluessel nennt das Hauptmodell (`_model_id`) —
+        # sonst stuenden dort dauerhaft Texte zweier Modelle nebeneinander.
+        if model_idx > 0:
+            res["_fallback_model"] = models[model_idx]
+        return res
+
+    # Mit Ausweichmodellen drei volle Runden (9 Versuche, rund 3 min Wartezeit
+    # bei Dauerlast) — mit 6 gaebe die App frueher auf als vor dem Umbau.
+    max_attempts = 9 if len(models) > 1 else 6
     print(f"[llm] start {key}", flush=True)
-    for attempt in range(6):  # mehr Versuche (war 4)
+    for attempt in range(max_attempts):
+        model = models[model_idx]
+        tag = f" via {model}" if model_idx > 0 else ""
         try:
             # max_tokens großzügig, weil manche Modelle das 80-Wort-Limit
             # ueberschreiten und die JSON sonst mid-string abgeschnitten wird.
-            text = await client.ask(system, user_msg, max_tokens=3000)
+            if model is None:
+                text = await client.ask(system, user_msg, max_tokens=3000)
+            else:
+                text = await client.ask(system, user_msg, max_tokens=3000, model=model)
             parsed = _extract_json(text)
-            print(f"[llm] ok    {key}", flush=True)
-            return _enrich(reg, parsed)
+            print(f"[llm] ok    {key}{tag}", flush=True)
+            return _done(_enrich(reg, parsed))
         except _TruncatedJSON as e:
             # Antwort abgeschnitten: erneut versuchen; erst beim letzten Versuch
             # das auto-reparierte Fragment akzeptieren (besser als ein Fehler).
             last_error = "JSON unvollstaendig (Antwort abgeschnitten)"
-            print(f"[llm] retry {key} attempt={attempt} truncated", flush=True)
-            if attempt < 5:
+            print(f"[llm] retry {key} attempt={attempt} truncated{tag}", flush=True)
+            if attempt < max_attempts - 1:
                 await asyncio.sleep(0.6)
                 continue
             print(f"[llm] partial {key}: nutze auto-repariertes Fragment", flush=True)
-            return _enrich(reg, e.partial)
+            return _done(_enrich(reg, e.partial))
         except (json.JSONDecodeError, ValueError) as e:
             last_error = f"JSON-Parse: {e}"
             print(f"[llm] retry {key} attempt={attempt} json-parse: {e}", flush=True)
             await asyncio.sleep(0.6)
         except Exception as e:  # noqa: BLE001
-            last_error = str(e)
+            # Falls ein Schluessel doch einmal in einer Adresse steht: nie ins
+            # Log und nie auf die Fehlerkarte.
+            last_error = re.sub(r"key=[^&\s'\"]+", "key=***", str(e))
             err_low = last_error.lower()
             is_rate_limit = ("429" in last_error or "rate_limit" in err_low
                              or "resource_exhausted" in err_low or "quota" in err_low)
@@ -645,8 +695,23 @@ async def _analyze_one(client: LLMClient, reg: dict, fulltext: str,
             is_overload = ("503" in last_error or "unavailable" in err_low
                            or "high demand" in err_low or "overloaded" in err_low)
             print(f"[llm] retry {key} attempt={attempt} "
-                  f"ratelimit={is_rate_limit} ueberlastet={is_overload}: {last_error[:160]}",
+                  f"ratelimit={is_rate_limit} ueberlastet={is_overload}{tag}: {last_error[:160]}",
                   flush=True)
+            if attempt == max_attempts - 1:
+                break  # letzter Versuch: nicht mehr umschalten und nicht mehr warten
+            # Ab dem zweiten Fehlschlag reihum auf das naechste Modell wechseln.
+            # Der erste Fehlschlag bleibt beim Hauptmodell (Lastspitzen dauern oft
+            # nur Sekunden, und nur dessen Ergebnis wird zwischengespeichert). Ein
+            # anderes Modell wird sofort gefragt; gewartet wird erst, wenn die
+            # Runde wieder beim Hauptmodell ankommt. Scheitert ein Ausweichmodell
+            # aus anderem Grund (400, 404 — abgeschaltet oder Angabe unbekannt),
+            # geht es ebenfalls weiter, statt die Versuche daran zu verbrauchen.
+            if len(models) > 1 and (model_idx > 0
+                                    or ((is_overload or is_rate_limit) and attempt >= 1)):
+                model_idx = (model_idx + 1) % len(models)
+                if model_idx != 0:
+                    await asyncio.sleep(1.0)
+                    continue
             if is_overload and not is_rate_limit:
                 await asyncio.sleep(min(15 * (attempt + 1), 90))
                 continue

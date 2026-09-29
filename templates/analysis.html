@@ -8,6 +8,7 @@
       <div class="progress-bar-inner" id="bar" style="width:0%"></div>
     </div>
     <div class="progress-status" id="status">…</div>
+    <p class="progress-status" id="slow-hint" style="display:none;margin-top:12px;color:#5A5A5A;">{{ t("analysis_slow", lang) }}</p>
   </div>
 </div>
 
@@ -15,6 +16,9 @@
 const bar = document.getElementById('bar');
 const status = document.getElementById('status');
 const phaseTitle = document.getElementById('phase-title');
+const slowHint = document.getElementById('slow-hint');
+// Hinweis erst, wenn sich 40 s lang nichts bewegt hat (Lastspitze beim Modell).
+let lastDone = -1, lastChange = Date.now();
 
 function poll() {
   fetch("{{ url_for('analysis_status_api') }}")
@@ -28,7 +32,13 @@ function poll() {
         status.textContent = d.done + '/' + d.total + ': ' + (d.name || '…');
       } else if (d.phase === 'analysis') {
         phaseTitle.textContent = "{{ t('step2', lang) }}";
-        status.textContent = d.done + '/' + d.total + ' — ' + (d.name || '…');
+        // Offene Regulierungen nennen, nicht die zuletzt fertige.
+        const waiting = d.waiting || [];
+        status.textContent = d.done + '/' + d.total + ' — ' + (waiting.length
+          ? {{ t('analysis_waiting', lang)|tojson }} + ': ' + waiting.join(', ')
+          : (d.name || '…'));
+        if (d.done !== lastDone) { lastDone = d.done; lastChange = Date.now(); }
+        slowHint.style.display = (Date.now() - lastChange > 40000) ? 'block' : 'none';
       } else if (d.phase === 'done') {
         // Fertig — zum Dashboard weiterleiten
         window.location.href = "{{ url_for('dashboard') }}";

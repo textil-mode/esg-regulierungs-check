@@ -1095,8 +1095,14 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
         ready, todo, cache_keys = plan_analysis(profile, REGULATIONS, lang)
         jobs = [(reg, texts.get(reg["key"], "")) for reg in todo]
 
+        # Was noch aussteht, fuer die Fortschrittsanzeige: "name" nennt die
+        # zuletzt FERTIGE Regulierung, und haengt eine am Modell, stand dort
+        # minutenlang eine laengst erledigte (28.09.2026: "EmpCo 15/16", gewartet
+        # wurde auf NFRD).
+        pending = {reg["key"]: reg["name"] for reg, _ in jobs}
         status.update({"phase": "analysis", "done": len(ready), "total": total,
-                        "cached": len(ready), "new": len(jobs), "name": ""})
+                        "cached": len(ready), "new": len(jobs), "name": "",
+                        "waiting": list(pending.values())})
 
         q = analyze_streaming(profile, jobs, ready)
         results: list[dict] = []
@@ -1106,7 +1112,11 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
             if item is None:
                 break
             is_cached = item.pop("_from_cache", False)
-            if not is_cached and item.get("applies") != "error":
+            # Ergebnis eines Ausweichmodells: anzeigen, aber nicht zwischenspeichern
+            # (der Cache-Schluessel nennt das Hauptmodell, siehe llm._analyze_one).
+            is_fallback = bool(item.pop("_fallback_model", None))
+            pending.pop(item.get("key", ""), None)
+            if not is_cached and not is_fallback and item.get("applies") != "error":
                 key = cache_keys.get(item.get("key", ""))
                 if key:
                     ph, rh, th = key
@@ -1117,7 +1127,8 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
             item["law_as_of"] = law_dates.get(item.get("key", ""), "")
             results.append(item)
             done += 1
-            status.update({"done": done, "name": item.get("name", "-")})
+            status.update({"done": done, "name": item.get("name", "-"),
+                           "waiting": list(pending.values())})
 
         # Speichern
         if any((r.get("applies") or "").lower() != "error" for r in results):
