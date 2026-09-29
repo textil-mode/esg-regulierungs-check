@@ -48,6 +48,7 @@ from i18n import (
     ROLE_LABELS,
     SALES_MARKET_LABELS,
     SITE_TYPE_LABELS,
+    SVHC_LABELS,
     normalize_lang,
     t,
     t_applies_note,
@@ -56,7 +57,7 @@ from i18n import (
     t_status,
 )
 from lawparse import build_context
-from llm import analyze_streaming, plan_analysis
+from llm import analyze_streaming, deterministic_result, plan_analysis
 from fetcher import (  # noqa: E402
     fetch_law_text,
     fetch_url_text,
@@ -75,6 +76,7 @@ from regulations import (
     REGULATIONS,
     SALES_MARKETS,
     SITE_TYPES,
+    SVHC_OPTIONS,
     VALUE_CHAIN_ROLES,
     application_for,
     guidelines_for,
@@ -315,6 +317,7 @@ def _inject_globals():
         MATERIAL_LABELS=MATERIAL_LABELS,
         MATERIAL_GROUP_LABELS=MATERIAL_GROUP_LABELS,
         SALES_MARKET_LABELS=SALES_MARKET_LABELS,
+        SVHC_LABELS=SVHC_LABELS,
     )
 
 
@@ -964,8 +967,28 @@ def dashboard():
         MATERIALS=MATERIALS,
         MATERIAL_GROUPS=MATERIAL_GROUPS,
         SALES_MARKETS=SALES_MARKETS,
+        SVHC_OPTIONS=SVHC_OPTIONS,
         reg_count=len(REGULATIONS),
     )
+
+
+def _parse_gwh(value) -> float:
+    """Energieverbrauch aus dem Formular: Komma oder Punkt, nie negativ oder unendlich.
+
+    Das versteckte Feld traegt normalerweise schon "7.5" (siehe parseDec im
+    Formular); ohne JavaScript kommt die Eingabe unveraendert an.
+    """
+    import math
+    text = str(value or "").strip().replace(" ", "")
+    if "," in text:
+        text = text.replace(".", "").replace(",", ".")
+    try:
+        number = float(text or 0)
+    except ValueError:
+        return 0.0
+    if not math.isfinite(number) or number < 0:
+        return 0.0
+    return min(number, 1_000_000.0)
 
 
 @app.route("/save-company", methods=["POST"])
@@ -1004,6 +1027,9 @@ def save_company():
         "listed": "listed" in f,
         "env_claims": "env_claims" in f,
         "eu_importer": "eu_importer" in f,
+        "wet_processing_de": "wet_processing_de" in f,
+        "energy_gwh": _parse_gwh(f.get("energy_gwh")),
+        "svhc_status": f.get("svhc_status") or SVHC_OPTIONS[0],
         "product_categories": f.getlist("product_categories"),
         "value_chain_roles": f.getlist("value_chain_roles"),
         "materials": f.getlist("materials"),
@@ -1063,6 +1089,14 @@ def _run_analysis_bg(uid: int, profile: dict, lang: str) -> None:
         max_chars = int(os.getenv("FULLTEXT_MAX_CHARS", "40000"))
         for i, reg in enumerate(REGULATIONS, 1):
             status.update({"done": i, "name": reg["name"]})
+            # Regelbasierte Regulierungen brauchen keinen Gesetzestext, nur das
+            # Datum "Gesetzesstand" fuer die Karte. Seit der Katalogerweiterung
+            # (15 von 30) kostete der Abruf jeden Lauf 25-40 s, REACH allein
+            # 5 MB doppelt. Aktuell haelt diese Texte der woechentliche Watchdog.
+            if deterministic_result(reg, profile, lang) is not None:
+                cached = get_cached_text(reg["key"], lang) or {}
+                law_dates[reg["key"]] = (cached.get("fetched_at") or "")[:10]
+                continue
             res = fetch_law_text(reg, language=lang)
             law_text = res.get("text") or ""
             law_dates[reg["key"]] = (res.get("fetched_at") or "")[:10]

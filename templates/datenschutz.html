@@ -56,11 +56,13 @@
   <p>
     Sie tragen die Merkmale Ihres Unternehmens selbst ein: Bezeichnung,
     Beschäftigtenzahl weltweit und in Deutschland, Nettoumsatz weltweit und in
-    der EU, Bilanzsumme, Rechtsform, Konzernstellung, Branche,
-    Produktkategorien, Rolle in der Wertschöpfungskette, eingesetzte
-    Materialien, Absatzmärkte, Standorte sowie die Angaben zu
-    Endkundengeschäft, Kapitalmarktorientierung, Umweltaussagen im Marketing
-    und zur Einfuhr in die EU.
+    der EU, Bilanzsumme, Gesamtenergieverbrauch in Deutschland, Rechtsform,
+    Konzernstellung, Branche, Produktkategorien, Rolle in der
+    Wertschöpfungskette, eingesetzte Materialien, Absatzmärkte, Standorte sowie
+    die Angaben zu Endkundengeschäft, Kapitalmarktorientierung, Umweltaussagen
+    im Marketing, zur Einfuhr in die EU, zur Nassveredlung mit Abwasser an
+    einem Standort in Deutschland und dazu, ob Ihre Produkte Stoffe der
+    ECHA-Kandidatenliste (SVHC) über 0,1&nbsp;% enthalten.
   </p>
   <p>
     Für die Bezeichnung des Unternehmens empfehlen wir ein Pseudonym. Die
@@ -98,6 +100,11 @@
     Zahlencode per E-Mail. Gespeichert werden der Zeitpunkt der Anforderung,
     ein Hashwert des Codes, sein Ablaufzeitpunkt (30&nbsp;Minuten) und die Zahl
     der Fehlversuche. Der Code selbst wird nicht gespeichert.
+  </p>
+  <p>
+    Kommt die E-Mail nicht an, kann die Administration ersatzweise einen
+    einmaligen Link zum Zurücksetzen erzeugen, der 24&nbsp;Stunden gilt. Auch
+    davon speichern wir nur einen Hashwert, nicht den Link selbst.
   </p>
 
   <h4>2.6 Server-Protokolle</h4>
@@ -164,8 +171,20 @@
 
   <h3>5. Auswertung durch künstliche Intelligenz</h3>
   <p>
-    Die Einschätzung, welche Regulierungen für Ihr Unternehmen einschlägig
-    sein könnten, erstellt ein Sprachmodell des Anbieters Google
+    Von den 30 Regulierungen der Prüfung entscheidet die Anwendung 15 selbst,
+    nach festen Regeln aus den Angaben Ihres Profils: die
+    EU-Nachhaltigkeitsberichterstattung (CSRD), das CSRD-Umsetzungsgesetz, das
+    CSR-Richtlinie-Umsetzungsgesetz, die Taxonomie-Verordnung, das
+    Hinweisgeberschutzgesetz, die Informationspflicht nach Art.&nbsp;33 REACH,
+    die SCIP-Meldepflicht, die Pflichten für behandelte Waren nach der
+    Biozid-Verordnung, die Verordnung über persönliche Schutzausrüstung, die
+    Medizinprodukte-Verordnung, die Schuhkennzeichnung, das
+    Energieeffizienzgesetz, Anhang&nbsp;38 der Abwasserverordnung sowie die
+    Herstellerverantwortung für Textilien in Frankreich und in den
+    Niederlanden. Für diese 15 geht keine Anfrage an Google.
+  </p>
+  <p>
+    Die Einschätzung zu den übrigen 15 Regulierungen erstellt ein Sprachmodell des Anbieters Google
     (<em>Gemini</em>, aufgerufen über die Schnittstelle
     <em>generativelanguage.googleapis.com</em>). Das Modell läuft nicht auf
     unserem Server, sondern bei Google. Bei jeder Prüfung werden dorthin
@@ -187,9 +206,11 @@
   <p>
     Übermittelt wird nie das vollständige Profil, sondern je Regulierung nur der
     Ausschnitt, der für genau diese Regulierung erheblich ist — bei der
-    Offenlegungsverordnung etwa allein die Branche, bei der Lieferkettenrichtlinie
+    Verpackungsverordnung etwa Branche, Produktkategorien, Rolle in der
+    Wertschöpfungskette, Absatzmärkte und die Angabe zum Import aus
+    Nicht-EU-Ländern, bei der Lieferkettenrichtlinie
     Beschäftigtenzahl, Umsatz, Rechtsform, Konzernstellung und Standorte. Von den
-    18 Merkmalen des Profils stehen höchstens acht in einer Anfrage. Da weder
+    21 Merkmalen des Profils stehen höchstens sieben in einer Anfrage. Da weder
     Name noch Kennung mitgehen, entsteht bei Google kein Datensatz, der Zahlen
     einem bestimmten Unternehmen zuordnet.
   </p>
@@ -250,9 +271,10 @@
         „Passwort ändern“ im Abschnitt „Konto löschen“; die Daten werden
         dabei sofort und vollständig entfernt.</li>
     <li>Fehlgeschlagene Anmeldeversuche: drei Stunden.</li>
-    <li>Anforderungen zum Zurücksetzen des Passworts: der Link verfällt nach
-        24 Stunden; der Vorgang bleibt zur Nachvollziehbarkeit gespeichert,
-        bis das Konto gelöscht wird.</li>
+    <li>Anforderungen zum Zurücksetzen des Passworts: der Zahlencode aus der
+        E-Mail verfällt nach 30 Minuten, ein ersatzweise von der Administration
+        erzeugter Link nach 24 Stunden; der Vorgang bleibt zur
+        Nachvollziehbarkeit gespeichert, bis das Konto gelöscht wird.</li>
     <li>Versandprotokoll der E-Mails: 30 Tage; beim Löschen des Kontos
         werden die Einträge zu Ihrer Adresse sofort mit entfernt.</li>
     <li>Server-Protokolle: bis zu sieben Tage.</li>
@@ -299,8 +321,9 @@
     keine Entscheidung, die Ihnen gegenüber rechtliche Wirkung entfaltet oder
     Sie in ähnlicher Weise erheblich beeinträchtigt; eine automatisierte
     Entscheidungsfindung im Sinne des Art. 22 DSGVO liegt nicht vor. Die
-    Ergebnisse werden von einer künstlichen Intelligenz erzeugt und können
-    unvollständig oder unrichtig sein.
+    Ergebnisse werden teils nach festen Regeln aus Ihren Angaben berechnet,
+    teils von einer künstlichen Intelligenz erzeugt (siehe Ziffer&nbsp;5); in
+    beiden Fällen können sie unvollständig oder unrichtig sein.
   </p>
 </div>
 

@@ -77,14 +77,18 @@ Eine SQLite-Datei (`data/esg.db`) mit Tabellen:
 - `db.py` — SQLite (Schema, Migration, CRUD), bcrypt
 - `fetcher.py` — HTTP-Download von Gesetzestexten, HTML/PDF-Extraktion, Cache mit ETag
 - `llm.py` — Provider-Abstraktion (Ollama/Anthropic/OpenAI), Volltext-Prompt, Retry/429-Handling
-- `regulations.py` — 16 Regulierungen + Auswahllisten (Branchen, Rechtsformen, Produkte,
+- `regulations.py` — 30 Regulierungen + Auswahllisten (Branchen, Rechtsformen, Produkte,
   Rolle in der Wertschoepfungskette, Materialien)
 
-## Die 16 Regulierungen
+## Die 30 Regulierungen
 
 CSDDD, LkSG, EUDR, FLR, CSRD, CSRD-DE, NFRD, CSR-RUG, Taxonomie-VO, HinSchG,
 Right to Repair, Oekodesign-VO, Vernichtungsverbot unverkaufter Konsumgueter
-(Del. VO (EU) 2026/296), PPWR, MinRohSorgG, EmpCo.
+(Del. VO (EU) 2026/296), PPWR, MinRohSorgG, EmpCo — und seit 29.09.2026:
+REACH Anhang XVII, REACH Art. 33, SCIP-Meldepflicht, POP-Verordnung, Biozid-VO
+(behandelte Waren), Textilkennzeichnungsverordnung, GPSR, PSA-Verordnung, MDR,
+Schuhkennzeichnung, Energieeffizienzgesetz, AbwV Anhang 38, REP TLC (Frankreich),
+UPV Textiel (Niederlande).
 
 Die massgebliche Liste steht in `regulations.py` (`REGULATIONS`) — diese
 Aufzaehlung ist nur eine Lesehilfe.

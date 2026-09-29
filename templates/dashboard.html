@@ -60,6 +60,11 @@
         <input type="text" class="fmt-cur" data-hidden="balance_sheet_eur" value="{{ '{:,.2f}'.format(company.get('balance_sheet_eur',0)|float).replace(',', 'X').replace('.', ',').replace('X', '.') if company.get('balance_sheet_eur',0)|float > 0 else '' }}" inputmode="decimal">
         <input type="hidden" name="balance_sheet_eur" value="{{ company.get('balance_sheet_eur',0)|float }}">
 
+        <div class="label-row"><label>{{ t("field_energy_gwh", lang) }}</label>{{ fh("energy_gwh") }}</div>
+        {%- set gwh = company.get('energy_gwh',0)|float -%}
+        <input type="text" class="fmt-dec" id="energy_gwh_view" data-hidden="energy_gwh" value="{{ '' if gwh <= 0 else (('%g' % gwh) if lang in ('en', 'zh') else (('%g' % gwh)|replace('.', ','))) }}" inputmode="decimal">
+        <input type="hidden" name="energy_gwh" value="{{ company.get('energy_gwh',0)|float }}">
+
         <div class="label-row"><label>{{ t("field_legal_form", lang) }}</label>{{ fh("legal_form") }}</div>
         <select name="legal_form">
           {% for v in LEGAL_FORMS %}
@@ -99,6 +104,17 @@
           <input type="checkbox" id="eu_importer" name="eu_importer" {{ 'checked' if company.get('eu_importer') }}>
           <label for="eu_importer">{{ t("field_eu_importer", lang) }}</label>{{ fh("eu_importer") }}
         </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="wet_processing_de" name="wet_processing_de" {{ 'checked' if company.get('wet_processing_de') }}>
+          <label for="wet_processing_de">{{ t("field_wet_processing", lang) }}</label>{{ fh("wet_processing") }}
+        </div>
+
+        <div class="label-row" style="margin-top:12px;"><label for="svhc_status">{{ t("field_svhc", lang) }}</label>{{ fh("svhc") }}</div>
+        <select name="svhc_status" id="svhc_status">
+          {% for v in SVHC_OPTIONS %}
+          <option value="{{ v }}" {{ 'selected' if (company.get('svhc_status') or SVHC_OPTIONS[0])==v }}>{{ t_opt(v, SVHC_LABELS, lang) }}</option>
+          {% endfor %}
+        </select>
       </div>
     </div>
 
@@ -284,7 +300,30 @@ function formatCur(input) {
   input.setSelectionRange(pos + diff, pos + diff);
 }
 
+// Kleine Kommazahlen (Energieverbrauch in GWh): Komma UND Punkt gelten als
+// Dezimaltrenner. Der Euro-Formatierer oben verwirft den Punkt — "2.5" wurde
+// dort zu 25 und loeste beim EnEfG faelschlich das Managementsystem aus.
+function parseDec(text) {
+  let v = (text || '').replace(/\s/g, '');
+  const lastComma = v.lastIndexOf(','), lastDot = v.lastIndexOf('.');
+  const sep = lastComma > lastDot ? ',' : '.';
+  const other = sep === ',' ? '.' : ',';
+  if ((v.split(sep).length - 1) > 1 && v.indexOf(other) < 0) {
+    v = v.split(sep).join('');            // mehrfach dasselbe Zeichen: Tausendertrenner
+  } else {
+    v = v.split(other).join('');          // das andere Zeichen ist Tausendertrenner
+    v = v.replace(sep, '.');
+  }
+  const n = parseFloat(v.replace(/[^\d.]/g, ''));
+  return isFinite(n) && n >= 0 ? String(n) : '0';
+}
+function syncDec(input) {
+  const h = document.querySelector('input[type=hidden][name="' + input.dataset.hidden + '"]');
+  h.value = parseDec(input.value);
+}
+
 // Event-Listener
+document.querySelectorAll('.fmt-dec').forEach(el => el.addEventListener('input', () => syncDec(el)));
 document.querySelectorAll('.fmt-int').forEach(el => el.addEventListener('input', () => formatInt(el)));
 document.querySelectorAll('.fmt-cur').forEach(el => el.addEventListener('input', () => formatCur(el)));
 
@@ -300,6 +339,7 @@ function syncAllHidden() {
     let parts = val.split(',');
     h.value = (parts[0] || '0') + (parts.length > 1 ? '.' + parts[1] : '');
   });
+  document.querySelectorAll('.fmt-dec').forEach(syncDec);
 }
 
 /* --- KI-Autofill --- */

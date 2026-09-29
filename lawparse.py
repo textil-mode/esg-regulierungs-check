@@ -204,6 +204,50 @@ def _block(sec: dict, cap: int) -> str:
     return f"{head}\n{body}" if body else head
 
 
+# Beginn eines nummerierten Eintrags in einer Anhangstabelle (REACH Anhang XVII:
+# "43.  Azofarbstoffe", "76.\nN,N-Dimethylformamid"). Absaetze innerhalb eines
+# Eintrags sind einstellig nummeriert ("1.", "2."), Eintraege mindestens
+# zweistellig — daran endet ein Eintrag beim naechsten hoeheren.
+_ENTRY_HEAD = re.compile(r"^(\d{2,3})([a-z]?)\.\s", re.M)
+
+
+def _focus_blocks(law_text: str, reg: dict, budget: int) -> str:
+    """Gezielte Auszuege fuer `focus_entries` (z. B. REACH Anhang XVII Nr. 43, 72).
+
+    Ein Anhang mit Dutzenden Eintraegen ist fuer `parse_sections` EIN Abschnitt;
+    gekappt auf das Vorrangbudget saehe das LLM nur die ersten Eintraege. Hier
+    wird jeder genannte Eintrag in Dokumentreihenfolge gesucht und mit eigener
+    Kopfzeile ausgegeben, damit die Fundstelle der "passage" stimmt.
+    Liefert '' wenn keiner gefunden wird — dann gilt der normale Ablauf.
+    """
+    entries = reg.get("focus_entries") or []
+    label = reg.get("focus_label") or "Nr. {n}"
+    found: list[tuple[str, int, int]] = []
+    pos = 0
+    for n in entries:
+        m = re.compile(rf"^{re.escape(n)}\.\s", re.M).search(law_text, pos)
+        if not m:
+            continue
+        num = int(re.match(r"\d+", n).group())
+        end = len(law_text)
+        for nxt in _ENTRY_HEAD.finditer(law_text, m.end()):
+            if int(nxt.group(1)) > num:
+                end = nxt.start()
+                break
+        found.append((n, m.start(), end))
+        pos = m.end()
+    if not found:
+        return ""
+    per = max(600, budget // len(found) - 60)
+    blocks = []
+    for n, start, end in found:
+        body = law_text[start:end].strip()
+        if len(body) > per:
+            body = body[:per].rstrip() + " […]"
+        blocks.append(f"=== {label.format(n=n)} ===\n{body}")
+    return "\n".join(blocks)[:budget]
+
+
 def build_context(reg: dict, law_text: str, guidelines: list[dict] | None,
                   max_chars: int) -> str:
     """Baut den LLM-Kontext fuer eine Regulierung.
@@ -231,9 +275,12 @@ def build_context(reg: dict, law_text: str, guidelines: list[dict] | None,
     g_len = sum(len(b) + 1 for b in g_blocks)
 
     law_budget = max(0, max_chars - len(header) - 1 - g_len)
-    sections = parse_sections(law_text)
+    focus = _focus_blocks(law_text, reg, law_budget)
+    sections = [] if focus else parse_sections(law_text)
 
-    if not sections:
+    if focus:
+        law_part = focus
+    elif not sections:
         # Kein erkennbarer Aufbau (TOC-Seite, Landingpage, PDF-Artefakte):
         # Rohtext unveraendert durchreichen.
         law_part = law_text[:law_budget]

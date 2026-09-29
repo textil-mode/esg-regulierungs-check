@@ -39,6 +39,10 @@ BUDGET = 25000
 MIN_CHARS = 8000
 MIN_SECTIONS = 3
 
+# Einzelnormen ohne Artikelgliederung (Katalogerweiterung 29.09.2026): die
+# Quelle ist bewusst nur die eine Vorschrift, nicht das ganze Gesetz.
+SHORT_SOURCES = {"SCIP": 1500, "AbwV38": 5000, "EPR_NL": 5000}
+
 KEEP_CACHE = "--keep" in sys.argv
 
 import fetcher  # noqa: E402
@@ -183,6 +187,16 @@ SOURCE_MARKERS: dict[str, list[str]] = {
     "CSR-RUG":     ["§ 289b", "500 Arbeitnehmer"],
     # Neu am 02.09.2026; der Volltext kommt ueber Cellar (32026R0296).
     "Vernichtungsverbot": ["2026/296", "acht Wochen"],
+    # Katalogerweiterung 29.09.2026. REACH lieferte bis dahin nur "Text von
+    # Bild" (Bildanker vor dem Textkoerper); Anhang XVII liegt hinter der
+    # Speichergrenze und wird ueber `text_from` angesteuert.
+    "REACH_XVII":  ["Azofarbstoffe", "Undecafluorhexansäure"],
+    "REACH_ART33": ["Artikel 33", "Massenprozent (w/w)"],
+    "SCIP":        ["Artikel 33 Absatz 1", "Chemikalienagentur"],
+    "BPR":         ["Artikel 58", "behandelte Ware"],
+    "EnEfG":       ["7,5 Gigawattstunden", "2,5 Gigawattstunden"],
+    "AbwV38":      ["Spinnstoffen und Garnen", "Textilveredlung"],
+    "Schuhkennzeichnung": ["Schuherzeugnisse", "Laufsohle"],
 }
 
 
@@ -192,6 +206,11 @@ def test_sources_deliver_fulltext() -> None:
     for reg in REGULATIONS:
         raw = _law_text(reg)
         n_sec = len(lawparse.parse_sections(raw))
+        if reg["key"] in SHORT_SOURCES:
+            floor = SHORT_SOURCES[reg["key"]]
+            check(len(raw) >= floor,
+                  f"{reg['key']:16s} Einzelnorm {len(raw):7d} Zeichen (>= {floor})")
+            continue
         check(len(raw) >= MIN_CHARS,
               f"{reg['key']:16s} Volltext {len(raw):7d} Zeichen (>= {MIN_CHARS})")
         check(n_sec >= MIN_SECTIONS,

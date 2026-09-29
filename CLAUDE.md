@@ -34,7 +34,7 @@
 | **Bremse gegen Mail-Fluten** (3 Anfragen je Adresse und 10 je Quell-IP in 60 min, ueber `db.take_quota` in derselben Tabelle wie die Login-Bremse) | `db.RESET_MAIL_*`, `app._forgot_password` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
 | Stammdaten-Frage "Import von Produkten aus Nicht-EU-Ländern" (internes Feld weiterhin `eu_importer`) | `templates/dashboard.html`, `db.eu_importer` | ✅ |
-| LLM-Analyse über 16 Regulierungen (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
+| Analyse über 30 Regulierungen: 15 regelbasiert, 15 über das LLM (Volltext + Guidelines) | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
 | **Datentrennung im globalen Cache** (siehe Invariante unten): der Prompt zeigt exakt die `relevant_fields` der Regulierung, der Firmenname steht nirgends darin, und der System-Prompt verbietet das Nennen eines Namens | `llm.py` `_format_profile`, `_SYSTEM_BASE` | ✅ |
 | **Handlungsplan je Karte**: "Gilt ab" mit unternehmensindividueller Frist (Phase-in) und aufklappbare "Erste Schritte" (2-4 kuratierte Stichpunkte + Leitlinien-Link) | `deadlines.py`, `regulations.py` `FIRST_STEPS_BY_REG_KEY`, `views.py` | ✅ |
@@ -49,7 +49,7 @@
 | **Erstkonsolidierung ≠ Notbehelf**: ist die einzige konsolidierte Fassung auf den ABl.-Tag datiert (z. B. ESG-Rating-VO), gibt es keine spaeteren Aenderungen — der Ursprungstext ist der geltende Text, es wird nicht gewarnt | `fetcher.py` `_is_initial_consolidation` | ✅ |
 | **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
 | **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
-| **Watchdog** (`python watchdog.py`): laedt alle 16 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
+| **Watchdog** (`python watchdog.py`): laedt alle 30 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
 | **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
 | **"Gesetzesstand vom …"** auf jeder Ergebnis-Karte | `app.py` `law_dates`, `views.py` | ✅ |
 | **PDF-Export im textil+mode-CD** (Logo, Verlaufskante, Statusfarben; gleicher Umfang wie das frühere CSV plus Kopfbereich und Zusammenfassung). Chinesisch nutzt die nicht eingebettete CID-Schrift STSong-Light — siehe Modul-Docstring | `/download-pdf`, `pdfexport.py` | ✅ |
@@ -405,6 +405,48 @@ Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER
   steckt noch in der Umgebung der beendeten `*-alt-*`-Container und lässt sich von dort testen,
   ohne ihn anzuzeigen.
 
+### Katalogerweiterung vom 29.09.2026 (14 Regulierungen, 4 Profilfelder)
+
+Auswahl: nur Vorschriften, die am 29.09.2026 für Textil- und Bekleidungsunternehmen
+schon Pflichten auslösen (PFHxA ab 10.10.2026 steht als Hinweis bei REACH Anhang XVII,
+die Abfallverbringungs-VO wurde bewusst weggelassen). Stammdaten am Primärtext
+recherchiert, Fundstellen je Eintrag als Kommentar.
+
+- **Neue Profilfelder:** Absatzmärkte zusätzlich „Frankreich“ und „Niederlande“
+  („andere EU-/EWR-Staaten“ meint seitdem die übrigen), `energy_gwh`
+  (Gesamtendenergieverbrauch DE, GWh/Jahr, Mittel der letzten drei Kalenderjahre),
+  `wet_processing_de` (Nassveredlung mit Abwasser in DE), `svhc_status`
+  (Ja/Nein/Nicht bekannt, Voreinstellung „Nicht bekannt“). Ausfüllhilfen von Claude
+  formuliert — **Freigabe durch den Nutzer steht aus**.
+- **Regelbasiert (kein LLM, Bausteine in 6 Sprachen, `regulations._COUPLINGS`):**
+  REACH_ART33, SCIP, BPR, PSA, MDR, Schuhkennzeichnung, EnEfG, AbwV38, EPR_FR, EPR_NL.
+  Statusfunktionen dürfen seitdem ein Drei-Tupel `(applies, fact, conclusion)`
+  liefern, wenn derselbe Ausgang unterschiedlich weitergeht (EnEfG 2,5 vs. 7,5 GWh).
+  EPR_FR/EPR_NL liefen zuerst über das LLM: im Live-Test schloss es aus dem
+  Absatzmarkt „Niederlande“ auf eine Pflicht in Frankreich und zitierte einen
+  Artikel, der in der abrufbaren Quelle fehlt — deshalb regelbasiert.
+- **Über das LLM:** REACH_XVII, POP, TKVO, GPSR (Kriterien enthalten eine Zeile
+  „Einordnung des Profils“, die sagt, wie die Profilfelder zu lesen sind).
+- **REACH-Abruf:** `fetcher._main_element` überspringt Bildanker
+  (`<a id="textofimagelink_…">`) — vorher kam von REACH nur „Text von Bild“ an; für alle
+  übrigen Quellen ist die Extraktion zeichengleich (geprüft an 6 EU-Quellen).
+  `text_from` (Regex, **letzte** Fundstelle) setzt den gespeicherten Text an die
+  Überschrift von Anhang XVII (Zeichen ~588 000 von 1,27 Mio., sonst hinter
+  `LAW_TEXT_MAX_CHARS`). `lawparse._focus_blocks` holt über `focus_entries` gezielt
+  die Einträge 43, 46a, 68, 72, 76, 79, 80, 81 mit eigener Kopfzeile
+  („=== Anhang XVII Nr. 72 ===“), weil der Anhang sonst ein einziger Abschnitt ist.
+- **Quellen:** Légifrance sperrt Server-Abrufe (403); EPR_FR lädt den verabschiedeten
+  Gesetzestext beim Sénat (enthält L541-10-9-1 und L541-10-27, nicht L541-10-1 11°).
+  EPR_NL lädt das versionsfeste XML der Fassung vom 01.07.2023 — bei einer Änderung
+  des Besluit `text_url` nachziehen. SCIP, AbwV38, EPR_NL sind Einzelnormen ohne
+  Artikelgliederung (`test_lawparse.SHORT_SOURCES`).
+- **Bekannt, nicht behoben:** Die SPARQL-Auflösung der konsolidierten Fassung beim Amt
+  für Veröffentlichungen lief am 29.09.2026 mehrfach in Timeouts; dann wird der
+  Basisrechtsakt geladen und rot markiert (vorhandener Schutz). Bei BPR, GPSR, MDR,
+  REACH beobachtet, beim nächsten Lauf aufgelöst.
+- Belege: `test_katalog_erweiterung.py` (ohne Netz), `test_lawparse.py` (Quellen, im
+  Container grün).
+
 ### Ausweichmodelle bei Lastspitzen (28.09.2026)
 
 Anlass: `gemini-3.1-flash-lite` antwortete minutenlang mit `503 high demand`. NFRD
@@ -483,7 +525,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `lawparse.py` | Zerlegt Gesetzestexte in Artikel-/§-/Anhang-Abschnitte und baut daraus den LLM-Kontext (Anwendungsbereich statt Praeambel) |
 | `test_lawparse.py` | Tests dazu — laufen gegen eine Kopie der DB (`data/esg_lawparse_test.db`), nie gegen `data/esg.db` |
 | `test_cache_stability.py` | Beweist die Wortstabilitaet der Begruendungen (6 Szenarien, eigene DB `data/esg_cache_test.db`). Ohne Argument mit Platzhalter statt LLM (kostenlos), mit `--live` echte Calls |
-| `regulations.py` | 16 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
+| `regulations.py` | 30 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
 | `watchdog.py` | Wöchentlicher Aktualitäts-Wächter (Cron auf dem VPS), schreibt `watchdog_runs` |
 | `i18n.py` | Übersetzungen (6 Sprachen) |
 | `db.py` | SQLite-Schema, Migrationen, Cache-Zugriff |
@@ -671,9 +713,9 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 
 1. https://ki-textil-mode.de/esg/ (bzw. Legacy https://schuckert.cloud/regulierungs-check) → Login-Seite laedt, Logo oben links sichtbar, Footer "© 2026 · Alle Rechte vorbehalten".
 2. Nach Login: Dashboard mit Button "Regulierungsliste" oben rechts neben "Jetzt pruefen". Rechts in der Rechts-Spalte die Checkbox "Import von Produkten aus Nicht-EU-Ländern".
-3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 19 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
+3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 30 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
 4. Footer unten rechts: `<details>` "Hinweis" → auf Klick Popover mit Claude-Code-/Codex-Text.
-5. "Jetzt pruefen" laeuft bis 19/19 durch, keine rote ✕-Fehlerkarte. "Passage" max. ~280 Zeichen.
+5. "Jetzt pruefen" laeuft bis 30/30 durch, keine rote ✕-Fehlerkarte. "Passage" max. ~280 Zeichen.
 
 ---
 

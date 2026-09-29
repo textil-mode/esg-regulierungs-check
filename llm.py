@@ -112,6 +112,9 @@ _PROFILE_LABELS: dict[str, str] = {
     "materials": "Materials used",
     "sales_markets": "Sales markets",
     "sites": "Sites",
+    "energy_gwh": "Total final energy consumption in Germany (GWh/year, average of the last 3 years; 0 = not stated)",
+    "wet_processing_de": "Wet processing of textiles with wastewater at a site in Germany",
+    "svhc_status": "Products contain SVHC (ECHA Candidate List) above 0.1 %",
 }
 
 _USER_TEMPLATE = """{profile}
@@ -147,6 +150,8 @@ def _render_field(field: str, value) -> str:
         return "yes" if value else "no"
     if field in _INT_FIELDS:
         return str(int(value or 0))
+    if field in _DECIMAL_FIELDS:
+        return f"{float(value or 0):.2f}"
     if field in _FLOAT_FIELDS:
         return f"{float(value or 0):,.0f}".replace(",", ".")
     return str(value or "-")
@@ -178,9 +183,11 @@ def _format_profile(profile: dict, reg: dict) -> str:
 # sortiert (die Reihenfolge im Formular ist bedeutungslos).
 _LIST_FIELDS = frozenset({"product_categories", "value_chain_roles", "materials",
                           "sales_markets"})
-_BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer"})
+_BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer", "wet_processing_de"})
 _INT_FIELDS = frozenset({"employees", "employees_de"})
-_FLOAT_FIELDS = frozenset({"revenue_eur", "revenue_eu_eur", "balance_sheet_eur"})
+_FLOAT_FIELDS = frozenset({"revenue_eur", "revenue_eu_eur", "balance_sheet_eur", "energy_gwh"})
+# Kleine Kommazahlen: im Prompt mit zwei Nachkommastellen (7,5 GWh darf nicht zu "8" werden).
+_DECIMAL_FIELDS = frozenset({"energy_gwh"})
 
 
 def _stable_value(field: str, value):

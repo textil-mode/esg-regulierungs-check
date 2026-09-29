@@ -97,11 +97,34 @@ def init_fetcher() -> None:
         )
 
 
+_MAIN_ID = re.compile("content|main|text", re.I)
+
+
+def _main_element(soup):
+    """Element mit dem eigentlichen Text: <main>, sonst das erste passende id-Element.
+
+    Uebersprungen werden Links und Bildverweise. Rechtsakte mit Abbildungen
+    (REACH: Strukturformeln) tragen im Cellar-HTML Anker wie
+    `<a id="textofimagelink_1">` VOR dem Textkoerper; bis 29.09.2026 blieb von
+    der ganzen REACH-Verordnung deshalb nur "Text von Bild" uebrig. Fuer alle
+    Quellen, bei denen schon vorher Text ankam, war das erste Treffer-Element
+    kein solcher Anker — ihr Ergebnis bleibt unveraendert.
+    """
+    main = soup.find("main")
+    if main:
+        return main
+    for element in soup.find_all(id=_MAIN_ID):
+        if element.name == "a" or str(element.get("id") or "").lower().startswith("textofimage"):
+            continue
+        return element
+    return soup.body or soup
+
+
 def _extract_html(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form"]):
         tag.decompose()
-    main = soup.find("main") or soup.find(id=re.compile("content|main|text", re.I)) or soup.body or soup
+    main = _main_element(soup)
     text = main.get_text("\n", strip=True)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
@@ -564,6 +587,23 @@ def source_is_base_act_fallback(source_status: int | None) -> bool:
     return source_status is not None and source_status <= SOURCE_STATUS_BASE_ACT_OFFSET
 
 
+def _apply_text_from(text: str, reg: dict) -> str:
+    """Schneidet den Text ab der LETZTEN Fundstelle von `reg["text_from"]` zu.
+
+    Ohne Marke oder ohne Treffer bleibt der Text unveraendert (siehe Aufrufer).
+    """
+    marker = reg.get("text_from")
+    if not marker:
+        return text
+    found = None
+    for found in re.finditer(marker, text, re.M):
+        pass
+    if found:
+        return text[found.start():]
+    print(f"[fetch] {reg.get('key')}: Einstiegsmarke nicht gefunden — Text ab Beginn", flush=True)
+    return text
+
+
 def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> dict:
     """Lädt den Gesetzestext.
 
@@ -665,6 +705,14 @@ def fetch_law_text(reg: dict, *, language: str = "de", force: bool = False) -> d
     if resp.status_code >= 400 and not text:
         return _cached_result(row, resp.status_code, f"HTTP {resp.status_code}")
 
+    # Optionale Einstiegsmarke (`text_from` in regulations.py): bei sehr langen
+    # Rechtsakten, deren massgeblicher Teil hinter der Speichergrenze laege.
+    # REACH hat rund 1,27 Mio. Zeichen, Anhang XVII beginnt bei etwa 588 000 —
+    # ohne Marke schnitte `_store_limit()` ihn vollstaendig ab. Massgeblich ist
+    # die LETZTE Fundstelle: dieselbe Ueberschrift steht vorher in den
+    # Inhaltsverzeichnissen (bei REACH zweimal, Zeichen 15 718 und 264 751).
+    # Findet sich die Marke nicht, bleibt der Text ungekuerzt.
+    text = _apply_text_from(text, reg)
     text = text[:_store_limit()]
 
     # --- Schutz vor Datenverlust ------------------------------------------

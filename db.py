@@ -12,7 +12,7 @@ from typing import Optional
 
 import bcrypt
 
-from regulations import (BRANCHES, MATERIALS, PRODUCT_CATEGORIES, SALES_MARKETS,
+from regulations import (BRANCHES, MATERIALS, PRODUCT_CATEGORIES, SALES_MARKETS, SVHC_OPTIONS,
                          SITE_TYPES, VALUE_CHAIN_ROLES)
 
 
@@ -54,6 +54,12 @@ COMPANY_EXTRA_COLUMNS = [
     # stellen fuer Drittland-Unternehmen darauf ab, nicht auf den weltweiten).
     ("revenue_eu_eur", "REAL DEFAULT 0"),
     ("sales_markets_json", "TEXT"),
+    # Seit 29.09.2026: Gesamtenergieverbrauch in Deutschland (GWh/Jahr, Mittel
+    # der letzten drei Jahre, §§ 8/9 EnEfG), Nassprozesse mit Abwasser an einem
+    # deutschen Standort (AbwV Anhang 38) und SVHC-Angabe (REACH Art. 33, SCIP).
+    ("energy_gwh", "REAL DEFAULT 0"),
+    ("wet_processing_de", "INTEGER DEFAULT 0"),
+    ("svhc_status", "TEXT"),
 ]
 
 # Umbenannte Auswahlwerte: alter Wert -> heutiger Wert. Anders als bei den
@@ -977,6 +983,10 @@ def get_company(user_id: int) -> Optional[dict]:
     data["listed"] = bool(data.get("listed"))
     data["env_claims"] = bool(data.get("env_claims"))
     data["eu_importer"] = bool(data.get("eu_importer"))
+    data["wet_processing_de"] = bool(data.get("wet_processing_de"))
+    data["energy_gwh"] = float(data.get("energy_gwh") or 0)
+    if data.get("svhc_status") not in SVHC_OPTIONS:
+        data["svhc_status"] = SVHC_OPTIONS[0]
     return data
 
 
@@ -999,9 +1009,10 @@ def upsert_company(user_id: int, data: dict) -> None:
                 sites_json, updated_at, balance_sheet_eur, legal_form, group_role,
                 env_claims, product_categories_json, employees_de, language,
                 eu_importer, value_chain_roles_json, materials_json,
-                revenue_eu_eur, sales_markets_json
+                revenue_eu_eur, sales_markets_json,
+                energy_gwh, wet_processing_de, svhc_status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 name=excluded.name,
                 employees=excluded.employees,
@@ -1022,7 +1033,10 @@ def upsert_company(user_id: int, data: dict) -> None:
                 value_chain_roles_json=excluded.value_chain_roles_json,
                 materials_json=excluded.materials_json,
                 revenue_eu_eur=excluded.revenue_eu_eur,
-                sales_markets_json=excluded.sales_markets_json
+                sales_markets_json=excluded.sales_markets_json,
+                energy_gwh=excluded.energy_gwh,
+                wet_processing_de=excluded.wet_processing_de,
+                svhc_status=excluded.svhc_status
             """,
             (
                 user_id,
@@ -1046,6 +1060,10 @@ def upsert_company(user_id: int, data: dict) -> None:
                 materials_json,
                 float(data.get("revenue_eu_eur") or 0),
                 markets_json,
+                float(data.get("energy_gwh") or 0),
+                1 if data.get("wet_processing_de") else 0,
+                data.get("svhc_status") if data.get("svhc_status") in SVHC_OPTIONS
+                else SVHC_OPTIONS[0],
             ),
         )
 

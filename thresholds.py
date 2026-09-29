@@ -8,12 +8,13 @@ BEVOR sie eintritt.
 Geprueft werden nur die zahlengebundenen Schwellen, die sich aus dem Profil
 ablesen lassen: LkSG (1.000 Arbeitnehmer im Inland), HinSchG (50 Beschaeftigte
 im Inland), CSRD (1.000 Beschaeftigte UND 450 Mio. EUR) und CSDDD (5.000
-Beschaeftigte UND 1.500 Mio. EUR). Naehe heisst: innerhalb von 20 Prozent
+Beschaeftigte UND 1.500 Mio. EUR) und seit 29.09.2026 das EnEfG (mehr als
+2,5 GWh Umsetzungsplaene, mehr als 7,5 GWh Managementsystem). Naehe heisst: innerhalb von 20 Prozent
 unterhalb oder oberhalb der Schwelle.
 
 Die Vergleichsoperatoren folgen exakt dem Gesetzeswortlaut und damit den
 Statusfunktionen in `regulations.py`: LkSG und HinSchG sagen "mindestens"
-(>=), CSRD und CSDDD sagen "mehr als" (>).
+(>=), CSRD, CSDDD und EnEfG sagen "mehr als" (>).
 
 Rueckgabe: Liste von {"key": "<i18n-Schluessel>", "values": {...}} in fester
 Reihenfolge. Der Text steht in `i18n.THRESHOLD_HINTS` in sechs Sprachen.
@@ -32,6 +33,9 @@ _CSRD_MA = 1000
 _CSRD_UMSATZ = 450_000_000
 _CSDDD_MA = 5000
 _CSDDD_UMSATZ = 1_500_000_000
+# § 9 Abs. 1 und § 8 Abs. 1 EnEfG, jeweils "von mehr als".
+_ENEFG_PLAN_GWH = 2.5
+_ENEFG_MANAGEMENT_GWH = 7.5
 
 
 def _unter(value: float, threshold: float) -> bool:
@@ -74,7 +78,9 @@ def near_thresholds(profile: dict) -> list[dict]:
     rev = profile.get("revenue_eur") or 0
 
     hints: list[dict] = []
-    values = {"employees": emp, "employees_de": emp_de, "revenue_eur": rev}
+    gwh = float(profile.get("energy_gwh") or 0)
+    values = {"employees": emp, "employees_de": emp_de, "revenue_eur": rev,
+              "energy_gwh": gwh}
 
     # LkSG — § 1 Abs. 1 Nr. 2: "in der Regel mindestens 1 000 Arbeitnehmer".
     if emp_de >= _LKSG_MA:
@@ -99,5 +105,16 @@ def near_thresholds(profile: dict) -> list[dict]:
     lage = _zwei_merkmale(emp, rev, _CSDDD_MA, _CSDDD_UMSATZ)
     if lage:
         hints.append({"key": f"csddd_knapp_dar{lage}", "values": values})
+
+    # EnEfG — "mehr als"; ohne Angabe (0) kein Hinweis. Die Baender um 2,5 und
+    # 7,5 GWh (2,0-3,0 bzw. 6,0-9,0) ueberschneiden sich nicht.
+    if gwh > 0:
+        for key, schwelle in (("enefg_7_5", _ENEFG_MANAGEMENT_GWH),
+                              ("enefg_2_5", _ENEFG_PLAN_GWH)):
+            if gwh > schwelle:
+                if _ueber(gwh, schwelle):
+                    hints.append({"key": f"{key}_knapp_darueber", "values": values})
+            elif _unter(gwh, schwelle):
+                hints.append({"key": f"{key}_knapp_darunter", "values": values})
 
     return hints
