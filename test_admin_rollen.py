@@ -117,7 +117,7 @@ chef = client_als(ADMIN)
 seite = chef.get("/admin/konten").get_data(as_text=True)
 pruefe("Zum Admin machen" in seite and "Admin (fest)" in seite,
        "Knopf \"Zum Admin machen\" und Kennzeichnung des festen Kontos sichtbar")
-fest_zeile = seite.split(f"<td>{ADMIN}</td>", 1)[1].split("</tr>", 1)[0]
+fest_zeile = seite.split(f">{ADMIN}</td>", 1)[1].split("</tr>", 1)[0]
 pruefe("Zum Admin machen" not in fest_zeile and "entziehen" not in fest_zeile,
        "am festen Konto selbst steht kein Knopf")
 versandt.clear()
@@ -130,7 +130,7 @@ pruefe([m["to"] for m in versandt] == ["berta@example.org"]
        "Berta erhaelt eine Mail mit Absender der Vergabe und Link")
 pruefe(db.admin_emails() == ["berta@example.org"], "admin_emails() liefert Berta")
 seite = chef.get("/admin/konten").get_data(as_text=True)
-berta_zeile = seite.split("<td>berta@example.org</td>", 1)[1].split("</tr>", 1)[0]
+berta_zeile = seite.split(">berta@example.org</td>", 1)[1].split("</tr>", 1)[0]
 pruefe("Admin-Recht entziehen" in berta_zeile and 'data-sort-value="Admin"' in berta_zeile,
        "in der Liste als Admin gekennzeichnet, mit Knopf zum Entziehen")
 
