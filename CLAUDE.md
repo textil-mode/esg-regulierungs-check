@@ -448,6 +448,18 @@ Nutzerentscheidung: niemand wird mehr automatisch freigeschaltet.
   Kontenliste.
 - Belege: `test_freischaltung.py`, `test_konto_sicherheit.py` (Block 1).
 
+### Textänderungen vom 29.09.2026 (nachmittags)
+
+- **Meldung nach der Registrierung** (`ok_signup_check_mail`) und **Eingangsmail**
+  (`mail_request_subject`, erster Satz von `mail_request_body`) sprechen jetzt von
+  „Registrierung“ statt „Anfrage“ — wörtliche Vorgabe des Nutzers. Die Meldung hat zwei
+  Absätze; `.flash` in `base.html` trägt dafür `white-space: pre-line` (keine andere
+  Flash-Meldung enthält Zeilenumbrüche).
+- **Nassveredlung → „Abwasser aus Textilherstellung oder -veredlung in Deutschland“**
+  (`field_wet_processing`) samt Ausfüllhilfe `wet_processing`, außerdem neue Ausfüllhilfe
+  `svhc`. Reine Oberfläche; interner Feldname `wet_processing_de` und die AbwV38-Bausteine
+  sind unverändert, `_PROMPT_VERSION` nicht hochgezählt.
+
 ### Admin-Rechte über die Oberfläche (seit 29.09.2026)
 
 - **Zwei Arten von Admins.** Fest hinterlegt: `app.ADMIN_EMAILS` (derzeit nur
