@@ -389,8 +389,18 @@ Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER
 
 ### API-Schlüssel: wo er liegt und wie er getauscht wird (Stand 29.09.2026)
 
-- **Aktiver Schlüssel** (Endung `…7cTw`): Google-Konto **texstarted@gmail.com**, AI-Studio-Projekt
-  **„ESG Service“** (`gen-lang-client-0057257718`), Name „ESG-Check ab 2026-09-29“.
+- **Aktiver Schlüssel** (seit 29.09.2026 mittags, Endung `…NGLA`): Google-Konto
+  **michael.schuckert@googlemail.com**, AI-Studio-Projekt **„Gemini Project“**
+  (`gen-lang-client-0397724158`), Name „ESG-Check bezahlt ab 2026-09-29“, **Preisstufe 1 ·
+  nachträgliche Zahlung** über „Mein Rechnungskonto“ (Nutzerentscheidung: einfachster Weg).
+- **Kostenlose Stufe vermeiden:** Das Projekt „ESG Service“ (texstarted@gmail.com) hat KEIN
+  Rechnungskonto. Der dortige Schlüssel `…7cTw` lief nur am Vormittag des 29.09.2026. In der
+  kostenlosen Stufe darf Google Eingaben zur Produktverbesserung nutzen — das widerspricht der
+  Datenschutzerklärung (Ziffer 5). Vor jedem Schlüsseltausch in AI Studio die Spalte
+  „Abrechnungsstufe“ prüfen.
+- **Vorauszahlung:** Google stellt das Rechnungskonto nach dem 12.10.2026 automatisch auf
+  Vorauszahlung um; bei leerem Guthaben stoppt die Schnittstelle (ESG und alle anderen
+  Projekte im „Gemini Project“).
 - Der Vorgänger (`…qaUw`, „ESG-Check gueltig ab 2026-09-04b“) lag in einem **anderen** Google-Konto,
   Projekt „Daily Dashboard“ (`beaming-park-503107-e2`), und wurde am 29.09. gelöscht, nachdem er
   über die rote Fehlerkarte sichtbar geworden war. AI Studio konnte ihn nicht löschen („konnte nicht
