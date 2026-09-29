@@ -411,16 +411,26 @@ Nutzerentscheidung: niemand wird mehr automatisch freigeschaltet.
 
 - `users.approved` (Default 1 → alle Bestandskonten bleiben nutzbar), `approved_at`,
   `signup_lang`. `db.create_user(..., approved=False, lang=...)` nur aus `app._signup`.
-- **Registrierung** (weiterhin gleiche Antwort für jede Adresse, alles Kontoabhängige im
-  Thread): neue Adresse → gesperrte Anfrage + Eingangsbestätigung an die Person +
-  Mail an alle `ADMIN_EMAILS`; offene Anfrage erneut → nur Eingangsbestätigung;
-  freigeschaltetes Konto → bisherige Mail „Es besteht bereits ein Konto“.
+- **Registrierung ohne Passwort** (weiterhin gleiche Antwort für jede Adresse, alles
+  Kontoabhängige im Thread): neue Adresse → gesperrte Anfrage mit Zufalls-Hash +
+  Eingangsbestätigung an die Person + Mail an alle `ADMIN_EMAILS` (höchstens
+  `ADMIN_MAIL_MAX_PER_HOUR` = 10 je Stunde, danach nur noch in der Liste); offene Anfrage
+  erneut → nur Eingangsbestätigung; freigeschaltetes Konto → „Es besteht bereits ein
+  Konto“. Höchstens `db.PENDING_MAX` = 200 offene Anfragen, unbearbeitete werden nach
+  `PENDING_MAX_DAYS` = 30 Tagen gelöscht (`db.purge_stale_pending`). Die Bremse je IP
+  zählt IPv6 als /64 (`app._quota_ip`). Adressprüfung `app._EMAIL_RE`, max. 254 Zeichen.
+- **Warum ohne Passwort** (Sicherheitsprüfung 29.09.2026): mit Passwort bei der
+  Registrierung ließ sich eine fremde Adresse mit dem eigenen Passwort besetzen (M1), und
+  Registrieren + sofort Anmelden verriet, ob die Adresse schon ein Konto hatte (M2). Jetzt
+  setzt nur, wer das Postfach hat, das Passwort — mit dem Code aus der Freischalt-Mail.
 - **Anmeldung** einer offenen Anfrage mit richtigem Passwort: 403 + „noch nicht
   freigeschaltet“, keine Sitzung. Mit falschem Passwort wie bisher „Anmeldung
   fehlgeschlagen“ (verrät nichts).
 - **Admin** `/admin/konten`: Abschnitt „Offene Zugangsanfragen“ mit „Freischalten“
-  (POST `/admin/anfragen/<id>/freischalten` → Mail `mail_signup_*` = „Ihr Zugang ist
-  freigeschaltet“ mit Link aus `PUBLIC_BASE_URL`, in `signup_lang`) und „Ablehnen“
+  (POST `/admin/anfragen/<id>/freischalten` → Mail `mail_signup_*` mit sechsstelligem
+  Code, `ACTIVATION_CODE_TTL_DAYS` = 7 Tage gültig, und Link auf `/passwort-neu` aus
+  `PUBLIC_BASE_URL`, in `signup_lang`; abgelaufen → „Passwort vergessen“; genau eine
+  Mail auch bei gleichzeitigen Klicks, `UPDATE … AND approved = 0` + `rowcount`) und „Ablehnen“
   (POST `/admin/anfragen/<id>/ablehnen` → `db.reject_user`, nur für offene Anfragen,
   löscht samt Versandprotokoll, **keine** Mail). Offene Anfragen zählen nicht in der
   Kontenliste.

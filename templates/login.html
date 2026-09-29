@@ -56,11 +56,8 @@
     <form method="post" autocomplete="off">
       <input type="hidden" name="action" value="signup">
       <label>{{ t("email", lang) }}</label>
-      <input type="email" name="email" required autocomplete="new-email" placeholder=" ">
-      <label>{{ t("password_min", lang) }}</label>
-      <input type="password" name="password" required minlength="8" autocomplete="new-password" placeholder=" ">
-      <label>{{ t("password_repeat", lang) }}</label>
-      <input type="password" name="password2" required minlength="8" autocomplete="new-password" placeholder=" ">
+      <input type="email" name="email" required maxlength="254" autocomplete="email" placeholder=" ">
+      <p class="help-text" style="margin:4px 0 12px;">{{ t("signup_hint", lang) }}</p>
       <button type="submit" class="btn btn-primary ack-gated" style="width:100%;margin-top:6px;" disabled title="{{ t('login_ack_required', lang) }}">{{ t("btn_signup", lang) }}</button>
     </form>
   </div>

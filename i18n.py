@@ -773,12 +773,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "待处理的访问申请",
     },
     "admin_pending_hint": {
-        "de": "Neue Registrierungen bleiben gesperrt, bis sie hier freigeschaltet werden. Beim Freischalten erhält die Person eine E-Mail mit dem Anmeldelink. Beim Ablehnen wird die Anfrage samt Daten gelöscht, ohne Nachricht an die Person.",
-        "en": "New registrations stay locked until they are activated here. On activation, the person receives an email with the sign-in link. On rejection, the request and its data are deleted without notifying the person.",
-        "es": "Los nuevos registros permanecen bloqueados hasta que se activan aquí. Al activarlos, la persona recibe un correo con el enlace de acceso. Al rechazarlos, la solicitud y sus datos se eliminan sin avisar a la persona.",
-        "fr": "Les nouvelles inscriptions restent bloquées jusqu'à leur activation ici. Lors de l'activation, la personne reçoit un e-mail avec le lien de connexion. En cas de refus, la demande et ses données sont supprimées sans que la personne soit avertie.",
-        "it": "Le nuove registrazioni restano bloccate finché non vengono attivate qui. Con l'attivazione la persona riceve un'e-mail con il link di accesso. In caso di rifiuto la richiesta e i relativi dati vengono eliminati senza avvisare la persona.",
-        "zh": "新注册在此处开通前将保持锁定。开通后，对方会收到一封包含登录链接的电子邮件。拒绝时，申请及相关数据将被删除，且不会通知对方。",
+        "de": "Neue Registrierungen bleiben gesperrt, bis sie hier freigeschaltet werden. Beim Freischalten erhält die Person eine E-Mail mit einem Code, mit dem sie ihr Passwort festlegt (7 Tage gültig). Beim Ablehnen wird die Anfrage samt Daten gelöscht, ohne Nachricht an die Person. Unbearbeitete Anfragen werden nach 30 Tagen automatisch gelöscht.",
+        "en": "New registrations stay locked until they are activated here. On activation, the person receives an email with a code to set their password (valid for 7 days). On rejection, the request and its data are deleted without notifying the person. Unprocessed requests are deleted automatically after 30 days.",
+        "es": "Los nuevos registros permanecen bloqueados hasta que se activan aquí. Al activarlos, la persona recibe un correo con un código para establecer su contraseña (válido 7 días). Al rechazarlos, la solicitud y sus datos se eliminan sin avisar a la persona. Las solicitudes sin tramitar se eliminan automáticamente a los 30 días.",
+        "fr": "Les nouvelles inscriptions restent bloquées jusqu'à leur activation ici. Lors de l'activation, la personne reçoit un e-mail avec un code pour définir son mot de passe (valable 7 jours). En cas de refus, la demande et ses données sont supprimées sans que la personne soit avertie. Les demandes non traitées sont supprimées automatiquement après 30 jours.",
+        "it": "Le nuove registrazioni restano bloccate finché non vengono attivate qui. Con l'attivazione la persona riceve un'e-mail con un codice per impostare la password (valido 7 giorni). In caso di rifiuto la richiesta e i relativi dati vengono eliminati senza avvisare la persona. Le richieste non evase vengono eliminate automaticamente dopo 30 giorni.",
+        "zh": "新注册在此处开通前将保持锁定。开通后，对方会收到一封包含验证码的电子邮件，用于设置密码（有效期 7 天）。拒绝时，申请及相关数据将被删除，且不会通知对方。未处理的申请将在 30 天后自动删除。",
     },
     "admin_pending_empty": {
         "de": "Keine offenen Anfragen.",
@@ -821,20 +821,20 @@ UI: dict[str, dict[str, str]] = {
         "zh": "确定拒绝该申请并删除相关数据吗？对方不会收到任何通知。",
     },
     "admin_approved_ok": {
-        "de": "{email} ist freigeschaltet und erhält den Anmeldelink per E-Mail.",
-        "en": "{email} has been activated and receives the sign-in link by email.",
-        "es": "{email} está activado y recibe el enlace de acceso por correo.",
-        "fr": "{email} est activé et reçoit le lien de connexion par e-mail.",
-        "it": "{email} è stato attivato e riceve il link di accesso via e-mail.",
-        "zh": "{email} 已开通，登录链接将通过电子邮件发送。",
+        "de": "{email} ist freigeschaltet und erhält per E-Mail den Code zum Festlegen des Passworts.",
+        "en": "{email} has been activated and receives the code for setting the password by email.",
+        "es": "{email} está activado y recibe por correo el código para establecer la contraseña.",
+        "fr": "{email} est activé et reçoit par e-mail le code pour définir son mot de passe.",
+        "it": "{email} è stato attivato e riceve via e-mail il codice per impostare la password.",
+        "zh": "{email} 已开通，设置密码的验证码将通过电子邮件发送。",
     },
     "admin_approved_nomail": {
-        "de": "{email} ist freigeschaltet. Der Mailversand ist nicht eingerichtet, bitte die Person selbst informieren.",
-        "en": "{email} has been activated. Email sending is not set up, please inform the person yourself.",
-        "es": "{email} está activado. El envío de correos no está configurado; informe usted mismo a la persona.",
-        "fr": "{email} est activé. L'envoi d'e-mails n'est pas configuré, veuillez informer la personne vous-même.",
-        "it": "{email} è stato attivato. L'invio di e-mail non è configurato: informi Lei stesso la persona.",
-        "zh": "{email} 已开通。邮件发送尚未配置，请自行通知对方。",
+        "de": "{email} ist freigeschaltet. Der Mailversand ist nicht eingerichtet: bitte unter „Passwort-Resets“ einen Link erzeugen und der Person selbst geben.",
+        "en": "{email} has been activated. Email sending is not set up: please create a link under “Password resets” and pass it to the person yourself.",
+        "es": "{email} está activado. El envío de correos no está configurado: cree un enlace en «Restablecimientos de contraseña» y entrégueselo usted mismo a la persona.",
+        "fr": "{email} est activé. L'envoi d'e-mails n'est pas configuré : veuillez créer un lien sous « Réinitialisations de mot de passe » et le transmettre vous-même à la personne.",
+        "it": "{email} è stato attivato. L'invio di e-mail non è configurato: crei un link in «Reimpostazioni password» e lo consegni Lei stesso alla persona.",
+        "zh": "{email} 已开通。邮件发送尚未配置：请在“密码重置”中生成链接并自行转交对方。",
     },
     "admin_rejected_ok": {
         "de": "Die Anfrage von {email} ist gelöscht.",
@@ -852,6 +852,14 @@ UI: dict[str, dict[str, str]] = {
         "it": "Questa richiesta non è più in sospeso.",
         "zh": "该申请已不再处于待处理状态。",
     },
+    "signup_hint": {
+        "de": "Ein Passwort legen Sie erst nach der Freischaltung fest: Sie erhalten dann eine E-Mail mit einem Code.",
+        "en": "You set a password only after your access has been activated: you will then receive an email with a code.",
+        "es": "La contraseña se establece después de la activación: recibirá entonces un correo con un código.",
+        "fr": "Vous définissez votre mot de passe après l'activation : vous recevrez alors un e-mail contenant un code.",
+        "it": "La password si imposta solo dopo l'attivazione: riceverà allora un'e-mail con un codice.",
+        "zh": "密码在访问权限开通后再设置：届时您会收到一封包含验证码的电子邮件。",
+    },
     "mail_signup_subject": {
         "de": "ESG-Regulierungs-Check: Ihr Zugang ist freigeschaltet",
         "en": "ESG Regulation Check: your access has been activated",
@@ -861,60 +869,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "ESG 法规检查：您的访问权限已开通",
     },
     "mail_signup_body": {
-        "de": (
-            "Guten Tag,\n\n"
-            "Ihr Zugang zum ESG-Regulierungs-Check ist freigeschaltet. Sie können "
-            "sich ab sofort anmelden:\n\n"
-            "{link}\n\n"
-            "Wenn Sie sich nicht registriert haben, können Sie die Nachricht "
-            "ignorieren.\n\n"
-            "Mit freundlichen Grüßen\n"
-            "ESG-Regulierungs-Check"
-        ),
-        "en": (
-            "Hello,\n\n"
-            "Your access to the ESG Regulation Check has been activated. You can sign "
-            "in right away:\n\n"
-            "{link}\n\n"
-            "If you did not register, you can ignore this message.\n\n"
-            "Kind regards\n"
-            "ESG Regulation Check"
-        ),
-        "es": (
-            "Buenos días:\n\n"
-            "Su acceso a la Verificación de Regulaciones ESG está activado. Ya "
-            "puede iniciar sesión:\n\n"
-            "{link}\n\n"
-            "Si usted no se ha registrado, puede ignorar este mensaje.\n\n"
-            "Atentamente,\n"
-            "Verificación de Regulaciones ESG"
-        ),
-        "fr": (
-            "Bonjour,\n\n"
-            "Votre accès à la Vérification des Réglementations ESG est activé. "
-            "Vous pouvez vous connecter dès maintenant :\n\n"
-            "{link}\n\n"
-            "Si vous ne vous êtes pas inscrit, vous pouvez ignorer ce message.\n\n"
-            "Cordialement,\n"
-            "Vérification des Réglementations ESG"
-        ),
-        "it": (
-            "Buongiorno,\n\n"
-            "Il Suo accesso alla Verifica delle Normative ESG è stato attivato. "
-            "Può accedere subito:\n\n"
-            "{link}\n\n"
-            "Se non si è registrato, può ignorare il messaggio.\n\n"
-            "Cordiali saluti\n"
-            "Verifica delle Normative ESG"
-        ),
-        "zh": (
-            "您好：\n\n"
-            "您的 ESG 法规检查访问权限已开通，现在即可登录：\n\n"
-            "{link}\n\n"
-            "如果这不是您本人的注册，可以忽略本邮件。\n\n"
-            "此致\n"
-            "ESG 法规检查"
-        ),
+        "de": "Guten Tag,\n\nIhr Zugang zum ESG-Regulierungs-Check ist freigeschaltet. Legen Sie jetzt Ihr Passwort fest. Ihr Code lautet:\n\n{code}\n\nGeben Sie ihn zusammen mit Ihrer E-Mail-Adresse und dem gewünschten Passwort hier ein:\n\n{link}\n\nDer Code gilt {tage} Tage. Ist er abgelaufen, fordern Sie auf der Anmeldeseite über „Passwort vergessen“ einen neuen an.\n\nWenn Sie sich nicht registriert haben, können Sie die Nachricht ignorieren.\n\nMit freundlichen Grüßen\nESG-Regulierungs-Check",
+        "en": "Hello,\n\nYour access to the ESG Regulation Check has been activated. Please set your password now. Your code is:\n\n{code}\n\nEnter it together with your email address and the password you want here:\n\n{link}\n\nThe code is valid for {tage} days. If it has expired, request a new one on the sign-in page via “Forgot password”.\n\nIf you did not register, you can ignore this message.\n\nKind regards\nESG Regulation Check",
+        "es": "Buenos días:\n\nSu acceso a la Verificación de Regulaciones ESG está activado. Establezca ahora su contraseña. Su código es:\n\n{code}\n\nIntrodúzcalo junto con su dirección de correo y la contraseña que desee aquí:\n\n{link}\n\nEl código es válido durante {tage} días. Si ha caducado, solicite uno nuevo en la página de acceso mediante «¿Olvidó su contraseña?».\n\nSi usted no se ha registrado, puede ignorar este mensaje.\n\nAtentamente,\nVerificación de Regulaciones ESG",
+        "fr": "Bonjour,\n\nVotre accès à la Vérification des Réglementations ESG est activé. Définissez maintenant votre mot de passe. Votre code est :\n\n{code}\n\nSaisissez-le ici avec votre adresse e-mail et le mot de passe souhaité :\n\n{link}\n\nLe code est valable {tage} jours. S'il a expiré, demandez-en un nouveau sur la page de connexion via « Mot de passe oublié ».\n\nSi vous ne vous êtes pas inscrit, vous pouvez ignorer ce message.\n\nCordialement,\nVérification des Réglementations ESG",
+        "it": "Buongiorno,\n\nil Suo accesso alla Verifica delle Normative ESG è stato attivato. Imposti ora la Sua password. Il Suo codice è:\n\n{code}\n\nLo inserisca qui insieme al Suo indirizzo e-mail e alla password desiderata:\n\n{link}\n\nIl codice è valido per {tage} giorni. Se è scaduto, ne richieda uno nuovo nella pagina di accesso tramite «Password dimenticata».\n\nSe non si è registrato, può ignorare il messaggio.\n\nCordiali saluti\nVerifica delle Normative ESG",
+        "zh": "您好：\n\n您的 ESG 法规检查访问权限已开通，请现在设置密码。您的验证码是：\n\n{code}\n\n请在以下页面输入该验证码、您的电子邮件地址和想要设置的密码：\n\n{link}\n\n验证码有效期为 {tage} 天。如已过期，请在登录页面通过“忘记密码”重新申请。\n\n如果这不是您本人的注册，可以忽略本邮件。\n\n此致\nESG 法规检查",
     },
     # Antwort auf eine Registrierung mit bereits vergebener Adresse. Sie geht
     # an den Inhaber, nicht an den Absender des Formulars — deshalb darf sie

@@ -267,15 +267,22 @@ def init_db() -> None:
 BCRYPT_ROUNDS = 12
 
 
-def create_user(email: str, password: str, *, approved: bool = True,
+def create_user(email: str, password: str | None, *, approved: bool = True,
                 lang: str | None = None) -> int:
     """Legt ein Konto an. Registrierungen kommen mit `approved=False` herein.
 
     Der Default `True` haelt Tests, Notausgaenge und Admin-Werkzeuge beim
     bisherigen Verhalten; die oeffentliche Registrierung setzt ausdruecklich
     `False` (siehe app._signup).
+
+    `password=None` (Registrierung seit 29.09.2026): das Konto bekommt den Hash
+    eines zufaelligen, nirgends gespeicherten Geheimnisses. Anmelden kann sich
+    damit niemand; das Passwort setzt die Person erst mit dem Code aus der
+    Freischalt-Mail. Wer eine fremde Adresse registriert, besetzt sie also nicht
+    mehr mit einem eigenen Passwort (Sicherheitspruefung 29.09.2026, M1/M2).
     """
-    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(BCRYPT_ROUNDS)).decode()
+    geheimnis = password.encode() if password is not None else secrets.token_bytes(32)
+    pw_hash = bcrypt.hashpw(geheimnis, bcrypt.gensalt(BCRYPT_ROUNDS)).decode()
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         cur = c.execute(
@@ -294,8 +301,36 @@ def is_approved(user_id: int) -> bool:
     return bool(row and row["approved"])
 
 
+# Offene Anfragen: Obergrenze und Frist (Sicherheitspruefung 29.09.2026, M3/N5).
+PENDING_MAX = 200
+PENDING_MAX_DAYS = 30
+# Gueltigkeit des Codes aus der Freischalt-Mail. Laenger als beim "Passwort
+# vergessen" (30 min), weil zwischen Anfrage und Freischaltung Tage liegen
+# koennen und die Person die Mail nicht sofort liest. Das Durchprobieren
+# bleibt durch CODE_MAX_ATTEMPTS je Code begrenzt; neue Codes erzeugt nur die
+# Administration.
+ACTIVATION_CODE_TTL_DAYS = 7
+
+
+def purge_stale_pending(days: int = PENDING_MAX_DAYS) -> int:
+    """Loescht offene Anfragen, die aelter als `days` Tage sind. Rueckgabe: Anzahl."""
+    grenze = (datetime.utcnow() - timedelta(days=days)).isoformat()
+    with _conn() as c:
+        alt = c.execute("SELECT id, email FROM users WHERE approved = 0 AND created_at < ?",
+                        (grenze,)).fetchall()
+        for row in alt:
+            _delete_account_rows(c, row["id"], row["email"])
+    return len(alt)
+
+
+def count_pending() -> int:
+    with _conn() as c:
+        return c.execute("SELECT COUNT(*) FROM users WHERE approved = 0").fetchone()[0]
+
+
 def list_pending() -> list[dict]:
-    """Offene Zugangsanfragen, aelteste zuerst."""
+    """Offene Zugangsanfragen, aelteste zuerst (abgelaufene werden vorher geloescht)."""
+    purge_stale_pending()
     with _conn() as c:
         rows = c.execute(
             "SELECT id, email, created_at, signup_lang FROM users"
@@ -310,13 +345,16 @@ def approve_user(user_id: int) -> Optional[dict]:
     None heisst: keine offene Anfrage mit dieser Nummer (schon freigeschaltet,
     abgelehnt oder nie vorhanden) — dann geht auch keine Mail raus.
     """
+    # Eine Anweisung, deren Zeilenzahl entscheidet: bei zwei gleichzeitigen
+    # Klicks gewinnt genau einer, und nur er verschickt die Mail (N1).
     with _conn() as c:
-        row = c.execute("SELECT email, signup_lang FROM users WHERE id = ? AND approved = 0",
-                        (user_id,)).fetchone()
-        if not row:
+        cur = c.execute(
+            "UPDATE users SET approved = 1, approved_at = ? WHERE id = ? AND approved = 0",
+            (datetime.utcnow().isoformat(), user_id))
+        if cur.rowcount != 1:
             return None
-        c.execute("UPDATE users SET approved = 1, approved_at = ? WHERE id = ? AND approved = 0",
-                  (datetime.utcnow().isoformat(), user_id))
+        row = c.execute("SELECT email, signup_lang FROM users WHERE id = ?",
+                        (user_id,)).fetchone()
     return dict(row)
 
 
@@ -326,12 +364,16 @@ def reject_user(user_id: int) -> Optional[str]:
     Bewusst nur fuer nicht freigeschaltete Konten: ueber diese Schaltflaeche
     darf kein aktives Konto verschwinden.
     """
+    # Pruefen und Loeschen in EINER Verbindung und unter derselben Bedingung:
+    # wird die Anfrage zwischendurch freigeschaltet, loescht dieser Aufruf
+    # nichts (N2).
     with _conn() as c:
+        c.execute("BEGIN IMMEDIATE")
         row = c.execute("SELECT email FROM users WHERE id = ? AND approved = 0",
                         (user_id,)).fetchone()
-    if not row:
-        return None
-    delete_user(user_id)
+        if not row:
+            return None
+        _delete_account_rows(c, user_id, row["email"], nur_offen=True)
     return row["email"]
 
 
@@ -434,16 +476,33 @@ def delete_user(user_id: int) -> bool:
         row = c.execute("SELECT email FROM users WHERE id = ?", (user_id,)).fetchone()
         if not row:
             return False
-        c.execute("DELETE FROM login_attempts WHERE scope = 'account' AND subject = ?",
-                  (row["email"].strip().lower(),))
-        # Das Versandprotokoll haengt ebenfalls nicht am Fremdschluessel: dort
-        # steht die Adresse als Text. Ohne diese Zeile ueberlebte sie die
-        # Loeschung — die Datenschutzerklaerung verspricht aber, dass beim
-        # Loeschen alles geht (Art. 17 DSGVO, Befund M4 vom 24.09.2026).
-        c.execute("DELETE FROM mail_log WHERE lower(recipient) = ?",
-                  (row["email"].strip().lower(),))
-        c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        _delete_account_rows(c, user_id, row["email"])
     return True
+
+
+def _delete_account_rows(c: sqlite3.Connection, user_id: int, email: str,
+                         nur_offen: bool = False) -> None:
+    """Entfernt ein Konto samt allem, was per Adresse (nicht per Fremdschluessel) daran haengt.
+
+    - `login_attempts`: die Kontobremse speichert "adresse|ip" (siehe
+      `_account_subject`), die Kontingente wie `reset_mail_addr` die blosse
+      Adresse. Bis 29.09.2026 wurde nur die blosse Adresse geloescht; die
+      Fehlversuche blieben bis zur Aufraeumroutine nach drei Stunden stehen (N3).
+    - `mail_log`: dort steht die Adresse als Text. Ohne diese Zeile ueberlebte
+      sie die Loeschung — die Datenschutzerklaerung verspricht aber, dass beim
+      Loeschen alles geht (Art. 17 DSGVO, Befund M4 vom 24.09.2026).
+    - `users`: `companies`, `analyses`, `password_resets`, `reset_codes` haengen
+      per ON DELETE CASCADE daran.
+    """
+    mail = (email or "").strip().lower()
+    prefix = mail + "|"
+    c.execute("DELETE FROM login_attempts WHERE subject = ? OR substr(subject, 1, ?) = ?",
+              (mail, len(prefix), prefix))
+    c.execute("DELETE FROM mail_log WHERE lower(recipient) = ?", (mail,))
+    if nur_offen:
+        c.execute("DELETE FROM users WHERE id = ? AND approved = 0", (user_id,))
+    else:
+        c.execute("DELETE FROM users WHERE id = ?", (user_id,))
 
 
 def set_password(user_id: int, password: str) -> None:
@@ -929,15 +988,17 @@ def _code_hash(code: str) -> str:
     return hashlib.sha256(code.strip().encode()).hexdigest()
 
 
-def issue_reset_code(user_id: int) -> tuple[str, str]:
+def issue_reset_code(user_id: int, ttl_minutes: int | None = None) -> tuple[str, str]:
     """Erzeugt einen sechsstelligen Code. Gibt (Klartext, Ablauf-ISO) zurueck.
 
     Der Klartext steht nur in der Mail; gespeichert wird allein sein Hash.
     Fuehrende Nullen bleiben erhalten — "004711" ist ein gueltiger Code.
+    `ttl_minutes` weicht nur fuer die Freischalt-Mail vom Standard ab
+    (ACTIVATION_CODE_TTL_DAYS).
     """
     code = f"{secrets.randbelow(1_000_000):06d}"
     now = datetime.utcnow()
-    expires = (now + timedelta(minutes=CODE_TTL_MIN)).isoformat()
+    expires = (now + timedelta(minutes=ttl_minutes or CODE_TTL_MIN)).isoformat()
     with _conn() as c:
         # Aeltere offene Codes desselben Kontos entwerten: es gilt immer nur
         # der zuletzt angeforderte.

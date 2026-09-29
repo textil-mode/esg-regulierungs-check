@@ -471,7 +471,34 @@ def _passwortwechsel_melden(email: str, lang: str) -> None:
                          "password_changed", lang)
 
 
-def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
+# Hoechstens so viele Admin-Mails je Stunde ueber alle Anfragen hinweg; danach
+# stehen weitere Anfragen nur noch in der Liste (Sicherheitspruefung M3).
+ADMIN_MAIL_MAX_PER_HOUR = 10
+
+# Strenger als "irgendwas@irgendwas.xy": die Adresse steht spaeter im Text der
+# Admin-Mail, wo Mailprogramme Zeichenfolgen wie "https://…?@x.de" als Link
+# darstellen (N4). RFC-Sonderfaelle (Anfuehrungszeichen, Kommentare) sind fuer
+# Geschaeftsadressen entbehrlich.
+_EMAIL_RE = r"^[A-Za-z0-9.!#$%&*+=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.[A-Za-z]{2,24}$"
+
+
+def _quota_ip(ip: str) -> str:
+    """IP fuer Kontingente: IPv6 wird auf das /64-Netz verdichtet.
+
+    Ein Anschluss bekommt ueblicherweise ein ganzes /64; je Einzeladresse
+    gezaehlt, liefe jede Bremse ins Leere (Sicherheitspruefung M3).
+    """
+    import ipaddress
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if addr.version == 6:
+        return str(ipaddress.ip_network(f"{addr}/64", strict=False))
+    return ip
+
+
+def _signup(email: str, lang: str) -> int | None:
     """Registrierung — die Antwort verraet nicht, ob es die Adresse schon gibt.
 
     Frueher meldete das Formular „E-Mail bereits vergeben". Wer eine Liste der
@@ -486,21 +513,15 @@ def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
     bleiben sichtbar — sie haengen nur an der Eingabe, nicht am Kontobestand.
     """
     import re
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+    if len(email) > 254 or not re.match(_EMAIL_RE, email):
         flash(t("err_email_invalid", lang), "error")
-        return None
-    if len(pw) < 8:
-        flash(t("err_pw_short", lang), "error")
-        return None
-    if pw != pw2:
-        flash(t("err_pw_mismatch", lang), "error")
         return None
 
     # Deckel je Quell-IP: sonst legt ein Skript beliebig viele Konten an und
     # hebt die kontobezogenen LLM-Kontingente auf (Befund M2). Steht bewusst
     # VOR dem Ausweichpfad unten — sonst entfiele die Bremse geraeuschlos
     # mit, sobald der Mailweg einmal ausfaellt.
-    if not db.take_quota("signup_ip", _client_ip(),
+    if not db.take_quota("signup_ip", _quota_ip(_client_ip()),
                          db.SIGNUP_MAX_PER_IP, db.SIGNUP_WINDOW_MIN):
         flash(t("err_signup_throttled", lang), "error")
         return 429
@@ -513,8 +534,8 @@ def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
     # Ohne Mailweg bleibt die Anfrage trotzdem bestehen und erscheint in der
     # Admin-Liste; nur die Bestaetigungen entfallen.
     if not _mailversand_bereit():
-        if not db.email_exists(email):
-            db.create_user(email, pw, approved=False, lang=lang)
+        if not db.email_exists(email) and db.count_pending() < db.PENDING_MAX:
+            db.create_user(email, None, approved=False, lang=lang)
         flash(t("ok_signup_check_mail", lang), "success")
         return None
 
@@ -539,10 +560,19 @@ def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
                                      "mail_request_body", anmeldelink,
                                      "signup_request", lang)
                 return
-            db.create_user(email, pw, approved=False, lang=lang)
+            db.purge_stale_pending()
+            if db.count_pending() >= db.PENDING_MAX:
+                # Deckel gegen massenhaft angelegte Anfragen: nichts anlegen,
+                # nichts verschicken — die Seite hat trotzdem wie immer geantwortet.
+                db.log_mail(email, "signup_request", "failed",
+                            error="Zu viele offene Anfragen (PENDING_MAX)")
+                return
+            db.create_user(email, None, approved=False, lang=lang)
             _mail_im_hintergrund(email, "mail_request_subject",
                                  "mail_request_body", anmeldelink,
                                  "signup_request", lang)
+            if not db.take_quota("signup_admin_mail", "alle", ADMIN_MAIL_MAX_PER_HOUR, 60):
+                return   # Deckel erreicht: die Anfrage steht in der Admin-Liste
             zeit = datetime.utcnow().strftime("%d.%m.%Y %H:%M")
             for admin in sorted(ADMIN_EMAILS):
                 _mail_im_hintergrund(admin, "mail_admin_request_subject",
@@ -658,9 +688,7 @@ def login():
                 return ergebnis   # Weiterleitung auf die Code-Eingabe
 
         elif action == "signup":
-            status = _signup(
-                email, pw, request.form.get("password2", ""), lang
-            ) or status
+            status = _signup(email, lang) or status
 
     return render_template("login.html"), status
 
@@ -898,9 +926,14 @@ def admin_approve(user_id: int):
         flash(t("admin_pending_missing", lang), "error")
         return redirect(url_for("admin_accounts"))
     if _mailversand_bereit():
+        # Das Passwort setzt die Person selbst, mit dem Code aus dieser Mail —
+        # nur wer das Postfach hat, kommt also hinein (M1/M2).
+        code, _ablauf = db.issue_reset_code(
+            user_id, ttl_minutes=db.ACTIVATION_CODE_TTL_DAYS * 24 * 60)
         _mail_im_hintergrund(konto["email"], "mail_signup_subject", "mail_signup_body",
-                             _public_origin() + url_for("login"), "signup_approved",
-                             normalize_lang(konto.get("signup_lang")))
+                             _public_origin() + url_for("reset_with_code"), "signup_approved",
+                             normalize_lang(konto.get("signup_lang")),
+                             code=code, tage=db.ACTIVATION_CODE_TTL_DAYS)
         flash(t("admin_approved_ok", lang).format(email=konto["email"]), "success")
     else:
         flash(t("admin_approved_nomail", lang).format(email=konto["email"]), "success")
