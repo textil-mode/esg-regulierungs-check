@@ -103,13 +103,18 @@ print("\n1. Die Registrierung verraet nicht, welche Adressen es gibt (M1)")
 _leeren()
 a = registrieren(BEKANNT)
 ruhe()
-mails_bekannt = [m["subject"] for m in versandt]
+# Seit 29.09.2026 geht bei einer NEUEN Anfrage zusaetzlich eine Mail an die
+# Administration. Fuer die Frage "verraet die Antwort etwas?" zaehlt nur, was
+# an die angegebene Adresse geht.
+mails_bekannt = [m["subject"] for m in versandt if m["to"] == BEKANNT]
+admin_bekannt = [m for m in versandt if m["to"] in flaskapp.ADMIN_EMAILS]
 seite_bekannt = a.get_data(as_text=True)
 
 _leeren()
 b = registrieren(NEU)
 ruhe()
-mails_neu = [m["subject"] for m in versandt]
+mails_neu = [m["subject"] for m in versandt if m["to"] == NEU]
+admin_neu = [m for m in versandt if m["to"] in flaskapp.ADMIN_EMAILS]
 seite_neu = b.get_data(as_text=True)
 
 pruefe(a.status_code == b.status_code,
@@ -122,20 +127,39 @@ pruefe("bereits" not in seite_bekannt.lower()
 pruefe(a.status_code == 200 and "/dashboard" not in (a.headers.get("Location") or ""),
        "niemand wird mehr automatisch angemeldet")
 pruefe(len(mails_bekannt) == 1 and len(mails_neu) == 1,
-       "in beiden Faellen geht genau eine Mail raus")
+       "in beiden Faellen geht genau eine Mail an die angegebene Adresse")
 if mails_bekannt and mails_neu:
     pruefe(mails_bekannt[0] != mails_neu[0],
            "der Inhaber erfaehrt per Mail, was wirklich war")
-pruefe(db.email_exists(NEU), "das neue Konto wurde tatsaechlich angelegt")
+pruefe(not admin_bekannt and len(admin_neu) == len(flaskapp.ADMIN_EMAILS),
+       "nur eine neue Anfrage benachrichtigt die Administration")
+pruefe(admin_neu and NEU in admin_neu[0]["text"],
+       "die Admin-Mail nennt die anfragende Adresse")
+pruefe(db.email_exists(NEU), "die Anfrage wurde tatsaechlich angelegt")
 neu_id = db.get_user_by_email(NEU)["id"]
-pruefe(db.verify_user(NEU, PW) == neu_id, "und laesst sich benutzen")
+pruefe(not db.is_approved(neu_id), "sie ist noch nicht freigeschaltet")
 
-# Zweiter Versuch auf die nun vergebene Adresse: wieder dieselbe Antwort.
+# Zweiter Versuch auf die noch offene Anfrage: wieder dieselbe Antwort,
+# nur die Eingangsbestaetigung, keine zweite Admin-Mail.
 _leeren()
 c2 = registrieren(NEU)
 ruhe()
 pruefe(c2.get_data(as_text=True) == seite_neu,
        "auch beim zweiten Versuch sieht die Seite gleich aus")
+pruefe(len(versandt) == 1 and versandt[0]["to"] == NEU
+       and "bereits" not in versandt[0]["subject"].lower(),
+       "offene Anfrage: nur die Eingangsbestaetigung, keine Admin-Mail")
+
+# Nach der Freischaltung laesst sich das Konto benutzen, und ein dritter
+# Versuch bekommt "Es besteht bereits ein Konto".
+pruefe(db.approve_user(neu_id) is not None, "Freischaltung gelingt")
+pruefe(db.is_approved(neu_id) and db.verify_user(NEU, PW) == neu_id,
+       "und das Konto laesst sich benutzen")
+_leeren()
+c3 = registrieren(NEU)
+ruhe()
+pruefe(c3.get_data(as_text=True) == seite_neu,
+       "auch nach der Freischaltung sieht die Seite gleich aus")
 pruefe(len(versandt) == 1 and "bereits" in versandt[0]["subject"].lower(),
        "diesmal geht die Nachricht 'Es besteht bereits ein Konto' raus")
 

@@ -25,7 +25,7 @@
 
 | Feature | Ort | Status |
 |---|---|---|
-| Login / Registrierung (bcrypt, SQLite) | `app.py`, `db.py` | ✅ |
+| Login / Registrierung (bcrypt, SQLite); neue Registrierungen erst nach **Freischaltung** durch den Admin | `app.py`, `db.py` | ✅ |
 | **Bremse gegen Passwort-Durchprobieren** (5 Fehlversuche je Konto+IP in 15 min mit sich verdoppelnder Wartezeit, zusätzlich 30/Stunde je IP; persistent in `login_attempts`) — siehe eigenen Abschnitt unten | `db.py` `begin_login_attempt`, `app.py` `/login` | ✅ |
 | **Passwort ändern** (eingeloggt, altes PW nötig) | `/passwort-aendern`, `templates/password_change.html` | ✅ |
 | **Konto löschen** (eingeloggt, Passwort + Browser-Rückfrage; entfernt users/companies/analyses/password_resets per Kaskade und die Fehlversuche zur E-Mail; `analysis_cache` bleibt, weil anonym und geteilt) | `/konto-loeschen`, `db.delete_user` | ✅ |
@@ -404,6 +404,27 @@ Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER
 - **Ob ein alter Schlüssel wirklich tot ist**, zeigt erst ein Aufruf mit ihm (401 statt 200). Er
   steckt noch in der Umgebung der beendeten `*-alt-*`-Container und lässt sich von dort testen,
   ohne ihn anzuzeigen.
+
+### Freischaltung neuer Registrierungen (seit 29.09.2026)
+
+Nutzerentscheidung: niemand wird mehr automatisch freigeschaltet.
+
+- `users.approved` (Default 1 → alle Bestandskonten bleiben nutzbar), `approved_at`,
+  `signup_lang`. `db.create_user(..., approved=False, lang=...)` nur aus `app._signup`.
+- **Registrierung** (weiterhin gleiche Antwort für jede Adresse, alles Kontoabhängige im
+  Thread): neue Adresse → gesperrte Anfrage + Eingangsbestätigung an die Person +
+  Mail an alle `ADMIN_EMAILS`; offene Anfrage erneut → nur Eingangsbestätigung;
+  freigeschaltetes Konto → bisherige Mail „Es besteht bereits ein Konto“.
+- **Anmeldung** einer offenen Anfrage mit richtigem Passwort: 403 + „noch nicht
+  freigeschaltet“, keine Sitzung. Mit falschem Passwort wie bisher „Anmeldung
+  fehlgeschlagen“ (verrät nichts).
+- **Admin** `/admin/konten`: Abschnitt „Offene Zugangsanfragen“ mit „Freischalten“
+  (POST `/admin/anfragen/<id>/freischalten` → Mail `mail_signup_*` = „Ihr Zugang ist
+  freigeschaltet“ mit Link aus `PUBLIC_BASE_URL`, in `signup_lang`) und „Ablehnen“
+  (POST `/admin/anfragen/<id>/ablehnen` → `db.reject_user`, nur für offene Anfragen,
+  löscht samt Versandprotokoll, **keine** Mail). Offene Anfragen zählen nicht in der
+  Kontenliste.
+- Belege: `test_freischaltung.py`, `test_konto_sicherheit.py` (Block 1).
 
 ### Katalogerweiterung vom 29.09.2026 (14 Regulierungen, 4 Profilfelder)
 

@@ -121,6 +121,16 @@ def _migrate_users(c: sqlite3.Connection) -> None:
     cols = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
     if "last_login_at" not in cols:
         c.execute("ALTER TABLE users ADD COLUMN last_login_at TEXT")
+    # Freischaltung durch die Administration (seit 29.09.2026). Der Default 1
+    # gilt fuer alle Bestandskonten: sie waren bisher sofort nutzbar und
+    # bleiben es. Nur neue Registrierungen legt `create_user(approved=False)`
+    # gesperrt an. `signup_lang` bestimmt die Sprache der Freischalt-Mail.
+    if "approved" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN approved INTEGER NOT NULL DEFAULT 1")
+    if "approved_at" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN approved_at TEXT")
+    if "signup_lang" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN signup_lang TEXT")
 
 
 def _migrate_analysis_cache(c: sqlite3.Connection) -> None:
@@ -257,14 +267,72 @@ def init_db() -> None:
 BCRYPT_ROUNDS = 12
 
 
-def create_user(email: str, password: str) -> int:
+def create_user(email: str, password: str, *, approved: bool = True,
+                lang: str | None = None) -> int:
+    """Legt ein Konto an. Registrierungen kommen mit `approved=False` herein.
+
+    Der Default `True` haelt Tests, Notausgaenge und Admin-Werkzeuge beim
+    bisherigen Verhalten; die oeffentliche Registrierung setzt ausdruecklich
+    `False` (siehe app._signup).
+    """
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(BCRYPT_ROUNDS)).decode()
+    now = datetime.utcnow().isoformat()
     with _conn() as c:
         cur = c.execute(
-            "INSERT INTO users (email, pw_hash, created_at) VALUES (?, ?, ?)",
-            (email.lower().strip(), pw_hash, datetime.utcnow().isoformat()),
+            "INSERT INTO users (email, pw_hash, created_at, approved, approved_at, signup_lang)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (email.lower().strip(), pw_hash, now, 1 if approved else 0,
+             now if approved else None, lang),
         )
         return cur.lastrowid
+
+
+def is_approved(user_id: int) -> bool:
+    """True, wenn die Administration das Konto freigeschaltet hat."""
+    with _conn() as c:
+        row = c.execute("SELECT approved FROM users WHERE id = ?", (user_id,)).fetchone()
+    return bool(row and row["approved"])
+
+
+def list_pending() -> list[dict]:
+    """Offene Zugangsanfragen, aelteste zuerst."""
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT id, email, created_at, signup_lang FROM users"
+            " WHERE approved = 0 ORDER BY created_at, id"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def approve_user(user_id: int) -> Optional[dict]:
+    """Schaltet eine offene Anfrage frei. Rueckgabe: {email, signup_lang} oder None.
+
+    None heisst: keine offene Anfrage mit dieser Nummer (schon freigeschaltet,
+    abgelehnt oder nie vorhanden) — dann geht auch keine Mail raus.
+    """
+    with _conn() as c:
+        row = c.execute("SELECT email, signup_lang FROM users WHERE id = ? AND approved = 0",
+                        (user_id,)).fetchone()
+        if not row:
+            return None
+        c.execute("UPDATE users SET approved = 1, approved_at = ? WHERE id = ? AND approved = 0",
+                  (datetime.utcnow().isoformat(), user_id))
+    return dict(row)
+
+
+def reject_user(user_id: int) -> Optional[str]:
+    """Loescht eine OFFENE Anfrage samt allem, was daran haengt. Rueckgabe: Adresse oder None.
+
+    Bewusst nur fuer nicht freigeschaltete Konten: ueber diese Schaltflaeche
+    darf kein aktives Konto verschwinden.
+    """
+    with _conn() as c:
+        row = c.execute("SELECT email FROM users WHERE id = ? AND approved = 0",
+                        (user_id,)).fetchone()
+    if not row:
+        return None
+    delete_user(user_id)
+    return row["email"]
 
 
 # bcrypt-Hash eines zufaelligen, nirgends verwendeten Geheimnisses. Er dient
@@ -294,9 +362,11 @@ def verify_user(email: str, password: str) -> Optional[int]:
     if bcrypt.checkpw(password.encode(), row["pw_hash"].encode()):
         # Zeitpunkt der letzten Anmeldung festhalten — mehr nicht. Weder die
         # Adresse noch eine Historie: der Admin soll sehen, welche Konten noch
-        # benutzt werden, nicht wer wann woher gearbeitet hat.
+        # benutzt werden, nicht wer wann woher gearbeitet hat. Ein noch nicht
+        # freigeschaltetes Konto meldet sich nicht an (app.login prueft das)
+        # und bekommt deshalb auch keinen Zeitstempel.
         with _conn() as c:
-            c.execute("UPDATE users SET last_login_at = ? WHERE id = ?",
+            c.execute("UPDATE users SET last_login_at = ? WHERE id = ? AND approved = 1",
                       (datetime.utcnow().isoformat(), row["id"]))
         return row["id"]
     return None
@@ -324,6 +394,7 @@ def list_accounts() -> list[dict]:
                         WHERE a.user_id = u.id) AS last_analysis
                  FROM users u
                  LEFT JOIN companies co ON co.user_id = u.id
+                WHERE u.approved = 1
              ORDER BY u.created_at DESC, u.id DESC"""
         ).fetchall()
     return [dict(r) for r in rows]

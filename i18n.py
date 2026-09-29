@@ -713,17 +713,12 @@ UI: dict[str, dict[str, str]] = {
         "it": "Non esiste ancora alcun account.", "zh": "尚无账户。",
     },
     "ok_signup_check_mail": {
-        "de": ("Bitte prüfen Sie Ihr Postfach. Wir haben Ihnen eine Nachricht "
-               "an die angegebene Adresse geschickt."),
-        "en": ("Please check your inbox. We have sent a message to the address "
-               "you provided."),
-        "es": ("Consulte su bandeja de entrada. Hemos enviado un mensaje a la "
-               "dirección indicada."),
-        "fr": ("Veuillez consulter votre boîte de réception. Nous avons envoyé "
-               "un message à l'adresse indiquée."),
-        "it": ("Controlli la Sua casella di posta. Abbiamo inviato un messaggio "
-               "all'indirizzo indicato."),
-        "zh": "请查收邮件。我们已向您填写的地址发送了一封邮件。",
+        "de": "Vielen Dank. Ihre Anfrage ist eingegangen. Wir prüfen sie und schicken Ihnen eine E-Mail, sobald Ihr Zugang freigeschaltet ist.",
+        "en": "Thank you. Your request has been received. We will review it and send you an email as soon as your access has been activated.",
+        "es": "Gracias. Hemos recibido su solicitud. La revisaremos y le enviaremos un correo en cuanto su acceso esté activado.",
+        "fr": "Merci. Votre demande a bien été reçue. Nous allons l'examiner et vous enverrons un e-mail dès que votre accès sera activé.",
+        "it": "Grazie. La Sua richiesta è stata ricevuta. La esamineremo e Le invieremo un'e-mail non appena il Suo accesso sarà attivato.",
+        "zh": "谢谢。我们已收到您的申请，将进行审核，并在您的访问权限开通后给您发送电子邮件。",
     },
     "err_signup_throttled": {
         "de": ("Es wurden zu viele Konten von dieser Verbindung aus angelegt. "
@@ -738,18 +733,137 @@ UI: dict[str, dict[str, str]] = {
                "Riprovi più tardi."),
         "zh": "该网络创建的账户过多，请稍后再试。",
     },
+    # --- Registrierung als Zugangsanfrage (29.09.2026) ---
+    "err_account_pending": {
+        "de": "Ihr Zugang ist noch nicht freigeschaltet. Sie erhalten eine E-Mail, sobald die Prüfung abgeschlossen ist.",
+        "en": "Your access has not been activated yet. You will receive an email as soon as the review is complete.",
+        "es": "Su acceso todavía no está activado. Recibirá un correo electrónico en cuanto termine la revisión.",
+        "fr": "Votre accès n'est pas encore activé. Vous recevrez un e-mail dès que la vérification sera terminée.",
+        "it": "Il Suo accesso non è ancora stato attivato. Riceverà un'e-mail non appena la verifica sarà conclusa.",
+        "zh": "您的访问权限尚未开通。审核完成后，您将收到一封电子邮件。",
+    },
+    "mail_request_subject": {
+        "de": "ESG-Regulierungs-Check: Ihre Anfrage ist eingegangen",
+        "en": "ESG Regulation Check: we have received your request",
+        "es": "Verificación de Regulaciones ESG: hemos recibido su solicitud",
+        "fr": "Vérification des Réglementations ESG : nous avons bien reçu votre demande",
+        "it": "Verifica delle Normative ESG: abbiamo ricevuto la Sua richiesta",
+        "zh": "ESG 法规检查：我们已收到您的申请",
+    },
+    "mail_request_body": {
+        "de": "Guten Tag,\n\nvielen Dank für Ihre Anfrage zum ESG-Regulierungs-Check. Wir prüfen sie und schicken Ihnen eine weitere E-Mail, sobald Ihr Zugang freigeschaltet ist. Bis dahin ist eine Anmeldung noch nicht möglich.\n\nWenn Sie sich nicht registriert haben, können Sie die Nachricht ignorieren.\n\nMit freundlichen Grüßen\nESG-Regulierungs-Check",
+        "en": "Hello,\n\nThank you for your request for the ESG Regulation Check. We will review it and send you another email as soon as your access has been activated. Until then, signing in is not yet possible.\n\nIf you did not register, you can ignore this message.\n\nKind regards\nESG Regulation Check",
+        "es": "Buenos días:\n\nGracias por su solicitud para la Verificación de Regulaciones ESG. La revisaremos y le enviaremos otro correo en cuanto su acceso esté activado. Hasta entonces todavía no es posible iniciar sesión.\n\nSi usted no se ha registrado, puede ignorar este mensaje.\n\nAtentamente,\nVerificación de Regulaciones ESG",
+        "fr": "Bonjour,\n\nMerci pour votre demande d'accès à la Vérification des Réglementations ESG. Nous allons l'examiner et vous enverrons un nouvel e-mail dès que votre accès sera activé. D'ici là, la connexion n'est pas encore possible.\n\nSi vous ne vous êtes pas inscrit, vous pouvez ignorer ce message.\n\nCordialement,\nVérification des Réglementations ESG",
+        "it": "Buongiorno,\n\ngrazie per la Sua richiesta di accesso alla Verifica delle Normative ESG. La esamineremo e Le invieremo un'altra e-mail non appena il Suo accesso sarà attivato. Fino ad allora non è ancora possibile accedere.\n\nSe non si è registrato, può ignorare il messaggio.\n\nCordiali saluti\nVerifica delle Normative ESG",
+        "zh": "您好：\n\n感谢您申请使用 ESG 法规检查。我们将进行审核，并在您的访问权限开通后再给您发送一封电子邮件。在此之前暂时无法登录。\n\n如果这不是您本人的注册，可以忽略本邮件。\n\n此致\nESG 法规检查",
+    },
+    "mail_admin_request_subject": {
+        "de": "ESG-Regulierungs-Check: Neue Zugangsanfrage",
+    },
+    "mail_admin_request_body": {
+        "de": "Neue Zugangsanfrage von {email} ({zeit} UTC).\n\nFreischalten oder ablehnen:\n{link}\n\nErst mit der Freischaltung erhält die Person den Anmeldelink.",
+    },
+    "admin_pending_title": {
+        "de": "Offene Zugangsanfragen",
+        "en": "Open access requests",
+        "es": "Solicitudes de acceso pendientes",
+        "fr": "Demandes d'accès en attente",
+        "it": "Richieste di accesso in sospeso",
+        "zh": "待处理的访问申请",
+    },
+    "admin_pending_hint": {
+        "de": "Neue Registrierungen bleiben gesperrt, bis sie hier freigeschaltet werden. Beim Freischalten erhält die Person eine E-Mail mit dem Anmeldelink. Beim Ablehnen wird die Anfrage samt Daten gelöscht, ohne Nachricht an die Person.",
+        "en": "New registrations stay locked until they are activated here. On activation, the person receives an email with the sign-in link. On rejection, the request and its data are deleted without notifying the person.",
+        "es": "Los nuevos registros permanecen bloqueados hasta que se activan aquí. Al activarlos, la persona recibe un correo con el enlace de acceso. Al rechazarlos, la solicitud y sus datos se eliminan sin avisar a la persona.",
+        "fr": "Les nouvelles inscriptions restent bloquées jusqu'à leur activation ici. Lors de l'activation, la personne reçoit un e-mail avec le lien de connexion. En cas de refus, la demande et ses données sont supprimées sans que la personne soit avertie.",
+        "it": "Le nuove registrazioni restano bloccate finché non vengono attivate qui. Con l'attivazione la persona riceve un'e-mail con il link di accesso. In caso di rifiuto la richiesta e i relativi dati vengono eliminati senza avvisare la persona.",
+        "zh": "新注册在此处开通前将保持锁定。开通后，对方会收到一封包含登录链接的电子邮件。拒绝时，申请及相关数据将被删除，且不会通知对方。",
+    },
+    "admin_pending_empty": {
+        "de": "Keine offenen Anfragen.",
+        "en": "No open requests.",
+        "es": "No hay solicitudes pendientes.",
+        "fr": "Aucune demande en attente.",
+        "it": "Nessuna richiesta in sospeso.",
+        "zh": "没有待处理的申请。",
+    },
+    "admin_pending_requested": {
+        "de": "Angefragt",
+        "en": "Requested",
+        "es": "Solicitado",
+        "fr": "Demandé le",
+        "it": "Richiesto il",
+        "zh": "申请时间",
+    },
+    "admin_btn_approve": {
+        "de": "Freischalten",
+        "en": "Activate",
+        "es": "Activar",
+        "fr": "Activer",
+        "it": "Attiva",
+        "zh": "开通",
+    },
+    "admin_btn_reject": {
+        "de": "Ablehnen",
+        "en": "Reject",
+        "es": "Rechazar",
+        "fr": "Refuser",
+        "it": "Rifiuta",
+        "zh": "拒绝",
+    },
+    "admin_reject_confirm": {
+        "de": "Anfrage ablehnen und samt Daten löschen? Die Person erhält keine Nachricht.",
+        "en": "Reject the request and delete its data? The person will not be notified.",
+        "es": "¿Rechazar la solicitud y eliminar sus datos? La persona no recibirá ningún aviso.",
+        "fr": "Refuser la demande et supprimer ses données ? La personne ne sera pas avertie.",
+        "it": "Rifiutare la richiesta ed eliminarne i dati? La persona non riceverà alcun avviso.",
+        "zh": "确定拒绝该申请并删除相关数据吗？对方不会收到任何通知。",
+    },
+    "admin_approved_ok": {
+        "de": "{email} ist freigeschaltet und erhält den Anmeldelink per E-Mail.",
+        "en": "{email} has been activated and receives the sign-in link by email.",
+        "es": "{email} está activado y recibe el enlace de acceso por correo.",
+        "fr": "{email} est activé et reçoit le lien de connexion par e-mail.",
+        "it": "{email} è stato attivato e riceve il link di accesso via e-mail.",
+        "zh": "{email} 已开通，登录链接将通过电子邮件发送。",
+    },
+    "admin_approved_nomail": {
+        "de": "{email} ist freigeschaltet. Der Mailversand ist nicht eingerichtet, bitte die Person selbst informieren.",
+        "en": "{email} has been activated. Email sending is not set up, please inform the person yourself.",
+        "es": "{email} está activado. El envío de correos no está configurado; informe usted mismo a la persona.",
+        "fr": "{email} est activé. L'envoi d'e-mails n'est pas configuré, veuillez informer la personne vous-même.",
+        "it": "{email} è stato attivato. L'invio di e-mail non è configurato: informi Lei stesso la persona.",
+        "zh": "{email} 已开通。邮件发送尚未配置，请自行通知对方。",
+    },
+    "admin_rejected_ok": {
+        "de": "Die Anfrage von {email} ist gelöscht.",
+        "en": "The request from {email} has been deleted.",
+        "es": "La solicitud de {email} se ha eliminado.",
+        "fr": "La demande de {email} a été supprimée.",
+        "it": "La richiesta di {email} è stata eliminata.",
+        "zh": "{email} 的申请已删除。",
+    },
+    "admin_pending_missing": {
+        "de": "Diese Anfrage ist nicht mehr offen.",
+        "en": "This request is no longer open.",
+        "es": "Esta solicitud ya no está pendiente.",
+        "fr": "Cette demande n'est plus en attente.",
+        "it": "Questa richiesta non è più in sospeso.",
+        "zh": "该申请已不再处于待处理状态。",
+    },
     "mail_signup_subject": {
-        "de": "ESG-Regulierungs-Check: Ihr Konto ist angelegt",
-        "en": "ESG Regulation Check: your account has been created",
-        "es": "Verificación de Regulaciones ESG: su cuenta está creada",
-        "fr": "Vérification des Réglementations ESG : votre compte est créé",
-        "it": "Verifica delle Normative ESG: il Suo account è stato creato",
-        "zh": "ESG 法规检查：您的账户已创建",
+        "de": "ESG-Regulierungs-Check: Ihr Zugang ist freigeschaltet",
+        "en": "ESG Regulation Check: your access has been activated",
+        "es": "Verificación de Regulaciones ESG: su acceso está activado",
+        "fr": "Vérification des Réglementations ESG : votre accès est activé",
+        "it": "Verifica delle Normative ESG: il Suo accesso è stato attivato",
+        "zh": "ESG 法规检查：您的访问权限已开通",
     },
     "mail_signup_body": {
         "de": (
             "Guten Tag,\n\n"
-            "Ihr Konto beim ESG-Regulierungs-Check ist angelegt. Sie können "
+            "Ihr Zugang zum ESG-Regulierungs-Check ist freigeschaltet. Sie können "
             "sich ab sofort anmelden:\n\n"
             "{link}\n\n"
             "Wenn Sie sich nicht registriert haben, können Sie die Nachricht "
@@ -759,7 +873,7 @@ UI: dict[str, dict[str, str]] = {
         ),
         "en": (
             "Hello,\n\n"
-            "Your ESG Regulation Check account has been created. You can sign "
+            "Your access to the ESG Regulation Check has been activated. You can sign "
             "in right away:\n\n"
             "{link}\n\n"
             "If you did not register, you can ignore this message.\n\n"
@@ -768,7 +882,7 @@ UI: dict[str, dict[str, str]] = {
         ),
         "es": (
             "Buenos días:\n\n"
-            "Su cuenta de la Verificación de Regulaciones ESG está creada. Ya "
+            "Su acceso a la Verificación de Regulaciones ESG está activado. Ya "
             "puede iniciar sesión:\n\n"
             "{link}\n\n"
             "Si usted no se ha registrado, puede ignorar este mensaje.\n\n"
@@ -777,7 +891,7 @@ UI: dict[str, dict[str, str]] = {
         ),
         "fr": (
             "Bonjour,\n\n"
-            "Votre compte de la Vérification des Réglementations ESG est créé. "
+            "Votre accès à la Vérification des Réglementations ESG est activé. "
             "Vous pouvez vous connecter dès maintenant :\n\n"
             "{link}\n\n"
             "Si vous ne vous êtes pas inscrit, vous pouvez ignorer ce message.\n\n"
@@ -786,7 +900,7 @@ UI: dict[str, dict[str, str]] = {
         ),
         "it": (
             "Buongiorno,\n\n"
-            "Il Suo account della Verifica delle Normative ESG è stato creato. "
+            "Il Suo accesso alla Verifica delle Normative ESG è stato attivato. "
             "Può accedere subito:\n\n"
             "{link}\n\n"
             "Se non si è registrato, può ignorare il messaggio.\n\n"
@@ -795,7 +909,7 @@ UI: dict[str, dict[str, str]] = {
         ),
         "zh": (
             "您好：\n\n"
-            "您在 ESG 法规检查的账户已创建，现在即可登录：\n\n"
+            "您的 ESG 法规检查访问权限已开通，现在即可登录：\n\n"
             "{link}\n\n"
             "如果这不是您本人的注册，可以忽略本邮件。\n\n"
             "此致\n"

@@ -435,7 +435,7 @@ def _send_reset_mail(email: str, lang: str, link_muster: str) -> None:
 
 
 def _mail_im_hintergrund(recipient: str, subject_key: str, body_key: str,
-                         link: str, purpose: str, lang: str) -> None:
+                         link: str, purpose: str, lang: str, **felder) -> None:
     """Verschickt eine Mail, ohne die Antwort aufzuhalten.
 
     SMTP braucht ein bis zwei Sekunden; die soll niemand vor einer weissen
@@ -444,7 +444,8 @@ def _mail_im_hintergrund(recipient: str, subject_key: str, body_key: str,
     def arbeit() -> None:
         try:
             message_id = mailer.send(
-                recipient, t(subject_key, lang), t(body_key, lang).format(link=link)
+                recipient, t(subject_key, lang),
+                t(body_key, lang).format(link=link, **felder)
             )
             db.log_mail(recipient, purpose, "sent", message_id=message_id)
         except Exception as exc:
@@ -504,34 +505,49 @@ def _signup(email: str, pw: str, pw2: str, lang: str) -> int | None:
         flash(t("err_signup_throttled", lang), "error")
         return 429
 
-    # Ohne Mailweg gaebe es keine Rueckmeldung, ob das Konto nun besteht. Dann
-    # bleibt es beim alten, offenen Verhalten — unschoen, aber benutzbar.
+    # Seit 29.09.2026 wird niemand mehr automatisch freigeschaltet: jede
+    # Registrierung ist eine Zugangsanfrage, die die Administration unter
+    # /admin/konten freischaltet oder ablehnt. Erst die Freischaltung loest die
+    # Mail mit dem Anmeldelink aus.
+    #
+    # Ohne Mailweg bleibt die Anfrage trotzdem bestehen und erscheint in der
+    # Admin-Liste; nur die Bestaetigungen entfallen.
     if not _mailversand_bereit():
-        if db.email_exists(email):
-            flash(t("err_email_exists", lang), "error")
-            return None
-        session.clear()
-        session["user_id"] = db.create_user(email, pw)
-        session["user_email"] = email
-        flash(t("ok_account_created", lang), "success")
+        if not db.email_exists(email):
+            db.create_user(email, pw, approved=False, lang=lang)
+        flash(t("ok_signup_check_mail", lang), "success")
         return None
 
     anmeldelink = _public_origin() + url_for("login")
+    adminlink = _public_origin() + url_for("admin_accounts")
 
     def arbeit() -> None:
         # Alles Kontoabhaengige laeuft hier — auch das Anlegen selbst. Das
         # bcrypt-Hashen dauert spuerbar laenger als ein blosses Nachschlagen;
         # im Vordergrund waere die Antwortzeit der Verraeter.
         try:
-            if db.email_exists(email):
+            vorhanden = db.get_user_by_email(email)
+            if vorhanden and db.is_approved(vorhanden["id"]):
                 _mail_im_hintergrund(email, "mail_exists_subject",
                                      "mail_exists_body", anmeldelink,
                                      "signup_exists", lang)
                 return
-            db.create_user(email, pw)
-            _mail_im_hintergrund(email, "mail_signup_subject",
-                                 "mail_signup_body", anmeldelink,
-                                 "signup", lang)
+            if vorhanden:
+                # Offene Anfrage erneut gestellt: nur die Eingangsbestaetigung
+                # wiederholen, die Admins nicht ein zweites Mal anschreiben.
+                _mail_im_hintergrund(email, "mail_request_subject",
+                                     "mail_request_body", anmeldelink,
+                                     "signup_request", lang)
+                return
+            db.create_user(email, pw, approved=False, lang=lang)
+            _mail_im_hintergrund(email, "mail_request_subject",
+                                 "mail_request_body", anmeldelink,
+                                 "signup_request", lang)
+            zeit = datetime.utcnow().strftime("%d.%m.%Y %H:%M")
+            for admin in sorted(ADMIN_EMAILS):
+                _mail_im_hintergrund(admin, "mail_admin_request_subject",
+                                     "mail_admin_request_body", adminlink,
+                                     "signup_admin", "de", email=email, zeit=zeit)
         except Exception as exc:
             # Die Seite hat bereits „Bitte pruefen Sie Ihr Postfach" gezeigt.
             # Scheitert es hier — etwa weil zwei Anfragen dieselbe Adresse
@@ -611,7 +627,14 @@ def login():
                 status = 429
             else:
                 uid = db.verify_user(email, pw)
-                if uid:
+                if uid and not db.is_approved(uid):
+                    # Richtiges Passwort, aber noch nicht freigeschaltet. Das zu
+                    # sagen verraet nichts: wer es liest, kennt das Passwort.
+                    db.clear_login_failures(email, ip)
+                    flash(t("err_account_pending", lang), "error")
+                    uid = None
+                    status = 403
+                elif uid:
                     # Raeumt den eben verbuchten Versuch und alle frueheren
                     # dieser Adresse weg — die Sperre einer fremden Adresse
                     # (Angreifer) bleibt bestehen.
@@ -624,7 +647,8 @@ def login():
                     session["user_id"] = uid
                     session["user_email"] = email
                     return redirect(url_for("dashboard"))
-                flash(t("err_login_failed", lang), "error")
+                if status != 403:
+                    flash(t("err_login_failed", lang), "error")
 
         elif action == "forgot":
             ergebnis = _forgot_password(email, lang)
@@ -856,7 +880,48 @@ def admin_accounts():
         konten=konten,
         neu_30=neu_30,
         aktiv_30=aktiv_30,
+        anfragen=db.list_pending(),
     )
+
+
+@app.route("/admin/anfragen/<int:user_id>/freischalten", methods=["POST"])
+def admin_approve(user_id: int):
+    """Schaltet eine Zugangsanfrage frei und schickt erst dann den Anmeldelink."""
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+    lang = _lang()
+    konto = db.approve_user(user_id)
+    if not konto:
+        flash(t("admin_pending_missing", lang), "error")
+        return redirect(url_for("admin_accounts"))
+    if _mailversand_bereit():
+        _mail_im_hintergrund(konto["email"], "mail_signup_subject", "mail_signup_body",
+                             _public_origin() + url_for("login"), "signup_approved",
+                             normalize_lang(konto.get("signup_lang")))
+        flash(t("admin_approved_ok", lang).format(email=konto["email"]), "success")
+    else:
+        flash(t("admin_approved_nomail", lang).format(email=konto["email"]), "success")
+    return redirect(url_for("admin_accounts"))
+
+
+@app.route("/admin/anfragen/<int:user_id>/ablehnen", methods=["POST"])
+def admin_reject(user_id: int):
+    """Loescht eine offene Zugangsanfrage samt Daten, ohne Nachricht an die Person."""
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+    lang = _lang()
+    email = db.reject_user(user_id)
+    if not email:
+        flash(t("admin_pending_missing", lang), "error")
+    else:
+        flash(t("admin_rejected_ok", lang).format(email=email), "success")
+    return redirect(url_for("admin_accounts"))
 
 
 @app.route("/admin/regulierungs-status")

@@ -2,6 +2,43 @@
 {% block content %}
 
 <div class="section">
+  <h2 style="margin-top:0;">{{ t("admin_pending_title", lang) }}{% if anfragen %} ({{ anfragen|length }}){% endif %}</h2>
+  <p style="font-size:13px;color:#5A5A5A;max-width:680px;">{{ t("admin_pending_hint", lang) }}</p>
+  {% if anfragen %}
+  <div style="overflow-x:auto;">
+  <table class="reg-table">
+    <thead>
+      <tr>
+        <th>{{ t("email", lang) }}</th>
+        <th>{{ t("admin_pending_requested", lang) }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in anfragen %}
+    <tr>
+      <td>{{ a.email }}</td>
+      <td style="color:#5A5A5A;white-space:nowrap;">{{ a.created_at[:16].replace("T", " ") if a.created_at else "—" }} UTC</td>
+      <td style="white-space:nowrap;text-align:right;">
+        <form method="post" action="{{ url_for('admin_approve', user_id=a.id) }}" style="display:inline;">
+          <button type="submit" class="btn btn-primary">{{ t("admin_btn_approve", lang) }}</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_reject', user_id=a.id) }}" style="display:inline;margin-left:6px;"
+              onsubmit="return confirm({{ t('admin_reject_confirm', lang)|tojson|forceescape }});">
+          <button type="submit" class="btn btn-danger">{{ t("admin_btn_reject", lang) }}</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p style="color:#5A5A5A;margin-bottom:0;">{{ t("admin_pending_empty", lang) }}</p>
+  {% endif %}
+</div>
+
+<div class="section">
   <h2 style="margin-top:0;">{{ t("admin_accounts_title", lang) }}</h2>
   <p style="font-size:13px;color:#5A5A5A;max-width:680px;">{{ t("admin_accounts_hint", lang) }}</p>
 
