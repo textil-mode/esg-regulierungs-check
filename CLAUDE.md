@@ -387,6 +387,24 @@ Texte zweier Modelle nebeneinander.
 
 Provider-Switch: Im Hostinger-Compose-UI (NICHT in der Repo-Datei) `LLM_PROVIDER` und Modell ändern → Bereitstellen.
 
+### API-Schlüssel: wo er liegt und wie er getauscht wird (Stand 29.09.2026)
+
+- **Aktiver Schlüssel** (Endung `…7cTw`): Google-Konto **texstarted@gmail.com**, AI-Studio-Projekt
+  **„ESG Service“** (`gen-lang-client-0057257718`), Name „ESG-Check ab 2026-09-29“.
+- Der Vorgänger (`…qaUw`, „ESG-Check gueltig ab 2026-09-04b“) lag in einem **anderen** Google-Konto,
+  Projekt „Daily Dashboard“ (`beaming-park-503107-e2`), und wurde am 29.09. gelöscht, nachdem er
+  über die rote Fehlerkarte sichtbar geworden war. AI Studio konnte ihn nicht löschen („konnte nicht
+  gelöscht werden“) — die `AQ.`-Schlüssel sind an ein Dienstkonto gebunden; gelöscht wurde er in der
+  **Cloud Console → APIs und Dienste → Anmeldedaten** des Projekts.
+- **Tausch:** `ssh hostinger /root/esg_key_wechsel.sh` — liest den Schlüssel unsichtbar ein, testet
+  ihn per `countTokens`, übergibt ihn nur per `--env-file` und nimmt einen Fehlstart zurück. Seit
+  29.09. übernimmt das Skript das **laufende** Modell; vorher stand dort fest `gemini-3.5-flash-lite`,
+  ein Schlüsseltausch hätte also still das Modell und damit alle Cache-Einträge gewechselt
+  (Sicherung: `/root/esg_key_wechsel.sh.bak-2026-09-29`).
+- **Ob ein alter Schlüssel wirklich tot ist**, zeigt erst ein Aufruf mit ihm (401 statt 200). Er
+  steckt noch in der Umgebung der beendeten `*-alt-*`-Container und lässt sich von dort testen,
+  ohne ihn anzuzeigen.
+
 ### Ausweichmodelle bei Lastspitzen (28.09.2026)
 
 Anlass: `gemini-3.1-flash-lite` antwortete minutenlang mit `503 high demand`. NFRD
