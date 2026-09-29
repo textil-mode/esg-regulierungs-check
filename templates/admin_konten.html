@@ -41,6 +41,7 @@
 <div class="section">
   <h2 style="margin-top:0;">{{ t("admin_accounts_title", lang) }}</h2>
   <p style="font-size:13px;color:#5A5A5A;max-width:680px;">{{ t("admin_accounts_hint", lang) }}</p>
+  <p style="font-size:13px;color:#5A5A5A;max-width:680px;">{{ t("admin_role_hint", lang) }}</p>
 
   <div style="display:flex;gap:28px;flex-wrap:wrap;background:#F2F2F2;padding:12px 16px;margin-bottom:18px;">
     <div>
@@ -68,6 +69,7 @@
         <th data-sort="date"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_last_login", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="num" style="text-align:right;"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_checks", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="date"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_last_check", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_role_col", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
       </tr>
     </thead>
     <tbody>
@@ -87,6 +89,18 @@
       <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.last_analysis or '' }}">
         {{ k.last_analysis[:16].replace("T", " ") if k.last_analysis else t("admin_accounts_never", lang) }}
       </td>
+      {% set fest = k.email in stamm_admins %}
+      {% set rolle = t("admin_role_fixed", lang) if fest else (t("admin_role_admin", lang) if k.is_admin else "") %}
+      <td style="white-space:nowrap;" data-sort-value="{{ rolle }}">
+        {% if rolle %}<span class="rollen-abzeichen">{{ rolle }}</span>{% else %}<span style="color:#5A5A5A;">—</span>{% endif %}
+        {% if darf_rollen and not fest %}
+        <form method="post" action="{{ url_for('admin_set_role', user_id=k.id) }}" style="display:inline;margin-left:8px;"
+              onsubmit="return confirm({{ t('admin_role_confirm_revoke' if k.is_admin else 'admin_role_confirm_grant', lang)|tojson|forceescape }});">
+          <input type="hidden" name="recht" value="{{ 'entziehen' if k.is_admin else 'erteilen' }}">
+          <button type="submit" class="btn {{ 'btn-danger' if k.is_admin else 'btn-secondary' }} btn-sm">{{ t('admin_role_btn_revoke' if k.is_admin else 'admin_role_btn_grant', lang) }}</button>
+        </form>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
     </tbody>
@@ -101,6 +115,8 @@
 </div>
 
 <style>
+  .rollen-abzeichen { display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 700;
+                      color: #fff; background: var(--tm-navy); border-radius: 3px; }
   .sort-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit;
               cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-align: inherit; }
   .sort-btn:hover { text-decoration: underline; }

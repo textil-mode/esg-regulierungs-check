@@ -89,9 +89,9 @@ pruefe('class="reg-table sortable" id="anfragen"' in html, "Anfragentabelle ist 
 print("\n2. Spaltenkoepfe")
 konten_kopf = html.split('id="konten"', 1)[1].split("</thead>", 1)[0]
 typen = re.findall(r'<th data-sort="(\w+)"', konten_kopf)
-pruefe(typen == ["text", "text", "date", "date", "num", "date"],
-       f"sechs sortierbare Spalten mit passender Art ({typen})")
-pruefe(konten_kopf.count('class="sort-btn"') == 6, "jede Spalte hat einen Sortierknopf")
+pruefe(typen == ["text", "text", "date", "date", "num", "date", "text"],
+       f"sieben sortierbare Spalten mit passender Art ({typen})")
+pruefe(konten_kopf.count('class="sort-btn"') == 7, "jede Spalte hat einen Sortierknopf")
 pruefe('aria-sort="descending"' in konten_kopf,
        "Ausgangslage gekennzeichnet: Registrierung, neueste zuerst")
 pruefe("Nach dieser Spalte sortieren" in konten_kopf, "Hinweis beim Ueberfahren (i18n)")
@@ -105,8 +105,8 @@ zeilen = koerper.split("<tr>")[2:]  # [0] = vor thead, [1] = Kopfzeile
 pruefe(len(zeilen) == 4, f"vier freigeschaltete Konten, offene Anfragen nicht darunter ({len(zeilen)})")
 berta = next((z for z in zeilen if "berta@example.org" in z), "")
 pruefe('data-sort-value="2026-03-10T12:00:00"' in berta, "Registrierung als ISO-Zeitstempel")
-pruefe(berta.count('data-sort-value=""') == 2,
-       "ohne Anmeldung und ohne Pruefung: leerer Sortierwert (steht dann unten)")
+pruefe(berta.count('data-sort-value=""') == 3,
+       "ohne Anmeldung, ohne Pruefung, ohne Admin-Recht: leerer Sortierwert (steht dann unten)")
 pruefe('data-sort-value="0"' in berta, "keine Pruefung: Zahl 0")
 anton = next((z for z in zeilen if "anton@example.org" in z), "")
 pruefe('data-sort-value="3"' in anton and 'data-sort-value="2026-06-20T09:00:00"' in anton,

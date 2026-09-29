@@ -574,7 +574,7 @@ def _signup(email: str, lang: str) -> int | None:
             if not db.take_quota("signup_admin_mail", "alle", ADMIN_MAIL_MAX_PER_HOUR, 60):
                 return   # Deckel erreicht: die Anfrage steht in der Admin-Liste
             zeit = datetime.utcnow().strftime("%d.%m.%Y %H:%M")
-            for admin in sorted(ADMIN_EMAILS):
+            for admin in _alle_admin_adressen():
                 _mail_im_hintergrund(admin, "mail_admin_request_subject",
                                      "mail_admin_request_body", adminlink,
                                      "signup_admin", "de", email=email, zeit=zeit)
@@ -702,11 +702,30 @@ def logout():
 # ---------------------------------------------------------------------------
 # Passwort: aendern, zuruecksetzen, Admin-Reset
 # ---------------------------------------------------------------------------
+# Fest hinterlegte Admins. Sie sind immer Admin, lassen sich in der Oberflaeche
+# nicht aendern und sind die einzigen, die Admin-Rechte vergeben oder entziehen.
+# Weitere Admins stehen in der Datenbank (`users.is_admin`, seit 29.09.2026).
 ADMIN_EMAILS = {"mschuckert@textil-mode.de"}
 
 
-def _is_admin() -> bool:
+def _is_stamm_admin() -> bool:
     return (session.get("user_email") or "").lower().strip() in ADMIN_EMAILS
+
+
+def _is_admin() -> bool:
+    if _is_stamm_admin():
+        return True
+    uid = session.get("user_id")
+    return bool(uid) and db.is_admin_user(uid)
+
+
+def _konto_ist_admin(user: dict) -> bool:
+    # Frisch aus der DB: `get_user_by_email` liefert die Spalte nicht mit.
+    return user["email"].lower() in ADMIN_EMAILS or db.is_admin_user(user["id"])
+
+
+def _alle_admin_adressen() -> list[str]:
+    return sorted(ADMIN_EMAILS | set(db.admin_emails()))
 
 
 @app.route("/passwort-aendern", methods=["GET", "POST"])
@@ -859,6 +878,10 @@ def admin_resets():
         user = db.get_user_by_email(email)
         if not user:
             flash(t("err_user_unknown", lang), "error")
+        elif _konto_ist_admin(user) and not _is_stamm_admin():
+            # Sonst koennte ein ernannter Admin das Konto eines anderen Admins
+            # uebernehmen — auch das fest hinterlegte, und damit die Rechtevergabe.
+            flash(t("admin_role_reset_blocked", lang), "error")
         else:
             token, expires = db.issue_reset_token(user["id"])
             pfad = url_for("reset_password", token=token)
@@ -909,7 +932,49 @@ def admin_accounts():
         neu_30=neu_30,
         aktiv_30=aktiv_30,
         anfragen=db.list_pending(),
+        stamm_admins=ADMIN_EMAILS,
+        darf_rollen=_is_stamm_admin(),
     )
+
+
+@app.route("/admin/konten/<int:user_id>/admin-recht", methods=["POST"])
+def admin_set_role(user_id: int):
+    """Erteilt oder entzieht Admin-Rechte. Nur fuer die fest hinterlegten Admins."""
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+    lang = _lang()
+    if not _is_stamm_admin():
+        flash(t("admin_role_only_owner", lang), "error")
+        return redirect(url_for("admin_accounts"))
+    konto = db.get_account(user_id)
+    if not konto or not konto["approved"]:
+        flash(t("admin_role_missing", lang), "error")
+        return redirect(url_for("admin_accounts"))
+    if konto["email"].lower() in ADMIN_EMAILS:
+        flash(t("admin_role_protected", lang), "error")
+        return redirect(url_for("admin_accounts"))
+
+    erteilen = request.form.get("recht") == "erteilen"
+    email = db.set_admin(user_id, erteilen)
+    if email:
+        flash(t("admin_role_granted" if erteilen else "admin_role_revoked", lang)
+              .format(email=email), "success")
+        app.logger.info("Admin-Recht %s: %s durch %s", "erteilt" if erteilen else "entzogen",
+                        email, session.get("user_email"))
+        if _mailversand_bereit():
+            # Die Person erfaehrt es immer — auch, damit eine unerwartete
+            # Rechtevergabe nicht unbemerkt bleibt.
+            art = "granted" if erteilen else "revoked"
+            _mail_im_hintergrund(email, f"mail_admin_role_{art}_subject",
+                                 f"mail_admin_role_{art}_body",
+                                 _public_origin() + url_for("admin_accounts"),
+                                 f"admin_role_{art}", "de",
+                                 von=session.get("user_email") or "",
+                                 zeit=datetime.utcnow().strftime("%d.%m.%Y %H:%M"))
+    return redirect(url_for("admin_accounts"))
 
 
 @app.route("/admin/anfragen/<int:user_id>/freischalten", methods=["POST"])

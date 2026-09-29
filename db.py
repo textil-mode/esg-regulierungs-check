@@ -131,6 +131,10 @@ def _migrate_users(c: sqlite3.Connection) -> None:
         c.execute("ALTER TABLE users ADD COLUMN approved_at TEXT")
     if "signup_lang" not in cols:
         c.execute("ALTER TABLE users ADD COLUMN signup_lang TEXT")
+    # Admin-Rechte ueber die Oberflaeche (seit 29.09.2026). Die Adressen in
+    # `app.ADMIN_EMAILS` sind unabhaengig davon immer Admin.
+    if "is_admin" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
 
 
 def _migrate_analysis_cache(c: sqlite3.Connection) -> None:
@@ -428,7 +432,7 @@ def list_accounts() -> list[dict]:
     """
     with _conn() as c:
         rows = c.execute(
-            """SELECT u.id, u.email, u.created_at, u.last_login_at,
+            """SELECT u.id, u.email, u.created_at, u.last_login_at, u.is_admin,
                       co.name AS company_name,
                       (SELECT COUNT(*) FROM analyses a WHERE a.user_id = u.id)
                           AS analyses_count,
@@ -440,6 +444,51 @@ def list_accounts() -> list[dict]:
              ORDER BY u.created_at DESC, u.id DESC"""
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def is_admin_user(user_id: int) -> bool:
+    """Admin-Recht aus der Datenbank. Nur freigeschaltete Konten zaehlen.
+
+    Wird bei jeder Anfrage frisch gelesen: ein entzogenes Recht wirkt sofort,
+    auch in einer schon laufenden Sitzung.
+    """
+    with _conn() as c:
+        row = c.execute("SELECT 1 FROM users WHERE id = ? AND approved = 1 AND is_admin = 1",
+                        (user_id,)).fetchone()
+    return row is not None
+
+
+def admin_emails() -> list[str]:
+    """Adressen aller Konten mit Admin-Recht aus der Datenbank."""
+    with _conn() as c:
+        rows = c.execute("SELECT email FROM users WHERE approved = 1 AND is_admin = 1"
+                         " ORDER BY email").fetchall()
+    return [r["email"] for r in rows]
+
+
+def get_account(user_id: int) -> Optional[dict]:
+    """Kurzangaben zu einem Konto (ohne Passwort-Hash)."""
+    with _conn() as c:
+        row = c.execute("SELECT id, email, approved, is_admin FROM users WHERE id = ?",
+                        (user_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def set_admin(user_id: int, admin: bool) -> Optional[str]:
+    """Erteilt oder entzieht das Admin-Recht; gibt die Adresse zurueck.
+
+    `None`, wenn es kein freigeschaltetes Konto mit dieser Kennung gibt oder
+    das Recht schon so steht — dann verschickt der Aufrufer auch keine Mail
+    (gleichzeitige Doppelklicks fuehren so zu genau einer Nachricht).
+    """
+    wert = 1 if admin else 0
+    with _conn() as c:
+        cur = c.execute("UPDATE users SET is_admin = ? WHERE id = ? AND approved = 1 AND is_admin != ?",
+                        (wert, user_id, wert))
+        if cur.rowcount != 1:
+            return None
+        row = c.execute("SELECT email FROM users WHERE id = ?", (user_id,)).fetchone()
+    return row["email"] if row else None
 
 
 def email_exists(email: str) -> bool:

@@ -448,6 +448,30 @@ Nutzerentscheidung: niemand wird mehr automatisch freigeschaltet.
   Kontenliste.
 - Belege: `test_freischaltung.py`, `test_konto_sicherheit.py` (Block 1).
 
+### Admin-Rechte über die Oberfläche (seit 29.09.2026)
+
+- **Zwei Arten von Admins.** Fest hinterlegt: `app.ADMIN_EMAILS` (derzeit nur
+  mschuckert@textil-mode.de) — immer Admin, in der Oberfläche nicht änderbar. Ernannt:
+  `users.is_admin = 1` (Default 0, Migration in `db._migrate_users`), zählt nur bei
+  `approved = 1`.
+- **Vergeben/entziehen** nur das fest hinterlegte Konto: `/admin/konten`, Spalte „Rolle“,
+  POST `/admin/konten/<id>/admin-recht` mit `recht=erteilen|entziehen` → `db.set_admin`
+  (`UPDATE … AND is_admin != ?` + `rowcount`, also genau eine Mail auch bei Doppelklick).
+  Die betroffene Person bekommt eine Mail (`mail_admin_role_granted|revoked_*`, nur Deutsch,
+  mit Absender der Änderung).
+- **`_is_admin()`** liest das Recht bei jeder Anfrage aus der DB — Entziehen wirkt sofort,
+  auch in einer laufenden Sitzung. `_is_stamm_admin()` prüft nur die feste Liste.
+- **Ernannte Admins dürfen:** freischalten/ablehnen, alle Konten, Passwort-Anfragen,
+  Regulierungs-Status; sie bekommen die Mail bei jeder neuen Registrierung
+  (`_alle_admin_adressen()`).
+- **Ernannte Admins dürfen nicht:** Rechte vergeben/entziehen und **keinen Reset-Link für
+  Admin-Konten** erzeugen (`admin_role_reset_blocked`). Sonst könnten sie über
+  `/admin/passwort-resets` das feste Konto übernehmen und sich damit die Rechtevergabe holen.
+- **Bewusst getragen:** Jeder Admin kann für Mitgliederkonten einen Reset-Link erzeugen und
+  sich damit als Mitglied anmelden (so war es schon vorher, nur für einen Admin). Das
+  Mitglied erfährt es über die Mail „Passwort geändert“.
+- Belege: `test_admin_rollen.py` (8 Blöcke), `test_admin_sortierung.py`.
+
 ### Katalogerweiterung vom 29.09.2026 (14 Regulierungen, 4 Profilfelder)
 
 Auswahl: nur Vorschriften, die am 29.09.2026 für Textil- und Bekleidungsunternehmen
