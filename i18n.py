@@ -685,6 +685,11 @@ UI: dict[str, dict[str, str]] = {
         "de": "noch nie", "en": "never", "es": "nunca",
         "fr": "jamais", "it": "mai", "zh": "从未",
     },
+    "admin_sort_hint": {
+        "de": "Nach dieser Spalte sortieren", "en": "Sort by this column",
+        "es": "Ordenar por esta columna", "fr": "Trier selon cette colonne",
+        "it": "Ordina per questa colonna", "zh": "按此列排序",
+    },
     "admin_accounts_unknown": {
         "de": "nicht erfasst", "en": "not recorded", "es": "no registrado",
         "fr": "non enregistré", "it": "non registrato", "zh": "未记录",

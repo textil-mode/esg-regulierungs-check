@@ -6,11 +6,11 @@
   <p style="font-size:13px;color:#5A5A5A;max-width:680px;">{{ t("admin_pending_hint", lang) }}</p>
   {% if anfragen %}
   <div style="overflow-x:auto;">
-  <table class="reg-table">
+  <table class="reg-table sortable" id="anfragen">
     <thead>
       <tr>
-        <th>{{ t("email", lang) }}</th>
-        <th>{{ t("admin_pending_requested", lang) }}</th>
+        <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("email", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="date" aria-sort="ascending"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_pending_requested", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th></th>
       </tr>
     </thead>
@@ -18,7 +18,7 @@
     {% for a in anfragen %}
     <tr>
       <td>{{ a.email }}</td>
-      <td style="color:#5A5A5A;white-space:nowrap;">{{ a.created_at[:16].replace("T", " ") if a.created_at else "—" }} UTC</td>
+      <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ a.created_at or '' }}">{{ a.created_at[:16].replace("T", " ") if a.created_at else "—" }} UTC</td>
       <td style="white-space:nowrap;text-align:right;">
         <form method="post" action="{{ url_for('admin_approve', user_id=a.id) }}" style="display:inline;">
           <button type="submit" class="btn btn-primary">{{ t("admin_btn_approve", lang) }}</button>
@@ -59,32 +59,32 @@
 
   {% if konten %}
   <div style="overflow-x:auto;">
-  <table class="reg-table">
+  <table class="reg-table sortable" id="konten">
     <thead>
       <tr>
-        <th>{{ t("email", lang) }}</th>
-        <th>{{ t("admin_accounts_company", lang) }}</th>
-        <th>{{ t("admin_accounts_registered", lang) }}</th>
-        <th>{{ t("admin_accounts_last_login", lang) }}</th>
-        <th style="text-align:right;">{{ t("admin_accounts_checks", lang) }}</th>
-        <th>{{ t("admin_accounts_last_check", lang) }}</th>
+        <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("email", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_company", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="date" aria-sort="descending"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_registered", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="date"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_last_login", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="num" style="text-align:right;"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_checks", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="date"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_last_check", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
       </tr>
     </thead>
     <tbody>
     {% for k in konten %}
     <tr>
       <td>{{ k.email }}</td>
-      <td style="color:#5A5A5A;">{{ k.company_name or "—" }}</td>
-      <td style="color:#5A5A5A;white-space:nowrap;">{{ k.created_at[:16].replace("T", " ") if k.created_at else "—" }}</td>
-      <td style="color:#5A5A5A;white-space:nowrap;">
+      <td style="color:#5A5A5A;" data-sort-value="{{ k.company_name or '' }}">{{ k.company_name or "—" }}</td>
+      <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.created_at or '' }}">{{ k.created_at[:16].replace("T", " ") if k.created_at else "—" }}</td>
+      <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.last_login_at or '' }}">
         {% if k.last_login_at %}
           {{ k.last_login_at[:16].replace("T", " ") }}
         {% else %}
           <span title="{{ t('admin_accounts_unknown_hint', lang) }}">{{ t("admin_accounts_unknown", lang) }}</span>
         {% endif %}
       </td>
-      <td style="text-align:right;{% if not k.analyses_count %}color:#5A5A5A;{% endif %}">{{ k.analyses_count }}</td>
-      <td style="color:#5A5A5A;white-space:nowrap;">
+      <td style="text-align:right;{% if not k.analyses_count %}color:#5A5A5A;{% endif %}" data-sort-value="{{ k.analyses_count or 0 }}">{{ k.analyses_count }}</td>
+      <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.last_analysis or '' }}">
         {{ k.last_analysis[:16].replace("T", " ") if k.last_analysis else t("admin_accounts_never", lang) }}
       </td>
     </tr>
@@ -99,5 +99,76 @@
   <p style="color:#5A5A5A;margin-bottom:0;">{{ t("admin_accounts_empty", lang) }}</p>
   {% endif %}
 </div>
+
+<style>
+  .sort-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit;
+              cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-align: inherit; }
+  .sort-btn:hover { text-decoration: underline; }
+  .sort-btn:focus-visible { outline: 2px solid var(--tm-navy); outline-offset: 2px; }
+  .sort-pfeil::after { content: "\2195"; opacity: .35; font-size: 12px; }
+  th[aria-sort="ascending"] .sort-pfeil::after { content: "\25B2"; opacity: 1; font-size: 10px; }
+  th[aria-sort="descending"] .sort-pfeil::after { content: "\25BC"; opacity: 1; font-size: 10px; }
+</style>
+<script>
+// Sortieren per Klick auf die Spaltenueberschrift, ganz im Browser.
+// Leere Werte ("noch nie", "nicht erfasst", kein Unternehmen) stehen in beiden
+// Richtungen unten; bei Gleichstand bleibt die Reihenfolge vom Server.
+(function () {
+  var SPEICHER = 'esg-admin-sortierung';
+  var gemerkt = {};
+  try { gemerkt = JSON.parse(localStorage.getItem(SPEICHER) || '{}') || {}; } catch (e) { gemerkt = {}; }
+
+  document.querySelectorAll('table.sortable').forEach(function (tabelle) {
+    var koerper = tabelle.tBodies[0];
+    Array.prototype.forEach.call(koerper.rows, function (tr, i) { tr.dataset.pos = i; });
+    var spalten = tabelle.querySelectorAll('thead th[data-sort]');
+
+    function wert(tr, i) {
+      var td = tr.cells[i];
+      var v = td.getAttribute('data-sort-value');
+      return (v === null ? td.textContent : v).trim();
+    }
+
+    function sortiere(th, richtung) {
+      var i = th.cellIndex, typ = th.getAttribute('data-sort');
+      var zeilen = Array.prototype.slice.call(koerper.rows);
+      zeilen.sort(function (a, b) {
+        var x = wert(a, i), y = wert(b, i), c;
+        if (x === '' || y === '') {
+          c = (x === '' ? 1 : 0) - (y === '' ? 1 : 0);
+          return c || (a.dataset.pos - b.dataset.pos);
+        }
+        if (typ === 'num') c = parseFloat(x) - parseFloat(y);
+        else if (typ === 'date') c = x < y ? -1 : (x > y ? 1 : 0);
+        else c = x.localeCompare(y, 'de', { sensitivity: 'base', numeric: true });
+        if (richtung === 'descending') c = -c;
+        return c || (a.dataset.pos - b.dataset.pos);
+      });
+      zeilen.forEach(function (tr) { koerper.appendChild(tr); });
+      spalten.forEach(function (s) {
+        if (s === th) s.setAttribute('aria-sort', richtung); else s.removeAttribute('aria-sort');
+      });
+    }
+
+    spalten.forEach(function (th) {
+      th.querySelector('.sort-btn').addEventListener('click', function () {
+        var jetzt = th.getAttribute('aria-sort');
+        // Erster Klick: Daten und Zahlen absteigend (neueste/meiste zuerst), Text A-Z.
+        var richtung = jetzt ? (jetzt === 'ascending' ? 'descending' : 'ascending')
+                             : (th.getAttribute('data-sort') === 'text' ? 'ascending' : 'descending');
+        sortiere(th, richtung);
+        gemerkt[tabelle.id] = { spalte: th.cellIndex, richtung: richtung };
+        try { localStorage.setItem(SPEICHER, JSON.stringify(gemerkt)); } catch (e) {}
+      });
+    });
+
+    var g = gemerkt[tabelle.id];
+    if (g && (g.richtung === 'ascending' || g.richtung === 'descending')) {
+      var ziel = Array.prototype.find.call(spalten, function (s) { return s.cellIndex === g.spalte; });
+      if (ziel) sortiere(ziel, g.richtung);
+    }
+  });
+})();
+</script>
 
 {% endblock %}
