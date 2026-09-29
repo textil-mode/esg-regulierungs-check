@@ -1581,7 +1581,7 @@ def enefg_status(profile: dict):
 
 
 def abwv38_status(profile: dict):
-    """Abwasserverordnung Anhang 38: Nassveredlung mit Abwasser in Deutschland."""
+    """Abwasserverordnung Anhang 38: Abwasser aus Textilherstellung oder -veredlung in Deutschland."""
     if profile.get("wet_processing_de"):
         return "ja", "abwv_nass"
     if (profile.get("branch") or "") == "Veredlung von Textilien und Bekleidung":

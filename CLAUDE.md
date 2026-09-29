@@ -457,8 +457,15 @@ Nutzerentscheidung: niemand wird mehr automatisch freigeschaltet.
   Flash-Meldung enthält Zeilenumbrüche).
 - **Nassveredlung → „Abwasser aus Textilherstellung oder -veredlung in Deutschland“**
   (`field_wet_processing`) samt Ausfüllhilfe `wet_processing`, außerdem neue Ausfüllhilfe
-  `svhc`. Reine Oberfläche; interner Feldname `wet_processing_de` und die AbwV38-Bausteine
-  sind unverändert, `_PROMPT_VERSION` nicht hochgezählt.
+  `svhc`. Die AbwV38-Bausteine (`abwv_nass`, `abwv_branche_veredlung`, `abwv_keine`)
+  sprechen ebenfalls von „Abwasser aus Textilherstellung oder -veredlung“; sie werden je
+  Lauf neu erzeugt, wirken also sofort. Interner Feldname `wet_processing_de` und die
+  Entscheidungslogik sind unverändert, `_PROMPT_VERSION` nicht hochgezählt.
+- **Anmeldefehler** (`err_login_failed`) lautet jetzt „Anmeldung nicht möglich. Bitte prüfen
+  Sie E-Mail und Passwort. Nach einer Registrierung ist die Anmeldung erst möglich, wenn …“.
+  Anlass: eine offene Anfrage hat noch kein Passwort, wer sich direkt nach der Registrierung
+  anmelden wollte, las „E-Mail oder Passwort falsch“. Der Text ist für jede Adresse gleich —
+  ein eigener Hinweis nur für offene Anfragen würde verraten, wer sich registriert hat (M2).
 
 ### Admin-Rechte über die Oberfläche (seit 29.09.2026)
 
