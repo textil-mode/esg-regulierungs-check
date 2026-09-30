@@ -40,6 +40,7 @@ assert db.DB_PATH == TEST_DB, f"Testlauf zeigt auf {db.DB_PATH} statt auf die Ko
 db.init_db()
 
 import mailer  # noqa: E402
+import regulations  # noqa: E402
 import app as flaskapp  # noqa: E402
 
 assert db.DB_PATH == TEST_DB, "app.py hat die Test-Datenbank umgebogen!"
@@ -92,7 +93,8 @@ def registrieren(email: str, ip: str = IP_A, pw: str = PW):
         return client.post(
             "/login",
             data={"action": "signup", "email": email,
-                  "password": pw, "password2": pw},
+                  "password": pw, "password2": pw,
+     "association": regulations.MEMBER_ASSOCIATIONS[0]},
             environ_base={"REMOTE_ADDR": ip},
         )
 

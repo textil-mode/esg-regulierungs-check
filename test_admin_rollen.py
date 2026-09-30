@@ -42,6 +42,7 @@ assert db.DB_PATH == TEST_DB
 db.init_db()
 
 import mailer  # noqa: E402
+import regulations  # noqa: E402
 import app as flaskapp  # noqa: E402
 
 fehler: list[str] = []
@@ -211,7 +212,8 @@ print("\n7. Registrierungs-Mails gehen an alle Admins")
 with sqlite3.connect(TEST_DB) as c:
     c.execute("DELETE FROM login_attempts")
 versandt.clear()
-post(flaskapp.app.test_client(), "/login", {"action": "signup", "email": "neuling@example.org"})
+post(flaskapp.app.test_client(), "/login", {"action": "signup", "email": "neuling@example.org",
+     "association": regulations.MEMBER_ASSOCIATIONS[0]})
 ruhe()
 an = sorted(m["to"] for m in versandt if "Zugangsanfrage" in m["subject"] and m["to"] != "neuling@example.org")
 pruefe(an == sorted([ADMIN, "berta@example.org"]), f"Admin-Mail an festes Konto und Berta ({an})")

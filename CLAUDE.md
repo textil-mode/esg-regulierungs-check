@@ -467,6 +467,42 @@ Nutzerentscheidung: niemand wird mehr automatisch freigeschaltet.
   anmelden wollte, las „E-Mail oder Passwort falsch“. Der Text ist für jede Adresse gleich —
   ein eigener Hinweis nur für offene Anfragen würde verraten, wer sich registriert hat (M2).
 
+### Mitgliedsverband bei der Registrierung (30.09.2026)
+
+Nutzervorgabe: Wer sich registriert, muss vor dem Abschicken angeben, bei welchem
+Verband er Mitglied ist; „Kein Mitglied“ ist wählbar. Die Angabe steht dem Admin
+auf der Freischaltungsseite.
+
+- **`regulations.MEMBER_ASSOCIATIONS`** — 24 Verbände wörtlich von
+  textil-mode.de/de/verband/mitgliedsverbaende/ plus „Kein Mitglied“.
+  **Falle beim Aktualisieren:** Die Übersichtsseite zeigt zunächst nur 12
+  Einträge und lädt den Rest über „Weiter laden“ nach — ein Abruf des
+  Seitenquelltexts liefert die halbe Liste. Die Verbandsseite nennt die
+  Gesamtzahl (24) und ist die Gegenprobe.
+- **Spalte `users.association`** (idempotente Migration in `db._migrate_users`),
+  gesetzt über `db.create_user(..., association=...)`, gelesen in
+  `db.list_pending()`. Bestandskonten haben `NULL`; die Admin-Tabelle zeigt
+  dafür „—“.
+- **Pflichtangabe serverseitig** (`app._signup`): `association not in
+  MEMBER_ASSOCIATIONS` → Fehlermeldung, **kein** Konto. Die Prüfung steht vor
+  jedem Kontozugriff und hängt nur an der Eingabe — die Antwort verrät weiterhin
+  nichts über den Kontobestand (Befund M2 vom 24.09.2026 bleibt gewahrt).
+- **Keine Auswirkung auf die Analyse:** Der Wert steht in keinem
+  `relevant_fields`, geht in keinen Prompt und in keinen `profile_hash`. Die
+  Cache-Invariante ist unberührt, `_PROMPT_VERSION` nicht hochgezählt.
+- **Übersetzt** werden nur Beschriftung, Fehlertext und „Kein Mitglied“
+  (`i18n.ASSOCIATION_LABELS`); die Verbandsnamen sind Eigennamen und bleiben in
+  jeder Sprache stehen.
+- **Selbstdeklariert, nicht geprüft:** Wer eine fremde Adresse registriert, kann
+  einen beliebigen Verband angeben. Die Angabe ist für den Admin ein Hinweis,
+  kein Nachweis. Übernehmen lässt sich die Adresse dadurch nicht — die
+  Freischalt-Mail mit dem Code geht an das Postfach (Stand 29.09.2026).
+  Eine erneute Registrierung derselben Adresse ändert den gespeicherten Verband
+  **nicht** (`app._signup` kehrt bei vorhandener Anfrage früh zurück).
+- **Datenschutzerklärung** Ziffer 2.1 nennt die Angabe (erhoben und dem Admin
+  gezeigt) — wer das Feld ändert, zieht den Text mit nach.
+- Belege: `test_mitgliedsverband.py` (35 Prüfungen).
+
 ### Admin-Rechte über die Oberfläche (seit 29.09.2026)
 
 - **Zwei Arten von Admins.** Fest hinterlegt: `app.ADMIN_EMAILS` (derzeit nur

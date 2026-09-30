@@ -119,6 +119,10 @@ def _migrate_users(c: sqlite3.Connection) -> None:
     zeigt dafuer einen Strich, keine erfundene Angabe.
     """
     cols = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
+    if "association" not in cols:
+        # Mitgliedsverband aus der Registrierung. Bestandskonten tragen NULL;
+        # die Admin-Liste zeigt dort einen Strich statt einer erfundenen Angabe.
+        c.execute("ALTER TABLE users ADD COLUMN association TEXT")
     if "last_login_at" not in cols:
         c.execute("ALTER TABLE users ADD COLUMN last_login_at TEXT")
     # Freischaltung durch die Administration (seit 29.09.2026). Der Default 1
@@ -272,7 +276,7 @@ BCRYPT_ROUNDS = 12
 
 
 def create_user(email: str, password: str | None, *, approved: bool = True,
-                lang: str | None = None) -> int:
+                lang: str | None = None, association: str | None = None) -> int:
     """Legt ein Konto an. Registrierungen kommen mit `approved=False` herein.
 
     Der Default `True` haelt Tests, Notausgaenge und Admin-Werkzeuge beim
@@ -290,10 +294,10 @@ def create_user(email: str, password: str | None, *, approved: bool = True,
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         cur = c.execute(
-            "INSERT INTO users (email, pw_hash, created_at, approved, approved_at, signup_lang)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (email, pw_hash, created_at, approved, approved_at,"
+            " signup_lang, association) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (email.lower().strip(), pw_hash, now, 1 if approved else 0,
-             now if approved else None, lang),
+             now if approved else None, lang, association),
         )
         return cur.lastrowid
 
@@ -337,7 +341,7 @@ def list_pending() -> list[dict]:
     purge_stale_pending()
     with _conn() as c:
         rows = c.execute(
-            "SELECT id, email, created_at, signup_lang FROM users"
+            "SELECT id, email, created_at, signup_lang, association FROM users"
             " WHERE approved = 0 ORDER BY created_at, id"
         ).fetchall()
     return [dict(r) for r in rows]

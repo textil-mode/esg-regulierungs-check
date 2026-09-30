@@ -96,8 +96,8 @@ pruefe('aria-sort="descending"' in konten_kopf,
        "Ausgangslage gekennzeichnet: Registrierung, neueste zuerst")
 pruefe("Nach dieser Spalte sortieren" in konten_kopf, "Hinweis beim Ueberfahren (i18n)")
 anfragen_kopf = html.split('id="anfragen"', 1)[1].split("</thead>", 1)[0]
-pruefe(re.findall(r'<th data-sort="(\w+)"', anfragen_kopf) == ["text", "date"],
-       "Anfragen: nach Adresse und Eingang sortierbar, Aktionsspalte nicht")
+pruefe(re.findall(r'<th data-sort="(\w+)"', anfragen_kopf) == ["text", "text", "date"],
+       "Anfragen: nach Adresse, Verband und Eingang sortierbar, Aktionsspalte nicht")
 
 print("\n3. Sortierwerte in den Zellen")
 koerper = html.split('id="konten"', 1)[1].split("</tbody>", 1)[0]

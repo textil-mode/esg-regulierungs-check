@@ -40,7 +40,9 @@
 
   <h4>2.1 Zugangsdaten</h4>
   <p>
-    Bei der Registrierung erheben wir Ihre E-Mail-Adresse und den Zeitpunkt
+    Bei der Registrierung erheben wir Ihre E-Mail-Adresse, die Angabe, bei
+    welchem Mitgliedsverband von textil+mode Sie Mitglied sind (Auswahl aus
+    einer Liste, „Kein Mitglied&#8220; eingeschlossen), und den Zeitpunkt
     der Registrierung. Ihr Passwort legen Sie erst nach der Freischaltung fest,
     mit einem Code aus der Freischalt-Nachricht. Das Passwort speichern wir
     ausschließlich als bcrypt-Hash; es lässt sich daraus nicht zurückrechnen,
@@ -49,7 +51,8 @@
   <p>
     Eine Registrierung ist zunächst eine Anfrage: Der Zugang wird erst nutzbar,
     wenn die Administration ihn freischaltet. Dafür sieht sie Ihre
-    E-Mail-Adresse und den Zeitpunkt der Anfrage und erhält darüber eine
+    E-Mail-Adresse, den angegebenen Verband und den Zeitpunkt der Anfrage
+    und erhält darüber eine
     E-Mail. Wir speichern zusätzlich, ob und wann der Zugang freigeschaltet
     wurde, und die Sprache der Anfrage für die Freischalt-Nachricht. Lehnt die
     Administration eine Anfrage ab, löschen wir sie samt aller Angaben in der

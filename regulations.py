@@ -1914,6 +1914,44 @@ SALES_MARKETS = [
 # Traegt REACH Art. 33 und die SCIP-Meldung. "Nicht bekannt" ist die
 # Voreinstellung und fuehrt zu "Pruefen" — die meisten Unternehmen wissen es
 # ohne Lieferantenabfrage nicht. Uebersetzungen: siehe i18n.SVHC_LABELS.
+# Mitgliedsverbaende von textil+mode, woertlich von
+# https://www.textil-mode.de/de/verband/mitgliedsverbaende/ (Stand 30.09.2026).
+# Reihenfolge wie dort. ACHTUNG beim Aktualisieren: Die Uebersichtsseite
+# zeigt zunaechst nur 12 Eintraege und laedt die uebrigen ueber
+# "Weiter laden" nach — ein Abruf des Seitenquelltexts liefert also nur die
+# halbe Liste. Die Verbandsseite nennt die Gesamtzahl (24) und ist damit die
+# Gegenprobe.
+# Wird bei der Registrierung abgefragt, damit die Administration bei der
+# Freischaltung sieht, woher die Anfrage kommt. Geht NICHT in die Analyse
+# ein und steht in keinem `relevant_fields` — der Cache bleibt unberuehrt.
+MEMBER_ASSOCIATIONS = [
+    "Verband der Nordwestdeutschen Textil- und Bekleidungsindustrie e. V.",
+    "Südwesttextil e. V.",
+    "Verband der Bayerischen Textil- und Bekleidungsindustrie e. V.",
+    "Verband der Rheinischen Textil- und Bekleidungsindustrie e. V.",
+    "Verband der Textil- und Bekleidungsindustrie Hessen, Rheinland-Pfalz und Saarland e. V.",
+    "Verband der Nord-Ostdeutschen Textil- und Bekleidungsindustrie e. V.",
+    "GermanFashion Modeverband Deutschland e. V.",
+    "HDS/L Bundesverband der Schuh- und Lederwarenindustrie e. V.",
+    "Industrieverband Veredlung - Garne - Gewebe - Technische Textilien e. V.",
+    "Verband der Deutschen Heimtextilien-Industrie e. V.",
+    "Gesamtverband der deutschen Maschen-Industrie - Gesamtmasche e. V.",
+    "Fachvereinigung Wirkerei-Strickerei Albstadt e. V.",
+    "Arbeitgeberverband der Textilindustrie von Düren, Jülich, Euskirchen und Umgebung e. V.",
+    "Verband der Textil- und Bekleidungsindustrie Berlin und Brandenburg e. V.",
+    "Deutscher Textilreinigungs-Verband e. V.",
+    "Gesamtvereinigung Bekleidungsindustrie Niedersachsen und Bremen e. V.",
+    "Industrieverband Technische Textilien – Rollladen – Sonnenschutz e. V.",
+    "Verein Deutscher Kammgarnspinner",
+    "Fachverband Matratzen-Industrie e. V.",
+    "Deutscher Pelz- Groß- und Außenhandelsverband e. V.",
+    "BVMed - Bundesverband Medizintechnologie e. V.",
+    "Branchenverband Plauener Spitze und Stickereien e. V.",
+    "Initiative Handarbeit e. V.",
+    "Industrieverband Textil Service – intex e.V.",
+    "Kein Mitglied",   # muss waehlbar bleiben
+]
+
 SVHC_OPTIONS = [
     "Nicht bekannt",
     "Ja",

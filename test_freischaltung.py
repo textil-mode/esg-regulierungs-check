@@ -47,6 +47,7 @@ assert db.DB_PATH == TEST_DB
 db.init_db()
 
 import mailer  # noqa: E402
+import regulations  # noqa: E402
 import app as flaskapp  # noqa: E402
 
 fehler: list[str] = []
@@ -118,7 +119,8 @@ anon = flaskapp.app.test_client()
 with anon.session_transaction() as sess:
     sess["ui_language"] = "fr"
 r = post(anon, "/login", {"action": "signup", "email": "neu@example.org",
-                          "password": PW, "password2": PW})
+                          "password": PW, "password2": PW,
+     "association": regulations.MEMBER_ASSOCIATIONS[0]})
 ruhe()
 neu = db.get_user_by_email("neu@example.org")
 pruefe(r.status_code == 200 and neu is not None, "Anfrage angelegt, Seite antwortet normal")
@@ -202,7 +204,8 @@ pruefe(not versandt, "zweites Freischalten schickt keine zweite Mail")
 print("\n5. Ablehnen")
 versandt.clear()
 post(flaskapp.app.test_client(), "/login", {"action": "signup", "email": "weg@example.org",
-                                             "password": PW, "password2": PW})
+                                             "password": PW, "password2": PW,
+     "association": regulations.MEMBER_ASSOCIATIONS[0]})
 ruhe()
 weg = db.get_user_by_email("weg@example.org")
 versandt.clear()
@@ -227,7 +230,8 @@ with sqlite3.connect(TEST_DB) as c:
 versandt.clear()
 angreifer = flaskapp.app.test_client()
 post(angreifer, "/login", {"action": "signup", "email": "chef@mitglied.example",
-                           "password": "angreifer-pw-1", "password2": "angreifer-pw-1"})
+                           "password": "angreifer-pw-1", "password2": "angreifer-pw-1",
+     "association": regulations.MEMBER_ASSOCIATIONS[0]})
 ruhe()
 r_neu = post(angreifer, "/login", {"action": "login", "email": "chef@mitglied.example",
                                    "password": "angreifer-pw-1"})
@@ -248,7 +252,8 @@ versandt.clear()
 for i in range(14):
     ip6 = f"2001:db8:aa:bb::{i + 1:x}"
     flaskapp.app.test_client().post(
-        "/login", data={"action": "signup", "email": f"flut{i}@example.org"},
+        "/login", data={"action": "signup", "email": f"flut{i}@example.org",
+              "association": regulations.MEMBER_ASSOCIATIONS[0]},
         headers={"Origin": BASIS}, environ_base={"REMOTE_ADDR": ip6})
 ruhe()
 angelegt = sum(1 for i in range(14) if db.get_user_by_email(f"flut{i}@example.org"))
@@ -259,7 +264,8 @@ with sqlite3.connect(TEST_DB) as c:
 versandt.clear()
 for i in range(14):
     flaskapp.app.test_client().post(
-        "/login", data={"action": "signup", "email": f"welle{i}@example.org"},
+        "/login", data={"action": "signup", "email": f"welle{i}@example.org",
+              "association": regulations.MEMBER_ASSOCIATIONS[0]},
         headers={"Origin": BASIS}, environ_base={"REMOTE_ADDR": f"198.51.100.{i + 1}"})
 ruhe()
 admin_mails = [m for m in versandt if m["to"] == ADMIN]
@@ -273,7 +279,8 @@ alt_max = db.PENDING_MAX
 db.PENDING_MAX = db.count_pending()
 with sqlite3.connect(TEST_DB) as c:
     c.execute("DELETE FROM login_attempts")
-post(flaskapp.app.test_client(), "/login", {"action": "signup", "email": "zuviel@example.org"})
+post(flaskapp.app.test_client(), "/login", {"action": "signup", "email": "zuviel@example.org",
+     "association": regulations.MEMBER_ASSOCIATIONS[0]})
 ruhe()
 pruefe(db.get_user_by_email("zuviel@example.org") is None, "ueber PENDING_MAX wird nichts angelegt")
 db.PENDING_MAX = alt_max

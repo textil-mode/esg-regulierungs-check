@@ -37,6 +37,7 @@ from flask.sessions import SecureCookieSessionInterface
 import db
 import mailer
 from i18n import (
+    ASSOCIATION_LABELS,
     BRANCH_LABELS,
     GROUP_ROLE_LABELS,
     LANGUAGES,
@@ -72,6 +73,7 @@ from regulations import (
     LOCATIONS,
     MATERIAL_GROUPS,
     MATERIALS,
+    MEMBER_ASSOCIATIONS,
     PRODUCT_CATEGORIES,
     REGULATIONS,
     SALES_MARKETS,
@@ -318,6 +320,8 @@ def _inject_globals():
         MATERIAL_GROUP_LABELS=MATERIAL_GROUP_LABELS,
         SALES_MARKET_LABELS=SALES_MARKET_LABELS,
         SVHC_LABELS=SVHC_LABELS,
+        MEMBER_ASSOCIATIONS=MEMBER_ASSOCIATIONS,
+        ASSOCIATION_LABELS=ASSOCIATION_LABELS,
     )
 
 
@@ -498,7 +502,7 @@ def _quota_ip(ip: str) -> str:
     return ip
 
 
-def _signup(email: str, lang: str) -> int | None:
+def _signup(email: str, lang: str, association: str = "") -> int | None:
     """Registrierung — die Antwort verraet nicht, ob es die Adresse schon gibt.
 
     Frueher meldete das Formular „E-Mail bereits vergeben". Wer eine Liste der
@@ -515,6 +519,15 @@ def _signup(email: str, lang: str) -> int | None:
     import re
     if len(email) > 254 or not re.match(_EMAIL_RE, email):
         flash(t("err_email_invalid", lang), "error")
+        return None
+
+    # Mitgliedsverband: Pflichtangabe, und nur ein Wert aus der Liste. Das
+    # Formular erzwingt die Auswahl schon im Browser; hier steht die Pruefung
+    # noch einmal, weil ein POST auch ohne Browser kommen kann. Der Wert geht
+    # NICHT in die Analyse ein und steht in keinem `relevant_fields` — er hilft
+    # der Administration beim Freischalten.
+    if association not in MEMBER_ASSOCIATIONS:
+        flash(t("err_association_missing", lang), "error")
         return None
 
     # Deckel je Quell-IP: sonst legt ein Skript beliebig viele Konten an und
@@ -535,7 +548,8 @@ def _signup(email: str, lang: str) -> int | None:
     # Admin-Liste; nur die Bestaetigungen entfallen.
     if not _mailversand_bereit():
         if not db.email_exists(email) and db.count_pending() < db.PENDING_MAX:
-            db.create_user(email, None, approved=False, lang=lang)
+            db.create_user(email, None, approved=False, lang=lang,
+                           association=association)
         flash(t("ok_signup_check_mail", lang), "success")
         return None
 
@@ -567,7 +581,8 @@ def _signup(email: str, lang: str) -> int | None:
                 db.log_mail(email, "signup_request", "failed",
                             error="Zu viele offene Anfragen (PENDING_MAX)")
                 return
-            db.create_user(email, None, approved=False, lang=lang)
+            db.create_user(email, None, approved=False, lang=lang,
+                           association=association)
             _mail_im_hintergrund(email, "mail_request_subject",
                                  "mail_request_body", anmeldelink,
                                  "signup_request", lang)
@@ -688,7 +703,10 @@ def login():
                 return ergebnis   # Weiterleitung auf die Code-Eingabe
 
         elif action == "signup":
-            status = _signup(email, lang) or status
+            status = _signup(
+                email, lang,
+                (request.form.get("association") or "").strip(),
+            ) or status
 
     return render_template("login.html"), status
 

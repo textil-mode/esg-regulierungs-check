@@ -10,6 +10,7 @@
     <thead>
       <tr>
         <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("email", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_pending_association", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="date" aria-sort="ascending"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_pending_requested", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th></th>
       </tr>
@@ -18,6 +19,9 @@
     {% for a in anfragen %}
     <tr>
       <td>{{ a.email }}</td>
+      <td style="overflow-wrap:anywhere;" data-sort-value="{{ a.association or '' }}">
+        {% if a.association %}{{ t_opt(a.association, ASSOCIATION_LABELS, lang) }}{% else %}<span style="color:#5A5A5A;">—</span>{% endif %}
+      </td>
       <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ a.created_at or '' }}">{{ a.created_at[:16].replace("T", " ") if a.created_at else "—" }} UTC</td>
       <td style="white-space:nowrap;text-align:right;">
         <form method="post" action="{{ url_for('admin_approve', user_id=a.id) }}" style="display:inline;">

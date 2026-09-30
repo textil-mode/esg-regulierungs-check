@@ -57,6 +57,13 @@
       <input type="hidden" name="action" value="signup">
       <label>{{ t("email", lang) }}</label>
       <input type="email" name="email" required maxlength="254" autocomplete="email" placeholder=" ">
+      <label>{{ t("field_association", lang) }}</label>
+      <select name="association" required>
+        <option value="">{{ t("association_choose", lang) }}</option>
+        {% for v in MEMBER_ASSOCIATIONS %}
+        <option value="{{ v }}">{{ t_opt(v, ASSOCIATION_LABELS, lang) }}</option>
+        {% endfor %}
+      </select>
       <p class="help-text" style="margin:4px 0 12px;">{{ t("signup_hint", lang) }}</p>
       <button type="submit" class="btn btn-primary ack-gated" style="width:100%;margin-top:6px;" disabled title="{{ t('login_ack_required', lang) }}">{{ t("btn_signup", lang) }}</button>
     </form>

@@ -1683,6 +1683,41 @@ UI: dict[str, dict[str, str]] = {
         "it": "Acque reflue dalla produzione o nobilitazione tessile in Germania",
         "zh": "在德国的纺织品生产或整理过程中产生废水",
     },
+    # --- Mitgliedsverband bei der Registrierung (30.09.2026) ----------
+    # Die Verbandsnamen selbst sind Eigennamen und bleiben unuebersetzt;
+    # uebersetzt werden nur Beschriftung, Fehlertext und „Kein Mitglied“.
+    "field_association": {
+        "de": "Mitglied bei welchem Verband?",
+        "en": "Member of which association?",
+        "es": "¿Miembro de qué asociación?",
+        "fr": "Membre de quelle fédération ?",
+        "it": "Membro di quale associazione?",
+        "zh": "您是哪个协会的会员？",
+    },
+    "association_choose": {
+        "de": "Bitte wählen",
+        "en": "Please select",
+        "es": "Seleccione",
+        "fr": "Veuillez choisir",
+        "it": "Selezioni",
+        "zh": "请选择",
+    },
+    "err_association_missing": {
+        "de": "Bitte geben Sie an, bei welchem Verband Sie Mitglied sind.",
+        "en": "Please state which association you are a member of.",
+        "es": "Indique de qué asociación es miembro.",
+        "fr": "Veuillez indiquer de quelle fédération vous êtes membre.",
+        "it": "Indichi di quale associazione è membro.",
+        "zh": "请说明您是哪个协会的会员。",
+    },
+    "admin_pending_association": {
+        "de": "Verband",
+        "en": "Association",
+        "es": "Asociación",
+        "fr": "Fédération",
+        "it": "Associazione",
+        "zh": "协会",
+    },
     "field_svhc": {
         "de": "Enthalten Ihre Produkte Stoffe der ECHA-Kandidatenliste (SVHC) über 0,1 %?",
         "en": "Do your products contain substances on the ECHA Candidate List (SVHC) above 0.1%?",
@@ -5842,6 +5877,20 @@ SALES_MARKET_LABELS: dict[str, dict[str, str]] = {
 }
 
 # Einfachauswahl SVHC (Key = DE-Wert, DB-kompatibel), siehe regulations.SVHC_OPTIONS.
+# Nur „Kein Mitglied“ wird uebersetzt; die Verbandsnamen sind Eigennamen
+# und bleiben in jeder Sprache wie auf textil-mode.de. `t_opt` faellt fuer
+# jeden nicht genannten Wert auf den Wert selbst zurueck.
+ASSOCIATION_LABELS: dict[str, dict[str, str]] = {
+    "Kein Mitglied": {
+        "de": "Kein Mitglied",
+        "en": "Not a member",
+        "es": "No es miembro",
+        "fr": "Non-membre",
+        "it": "Non è membro",
+        "zh": "非会员",
+    },
+}
+
 SVHC_LABELS: dict[str, dict[str, str]] = {
     "Nicht bekannt": {
         "de": "Nicht bekannt", "en": "Not known", "es": "No se sabe",
