@@ -70,6 +70,7 @@
       <tr>
         <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("email", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_company", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_pending_association", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="date" aria-sort="descending"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_registered", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="date"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_last_login", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="num" style="text-align:right;"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_checks", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
@@ -82,6 +83,9 @@
     <tr>
       <td style="overflow-wrap:anywhere;">{{ k.email }}</td>
       <td style="color:#5A5A5A;overflow-wrap:anywhere;" data-sort-value="{{ k.company_name or '' }}">{{ k.company_name or "—" }}</td>
+      <td style="overflow-wrap:anywhere;" data-sort-value="{{ k.association or '' }}">
+        {% if k.association %}{{ t_opt(k.association, ASSOCIATION_LABELS, lang) }}{% else %}<span style="color:#5A5A5A;">—</span>{% endif %}
+      </td>
       <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.created_at or '' }}">{{ zeitpunkt(k.created_at) if k.created_at else "—" }}</td>
       <td style="color:#5A5A5A;white-space:nowrap;" data-sort-value="{{ k.last_login_at or '' }}">
         {% if k.last_login_at %}
@@ -138,7 +142,7 @@
 // Leere Werte ("noch nie", "nicht erfasst", kein Unternehmen) stehen in beiden
 // Richtungen unten; bei Gleichstand bleibt die Reihenfolge vom Server.
 (function () {
-  var SPEICHER = 'esg-admin-sortierung';
+  var SPEICHER = 'esg-admin-sortierung-v2';  // v2: Spalte "Verband" eingefuegt, alte Indizes passen nicht mehr
   var gemerkt = {};
   try { gemerkt = JSON.parse(localStorage.getItem(SPEICHER) || '{}') || {}; } catch (e) { gemerkt = {}; }
 

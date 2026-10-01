@@ -184,6 +184,42 @@ pruefe(i18n.t_opt(VERBAND, i18n.ASSOCIATION_LABELS, "en") == VERBAND,
        "Verbandsnamen bleiben als Eigenname stehen (hier: en)")
 
 # ---------------------------------------------------------------------------
+print("\n8. Der Verband bleibt nach der Freischaltung sichtbar")
+# ---------------------------------------------------------------------------
+# Die Anfragenliste zeigt ihn seit dem 30.09.2026; wer freigeschaltet ist,
+# steht dort aber nicht mehr. Ohne die Spalte in der Kontenliste waere die
+# Angabe nach dem ersten Klick des Admins verschwunden.
+offen_id = treffer[0]["id"] if treffer else None
+assert offen_id, "Anfrage von mit-verband@example.org nicht gefunden"
+db.approve_user(offen_id)
+konten = db.list_accounts()
+zeile = [k for k in konten if k["email"] == "mit-verband@example.org"]
+pruefe(all("association" in k for k in konten),
+       "list_accounts liefert die Spalte mit")
+pruefe(bool(zeile) and zeile[0]["association"] == VERBAND,
+       "der Verband steht am freigeschalteten Konto")
+
+# Konten von vor der Umstellung haben keinen Wert - die Seite muss das aushalten.
+alt_id = db.create_user("altkonto@example.org", "ein-gutes-Passwort-2026")
+altzeile = [k for k in db.list_accounts() if k["id"] == alt_id]
+pruefe(bool(altzeile) and altzeile[0]["association"] is None,
+       "Bestandskonto ohne Angabe liefert None statt Fehler")
+
+with flaskapp.app.test_client() as client:
+    with client.session_transaction() as sitzung:
+        sitzung["user_id"] = admin_id
+        sitzung["user_email"] = admin
+    seite2 = client.get("/admin/konten").get_data(as_text=True)
+tabelle = seite2.split('id="konten"')[1] if 'id="konten"' in seite2 else ""
+pruefe(bool(tabelle), "die Kontentabelle wird ausgegeben")
+pruefe(VERBAND in tabelle, "sie zeigt den Verband des Kontos")
+pruefe("altkonto@example.org" in tabelle and "—" in tabelle,
+       "das Bestandskonto steht darin und zeigt einen Gedankenstrich")
+pruefe(i18n.t("admin_pending_association", "de") in tabelle,
+       "die Spaltenueberschrift ist uebersetzt")
+
+# ---------------------------------------------------------------------------
+
 ruhe()
 print("\n" + "=" * 62)
 if fehler:

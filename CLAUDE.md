@@ -501,7 +501,14 @@ auf der Freischaltungsseite.
   **nicht** (`app._signup` kehrt bei vorhandener Anfrage früh zurück).
 - **Datenschutzerklärung** Ziffer 2.1 nennt die Angabe (erhoben und dem Admin
   gezeigt) — wer das Feld ändert, zieht den Text mit nach.
-- Belege: `test_mitgliedsverband.py` (35 Prüfungen).
+- **Sichtbar an zwei Stellen** (seit 01.10.2026): bei den offenen Anfragen und
+  in der Kontenliste (`db.list_accounts` liefert `association`, Spalte hinter
+  „Unternehmen"). Ohne die zweite wäre die Angabe mit dem Freischalten
+  verschwunden, weil freigeschaltete Konten aus der Anfragenliste fallen.
+  Die gemerkte Sortierung hängt am Spaltenindex — deshalb heißt der
+  localStorage-Schlüssel jetzt `esg-admin-sortierung-v2`.
+- Belege: `test_mitgliedsverband.py` (42 Prüfungen), `test_admin_sortierung.py`
+  (acht Spalten).
 
 ### Admin-Rechte über die Oberfläche (seit 29.09.2026)
 

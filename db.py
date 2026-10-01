@@ -430,6 +430,11 @@ def list_accounts() -> list[dict]:
     mehr nach aussen, und ein Blick in die Datenbank per `docker exec` war
     der einzige Weg.
 
+    `association` ist die Angabe aus der Registrierung (seit 30.09.2026) —
+    sie steht am Konto, nicht im Unternehmensprofil, und soll bei jedem Nutzer
+    sichtbar sein, nicht nur bei der offenen Anfrage. Konten von davor haben
+    `NULL`; die Oberflaeche zeigt dafuer einen Gedankenstrich.
+
     Bewusst NICHT enthalten: der Passwort-Hash und alles aus dem
     Unternehmensprofil ausser dem selbstgewaehlten Namen. Wie viele
     Beschaeftigte ein Mitglied hat, geht die Kontenliste nichts an.
@@ -437,6 +442,7 @@ def list_accounts() -> list[dict]:
     with _conn() as c:
         rows = c.execute(
             """SELECT u.id, u.email, u.created_at, u.last_login_at, u.is_admin,
+                      u.association,
                       co.name AS company_name,
                       (SELECT COUNT(*) FROM analyses a WHERE a.user_id = u.id)
                           AS analyses_count,
