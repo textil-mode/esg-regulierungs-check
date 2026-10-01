@@ -510,6 +510,45 @@ auf der Freischaltungsseite.
 - Belege: `test_mitgliedsverband.py` (42 Prüfungen), `test_admin_sortierung.py`
   (acht Spalten).
 
+#### Bestandskonten: Verband nachgetragen (01.10.2026)
+
+38 der 83 Konten hatten keine Angabe und haben sie per Skript bekommen —
+zugeordnet über die **E-Mail-Domain**, und nur dort, wo die Mitgliedschaft im
+öffentlichen Mitgliederverzeichnis des Verbands belegt ist. Danach: 40 von 83
+Konten mit Angabe (48 %).
+
+| Verband | Konten |
+|---|---|
+| Nordwestdeutscher Verband | 14 (davon 1 Selbstauskunft) |
+| BVMed | 9 |
+| Südwesttextil | 8 |
+| Bayerischer Verband | 6 |
+| Rheinischer Verband | 1 (Selbstauskunft) |
+| vti (Nord-Ost) | 1 |
+| Plauener Spitze | 1 |
+
+- **Skript:** `/root/verband_nachtragen.py` auf dem VPS. Es dokumentiert die
+  Domain→Verband-Tabelle und läuft ohne `--schreiben` als Probe. Es überschreibt
+  **nie** eine vorhandene Angabe (`UPDATE … AND association IS NULL`) und prüft
+  jeden Wert gegen `regulations.MEMBER_ASSOCIATIONS`.
+- **Sicherung vorher:** `/root/esg-backups/esg-ki-textil-mode-vor-verband-2026-10-01.db`
+  (und dieselbe Datei im Volume unter `/app/data/`).
+- **Der Legacy-Container** (`esg-regulierungs-check`, eigene Datenbank mit 4
+  Konten) hat keine zuzuordnende Domain — dort wurde nichts geändert.
+- **Bei Doppelmitgliedschaft** steht der Textilverband: Paul Hartmann ist bei
+  Südwesttextil *und* im BVMed, FALKE beim Nordwestdeutschen *und* bei
+  Gesamtmasche. Das Feld lässt nur einen Wert zu.
+- **Nicht zugeordnet** (43 Konten): Verbandskonten und Verbandseinrichtungen
+  (@textil-mode.de, @suedwesttextil.de, @ivgt.de …) — ein Verbandsmitarbeiter
+  ist kein Mitglied —, Freemail-Adressen, Testkonten, und fünf Unternehmen, bei
+  denen die Mitgliedschaft nicht öffentlich belegt ist (Josef Seibel, AUNDE,
+  HB Protective Wear, FHB original, Kunert).
+- **Wichtig für die Auslegung:** Die Spalte enthält seitdem zweierlei — die
+  Selbstauskunft aus der Registrierung und diese Fremdzuordnung über die Domain.
+  Unterschieden wird beides in der Datenbank nicht. Künftige Registrierungen
+  tragen die Angabe wieder selbst ein.
+
+
 ### Admin-Rechte über die Oberfläche (seit 29.09.2026)
 
 - **Zwei Arten von Admins.** Fest hinterlegt: `app.ADMIN_EMAILS` (derzeit nur
