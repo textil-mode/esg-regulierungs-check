@@ -76,6 +76,7 @@
         <th data-sort="num" style="text-align:right;"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_checks", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="date"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_accounts_last_check", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
         <th data-sort="text"><button type="button" class="sort-btn" title="{{ t('admin_sort_hint', lang) }}">{{ t("admin_role_col", lang) }}<span class="sort-pfeil" aria-hidden="true"></span></button></th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -100,6 +101,7 @@
       </td>
       {% set fest = k.email in stamm_admins %}
       {% set rolle = t("admin_role_fixed", lang) if fest else (t("admin_role_admin", lang) if k.is_admin else "") %}
+      {% set schuetzen = fest or k.is_admin or k.id == session.get("user_id") %}
       <td data-sort-value="{{ rolle }}"><div class="rollen-zelle">
         {% if rolle %}<span class="rollen-abzeichen">{{ rolle }}</span>{% elif not darf_rollen %}<span style="color:#5A5A5A;">—</span>{% endif %}
         {% if darf_rollen and not fest %}
@@ -110,6 +112,14 @@
         </form>
         {% endif %}
       </div></td>
+      <td style="white-space:nowrap;text-align:right;">
+        {% if not schuetzen %}
+        <form method="post" action="{{ url_for('admin_delete_account', user_id=k.id) }}"
+              onsubmit="return confirm({{ t('admin_delete_confirm', lang).format(email=k.email)|tojson|forceescape }});">
+          <button type="submit" class="btn btn-danger btn-sm">{{ t("admin_delete_btn", lang) }}</button>
+        </form>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
     </tbody>

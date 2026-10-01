@@ -29,6 +29,7 @@
 | **Bremse gegen Passwort-Durchprobieren** (5 Fehlversuche je Konto+IP in 15 min mit sich verdoppelnder Wartezeit, zusätzlich 30/Stunde je IP; persistent in `login_attempts`) — siehe eigenen Abschnitt unten | `db.py` `begin_login_attempt`, `app.py` `/login` | ✅ |
 | **Passwort ändern** (eingeloggt, altes PW nötig) | `/passwort-aendern`, `templates/password_change.html` | ✅ |
 | **Konto löschen** (eingeloggt, Passwort + Browser-Rückfrage; entfernt users/companies/analyses/password_resets per Kaskade und die Fehlversuche zur E-Mail; `analysis_cache` bleibt, weil anonym und geteilt) | `/konto-loeschen`, `db.delete_user` | ✅ |
+| **Konten entfernen durch den Admin** (eigene Spalte in der Kontenliste, Browser-Rückfrage; Admin-Konten, das eigene Konto und offene Anfragen gesperrt; Nachricht an die Person) | `/admin/konten/<id>/entfernen`, `db.delete_user` | ✅ |
 | **Datenschutzerklärung** der Anwendung (Hosting, Google-Gemini-Übermittlung, Autofill, Löschung) — nur Deutsch, bewusst nicht in `i18n.py` | `/datenschutz`, `templates/datenschutz.html` | ✅ |
 | **Passwort vergessen → Reset-Link per E-Mail** (SMTP mit STARTTLS auf Port 587, Versand im Hintergrund-Thread; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert). Ohne `SMTP_*`/`MAIL_FROM` faellt alles auf den Admin-Weg zurueck; Zustellprotokoll auf der Admin-Seite | `app._forgot_password`, `mailer.py`, `/admin/passwort-resets` | ✅ |
 | **Bremse gegen Mail-Fluten** (3 Anfragen je Adresse und 10 je Quell-IP in 60 min, ueber `db.take_quota` in derselben Tabelle wie die Login-Bremse) | `db.RESET_MAIL_*`, `app._forgot_password` | ✅ |
@@ -548,6 +549,19 @@ Konten mit Angabe (48 %).
   Unterschieden wird beides in der Datenbank nicht. Künftige Registrierungen
   tragen die Angabe wieder selbst ein.
 
+**Zweiter Durchgang am 01.10.2026** (`/root/verband_nachtragen2.py`): Nach dem
+Hinweis des Nutzers, dass die Mitgliedsverbände **direkte Mitglieder von
+textil+mode** sind, tragen auch die Verbandskonten ihren eigenen Verband — alle
+elf vertretenen, nicht nur die drei genannten (Gesamtmasche, IVGT, vti). Dazu
+ein Konto über den selbst eingetragenen **Firmennamen** statt über die Domain
+(Fachvereinigung Wirkerei-Strickerei Albstadt, Freemail-Adresse). Stand danach:
+**58 von 83 Konten**.
+
+Weiterhin leer bleiben: `@textil-mode.de` (der Dachverband ist bei sich kein
+Mitglied), `afbw.eu` (kein t+m-Mitgliedsverband), `textilakademie.de`
+(Einrichtung der Verbände), Freemail- und Testkonten sowie die fünf Unternehmen
+ohne öffentlichen Beleg.
+
 
 ### Admin-Rechte über die Oberfläche (seit 29.09.2026)
 
@@ -572,6 +586,46 @@ Konten mit Angabe (48 %).
   sich damit als Mitglied anmelden (so war es schon vorher, nur für einen Admin). Das
   Mitglied erfährt es über die Mail „Passwort geändert“.
 - Belege: `test_admin_rollen.py` (8 Blöcke), `test_admin_sortierung.py`.
+
+### Konten entfernen (01.10.2026)
+
+`POST /admin/konten/<id>/entfernen` → `admin_delete_account`. Schaltfläche in
+einer eigenen Spalte am Ende der Kontenliste, mit Browser-Rückfrage, die die
+Adresse nennt. Gelöscht wird über `db.delete_user` — dieselbe Funktion wie beim
+Löschen durch den Nutzer selbst, also Konto, Unternehmensangaben, Prüfungen,
+Reset-Tickets, Einträge der Login-Bremse und Versandprotokoll (Art. 17 DSGVO).
+
+**Drei Sperren, jede aus eigenem Grund:**
+
+- **Kein Admin-Konto** (ernannt oder fest hinterlegt). Sonst könnte ein
+  ernannter Admin das feste Konto entfernen und sich so die Rechtevergabe holen
+  — dieselbe Überlegung wie bei `admin_role_reset_blocked`. Wer wirklich löschen
+  will, entzieht erst das Recht; das darf nur das fest hinterlegte Konto.
+  Nebeneffekt: Es bleibt immer mindestens ein Admin übrig.
+- **Nicht das eigene Konto.** Dafür gibt es `/konto-loeschen` mit
+  Passwortabfrage.
+- **Nur freigeschaltete Konten.** Offene Anfragen haben „Ablehnen“.
+
+Die Schaltfläche erscheint nur dort, wo sie wirkt (`schuetzen` im Template) —
+ein Knopf, der bloß eine Fehlermeldung bringt, wäre eine Falle. Die Route prüft
+trotzdem selbst.
+
+**Die Person erhält eine Nachricht** (`mail_account_deleted_*`, nur Deutsch wie
+die Rollen-Mails, mit Absender, Zeit und dem Weg zur Neuregistrierung) — sonst
+stellt sie erst beim nächsten Anmeldeversuch fest, dass ihr Zugang weg ist.
+**Bewusste Abwägung:** Der Versand dieser einen Nachricht legt einen neuen
+`mail_log`-Eintrag mit ihrer Adresse an, direkt nach einer Löschung, die alles
+andere entfernt hat. Das steht so in der Datenschutzerklärung (Ziffer 2.1) und
+verfällt mit der 30-Tage-Frist des Protokolls. Wer das nicht will, lässt den
+`_mail_im_hintergrund`-Aufruf weg — dann erfährt die Person nichts.
+
+`db.delete_user` gibt beim zweiten Aufruf `False` zurück: bei gleichzeitigen
+Klicks geht genau eine Nachricht raus.
+
+Belege: `test_admin_loeschen.py` (7 Blöcke, 30 Prüfungen). Darin auch
+festgehalten, dass ein POST ohne `Origin` **und** ohne `Referer` bewusst
+durchgelassen wird (Entscheidung vom 24.09.2026, `app._herkunft_pruefen`) —
+fällt das einmal, fällt es dort auf.
 
 ### Katalogerweiterung vom 29.09.2026 (14 Regulierungen, 4 Profilfelder)
 
@@ -704,6 +758,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `mailer.py` | Mailversand über SMTP mit STARTTLS (`smtplib`, ein Versuch, kein Queue — Begründung im Modul-Docstring) |
 | `test_mailer_smtp.py` | Tests zum SMTP-Weg (STARTTLS, Zeitgrenze, Umlaute, Fehlerübersetzung; Doppel statt echtem Server, kein Netz nach außen) |
 | `test_reset_mail.py` | Tests zum automatischen Reset-Mail-Versand (9 Blöcke, eigene DB `data/esg_mail_test.db`, Attrappe statt echtem Versand, kein Netz) |
+| `test_admin_loeschen.py` | Tests zum Entfernen von Konten durch den Admin (eigene DB `data/esg_admin_loeschen_test.db`, Attrappe statt Versand) |
 | `views.py` | Card-Renderer (Kennzahl-Hervorhebung, "Gilt ab", "Erste Schritte", Schwellen-Hinweise) |
 | `pdfexport.py` | PDF-Export der Ergebnisse (reportlab, textil+mode-CD) |
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |

@@ -995,6 +995,65 @@ def admin_set_role(user_id: int):
     return redirect(url_for("admin_accounts"))
 
 
+@app.route("/admin/konten/<int:user_id>/entfernen", methods=["POST"])
+def admin_delete_account(user_id: int):
+    """Entfernt ein Konto samt allem, was daran haengt.
+
+    Drei Sperren, jede aus einem eigenen Grund:
+
+    * **Kein Admin-Konto.** Sonst koennte ein ernannter Admin das fest
+      hinterlegte Konto entfernen und sich damit die Rechtevergabe holen —
+      dieselbe Ueberlegung wie beim Reset-Link fuer Admin-Konten
+      (`admin_role_reset_blocked`). Wer wirklich loeschen will, entzieht erst
+      das Recht; das darf nur das fest hinterlegte Konto.
+    * **Nicht das eigene Konto.** Dafuer gibt es `/konto-loeschen` mit
+      Passwortabfrage. Hier wuerde sich der Admin aus der laufenden Sitzung
+      heraus selbst entfernen.
+    * **Nur freigeschaltete Konten.** Offene Anfragen haben "Ablehnen"; das
+      raeumt zusaetzlich das Versandprotokoll der Anfrage weg.
+
+    Die Loeschung selbst erledigt `db.delete_user` (Art. 17 DSGVO). Sie gibt
+    beim zweiten Aufruf False zurueck — bei gleichzeitigen Klicks geht also
+    genau eine Nachricht raus.
+    """
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+    lang = _lang()
+
+    konto = db.get_account(user_id)
+    if not konto:
+        flash(t("admin_delete_missing", lang), "error")
+        return redirect(url_for("admin_accounts"))
+    if user_id == session.get("user_id"):
+        flash(t("admin_delete_self", lang), "error")
+        return redirect(url_for("admin_accounts"))
+    if konto["is_admin"] or konto["email"].lower() in ADMIN_EMAILS:
+        flash(t("admin_delete_is_admin", lang), "error")
+        return redirect(url_for("admin_accounts"))
+    if not konto["approved"]:
+        flash(t("admin_delete_pending", lang), "error")
+        return redirect(url_for("admin_accounts"))
+
+    email = konto["email"]
+    if not db.delete_user(user_id):
+        flash(t("admin_delete_missing", lang), "error")
+        return redirect(url_for("admin_accounts"))
+
+    flash(t("admin_delete_done", lang).format(email=email), "success")
+    app.logger.info("Konto entfernt: %s durch %s", email, session.get("user_email"))
+    if _mailversand_bereit():
+        _mail_im_hintergrund(email, "mail_account_deleted_subject",
+                             "mail_account_deleted_body",
+                             _public_origin() + url_for("login"),
+                             "account_deleted", "de",
+                             von=session.get("user_email") or "",
+                             zeit=datetime.utcnow().strftime("%d.%m.%Y %H:%M"))
+    return redirect(url_for("admin_accounts"))
+
+
 @app.route("/admin/anfragen/<int:user_id>/freischalten", methods=["POST"])
 def admin_approve(user_id: int):
     """Schaltet eine Zugangsanfrage frei und schickt erst dann den Anmeldelink."""

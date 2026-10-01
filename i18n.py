@@ -809,6 +809,76 @@ UI: dict[str, dict[str, str]] = {
     "mail_admin_role_revoked_body": {
         "de": "Guten Tag,\n\nIhre Admin-Rechte im ESG-Regulierungs-Check wurden am {zeit} UTC von {von} entzogen. Ihr Konto bleibt unverändert nutzbar.\n\n{link}\n\nMit freundlichen Grüßen\nESG-Regulierungs-Check",
     },
+    # --- Konto durch die Administration entfernen (01.10.2026) --------
+    # Der Vorgang ist endgueltig: `db.delete_user` raeumt Konto,
+    # Unternehmensangaben, Pruefungen, Reset-Tickets, Bremsen-Eintraege und
+    # das Versandprotokoll weg. Deshalb nennt die Rueckfrage die Adresse.
+    # Die Person erfaehrt von der Loeschung - sonst stellt sie erst beim
+    # naechsten Anmeldeversuch fest, dass ihr Zugang weg ist. Dass der
+    # Versand dieser einen Nachricht wie jeder andere protokolliert wird,
+    # steht in der Datenschutzerklaerung (Ziffer 2.1).
+    "mail_account_deleted_subject": {
+        "de": "Ihr Zugang zum ESG-Regulierungs-Check wurde entfernt",
+    },
+    "mail_account_deleted_body": {
+        "de": "Guten Tag,\n\nIhr Zugang zum ESG-Regulierungs-Check wurde am {zeit} UTC von {von} entfernt. Damit sind auch Ihre Unternehmensangaben und Ihre Prüfergebnisse gelöscht.\n\nWenn Sie das Werkzeug weiter nutzen möchten, können Sie sich jederzeit neu registrieren:\n\n{link}\n\nMit freundlichen Grüßen\nESG-Regulierungs-Check",
+    },
+    "admin_delete_btn": {
+        "de": "Entfernen",
+        "en": "Remove",
+        "es": "Eliminar",
+        "fr": "Supprimer",
+        "it": "Rimuovi",
+        "zh": "移除",
+    },
+    "admin_delete_confirm": {
+        "de": "Konto {email} endgültig entfernen? Unternehmensangaben und Prüfungen dieses Kontos werden mitgelöscht. Das lässt sich nicht zurücknehmen.",
+        "en": "Permanently remove the account {email}? The company data and checks of this account will be deleted with it. This cannot be undone.",
+        "es": "¿Eliminar definitivamente la cuenta {email}? Se borrarán también los datos de empresa y los análisis de esta cuenta. No se puede deshacer.",
+        "fr": "Supprimer définitivement le compte {email} ? Les données d'entreprise et les vérifications de ce compte seront également effacées. Cette action est irréversible.",
+        "it": "Rimuovere definitivamente l'account {email}? Verranno eliminati anche i dati aziendali e le verifiche di questo account. L'operazione non è reversibile.",
+        "zh": "确定要永久移除账户 {email} 吗？该账户的企业数据和检查结果将一并删除，且无法恢复。",
+    },
+    "admin_delete_done": {
+        "de": "Konto {email} wurde entfernt.",
+        "en": "The account {email} has been removed.",
+        "es": "La cuenta {email} ha sido eliminada.",
+        "fr": "Le compte {email} a été supprimé.",
+        "it": "L'account {email} è stato rimosso.",
+        "zh": "账户 {email} 已移除。",
+    },
+    "admin_delete_missing": {
+        "de": "Dieses Konto gibt es nicht mehr.",
+        "en": "This account no longer exists.",
+        "es": "Esta cuenta ya no existe.",
+        "fr": "Ce compte n'existe plus.",
+        "it": "Questo account non esiste più.",
+        "zh": "该账户已不存在。",
+    },
+    "admin_delete_self": {
+        "de": "Das eigene Konto entfernen Sie über „Konto löschen“ in Ihrem Profil.",
+        "en": "Remove your own account via “Delete account” in your profile.",
+        "es": "Su propia cuenta se elimina en «Eliminar cuenta» de su perfil.",
+        "fr": "Supprimez votre propre compte via « Supprimer le compte » dans votre profil.",
+        "it": "Il suo account lo rimuove tramite «Elimina account» nel suo profilo.",
+        "zh": "您自己的账户请通过个人资料中的“删除账户”移除。",
+    },
+    "admin_delete_is_admin": {
+        "de": "Konten mit Admin-Recht lassen sich nicht entfernen. Entziehen Sie zuerst das Recht.",
+        "en": "Accounts with admin rights cannot be removed. Revoke the rights first.",
+        "es": "Las cuentas con derechos de administrador no se pueden eliminar. Retire primero los derechos.",
+        "fr": "Les comptes disposant de droits d'administration ne peuvent pas être supprimés. Retirez d'abord les droits.",
+        "it": "Gli account con diritti di amministratore non possono essere rimossi. Revochi prima i diritti.",
+        "zh": "拥有管理员权限的账户无法移除，请先撤销权限。",
+    },
+    "admin_delete_pending": {
+        "de": "Offene Zugangsanfragen entfernen Sie oben mit „Ablehnen“.",
+        "en": "Use “Reject” above to remove open access requests.",
+        "es": "Las solicitudes de acceso pendientes se eliminan arriba con «Rechazar».",
+        "fr": "Les demandes d'accès en attente se suppriment ci-dessus avec « Refuser ».",
+        "it": "Le richieste di accesso aperte si rimuovono sopra con «Rifiuta».",
+        "zh": "待处理的访问申请请在上方使用“拒绝”移除。",
+    },
     "admin_sort_hint": {
         "de": "Nach dieser Spalte sortieren", "en": "Sort by this column",
         "es": "Ordenar por esta columna", "fr": "Trier selon cette colonne",
