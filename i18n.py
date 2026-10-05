@@ -839,12 +839,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "您的 ESG 法规检查试用访问权限",
     },
     "mail_signup_test_body": {
-        "de": "Guten Tag,\n\nIhr Zugang zum ESG-Regulierungs-Check ist freigeschaltet — als **Testzugang für 48 Stunden**. Er endet am {ablauf} UTC; danach ist die Anmeldung gesperrt. Ihre Angaben bleiben gespeichert, der Zugang lässt sich jederzeit dauerhaft freischalten.\n\nSetzen Sie zuerst Ihr Passwort. Ihr Code lautet:\n\n    {code}\n\nSo geht es weiter:\n\n{link}\n\nDer Code gilt {tage} Tage — die Testzeit läuft davon unabhängig ab {ablauf} UTC aus. Lösen Sie ihn also am besten gleich ein.\n\nWenn Sie den Zugang über den Testzeitraum hinaus brauchen, wenden Sie sich an das Team von textil+mode.\n\nMit freundlichen Grüßen\nESG-Regulierungs-Check",
-        "en": "Hello,\n\nYour access to the ESG Regulation Check has been activated — as a **48-hour trial access**. It ends on {ablauf} UTC; after that, signing in is blocked. Your data remains stored, and the access can be made permanent at any time.\n\nFirst set your password. Your code is:\n\n    {code}\n\nContinue here:\n\n{link}\n\nThe code is valid for {tage} days — the trial period ends on {ablauf} UTC regardless, so it is best to use it right away.\n\nIf you need the access beyond the trial period, please contact the textil+mode team.\n\nKind regards\nESG Regulation Check",
-        "es": "Buenos días:\n\nSu acceso a la Verificación de Regulaciones ESG está activado, como **acceso de prueba de 48 horas**. Finaliza el {ablauf} UTC; después, el inicio de sesión queda bloqueado. Sus datos se conservan y el acceso puede hacerse permanente en cualquier momento.\n\nPrimero establezca su contraseña. Su código es:\n\n    {code}\n\nContinúe aquí:\n\n{link}\n\nEl código es válido {tage} días; el periodo de prueba finaliza el {ablauf} UTC independientemente, así que conviene utilizarlo de inmediato.\n\nSi necesita el acceso más allá del periodo de prueba, diríjase al equipo de textil+mode.\n\nAtentamente\nVerificación de Regulaciones ESG",
-        "fr": "Bonjour,\n\nVotre accès à la Vérification des Réglementations ESG est activé — en tant qu'**accès d'essai de 48 heures**. Il se termine le {ablauf} UTC ; ensuite, la connexion est bloquée. Vos données restent enregistrées et l'accès peut être rendu permanent à tout moment.\n\nDéfinissez d'abord votre mot de passe. Votre code est :\n\n    {code}\n\nPour continuer :\n\n{link}\n\nLe code est valable {tage} jours — la période d'essai se termine de toute façon le {ablauf} UTC, il est donc préférable de l'utiliser tout de suite.\n\nSi vous avez besoin de l'accès au-delà de la période d'essai, adressez-vous à l'équipe de textil+mode.\n\nCordialement\nVérification des Réglementations ESG",
-        "it": "Buongiorno,\n\nil suo accesso alla Verifica delle Normative ESG è attivo, come **accesso di prova per 48 ore**. Termina il {ablauf} UTC; successivamente l'accesso è bloccato. I suoi dati restano memorizzati e l'accesso può essere reso permanente in qualsiasi momento.\n\nImposti prima la sua password. Il suo codice è:\n\n    {code}\n\nProsegua qui:\n\n{link}\n\nIl codice è valido {tage} giorni; il periodo di prova termina comunque il {ablauf} UTC, quindi è meglio utilizzarlo subito.\n\nSe le serve l'accesso oltre il periodo di prova, si rivolga al team di textil+mode.\n\nCordiali saluti\nVerifica delle Normative ESG",
-        "zh": "您好：\n\n您的 ESG 法规检查访问权限已开通，为 **48 小时试用访问**。将于 {ablauf} UTC 结束；之后将无法登录。您的数据会保留，访问权限可随时转为永久。\n\n请先设置密码。您的验证码为：\n\n    {code}\n\n请从此处继续：\n\n{link}\n\n验证码有效期为 {tage} 天，但试用期无论如何都在 {ablauf} UTC 结束，建议立即使用。\n\n如果您在试用期之后仍需使用，请联系 textil+mode 团队。\n\n顺致敬意\nESG 法规检查",
+        "de": "Guten Tag,\n\nIhr Zugang zum ESG-Regulierungs-Check ist freigeschaltet — als **Testzugang**. Sie können das Werkzeug {stunden} Stunden lang nutzen; die Zeit beginnt, sobald Sie sich das erste Mal anmelden. Sie können den Zugang also einlösen, wann es Ihnen passt.\n\nSetzen Sie zuerst Ihr Passwort. Ihr Code lautet:\n\n    {code}\n\nSo geht es weiter:\n\n{link}\n\nDer Code gilt {tage} Tage.\n\nNach Ablauf der {stunden} Stunden ist die Anmeldung gesperrt; Ihre Angaben und Ergebnisse bleiben dabei erhalten. Wenn Sie den Zugang darüber hinaus brauchen, wenden Sie sich an das Team von textil+mode.\n\nMit freundlichen Grüßen\nESG-Regulierungs-Check",
+        "en": "Hello,\n\nYour access to the ESG Regulation Check has been activated — as a **trial access**. You can use the tool for {stunden} hours; the time starts as soon as you sign in for the first time, so you can redeem the access whenever it suits you.\n\nFirst set your password. Your code is:\n\n    {code}\n\nContinue here:\n\n{link}\n\nThe code is valid for {tage} days.\n\nAfter the {stunden} hours, signing in is blocked; your data and results remain stored. If you need the access beyond that, please contact the textil+mode team.\n\nKind regards\nESG Regulation Check",
+        "es": "Buenos días:\n\nSu acceso a la Verificación de Regulaciones ESG está activado, como **acceso de prueba**. Puede utilizar la herramienta durante {stunden} horas; el tiempo comienza en cuanto inicie sesión por primera vez, así que puede canjear el acceso cuando le convenga.\n\nPrimero establezca su contraseña. Su código es:\n\n    {code}\n\nContinúe aquí:\n\n{link}\n\nEl código es válido {tage} días.\n\nTranscurridas las {stunden} horas, el inicio de sesión queda bloqueado; sus datos y resultados se conservan. Si necesita el acceso más allá, diríjase al equipo de textil+mode.\n\nAtentamente\nVerificación de Regulaciones ESG",
+        "fr": "Bonjour,\n\nVotre accès à la Vérification des Réglementations ESG est activé — en tant qu'**accès d'essai**. Vous pouvez utiliser l'outil pendant {stunden} heures ; le temps démarre dès votre première connexion, vous pouvez donc utiliser l'accès quand cela vous convient.\n\nDéfinissez d'abord votre mot de passe. Votre code est :\n\n    {code}\n\nPour continuer :\n\n{link}\n\nLe code est valable {tage} jours.\n\nAu terme des {stunden} heures, la connexion est bloquée ; vos données et résultats sont conservés. Si vous avez besoin de l'accès au-delà, adressez-vous à l'équipe de textil+mode.\n\nCordialement\nVérification des Réglementations ESG",
+        "it": "Buongiorno,\n\nil suo accesso alla Verifica delle Normative ESG è attivo, come **accesso di prova**. Può utilizzare lo strumento per {stunden} ore; il tempo inizia appena effettua il primo accesso, quindi può sfruttarlo quando le è comodo.\n\nImposti prima la sua password. Il suo codice è:\n\n    {code}\n\nProsegua qui:\n\n{link}\n\nIl codice è valido {tage} giorni.\n\nTrascorse le {stunden} ore, l'accesso è bloccato; i suoi dati e risultati restano memorizzati. Se le serve l'accesso oltre, si rivolga al team di textil+mode.\n\nCordiali saluti\nVerifica delle Normative ESG",
+        "zh": "您好：\n\n您的 ESG 法规检查访问权限已开通，为 **试用访问**。您可以使用本工具 {stunden} 小时；计时自您首次登录时开始，因此您可以在方便时再使用该权限。\n\n请先设置密码。您的验证码为：\n\n    {code}\n\n请从此处继续：\n\n{link}\n\n验证码有效期为 {tage} 天。\n\n{stunden} 小时结束后将无法登录；您的数据和检查结果会保留。如果您需要在此之后继续使用，请联系 textil+mode 团队。\n\n顺致敬意\nESG 法规检查",
     },
     "mail_test_expired_subject": {
         "de": "Ihr Testzugang zum ESG-Regulierungs-Check ist abgelaufen",
@@ -910,6 +910,16 @@ UI: dict[str, dict[str, str]] = {
         "it": "fino al {zeit} UTC",
         "zh": "至 {zeit} UTC",
     },
+    # Testzugang, dessen Uhr noch nicht laeuft: die 48 Stunden beginnen
+    # erst mit der ersten Anmeldung, bis dahin gibt es keine Frist.
+    "account_test_not_started": {
+        "de": "noch nicht gestartet",
+        "en": "not started yet",
+        "es": "aún no iniciado",
+        "fr": "pas encore commencé",
+        "it": "non ancora iniziato",
+        "zh": "尚未开始",
+    },
     "account_test_locked": {
         "de": "Testzeit abgelaufen",
         "en": "Trial period over",
@@ -943,12 +953,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "将账户 {email} 改为永久用户？因试用期结束产生的锁定将被解除。",
     },
     "account_type_confirm_test": {
-        "de": "Konto {email} auf Testzugang umstellen? Es beginnen 48 Stunden ab jetzt; danach sperrt sich das Konto automatisch.",
-        "en": "Switch the account {email} to trial access? 48 hours start now; afterwards the account locks itself automatically.",
-        "es": "¿Cambiar la cuenta {email} a acceso de prueba? Comienzan 48 horas desde ahora; después la cuenta se bloquea automáticamente.",
-        "fr": "Basculer le compte {email} en accès d'essai ? 48 heures commencent maintenant ; ensuite le compte se verrouille automatiquement.",
-        "it": "Passare l'account {email} ad accesso di prova? Iniziano 48 ore da adesso; poi l'account si blocca automaticamente.",
-        "zh": "将账户 {email} 改为试用访问？48 小时从现在开始计算，之后账户将自动锁定。",
+        "de": "Konto {email} auf Testzugang umstellen? Es gelten dann {stunden} Stunden, gerechnet ab der nächsten Anmeldung; danach sperrt sich das Konto automatisch.",
+        "en": "Switch the account {email} to trial access? {stunden} hours then apply, counted from the next sign-in; afterwards the account locks itself automatically.",
+        "es": "¿Cambiar la cuenta {email} a acceso de prueba? Se aplicarán {stunden} horas contadas desde el próximo inicio de sesión; después la cuenta se bloquea automáticamente.",
+        "fr": "Basculer le compte {email} en accès d'essai ? {stunden} heures s'appliquent alors, comptées à partir de la prochaine connexion ; ensuite le compte se verrouille automatiquement.",
+        "it": "Passare l'account {email} ad accesso di prova? Valgono allora {stunden} ore a partire dal prossimo accesso; poi l'account si blocca automaticamente.",
+        "zh": "将账户 {email} 改为试用访问？随后适用 {stunden} 小时，自下次登录起计算；之后账户将自动锁定。",
     },
     "account_type_changed_user": {
         "de": "Konto {email} ist jetzt ein dauerhafter Benutzerzugang.",
@@ -959,12 +969,12 @@ UI: dict[str, dict[str, str]] = {
         "zh": "账户 {email} 现在是永久用户访问权限。",
     },
     "account_type_changed_test": {
-        "de": "Konto {email} ist jetzt ein Testzugang bis {zeit} UTC.",
-        "en": "The account {email} is now a trial access until {zeit} UTC.",
-        "es": "La cuenta {email} es ahora un acceso de prueba hasta {zeit} UTC.",
-        "fr": "Le compte {email} est désormais un accès d'essai jusqu'au {zeit} UTC.",
-        "it": "L'account {email} è ora un accesso di prova fino al {zeit} UTC.",
-        "zh": "账户 {email} 现在是试用访问权限，至 {zeit} UTC。",
+        "de": "Konto {email} ist jetzt ein Testzugang. Die {stunden} Stunden beginnen mit der nächsten Anmeldung.",
+        "en": "The account {email} is now a trial access. The {stunden} hours start with the next sign-in.",
+        "es": "La cuenta {email} es ahora un acceso de prueba. Las {stunden} horas comienzan con el próximo inicio de sesión.",
+        "fr": "Le compte {email} est désormais un accès d'essai. Les {stunden} heures commencent à la prochaine connexion.",
+        "it": "L'account {email} è ora un accesso di prova. Le {stunden} ore iniziano con il prossimo accesso.",
+        "zh": "账户 {email} 现在是试用访问权限。{stunden} 小时自下次登录起开始计算。",
     },
     "account_type_unchanged": {
         "de": "An diesem Konto hat sich nichts geändert.",

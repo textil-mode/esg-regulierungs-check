@@ -111,21 +111,26 @@
       {% set rolle = t("admin_role_fixed", lang) if fest else (t("admin_role_admin", lang) if k.is_admin else "") %}
       {% set schuetzen = fest or k.is_admin or k.id == session.get("user_id") %}
       {% set ist_test = k.account_type == ACCOUNT_TYPE_TEST %}
-      <td data-sort-value="{{ k.account_type }}{{ '-gesperrt' if k.locked else '' }}">
+      <td data-sort-value="{{ k.account_type }}{{ '-gesperrt' if k.locked else ('-laeuft' if k.test_expires_at else '-offen') }}">
         <div class="rollen-zelle">
           {% if ist_test %}
             {% if k.locked %}
             <span class="zugang-abzeichen zugang-aus">{{ t("account_test_locked", lang) }}</span>
             {% else %}
             <span class="zugang-abzeichen zugang-test">{{ t("account_type_test", lang) }}</span>
+            {% if k.test_expires_at %}
             <span class="zugang-frist">{{ t("account_test_until", lang).format(zeit=zeitpunkt_kurz(k.test_expires_at)) }}</span>
+            {% else %}
+            {# Uhr laeuft erst ab der ersten Anmeldung — bis dahin gibt es keine Frist. #}
+            <span class="zugang-frist">{{ t("account_test_not_started", lang) }}</span>
+            {% endif %}
             {% endif %}
           {% else %}
             <span style="color:#5A5A5A;">{{ t("account_type_user", lang) }}</span>
           {% endif %}
           {% if k.id != session.get("user_id") %}
           <form method="post" action="{{ url_for('admin_set_account_type', user_id=k.id) }}"
-                onsubmit="return confirm({{ t('account_type_confirm_user' if ist_test else 'account_type_confirm_test', lang).format(email=k.email)|tojson|forceescape }});">
+                onsubmit="return confirm({{ t('account_type_confirm_user' if ist_test else 'account_type_confirm_test', lang).format(email=k.email, stunden=TEST_ACCESS_HOURS)|tojson|forceescape }});">
             <input type="hidden" name="kontotyp" value="{{ ACCOUNT_TYPE_USER if ist_test else ACCOUNT_TYPE_TEST }}">
             <button type="submit" class="btn btn-secondary btn-sm">{{ t('account_type_btn_to_user' if ist_test else 'account_type_btn_to_test', lang) }}</button>
           </form>

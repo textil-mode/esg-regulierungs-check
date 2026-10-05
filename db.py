@@ -332,12 +332,17 @@ PENDING_MAX_DAYS = 30
 ACTIVATION_CODE_TTL_DAYS = 7
 
 # --- Kontoarten (05.10.2026) ----------------------------------------------
-# `benutzer` = dauerhafter Zugang, `test` = 48 Stunden ab Freischaltung.
-# Die Frist laeuft ab dem Klick des Admins (Nutzerentscheidung 05.10.2026),
-# nicht ab der ersten Anmeldung. Folge, die man kennen muss: Der
-# Freischalt-Code gilt ACTIVATION_CODE_TTL_DAYS = 7 Tage, die Testzeit aber
-# nur 48 Stunden — wer sein Passwort erst am dritten Tag setzt, findet das
-# Konto gesperrt. Die Freischalt-Mail nennt deshalb den Ablaufzeitpunkt.
+# `benutzer` = dauerhafter Zugang, `test` = 48 Stunden ab der ERSTEN
+# ANMELDUNG (Nutzerentscheidung 05.10.2026, nach einem ersten Entwurf ab
+# Freischaltung). Der Grund: Der Freischalt-Code gilt
+# ACTIVATION_CODE_TTL_DAYS = 7 Tage. Lief die Frist ab dem Klick des Admins,
+# fand jemand, der sein Passwort erst am dritten Tag setzt, das Konto
+# gesperrt — ohne das Werkzeug gesehen zu haben.
+#
+# `test_expires_at IS NULL` heisst deshalb: Uhr laeuft noch nicht.
+# `start_test_clock` setzt sie bei der ersten Anmeldung, und
+# `lock_expired_tests` erfasst nur Zeilen mit gesetzter Frist — ein nicht
+# eingeloester Testzugang laeuft also nie von selbst ab.
 ACCOUNT_TYPE_USER = "benutzer"
 ACCOUNT_TYPE_TEST = "test"
 ACCOUNT_TYPES = (ACCOUNT_TYPE_USER, ACCOUNT_TYPE_TEST)
@@ -379,6 +384,10 @@ def approve_user(user_id: int, account_type: str) -> Optional[dict]:
     Entscheidung bei jeder Freischaltung ausdruecklich). Ein unbekannter Wert
     loest einen ValueError aus; der Aufrufer faengt ihn, bevor etwas passiert.
 
+    Ein Testzugang bekommt hier **keine** Frist: die 48 Stunden beginnen mit
+    der ersten Anmeldung (`start_test_clock`). Sonst waere die Testzeit
+    verstrichen, bevor die Person ihr Passwort ueberhaupt gesetzt hat.
+
     Rueckgabe: {email, signup_lang, account_type, test_expires_at} oder None.
     None heisst: keine offene Anfrage mit dieser Nummer (schon freigeschaltet,
     abgelehnt oder nie vorhanden) — dann geht auch keine Mail raus.
@@ -386,16 +395,14 @@ def approve_user(user_id: int, account_type: str) -> Optional[dict]:
     if account_type not in ACCOUNT_TYPES:
         raise ValueError(f"unbekannte Kontoart: {account_type!r}")
     jetzt = datetime.utcnow()
-    ablauf = (jetzt + timedelta(hours=TEST_ACCESS_HOURS)).isoformat() \
-        if account_type == ACCOUNT_TYPE_TEST else None
     # Eine Anweisung, deren Zeilenzahl entscheidet: bei zwei gleichzeitigen
     # Klicks gewinnt genau einer, und nur er verschickt die Mail (N1).
     with _conn() as c:
         cur = c.execute(
             "UPDATE users SET approved = 1, approved_at = ?, account_type = ?,"
-            " test_expires_at = ?, locked = 0"
+            " test_expires_at = NULL, locked = 0"
             " WHERE id = ? AND approved = 0",
-            (jetzt.isoformat(), account_type, ablauf, user_id))
+            (jetzt.isoformat(), account_type, user_id))
         if cur.rowcount != 1:
             return None
         row = c.execute(
@@ -412,8 +419,9 @@ def set_account_type(user_id: int, account_type: str) -> Optional[dict]:
     * nach `benutzer` — die Frist wird geloescht, das Konto ist dauerhaft
       nutzbar. Das ist auch der Weg, einen abgelaufenen Testzugang dauerhaft
       zu uebernehmen.
-    * nach `test` — es beginnen neue 48 Stunden ab jetzt. Ein zweites Mal
-      „Testzugang" auf ein laufendes Testkonto verlaengert also bewusst.
+    * nach `test` — die Uhr wird auf null gestellt: die 48 Stunden beginnen
+      mit der naechsten Anmeldung. Das gilt auch fuer ein laufendes Testkonto,
+      ein zweiter Klick setzt die Testzeit also bewusst neu an.
 
     `rowcount` sichert wie bei `set_admin`, dass bei gleichzeitigen Klicks
     genau ein Aufrufer eine Rueckgabe bekommt und damit genau eine Mail
@@ -422,8 +430,11 @@ def set_account_type(user_id: int, account_type: str) -> Optional[dict]:
     """
     if account_type not in ACCOUNT_TYPES:
         raise ValueError(f"unbekannte Kontoart: {account_type!r}")
-    ablauf = (datetime.utcnow() + timedelta(hours=TEST_ACCESS_HOURS)).isoformat() \
-        if account_type == ACCOUNT_TYPE_TEST else None
+    # Auf `test` geht immer durch (die Uhr neu anzusetzen ist eine sinnvolle
+    # Aktion, auch wenn die Kontoart schon stimmt). Auf `benutzer` nur, wenn
+    # sich tatsaechlich etwas aendert — sonst kaeme bei jedem Doppelklick eine
+    # weitere Erfolgsmeldung.
+    immer = 1 if account_type == ACCOUNT_TYPE_TEST else 0
     with _conn() as c:
         vorher = c.execute(
             "SELECT locked FROM users WHERE id = ? AND approved = 1",
@@ -431,10 +442,11 @@ def set_account_type(user_id: int, account_type: str) -> Optional[dict]:
         if not vorher:
             return None
         cur = c.execute(
-            "UPDATE users SET account_type = ?, test_expires_at = ?, locked = 0"
+            "UPDATE users SET account_type = ?, test_expires_at = NULL, locked = 0"
             " WHERE id = ? AND approved = 1"
-            "   AND (account_type != ? OR locked = 1 OR ? IS NOT NULL)",
-            (account_type, ablauf, user_id, account_type, ablauf))
+            "   AND (? = 1 OR account_type != ? OR locked = 1"
+            "        OR test_expires_at IS NOT NULL)",
+            (account_type, user_id, immer, account_type))
         if cur.rowcount != 1:
             return None
         row = c.execute(
@@ -443,6 +455,27 @@ def set_account_type(user_id: int, account_type: str) -> Optional[dict]:
     ergebnis = dict(row)
     ergebnis["war_gesperrt"] = bool(vorher["locked"])
     return ergebnis
+
+
+def start_test_clock(user_id: int) -> Optional[str]:
+    """Startet die Testzeit bei der ersten Anmeldung.
+
+    Setzt die Frist auf jetzt + `TEST_ACCESS_HOURS`, aber nur bei einem
+    Testzugang, dessen Uhr noch nicht laeuft (`test_expires_at IS NULL`).
+    `rowcount` entscheidet: bei zwei gleichzeitigen Anmeldungen gewinnt genau
+    eine, die zweite bekommt `None` und verschiebt die Frist nicht.
+
+    Rueckgabe: die neue Frist als ISO-Zeitstempel, sonst `None` (dauerhafter
+    Zugang, Uhr laeuft schon, oder Konto gibt es nicht).
+    """
+    frist = (datetime.utcnow() + timedelta(hours=TEST_ACCESS_HOURS)).isoformat()
+    with _conn() as c:
+        cur = c.execute(
+            "UPDATE users SET test_expires_at = ?"
+            " WHERE id = ? AND approved = 1 AND locked = 0"
+            "   AND account_type = ? AND test_expires_at IS NULL",
+            (frist, user_id, ACCOUNT_TYPE_TEST))
+        return frist if cur.rowcount == 1 else None
 
 
 def lock_expired_tests() -> list[dict]:

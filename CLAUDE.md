@@ -29,7 +29,7 @@
 | **Bremse gegen Passwort-Durchprobieren** (5 Fehlversuche je Konto+IP in 15 min mit sich verdoppelnder Wartezeit, zusätzlich 30/Stunde je IP; persistent in `login_attempts`) — siehe eigenen Abschnitt unten | `db.py` `begin_login_attempt`, `app.py` `/login` | ✅ |
 | **Passwort ändern** (eingeloggt, altes PW nötig) | `/passwort-aendern`, `templates/password_change.html` | ✅ |
 | **Konto löschen** (eingeloggt, Passwort + Browser-Rückfrage; entfernt users/companies/analyses/password_resets per Kaskade und die Fehlversuche zur E-Mail; `analysis_cache` bleibt, weil anonym und geteilt) | `/konto-loeschen`, `db.delete_user` | ✅ |
-| **Testzugang** (48 h ab Freischaltung, danach automatisch gesperrt – nicht gelöscht; Kontoart bei der Freischaltung Pflicht und jederzeit wechselbar; eigener Mailtext bei Freischaltung und bei Ablauf) | `db.account_type`, `testzugang.py`, `/admin/konten/<id>/zugang` | ✅ |
+| **Testzugang** (48 h ab der ersten Anmeldung, danach automatisch gesperrt – nicht gelöscht; Kontoart bei der Freischaltung Pflicht und jederzeit wechselbar; eigener Mailtext bei Freischaltung und bei Ablauf) | `db.account_type`, `testzugang.py`, `/admin/konten/<id>/zugang` | ✅ |
 | **Konten entfernen durch den Admin** (eigene Spalte in der Kontenliste, Browser-Rückfrage; Admin-Konten, das eigene Konto und offene Anfragen gesperrt; Nachricht an die Person) | `/admin/konten/<id>/entfernen`, `db.delete_user` | ✅ |
 | **Datenschutzerklärung** der Anwendung (Hosting, Google-Gemini-Übermittlung, Autofill, Löschung) — nur Deutsch, bewusst nicht in `i18n.py` | `/datenschutz`, `templates/datenschutz.html` | ✅ |
 | **Passwort vergessen → Reset-Link per E-Mail** (SMTP mit STARTTLS auf Port 587, Versand im Hintergrund-Thread; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert). Ohne `SMTP_*`/`MAIL_FROM` faellt alles auf den Admin-Weg zurueck; Zustellprotokoll auf der Admin-Seite | `app._forgot_password`, `mailer.py`, `/admin/passwort-resets` | ✅ |
@@ -588,16 +588,20 @@ ohne öffentlichen Beleg.
   Mitglied erfährt es über die Mail „Passwort geändert“.
 - Belege: `test_admin_rollen.py` (8 Blöcke), `test_admin_sortierung.py`.
 
-### Testzugang: 48 Stunden ab Freischaltung (05.10.2026)
+### Testzugang: 48 Stunden ab der ersten Anmeldung (05.10.2026)
 
 Dritte Kontoart neben Admin und Benutzer. Nutzerentscheidungen dazu:
 
-- **Die Frist läuft ab der Freischaltung**, nicht ab der ersten Anmeldung.
-  **Folge, die man kennen muss:** Der Freischalt-Code gilt 7 Tage
-  (`ACTIVATION_CODE_TTL_DAYS`), die Testzeit nur 48 Stunden — wer sein Passwort
-  erst am dritten Tag setzt, findet das Konto gesperrt. Die Freischalt-Mail für
-  Testzugänge nennt deshalb den Ablaufzeitpunkt und bittet, den Code gleich
-  einzulösen.
+- **Die Frist läuft ab der ersten Anmeldung.** Zuerst war sie ab der
+  Freischaltung geplant und auch so gebaut; am selben Tag umgestellt, weil der
+  Freischalt-Code 7 Tage gilt (`ACTIVATION_CODE_TTL_DAYS`), die Testzeit aber
+  nur 48 Stunden: wer sein Passwort erst am dritten Tag setzt, hätte das Konto
+  gesperrt gefunden, ohne das Werkzeug gesehen zu haben.
+  **`test_expires_at IS NULL` heißt seitdem: Uhr läuft noch nicht.**
+  `db.start_test_clock` setzt sie beim Anmelden (`UPDATE … AND test_expires_at
+  IS NULL` + `rowcount`, also genau einmal — Aus- und Einloggen verlängert
+  nichts), und `lock_expired_tests` erfasst nur Zeilen mit gesetzter Frist: ein
+  nicht eingelöster Testzugang läuft nie von selbst ab.
 - **Keine Voreinstellung:** Beim Freischalten *muss* der Admin wählen. Das
   Auswahlfeld in der Anfragenzeile ist `required` mit leerer Vorauswahl, und
   `app.admin_approve` weist einen fehlenden oder unbekannten Wert ab, bevor
@@ -611,8 +615,12 @@ abgelaufener Testzugang wieder unter den offenen Zugangsanfragen.
 
 **Gesperrt, nicht gelöscht** (Nutzervorgabe): Angaben und Prüfergebnisse
 bleiben. `db.set_account_type(id, "benutzer")` hebt die Sperre auf und macht den
-Zugang dauerhaft; `…(id, "test")` startet neue 48 Stunden ab jetzt — ein zweiter
-Klick verlängert also bewusst.
+Zugang dauerhaft; `…(id, "test")` stellt die Uhr auf null — die 48 Stunden
+beginnen mit der nächsten Anmeldung. Das gilt auch für ein laufendes Testkonto,
+ein zweiter Klick setzt die Testzeit also bewusst neu an.
+
+**Drei Zustände in der Spalte „Zugang":** „noch nicht gestartet" (keine Frist),
+laufend (mit Frist) und „Testzeit abgelaufen" (gesperrt).
 
 **Wer sperrt wann?** Dieser Prozess hat keinen Wecker, deshalb drei Auslöser
 (`testzugang.sperren_und_melden`):
@@ -644,17 +652,25 @@ liest. Anmeldung mit richtigem Passwort auf ein gesperrtes Konto: 403 +
 `err_account_test_over` (verrät nichts, wer es liest, kennt das Passwort).
 
 **Mails** (alle sechs Sprachen, in `signup_lang`): `mail_signup_test_*` bei der
-Freischaltung — anderer Text als `mail_signup_*`, mit Frist und Ablaufzeitpunkt
-— und `mail_test_expired_*` beim Ablauf (sagt ausdrücklich: gesperrt, nicht
-gelöscht, und wie es weitergeht).
+Freischaltung — anderer Text als `mail_signup_*`; er nennt die 48 Stunden und
+sagt, dass sie mit der ersten Anmeldung beginnen (einen Ablaufzeitpunkt gibt es
+da noch nicht) — und `mail_test_expired_*` beim Ablauf (sagt ausdrücklich:
+gesperrt, nicht gelöscht, und wie es weitergeht).
 
 **Das eigene Konto** lässt sich nicht auf Testzugang stellen — man sperrte sich
 in 48 Stunden selbst aus. Anders als die Rechtevergabe darf den Wechsel **jeder**
 Admin: die Kontoart entscheidet nicht darüber, wer verwalten kann.
 
-Belege: `test_testzugang.py` (9 Blöcke, 55 Prüfungen). Die bestehenden Tests
-sind nachgezogen (`db.approve_user` braucht die Kontoart, die Route das Feld
-`kontotyp`, die Kontenliste hat neun sortierbare Spalten).
+Belege: `test_testzugang.py` (9 Blöcke, 57 Prüfungen) — darunter, dass eine
+zweite Anmeldung die Frist nicht verschiebt und dass ein nicht eingelöster
+Testzugang nicht von selbst abläuft. Die bestehenden Tests sind nachgezogen
+(`db.approve_user` braucht die Kontoart, die Route das Feld `kontotyp`, die
+Kontenliste hat neun sortierbare Spalten).
+
+**Beim Umstellen aufgefallen:** Zwei Prüfungen in Block 7 standen in einem
+`if z["test_expires_at"]:` und fielen nach der Umstellung stillschweigend aus —
+eine Prüfung, die nichts mehr prüft, ist schlimmer als keine. Sie prüfen jetzt
+ausdrücklich auf `None`.
 
 ### Konten entfernen (01.10.2026)
 

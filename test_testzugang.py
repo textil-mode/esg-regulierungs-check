@@ -178,18 +178,21 @@ print("\n4. Freischaltung als Testzugang")
 # ---------------------------------------------------------------------------
 test_id = anfrage_anlegen("probe@example.org")
 versandt.clear()
-vorher = datetime.utcnow()
 post(client_als(ADMIN), f"/admin/anfragen/{test_id}/freischalten",
      {"kontotyp": db.ACCOUNT_TYPE_TEST})
 ruhe()
 z = zustand(test_id)
 pruefe(z["approved"] == 1 and z["account_type"] == db.ACCOUNT_TYPE_TEST,
        "freigeschaltet als Testzugang")
-pruefe(bool(z["test_expires_at"]), "mit Frist")
-if z["test_expires_at"]:
-    frist = datetime.fromisoformat(z["test_expires_at"])
-    stunden = (frist - vorher).total_seconds() / 3600
-    pruefe(47.9 < stunden < 48.2, f"die Frist liegt 48 Stunden voraus ({stunden:.2f} h)")
+# Die Uhr laeuft erst mit der ersten Anmeldung. Setzte die Freischaltung schon
+# eine Frist, waere die Testzeit verstrichen, bevor die Person ihr Passwort
+# ueberhaupt gesetzt hat - der Code gilt 7 Tage, die Testzeit 48 Stunden.
+pruefe(z["test_expires_at"] is None,
+       "noch ohne Frist - die Uhr startet bei der ersten Anmeldung")
+pruefe(z["locked"] == 0, "und nicht gesperrt")
+pruefe(testzugang.sperren_und_melden() == [],
+       "ein nicht eingeloester Testzugang laeuft nicht von selbst ab")
+
 pruefe(len(versandt) == 1, f"eine Mail ({len(versandt)})")
 if versandt:
     pruefe(versandt[0]["subject"] == i18n.t("mail_signup_test_subject", "de"),
@@ -198,8 +201,7 @@ if versandt:
            "also einem anderen als beim dauerhaften Zugang")
     text = versandt[0]["text"]
     pruefe("48" in text, "der Text nennt die 48 Stunden")
-    pruefe(frist.strftime("%d.%m.%Y") in text,
-           "und den Ablaufzeitpunkt (weil die Frist ab Freischaltung laeuft)")
+    pruefe("anmelden" in text.lower(), "und sagt, dass die Zeit mit der Anmeldung beginnt")
     pruefe(BASIS in text, "samt Link zum Setzen des Passworts")
 
 # Testzugang in einer anderen Sprache
@@ -212,13 +214,33 @@ pruefe(bool(versandt) and versandt[0]["subject"] == i18n.t("mail_signup_test_sub
        "die Mail kommt in der Sprache der Registrierung (FR)")
 
 # ---------------------------------------------------------------------------
-print("\n5. Ablauf: gesperrt, mit Nachricht, und nur einer")
+print("\n5. Die erste Anmeldung startet die Uhr, der Ablauf sperrt")
 # ---------------------------------------------------------------------------
 db.set_password(test_id, PW)
-pruefe(db.verify_user("probe@example.org", PW) == test_id,
-       "vor Ablauf laesst sich das Passwort pruefen")
+pruefe(zustand(test_id)["test_expires_at"] is None,
+       "Passwort setzen allein startet die Uhr nicht")
+
+vorher = datetime.utcnow()
+r = post(flaskapp.app.test_client(), "/login",
+         {"action": "login", "email": "probe@example.org", "password": PW})
+pruefe(r.status_code in (302, 303), f"die erste Anmeldung gelingt ({r.status_code})")
+frist_iso = zustand(test_id)["test_expires_at"]
+pruefe(bool(frist_iso), "und setzt die Frist")
+if frist_iso:
+    stunden = (datetime.fromisoformat(frist_iso) - vorher).total_seconds() / 3600
+    pruefe(47.9 < stunden < 48.2, f"auf 48 Stunden ab jetzt ({stunden:.2f} h)")
+
+# Jede weitere Anmeldung darf die Frist NICHT verschieben, sonst liesse sich
+# die Testzeit durch Aus- und Einloggen beliebig verlaengern.
+post(flaskapp.app.test_client(), "/login",
+     {"action": "login", "email": "probe@example.org", "password": PW})
+pruefe(zustand(test_id)["test_expires_at"] == frist_iso,
+       "eine zweite Anmeldung verschiebt die Frist nicht")
+pruefe(db.start_test_clock(test_id) is None,
+       "start_test_clock wirkt genau einmal")
+
 seite = client_als("probe@example.org").get("/dashboard")
-pruefe(seite.status_code == 200, "und das Dashboard laedt")
+pruefe(seite.status_code == 200, "vor Ablauf laedt das Dashboard")
 
 frist_setzen(test_id, -0.1)        # Frist liegt 6 Minuten in der Vergangenheit
 versandt.clear()
@@ -227,7 +249,7 @@ pruefe(len(betroffen) == 1 and betroffen[0]["email"] == "probe@example.org",
        f"genau ein Konto gesperrt ({len(betroffen)})")
 pruefe(zustand(test_id)["locked"] == 1, "es ist gesperrt")
 pruefe(zustand(test_id)["approved"] == 1,
-       "aber weiterhin freigeschaltet — also keine offene Anfrage")
+       "aber weiterhin freigeschaltet - also keine offene Anfrage")
 with sqlite3.connect(TEST_DB) as c:
     da = c.execute("SELECT 1 FROM users WHERE id = ?", (test_id,)).fetchone()
 pruefe(da is not None, "und nicht geloescht (Nutzervorgabe)")
@@ -279,24 +301,32 @@ pruefe(db.verify_user("probe@example.org", PW) == test_id, "Anmelden geht wieder
 r = client_als("probe@example.org").get("/dashboard")
 pruefe(r.status_code == 200, "das Dashboard laedt wieder")
 
-vorher = datetime.utcnow()
 post(client_als(ADMIN), f"/admin/konten/{dauer_id}/zugang",
      {"kontotyp": db.ACCOUNT_TYPE_TEST})
 z = zustand(dauer_id)
 pruefe(z["account_type"] == db.ACCOUNT_TYPE_TEST, "Wechsel auf Testzugang wirkt")
-if z["test_expires_at"]:
-    stunden = (datetime.fromisoformat(z["test_expires_at"]) - vorher).total_seconds() / 3600
-    pruefe(47.9 < stunden < 48.2, f"mit neuen 48 Stunden ab jetzt ({stunden:.2f} h)")
+pruefe(z["test_expires_at"] is None,
+       "die Uhr steht auf null - sie startet mit der naechsten Anmeldung")
 
-# Zweites Mal "Auf Testzugang" verlaengert bewusst.
+# Ein zweiter Klick auf einem laufenden Testkonto setzt die Testzeit neu an:
+# die Frist faellt weg, die naechste Anmeldung startet 48 frische Stunden.
 frist_setzen(dauer_id, 1)
-vorher = datetime.utcnow()
+pruefe(zustand(dauer_id)["test_expires_at"] is not None, "Ausgangslage: Frist laeuft")
 post(client_als(ADMIN), f"/admin/konten/{dauer_id}/zugang",
      {"kontotyp": db.ACCOUNT_TYPE_TEST})
-z = zustand(dauer_id)
-if z["test_expires_at"]:
-    stunden = (datetime.fromisoformat(z["test_expires_at"]) - vorher).total_seconds() / 3600
-    pruefe(47.9 < stunden < 48.2, "ein zweiter Klick verlaengert auf neue 48 Stunden")
+pruefe(zustand(dauer_id)["test_expires_at"] is None,
+       "ein zweiter Klick setzt die Testzeit neu an (Uhr wieder auf null)")
+
+# Und die Uhr laeuft dann wirklich bei der naechsten Anmeldung los.
+db.set_password(dauer_id, PW)
+vorher = datetime.utcnow()
+post(flaskapp.app.test_client(), "/login",
+     {"action": "login", "email": "dauerhaft@example.org", "password": PW})
+neue_frist = zustand(dauer_id)["test_expires_at"]
+pruefe(bool(neue_frist), "die naechste Anmeldung startet sie")
+if neue_frist:
+    stunden = (datetime.fromisoformat(neue_frist) - vorher).total_seconds() / 3600
+    pruefe(47.9 < stunden < 48.2, f"mit frischen 48 Stunden ({stunden:.2f} h)")
 
 r = post(client_als(ADMIN), f"/admin/konten/{dauer_id}/zugang", {"kontotyp": ""})
 pruefe(zustand(dauer_id)["account_type"] == db.ACCOUNT_TYPE_TEST,

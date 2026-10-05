@@ -749,6 +749,10 @@ def login():
                     # Ohne `permanent` traegt das Cookie kein Ablaufdatum und
                     # PERMANENT_SESSION_LIFETIME bliebe wirkungslos.
                     session.permanent = True
+                    # Erste Anmeldung eines Testzugangs: hier beginnen die
+                    # 48 Stunden (Nutzerentscheidung 05.10.2026). Bei jeder
+                    # weiteren Anmeldung tut der Aufruf nichts.
+                    db.start_test_clock(uid)
                     session["user_id"] = uid
                     session["user_email"] = email
                     return redirect(url_for("dashboard"))
@@ -1097,8 +1101,7 @@ def admin_set_account_type(user_id: int):
     ist_test = konto["account_type"] == db.ACCOUNT_TYPE_TEST
     if ist_test:
         flash(t("account_type_changed_test", lang).format(
-            email=konto["email"], zeit=_zeitpunkt(konto.get("test_expires_at"))),
-            "success")
+            email=konto["email"], stunden=db.TEST_ACCESS_HOURS), "success")
     else:
         flash(t("account_type_changed_user", lang).format(email=konto["email"]),
               "success")
@@ -1194,9 +1197,9 @@ def admin_approve(user_id: int):
         # nur wer das Postfach hat, kommt also hinein (M1/M2).
         code, _ablauf = db.issue_reset_code(
             user_id, ttl_minutes=db.ACTIVATION_CODE_TTL_DAYS * 24 * 60)
-        # Testzugaenge bekommen einen eigenen Text: er nennt die Frist und den
-        # Ablaufzeitpunkt, weil die 48 Stunden ab jetzt laufen und nicht ab
-        # der ersten Anmeldung.
+        # Testzugaenge bekommen einen eigenen Text: er sagt, dass die
+        # 48 Stunden mit der ersten Anmeldung beginnen — einen festen
+        # Ablaufzeitpunkt gibt es zu diesem Zeitpunkt noch nicht.
         _mail_im_hintergrund(
             konto["email"],
             "mail_signup_test_subject" if ist_test else "mail_signup_subject",
@@ -1204,7 +1207,7 @@ def admin_approve(user_id: int):
             _public_origin() + url_for("reset_with_code"), "signup_approved",
             normalize_lang(konto.get("signup_lang")),
             code=code, tage=db.ACTIVATION_CODE_TTL_DAYS,
-            **({"ablauf": _zeitpunkt(konto.get("test_expires_at"))} if ist_test else {}))
+            **({"stunden": db.TEST_ACCESS_HOURS} if ist_test else {}))
         flash(t("admin_approved_ok", lang).format(email=konto["email"]), "success")
     else:
         flash(t("admin_approved_nomail", lang).format(email=konto["email"]), "success")
