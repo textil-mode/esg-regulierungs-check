@@ -144,7 +144,8 @@ for pfad in ("/admin/konten", "/admin/passwort-resets", "/admin/regulierungs-sta
 menue = berta.get("/dashboard").get_data(as_text=True)
 pruefe("/admin/konten" in menue, "Admin-Menuepunkte werden angezeigt")
 versandt.clear()
-r = post(berta, f"/admin/anfragen/{offen_id}/freischalten")
+r = post(berta, f"/admin/anfragen/{offen_id}/freischalten",
+         {"kontotyp": db.ACCOUNT_TYPE_USER})
 ruhe()
 pruefe(db.is_approved(offen_id) and any(m["to"] == "offen@example.org" for m in versandt),
        "Berta kann eine Anfrage freischalten")

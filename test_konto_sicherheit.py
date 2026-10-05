@@ -154,7 +154,8 @@ pruefe(len(versandt) == 1 and versandt[0]["to"] == NEU
 
 # Nach der Freischaltung laesst sich das Konto benutzen, und ein dritter
 # Versuch bekommt "Es besteht bereits ein Konto".
-pruefe(db.approve_user(neu_id) is not None, "Freischaltung gelingt")
+pruefe(db.approve_user(neu_id, db.ACCOUNT_TYPE_USER) is not None,
+       "Freischaltung gelingt")
 pruefe(db.verify_user(NEU, PW) is None,
        "das bei der Registrierung angegebene Passwort gilt nicht (Registrierung ohne Passwort)")
 db.set_password(neu_id, PW)   # so, wie es der Code aus der Freischalt-Mail tut

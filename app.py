@@ -35,6 +35,7 @@ from flask import (  # noqa: E402
 from flask.sessions import SecureCookieSessionInterface
 
 import db
+import testzugang
 import mailer
 from i18n import (
     ASSOCIATION_LABELS,
@@ -218,7 +219,24 @@ def _uid() -> int | None:
 
 
 def _require_login():
-    if not _uid():
+    """Angemeldet — und darf das Konto ueberhaupt noch?
+
+    Die Pruefung liest den Zustand bei JEDER Anfrage aus der Datenbank. Ohne
+    das arbeitete ein abgelaufener Testzugang weiter, solange sein Cookie lebt
+    (bis zu 12 Stunden), und auch ein vom Admin gesperrtes Konto bliebe drin —
+    dieselbe Ueberlegung wie bei `_is_admin()`, das das Admin-Recht ebenfalls
+    frisch liest, damit ein Entzug sofort wirkt.
+    """
+    uid = _uid()
+    if not uid:
+        return redirect(url_for("login"))
+    zustand = db.account_state(uid)
+    if not zustand or not zustand["approved"] or zustand["locked"]:
+        session.clear()
+        schluessel = ("err_account_test_over"
+                      if zustand and zustand["account_type"] == db.ACCOUNT_TYPE_TEST
+                      else "err_account_pending")
+        flash(t(schluessel, _lang()), "error")
         return redirect(url_for("login"))
     return None
 
@@ -321,6 +339,9 @@ def _inject_globals():
         SALES_MARKET_LABELS=SALES_MARKET_LABELS,
         SVHC_LABELS=SVHC_LABELS,
         MEMBER_ASSOCIATIONS=MEMBER_ASSOCIATIONS,
+        ACCOUNT_TYPE_USER=db.ACCOUNT_TYPE_USER,
+        ACCOUNT_TYPE_TEST=db.ACCOUNT_TYPE_TEST,
+        TEST_ACCESS_HOURS=db.TEST_ACCESS_HOURS,
         ASSOCIATION_LABELS=ASSOCIATION_LABELS,
     )
 
@@ -454,6 +475,33 @@ def _mail_im_hintergrund(recipient: str, subject_key: str, body_key: str,
             db.log_mail(recipient, purpose, "sent", message_id=message_id)
         except Exception as exc:
             db.log_mail(recipient, purpose, "failed", error=str(exc)[:300])
+
+    threading.Thread(target=arbeit, daemon=True).start()
+
+
+def _zeitpunkt(iso: str | None) -> str:
+    """ISO-Zeitstempel als `TT.MM.JJJJ HH:MM` fuer Mailtexte und Meldungen."""
+    if not iso:
+        return ""
+    try:
+        return datetime.fromisoformat(iso).strftime("%d.%m.%Y %H:%M")
+    except ValueError:
+        return str(iso)[:16].replace("T", " ")
+
+
+def _mail_direkt_im_hintergrund(recipient: str, subject: str, text: str) -> None:
+    """Verschickt einen fertigen Text, ohne die Antwort aufzuhalten.
+
+    Gegenstueck zu `_mail_im_hintergrund`, das Betreff und Text erst aus
+    i18n-Schluesseln baut. Hier kommen beide fertig herein (aus
+    `testzugang.nachricht`).
+    """
+    def arbeit() -> None:
+        try:
+            message_id = mailer.send(recipient, subject, text)
+            db.log_mail(recipient, "test_expired", "sent", message_id=message_id)
+        except Exception as exc:                            # noqa: BLE001
+            db.log_mail(recipient, "test_expired", "failed", error=str(exc)[:300])
 
     threading.Thread(target=arbeit, daemon=True).start()
 
@@ -671,8 +719,20 @@ def login():
                 flash(_locked_message(blocked, lang), "error")
                 status = 429
             else:
+                # Erst faellige Testzugaenge sperren, dann pruefen: sonst
+                # kaeme jemand in der Stunde zwischen Ablauf und Cron-Lauf
+                # noch hinein.
+                testzugang.sperren_und_melden(_mail_direkt_im_hintergrund)
                 uid = db.verify_user(email, pw)
-                if uid and not db.is_approved(uid):
+                zustand = db.account_state(uid) if uid else None
+                if uid and zustand and zustand["locked"]:
+                    # Richtiges Passwort, aber die Testzeit ist vorbei. Das zu
+                    # sagen verraet nichts: wer es liest, kennt das Passwort.
+                    db.clear_login_failures(email, ip)
+                    flash(t("err_account_test_over", lang), "error")
+                    uid = None
+                    status = 403
+                elif uid and not db.is_approved(uid):
                     # Richtiges Passwort, aber noch nicht freigeschaltet. Das zu
                     # sagen verraet nichts: wer es liest, kennt das Passwort.
                     db.clear_login_failures(email, ip)
@@ -934,6 +994,12 @@ def admin_accounts():
     if not _is_admin():
         return redirect(url_for("dashboard"))
 
+    # Faellige Testzugaenge sperren, bevor die Liste gebaut wird — sonst
+    # zeigte sie einen Zugang als laufend, der es nicht mehr ist. Der
+    # stuendliche Cron macht dasselbe; `db.lock_expired_tests` gibt jede Zeile
+    # nur einmal heraus, es geht also keine Nachricht doppelt raus.
+    testzugang.sperren_und_melden(_mail_direkt_im_hintergrund)
+
     konten = db.list_accounts()
     heute = datetime.utcnow()
     neu_30 = sum(
@@ -992,6 +1058,52 @@ def admin_set_role(user_id: int):
                                  f"admin_role_{art}", "de",
                                  von=session.get("user_email") or "",
                                  zeit=datetime.utcnow().strftime("%d.%m.%Y %H:%M"))
+    return redirect(url_for("admin_accounts"))
+
+
+@app.route("/admin/konten/<int:user_id>/zugang", methods=["POST"])
+def admin_set_account_type(user_id: int):
+    """Stellt ein Konto auf dauerhaften Benutzerzugang oder Testzugang um.
+
+    Beides wirkt sofort und hebt eine Sperre durch abgelaufene Testzeit auf
+    (`db.set_account_type`). „Auf Testzugang" startet neue 48 Stunden ab jetzt —
+    das ist auch der Weg, einen Test zu verlaengern.
+
+    Anders als bei der Rechtevergabe darf das **jeder** Admin: die Kontoart
+    entscheidet nicht darueber, wer verwalten kann, sondern nur ueber die
+    Laufzeit eines Mitgliederzugangs. Das eigene Konto bleibt aussen vor —
+    wer sich selbst einen Testzugang gibt, sperrt sich in 48 Stunden aus.
+    """
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+    lang = _lang()
+
+    kontotyp = (request.form.get("kontotyp") or "").strip()
+    if kontotyp not in db.ACCOUNT_TYPES:
+        flash(t("err_account_type_missing", lang), "error")
+        return redirect(url_for("admin_accounts"))
+    if user_id == session.get("user_id"):
+        flash(t("admin_delete_self", lang), "error")
+        return redirect(url_for("admin_accounts"))
+
+    konto = db.set_account_type(user_id, kontotyp)
+    if not konto:
+        flash(t("account_type_unchanged", lang), "error")
+        return redirect(url_for("admin_accounts"))
+
+    ist_test = konto["account_type"] == db.ACCOUNT_TYPE_TEST
+    if ist_test:
+        flash(t("account_type_changed_test", lang).format(
+            email=konto["email"], zeit=_zeitpunkt(konto.get("test_expires_at"))),
+            "success")
+    else:
+        flash(t("account_type_changed_user", lang).format(email=konto["email"]),
+              "success")
+    app.logger.info("Kontoart %s: %s durch %s", kontotyp, konto["email"],
+                    session.get("user_email"))
     return redirect(url_for("admin_accounts"))
 
 
@@ -1063,19 +1175,36 @@ def admin_approve(user_id: int):
     if not _is_admin():
         return redirect(url_for("dashboard"))
     lang = _lang()
-    konto = db.approve_user(user_id)
+
+    # Kontoart ist Pflicht und hat bewusst keine Voreinstellung
+    # (Nutzerentscheidung 05.10.2026): der Admin entscheidet bei jeder
+    # Freischaltung ausdruecklich zwischen dauerhaftem Zugang und 48 Stunden.
+    kontotyp = (request.form.get("kontotyp") or "").strip()
+    if kontotyp not in db.ACCOUNT_TYPES:
+        flash(t("err_account_type_missing", lang), "error")
+        return redirect(url_for("admin_accounts"))
+
+    konto = db.approve_user(user_id, kontotyp)
     if not konto:
         flash(t("admin_pending_missing", lang), "error")
         return redirect(url_for("admin_accounts"))
+    ist_test = konto["account_type"] == db.ACCOUNT_TYPE_TEST
     if _mailversand_bereit():
         # Das Passwort setzt die Person selbst, mit dem Code aus dieser Mail —
         # nur wer das Postfach hat, kommt also hinein (M1/M2).
         code, _ablauf = db.issue_reset_code(
             user_id, ttl_minutes=db.ACTIVATION_CODE_TTL_DAYS * 24 * 60)
-        _mail_im_hintergrund(konto["email"], "mail_signup_subject", "mail_signup_body",
-                             _public_origin() + url_for("reset_with_code"), "signup_approved",
-                             normalize_lang(konto.get("signup_lang")),
-                             code=code, tage=db.ACTIVATION_CODE_TTL_DAYS)
+        # Testzugaenge bekommen einen eigenen Text: er nennt die Frist und den
+        # Ablaufzeitpunkt, weil die 48 Stunden ab jetzt laufen und nicht ab
+        # der ersten Anmeldung.
+        _mail_im_hintergrund(
+            konto["email"],
+            "mail_signup_test_subject" if ist_test else "mail_signup_subject",
+            "mail_signup_test_body" if ist_test else "mail_signup_body",
+            _public_origin() + url_for("reset_with_code"), "signup_approved",
+            normalize_lang(konto.get("signup_lang")),
+            code=code, tage=db.ACTIVATION_CODE_TTL_DAYS,
+            **({"ablauf": _zeitpunkt(konto.get("test_expires_at"))} if ist_test else {}))
         flash(t("admin_approved_ok", lang).format(email=konto["email"]), "success")
     else:
         flash(t("admin_approved_nomail", lang).format(email=konto["email"]), "success")

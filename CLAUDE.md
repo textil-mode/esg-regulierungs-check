@@ -29,6 +29,7 @@
 | **Bremse gegen Passwort-Durchprobieren** (5 Fehlversuche je Konto+IP in 15 min mit sich verdoppelnder Wartezeit, zusätzlich 30/Stunde je IP; persistent in `login_attempts`) — siehe eigenen Abschnitt unten | `db.py` `begin_login_attempt`, `app.py` `/login` | ✅ |
 | **Passwort ändern** (eingeloggt, altes PW nötig) | `/passwort-aendern`, `templates/password_change.html` | ✅ |
 | **Konto löschen** (eingeloggt, Passwort + Browser-Rückfrage; entfernt users/companies/analyses/password_resets per Kaskade und die Fehlversuche zur E-Mail; `analysis_cache` bleibt, weil anonym und geteilt) | `/konto-loeschen`, `db.delete_user` | ✅ |
+| **Testzugang** (48 h ab Freischaltung, danach automatisch gesperrt – nicht gelöscht; Kontoart bei der Freischaltung Pflicht und jederzeit wechselbar; eigener Mailtext bei Freischaltung und bei Ablauf) | `db.account_type`, `testzugang.py`, `/admin/konten/<id>/zugang` | ✅ |
 | **Konten entfernen durch den Admin** (eigene Spalte in der Kontenliste, Browser-Rückfrage; Admin-Konten, das eigene Konto und offene Anfragen gesperrt; Nachricht an die Person) | `/admin/konten/<id>/entfernen`, `db.delete_user` | ✅ |
 | **Datenschutzerklärung** der Anwendung (Hosting, Google-Gemini-Übermittlung, Autofill, Löschung) — nur Deutsch, bewusst nicht in `i18n.py` | `/datenschutz`, `templates/datenschutz.html` | ✅ |
 | **Passwort vergessen → Reset-Link per E-Mail** (SMTP mit STARTTLS auf Port 587, Versand im Hintergrund-Thread; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert). Ohne `SMTP_*`/`MAIL_FROM` faellt alles auf den Admin-Weg zurueck; Zustellprotokoll auf der Admin-Seite | `app._forgot_password`, `mailer.py`, `/admin/passwort-resets` | ✅ |
@@ -587,6 +588,74 @@ ohne öffentlichen Beleg.
   Mitglied erfährt es über die Mail „Passwort geändert“.
 - Belege: `test_admin_rollen.py` (8 Blöcke), `test_admin_sortierung.py`.
 
+### Testzugang: 48 Stunden ab Freischaltung (05.10.2026)
+
+Dritte Kontoart neben Admin und Benutzer. Nutzerentscheidungen dazu:
+
+- **Die Frist läuft ab der Freischaltung**, nicht ab der ersten Anmeldung.
+  **Folge, die man kennen muss:** Der Freischalt-Code gilt 7 Tage
+  (`ACTIVATION_CODE_TTL_DAYS`), die Testzeit nur 48 Stunden — wer sein Passwort
+  erst am dritten Tag setzt, findet das Konto gesperrt. Die Freischalt-Mail für
+  Testzugänge nennt deshalb den Ablaufzeitpunkt und bittet, den Code gleich
+  einzulösen.
+- **Keine Voreinstellung:** Beim Freischalten *muss* der Admin wählen. Das
+  Auswahlfeld in der Anfragenzeile ist `required` mit leerer Vorauswahl, und
+  `app.admin_approve` weist einen fehlenden oder unbekannten Wert ab, bevor
+  etwas passiert (`db.approve_user` wirft bei unbekannter Kontoart ValueError).
+
+**Datenmodell** (`db._migrate_users`, idempotent): `account_type` (`benutzer` |
+`test`, Default `benutzer` — deckt alle Bestandskonten), `test_expires_at`,
+`locked`. **`locked` trennt „Testzeit abgelaufen" von „noch nicht
+freigeschaltet" (`approved = 0`)** — ohne diese Trennung erschiene ein
+abgelaufener Testzugang wieder unter den offenen Zugangsanfragen.
+
+**Gesperrt, nicht gelöscht** (Nutzervorgabe): Angaben und Prüfergebnisse
+bleiben. `db.set_account_type(id, "benutzer")` hebt die Sperre auf und macht den
+Zugang dauerhaft; `…(id, "test")` startet neue 48 Stunden ab jetzt — ein zweiter
+Klick verlängert also bewusst.
+
+**Wer sperrt wann?** Dieser Prozess hat keinen Wecker, deshalb drei Auslöser
+(`testzugang.sperren_und_melden`):
+
+| Auslöser | wirkt | Grenze |
+|---|---|---|
+| Anmeldeversuch | sofort | nur wenn jemand kommt |
+| Aufruf `/admin/konten` | sofort | ebenso |
+| Cron, stündlich | immer | der einzige, der auch im stillen Fall mailt |
+
+```bash
+0 * * * * docker exec esg-ki-textil-mode python testzugang.py >> /var/log/esg-testzugang.log 2>&1
+```
+
+`python testzugang.py --probe` zeigt, was fällig ist, ohne zu sperren.
+
+Dass niemand zweimal benachrichtigt wird, sichert `db.lock_expired_tests()`:
+Lesen und Sperren liegen in einer Transaktion, jede Zeile wird nur einmal
+herausgegeben. **Davor steht ein billiger Lesezugriff** — ohne ihn nahm *jeder*
+Anmeldeversuch eine Schreibsperre, auch ohne einen einzigen Testzugang; bei acht
+Threads bremste das die Anmeldung und die Hintergrund-Threads der Registrierung
+gegenseitig aus (sichtbar als Flackern in `test_freischaltung.py`).
+
+**Zugangsprüfung bei jeder Anfrage:** `_require_login()` liest den Kontozustand
+jetzt aus der Datenbank, nicht nur die Sitzung. Ohne das arbeitete ein
+abgelaufener Testzugang weiter, solange sein Cookie lebt (bis zu 12 Stunden) —
+dieselbe Überlegung wie bei `_is_admin()`, das das Admin-Recht ebenfalls frisch
+liest. Anmeldung mit richtigem Passwort auf ein gesperrtes Konto: 403 +
+`err_account_test_over` (verrät nichts, wer es liest, kennt das Passwort).
+
+**Mails** (alle sechs Sprachen, in `signup_lang`): `mail_signup_test_*` bei der
+Freischaltung — anderer Text als `mail_signup_*`, mit Frist und Ablaufzeitpunkt
+— und `mail_test_expired_*` beim Ablauf (sagt ausdrücklich: gesperrt, nicht
+gelöscht, und wie es weitergeht).
+
+**Das eigene Konto** lässt sich nicht auf Testzugang stellen — man sperrte sich
+in 48 Stunden selbst aus. Anders als die Rechtevergabe darf den Wechsel **jeder**
+Admin: die Kontoart entscheidet nicht darüber, wer verwalten kann.
+
+Belege: `test_testzugang.py` (9 Blöcke, 55 Prüfungen). Die bestehenden Tests
+sind nachgezogen (`db.approve_user` braucht die Kontoart, die Route das Feld
+`kontotyp`, die Kontenliste hat neun sortierbare Spalten).
+
 ### Konten entfernen (01.10.2026)
 
 `POST /admin/konten/<id>/entfernen` → `admin_delete_account`. Schaltfläche in
@@ -757,7 +826,9 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `test_login_throttle.py` | Tests zur Login-Bremse und zum Zeitgleichlauf beider Fehlerpfade (16 Blöcke, eigene DB `data/esg_login_test.db`, kein Netz, kein LLM) |
 | `mailer.py` | Mailversand über SMTP mit STARTTLS (`smtplib`, ein Versuch, kein Queue — Begründung im Modul-Docstring) |
 | `test_mailer_smtp.py` | Tests zum SMTP-Weg (STARTTLS, Zeitgrenze, Umlaute, Fehlerübersetzung; Doppel statt echtem Server, kein Netz nach außen) |
-| `test_reset_mail.py` | Tests zum automatischen Reset-Mail-Versand (9 Blöcke, eigene DB `data/esg_mail_test.db`, Attrappe statt echtem Versand, kein Netz) |
+| `test_reset_code.py` | Tests zum Zahlencode beim Passwort-Reset (eigene DB, Attrappe statt echtem Versand, kein Netz). **`test_reset_mail.py` gibt es nicht mehr** — es stand hier noch, obwohl es mit dem Wechsel vom Link auf den Zahlencode entfallen ist (bemerkt am 05.10.2026) |
+| `testzugang.py` | Sperrt abgelaufene Testzugaenge und benachrichtigt die Betroffenen; von app.py (Anmeldung, Kontenliste) und vom stuendlichen Cron genutzt, `--probe` zeigt ohne zu sperren |
+| `test_testzugang.py` | Tests dazu (eigene DB `data/esg_testzugang_test.db`, Attrappe statt Versand, Fristen per Direktzugriff verschoben) |
 | `test_admin_loeschen.py` | Tests zum Entfernen von Konten durch den Admin (eigene DB `data/esg_admin_loeschen_test.db`, Attrappe statt Versand) |
 | `views.py` | Card-Renderer (Kennzahl-Hervorhebung, "Gilt ab", "Erste Schritte", Schwellen-Hinweise) |
 | `pdfexport.py` | PDF-Export der Ergebnisse (reportlab, textil+mode-CD) |

@@ -191,7 +191,7 @@ print("\n8. Der Verband bleibt nach der Freischaltung sichtbar")
 # Angabe nach dem ersten Klick des Admins verschwunden.
 offen_id = treffer[0]["id"] if treffer else None
 assert offen_id, "Anfrage von mit-verband@example.org nicht gefunden"
-db.approve_user(offen_id)
+db.approve_user(offen_id, db.ACCOUNT_TYPE_USER)
 konten = db.list_accounts()
 zeile = [k for k in konten if k["email"] == "mit-verband@example.org"]
 pruefe(all("association" in k for k in konten),

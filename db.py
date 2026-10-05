@@ -139,6 +139,18 @@ def _migrate_users(c: sqlite3.Connection) -> None:
     # `app.ADMIN_EMAILS` sind unabhaengig davon immer Admin.
     if "is_admin" not in cols:
         c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
+    # Kontoart (seit 05.10.2026): `benutzer` dauerhaft, `test` 48 Stunden ab
+    # Freischaltung. Der Default deckt alle Bestandskonten — sie waren
+    # dauerhaft und bleiben es. `locked` trennt "Testzeit abgelaufen" von
+    # "noch nicht freigeschaltet" (`approved = 0`); ohne diese Trennung
+    # erschiene ein abgelaufener Testzugang wieder unter den offenen Anfragen.
+    if "account_type" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN account_type TEXT NOT NULL"
+                  " DEFAULT 'benutzer'")
+    if "test_expires_at" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN test_expires_at TEXT")
+    if "locked" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN locked INTEGER NOT NULL DEFAULT 0")
 
 
 def _migrate_analysis_cache(c: sqlite3.Connection) -> None:
@@ -319,6 +331,18 @@ PENDING_MAX_DAYS = 30
 # Administration.
 ACTIVATION_CODE_TTL_DAYS = 7
 
+# --- Kontoarten (05.10.2026) ----------------------------------------------
+# `benutzer` = dauerhafter Zugang, `test` = 48 Stunden ab Freischaltung.
+# Die Frist laeuft ab dem Klick des Admins (Nutzerentscheidung 05.10.2026),
+# nicht ab der ersten Anmeldung. Folge, die man kennen muss: Der
+# Freischalt-Code gilt ACTIVATION_CODE_TTL_DAYS = 7 Tage, die Testzeit aber
+# nur 48 Stunden — wer sein Passwort erst am dritten Tag setzt, findet das
+# Konto gesperrt. Die Freischalt-Mail nennt deshalb den Ablaufzeitpunkt.
+ACCOUNT_TYPE_USER = "benutzer"
+ACCOUNT_TYPE_TEST = "test"
+ACCOUNT_TYPES = (ACCOUNT_TYPE_USER, ACCOUNT_TYPE_TEST)
+TEST_ACCESS_HOURS = 48
+
 
 def purge_stale_pending(days: int = PENDING_MAX_DAYS) -> int:
     """Loescht offene Anfragen, die aelter als `days` Tage sind. Rueckgabe: Anzahl."""
@@ -347,23 +371,131 @@ def list_pending() -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def approve_user(user_id: int) -> Optional[dict]:
-    """Schaltet eine offene Anfrage frei. Rueckgabe: {email, signup_lang} oder None.
+def approve_user(user_id: int, account_type: str) -> Optional[dict]:
+    """Schaltet eine offene Anfrage frei.
 
+    `account_type` muss `benutzer` oder `test` sein — eine Voreinstellung gibt
+    es bewusst nicht (Nutzerentscheidung 05.10.2026: der Admin trifft die
+    Entscheidung bei jeder Freischaltung ausdruecklich). Ein unbekannter Wert
+    loest einen ValueError aus; der Aufrufer faengt ihn, bevor etwas passiert.
+
+    Rueckgabe: {email, signup_lang, account_type, test_expires_at} oder None.
     None heisst: keine offene Anfrage mit dieser Nummer (schon freigeschaltet,
     abgelehnt oder nie vorhanden) — dann geht auch keine Mail raus.
     """
+    if account_type not in ACCOUNT_TYPES:
+        raise ValueError(f"unbekannte Kontoart: {account_type!r}")
+    jetzt = datetime.utcnow()
+    ablauf = (jetzt + timedelta(hours=TEST_ACCESS_HOURS)).isoformat() \
+        if account_type == ACCOUNT_TYPE_TEST else None
     # Eine Anweisung, deren Zeilenzahl entscheidet: bei zwei gleichzeitigen
     # Klicks gewinnt genau einer, und nur er verschickt die Mail (N1).
     with _conn() as c:
         cur = c.execute(
-            "UPDATE users SET approved = 1, approved_at = ? WHERE id = ? AND approved = 0",
-            (datetime.utcnow().isoformat(), user_id))
+            "UPDATE users SET approved = 1, approved_at = ?, account_type = ?,"
+            " test_expires_at = ?, locked = 0"
+            " WHERE id = ? AND approved = 0",
+            (jetzt.isoformat(), account_type, ablauf, user_id))
         if cur.rowcount != 1:
             return None
-        row = c.execute("SELECT email, signup_lang FROM users WHERE id = ?",
-                        (user_id,)).fetchone()
+        row = c.execute(
+            "SELECT email, signup_lang, account_type, test_expires_at"
+            "  FROM users WHERE id = ?", (user_id,)).fetchone()
     return dict(row)
+
+
+def set_account_type(user_id: int, account_type: str) -> Optional[dict]:
+    """Wechselt die Kontoart eines freigeschalteten Kontos.
+
+    Beides wirkt sofort und hebt eine Sperre auf:
+
+    * nach `benutzer` — die Frist wird geloescht, das Konto ist dauerhaft
+      nutzbar. Das ist auch der Weg, einen abgelaufenen Testzugang dauerhaft
+      zu uebernehmen.
+    * nach `test` — es beginnen neue 48 Stunden ab jetzt. Ein zweites Mal
+      „Testzugang" auf ein laufendes Testkonto verlaengert also bewusst.
+
+    `rowcount` sichert wie bei `set_admin`, dass bei gleichzeitigen Klicks
+    genau ein Aufrufer eine Rueckgabe bekommt und damit genau eine Mail
+    verschickt. Rueckgabe: {email, signup_lang, account_type,
+    test_expires_at, war_gesperrt} oder None.
+    """
+    if account_type not in ACCOUNT_TYPES:
+        raise ValueError(f"unbekannte Kontoart: {account_type!r}")
+    ablauf = (datetime.utcnow() + timedelta(hours=TEST_ACCESS_HOURS)).isoformat() \
+        if account_type == ACCOUNT_TYPE_TEST else None
+    with _conn() as c:
+        vorher = c.execute(
+            "SELECT locked FROM users WHERE id = ? AND approved = 1",
+            (user_id,)).fetchone()
+        if not vorher:
+            return None
+        cur = c.execute(
+            "UPDATE users SET account_type = ?, test_expires_at = ?, locked = 0"
+            " WHERE id = ? AND approved = 1"
+            "   AND (account_type != ? OR locked = 1 OR ? IS NOT NULL)",
+            (account_type, ablauf, user_id, account_type, ablauf))
+        if cur.rowcount != 1:
+            return None
+        row = c.execute(
+            "SELECT email, signup_lang, account_type, test_expires_at"
+            "  FROM users WHERE id = ?", (user_id,)).fetchone()
+    ergebnis = dict(row)
+    ergebnis["war_gesperrt"] = bool(vorher["locked"])
+    return ergebnis
+
+
+def lock_expired_tests() -> list[dict]:
+    """Sperrt abgelaufene Testzugaenge und gibt die betroffenen Konten zurueck.
+
+    Gesperrt, nicht geloescht: die Angaben bleiben erhalten, der Admin kann
+    jederzeit auf `benutzer` umstellen (Nutzervorgabe 05.10.2026).
+
+    Der Aufrufer verschickt zu jedem Rueckgabe-Eintrag genau eine Nachricht.
+    Dass niemand doppelt benachrichtigt wird, sichert `WHERE locked = 0` in
+    derselben Transaktion wie das Lesen: zwei gleichzeitige Aufrufe (Cron und
+    Anmeldeversuch) sperren zusammen jede Zeile nur einmal.
+
+    Aufgerufen wird das an drei Stellen: beim Anmeldeversuch, beim Aufruf der
+    Admin-Kontenliste und stuendlich per Cron (`python -m db testzugaenge`).
+    Die ersten beiden wirken sofort, aber nur wenn jemand kommt; der Cron
+    sorgt dafuer, dass die Nachricht auch im stillen Fall rausgeht.
+    """
+    jetzt = datetime.utcnow().isoformat()
+    bedingung = ("account_type = ? AND locked = 0 AND approved = 1"
+                 " AND test_expires_at IS NOT NULL AND test_expires_at <= ?")
+
+    # Billige Lesefrage zuerst. Ohne sie nahm JEDER Anmeldeversuch eine
+    # Schreibsperre, auch wenn es gar keinen Testzugang gibt — bei acht
+    # Threads bremst das die Anmeldung und die Hintergrund-Threads der
+    # Registrierung gegenseitig aus.
+    with _conn() as c:
+        if not c.execute(f"SELECT 1 FROM users WHERE {bedingung} LIMIT 1",
+                         (ACCOUNT_TYPE_TEST, jetzt)).fetchone():
+            return []
+
+    # Jetzt lohnt die Transaktion: zwischen Lesen und Sperren kann ein
+    # zweiter Aufrufer (Cron neben Anmeldeversuch) dazwischenkommen, und sie
+    # entscheidet, wer die Nachricht verschickt.
+    with _conn() as c:
+        c.execute("BEGIN IMMEDIATE")
+        rows = c.execute(
+            f"SELECT id, email, signup_lang, test_expires_at FROM users"
+            f" WHERE {bedingung}", (ACCOUNT_TYPE_TEST, jetzt)).fetchall()
+        if not rows:
+            return []
+        c.executemany("UPDATE users SET locked = 1 WHERE id = ? AND locked = 0",
+                      [(r["id"],) for r in rows])
+    return [dict(r) for r in rows]
+
+
+def account_state(user_id: int) -> Optional[dict]:
+    """Zustand eines Kontos fuer die Zugangspruefung bei jeder Anfrage."""
+    with _conn() as c:
+        row = c.execute(
+            "SELECT approved, locked, account_type, test_expires_at"
+            "  FROM users WHERE id = ?", (user_id,)).fetchone()
+    return dict(row) if row else None
 
 
 def reject_user(user_id: int) -> Optional[str]:
@@ -442,7 +574,7 @@ def list_accounts() -> list[dict]:
     with _conn() as c:
         rows = c.execute(
             """SELECT u.id, u.email, u.created_at, u.last_login_at, u.is_admin,
-                      u.association,
+                      u.association, u.account_type, u.test_expires_at, u.locked,
                       co.name AS company_name,
                       (SELECT COUNT(*) FROM analyses a WHERE a.user_id = u.id)
                           AS analyses_count,

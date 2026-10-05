@@ -74,10 +74,23 @@ def pruefe(bedingung: bool, text: str) -> None:
 
 
 def ruhe() -> None:
-    ende = time.perf_counter() + 5
-    while threading.active_count() > BASIS_THREADS and time.perf_counter() < ende:
-        time.sleep(0.005)
-    time.sleep(0.05)
+    """Wartet, bis die Hintergrund-Threads wirklich durch sind.
+
+    Zweimal hintereinander ruhig, mit Abstand: Der Registrierungs-Thread
+    startet selbst weitere Threads (je verschickter Mail einen). Wer nur
+    einmal prueft, kehrt im Moment zwischen beiden zurueck — die zweite Mail
+    landet dann nach dem `versandt.clear()` des naechsten Blocks und laesst
+    eine voellig andere Pruefung fehlschlagen.
+    """
+    ende = time.perf_counter() + 8
+    ruhig = 0
+    while ruhig < 2 and time.perf_counter() < ende:
+        if threading.active_count() > BASIS_THREADS:
+            ruhig = 0
+            time.sleep(0.005)
+        else:
+            ruhig += 1
+            time.sleep(0.08)
 
 
 def client_als(email: str | None):
@@ -92,6 +105,11 @@ def client_als(email: str | None):
 
 
 def post(c, path: str, data: dict | None = None):
+    # Freischalten verlangt seit 05.10.2026 eine Kontoart. Diese Tests
+    # pruefen den bisherigen, dauerhaften Zugang; der Testzugang hat
+    # seine eigene Datei (test_testzugang.py).
+    if path.endswith("/freischalten") and not (data or {}).get("kontotyp"):
+        data = dict(data or {}, kontotyp="benutzer")
     # Kein eigenes base_url: die Sitzung aus session_transaction haengt am
     # Standard-Host des Testclients. Die Herkunftspruefung vergleicht den
     # Origin-Kopf mit PUBLIC_BASE_URL, das genuegt.
@@ -241,7 +259,7 @@ pruefe(r_neu.status_code == r_alt.status_code == 200
        and r_neu.get_data(as_text=True) == r_alt.get_data(as_text=True),
        "Registrieren + Anmelden: neue und bestehende Adresse antworten gleich (M2)")
 chef = db.get_user_by_email("chef@mitglied.example")
-db.approve_user(chef["id"])
+db.approve_user(chef["id"], db.ACCOUNT_TYPE_USER)
 pruefe(db.verify_user("chef@mitglied.example", "angreifer-pw-1") is None,
        "auch nach der Freischaltung gilt das Passwort des Angreifers nicht (M1)")
 

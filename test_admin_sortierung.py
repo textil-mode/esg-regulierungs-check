@@ -89,9 +89,10 @@ pruefe('class="reg-table sortable" id="anfragen"' in html, "Anfragentabelle ist 
 print("\n2. Spaltenkoepfe")
 konten_kopf = html.split('id="konten"', 1)[1].split("</thead>", 1)[0]
 typen = re.findall(r'<th data-sort="(\w+)"', konten_kopf)
-pruefe(typen == ["text", "text", "text", "date", "date", "num", "date", "text"],
-       f"acht sortierbare Spalten mit passender Art ({typen})")
-pruefe(konten_kopf.count('class="sort-btn"') == 8, "jede Spalte hat einen Sortierknopf")
+pruefe(typen == ["text", "text", "text", "date", "date", "num", "date",
+                 "text", "text"],
+       f"neun sortierbare Spalten mit passender Art ({typen})")
+pruefe(konten_kopf.count('class="sort-btn"') == 9, "jede Spalte hat einen Sortierknopf")
 pruefe('aria-sort="descending"' in konten_kopf,
        "Ausgangslage gekennzeichnet: Registrierung, neueste zuerst")
 pruefe("Nach dieser Spalte sortieren" in konten_kopf, "Hinweis beim Ueberfahren (i18n)")
