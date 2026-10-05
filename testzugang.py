@@ -120,10 +120,12 @@ def main(argv: list[str]) -> int:
     if "--probe" in argv:
         return _probe()
     betroffen = sperren_und_melden()
-    zeit = datetime.utcnow().strftime("%d.%m.%Y %H:%M")
     if not betroffen:
-        print(f"[{zeit}] keine abgelaufenen Testzugaenge")
+        # Stille, wenn nichts zu melden ist: der Lauf kommt stuendlich, und ein
+        # Log, in dem 23 von 24 Zeilen "nichts passiert" sagen, liest niemand.
+        # Den Stand zeigt `--probe`.
         return 0
+    zeit = datetime.utcnow().strftime("%d.%m.%Y %H:%M")
     print(f"[{zeit}] {len(betroffen)} Testzugang/-zugaenge gesperrt:")
     for konto in betroffen:
         print(f"  {konto['email']}")
