@@ -1089,6 +1089,9 @@ def list_mail_log(limit: int = 25) -> list[dict]:
 QUOTA_WINDOW_MIN = 60
 AUTOFILL_MAX_PER_HOUR = 20
 ANALYSIS_MAX_PER_HOUR = 30
+# Regulierungs-Assistent: eine Frage kostet rund 0,7 Cent. 40 in der Stunde
+# reichen fuer ein ausgiebiges Gespraech und deckeln einen Missbrauch je Konto.
+ASSISTENT_MAX_PER_HOUR = 40
 
 
 def take_quota(scope: str, subject: str, limit: int,
@@ -1106,6 +1109,10 @@ def take_quota(scope: str, subject: str, limit: int,
         c.execute("BEGIN IMMEDIATE")
         anzahl, _ = _attempt_stats(c, scope, subject, window_min)
         _record_attempt(c, scope, subject)
+        # Auch hier aufraeumen: sonst blieben die Eintraege liegen, bis zufaellig
+        # ein Fehlversuch beim Anmelden die Routine anstoesst — die
+        # Datenschutzerklaerung sagt drei Stunden zu.
+        _prune(c)
         return anzahl < limit
 
 

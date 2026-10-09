@@ -243,6 +243,20 @@ def _results_hint_html(language: str) -> str:
     return (f'\n<div class="results-hint">{escape(t("results_hint", language))}</div>')
 
 
+def _ask_html(r: dict, language: str) -> str:
+    """Knopf "Nachfragen": oeffnet den Regulierungs-Assistenten mit einer Frage zu dieser Karte.
+
+    Die Logik steckt in static/assistent.js (delegierter Klick auf .ask-btn).
+    Eine Fehlerkarte hat nichts zu erklaeren.
+    """
+    reg_key = r.get("key") or ""
+    if not reg_key or (r.get("applies") or "").lower() == "error":
+        return ""
+    return (f'\n  <div class="reg-ask"><button type="button" class="ask-btn" data-reg="{escape(reg_key)}" '
+            f'data-name="{escape(r.get("name") or "")}" title="{escape(t("assistent_card_btn_title", language))}">'
+            f'{escape(t("assistent_card_btn", language))}</button></div>')
+
+
 def _card_html(r: dict, lang_dict: dict, language: str = "de",
                profile: dict | None = None) -> str:
     # Klein geschrieben, genau wie Filter und Sortierung in render_cards_html
@@ -283,7 +297,7 @@ def _card_html(r: dict, lang_dict: dict, language: str = "de",
     <span class="reg-full">— {full}</span>
   </div>
   <div class="reg-reason"><strong>{escape(lang_dict['reason'])}:</strong> {reason}</div>{plan_html}
-  <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> {_help_html("passage", language, f"-{nr}")} <em>{passage}</em></div>{as_of_html}
+  <div class="reg-passage"><strong>{escape(lang_dict['passage'])}:</strong> {_help_html("passage", language, f"-{nr}")} <em>{passage}</em></div>{as_of_html}{_ask_html(r, language)}
 </div>"""
 
 

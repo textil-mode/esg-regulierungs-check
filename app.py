@@ -34,6 +34,7 @@ from flask import (  # noqa: E402
 )
 from flask.sessions import SecureCookieSessionInterface
 
+import assistent
 import db
 import testzugang
 import mailer
@@ -125,6 +126,9 @@ class ProxyAwareSessionInterface(SecureCookieSessionInterface):
 
 
 app = Flask(__name__)
+# Obergrenze fuer jede Anfrage, auch ohne Content-Length (chunked). Groesster
+# Einzelfall ist die Sprachaufnahme des Assistenten (1 MB); Formulare sind winzig.
+app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
 app.secret_key = _secret_key()
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -343,7 +347,41 @@ def _inject_globals():
         ACCOUNT_TYPE_TEST=db.ACCOUNT_TYPE_TEST,
         TEST_ACCESS_HOURS=db.TEST_ACCESS_HOURS,
         ASSOCIATION_LABELS=ASSOCIATION_LABELS,
+        assistent_config=_assistent_config(lang),
     )
+
+
+_ASSISTENT_TEXTE = ("title", "subtitle", "open", "new", "new_title", "close", "placeholder", "send",
+                    "greeting", "sugg1", "sugg2", "sugg3", "ask_card", "disclaimer", "who",
+                    "thinking", "no_answer", "error", "session", "mic", "mic_done", "listening",
+                    "mic_denied", "mic_none", "mic_nothing", "mic_recognizing", "mic_unavailable")
+
+
+def _assistent_config(lang: str) -> dict | None:
+    """Konfiguration fuer das Chat-Widget — nur fuer angemeldete, freigeschaltete Konten.
+
+    `sid` ist eine Zufallskennung je Anmeldung (die Sitzung wird beim Anmelden
+    geleert). Das Widget legt den Gespraechsverlauf darunter im Browser-Tab ab,
+    damit eine andere Person im selben Tab ihn nicht zu sehen bekommt.
+    """
+    uid = _uid()
+    if not uid:
+        return None
+    zustand = db.account_state(uid)
+    if not zustand or not zustand["approved"] or zustand["locked"]:
+        return None
+    if not session.get("assistent_sid"):
+        session["assistent_sid"] = secrets.token_hex(8)
+    texte = {k: t(f"assistent_{k}", lang) for k in _ASSISTENT_TEXTE}
+    texte["privacy"] = t("footer_privacy", lang)
+    return {
+        "api": url_for("assistent_api"),
+        "speech": url_for("assistent_sprache_api"),
+        "privacy": url_for("privacy") + "#assistent",
+        "lang": lang,
+        "sid": session["assistent_sid"],
+        "t": texte,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1656,6 +1694,92 @@ def download_pdf():
         mimetype="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={fname}"},
     )
+
+
+# ---------------------------------------------------------------------------
+# Regulierungs-Assistent (Chat unten rechts, siehe assistent.py)
+# ---------------------------------------------------------------------------
+def _assistent_zugang() -> tuple[int | None, Response | None]:
+    """Angemeldet, freigeschaltet, nicht gesperrt — sonst eine JSON-Antwort fuer das Widget.
+
+    Dieselbe Pruefung wie `_require_login`, nur ohne Weiterleitung: das Widget
+    spricht per fetch mit dem Server und kann mit einer Login-Seite nichts anfangen.
+    """
+    uid = _uid()
+    zustand = db.account_state(uid) if uid else None
+    if not zustand or not zustand["approved"] or zustand["locked"]:
+        return None, Response(json.dumps({"error": t("assistent_session", _lang())}),
+                              status=401, mimetype="application/json")
+    return uid, None
+
+
+def _json_fehler(text: str, status: int) -> Response:
+    return Response(json.dumps({"error": text}, ensure_ascii=False), status=status,
+                    mimetype="application/json")
+
+
+@app.route("/api/assistent", methods=["POST"])
+def assistent_api():
+    uid, fehler = _assistent_zugang()
+    if fehler:
+        return fehler
+    lang = _lang()
+    if not db.take_quota("assistent", str(uid), db.ASSISTENT_MAX_PER_HOUR):
+        return _json_fehler(t("err_quota", lang), 429)
+    # Frage (800 Zeichen) und Verlauf (6 x 1.500) passen locker in 64 KB; ohne Deckel
+    # laese get_json jede beliebige Menge in den Speicher.
+    if (request.content_length or 0) > 64 * 1024:
+        return _json_fehler("request too large", 413)
+    payload = request.get_json(silent=True) or {}
+    question = (payload.get("message") or "")
+    question = question.strip()[:assistent.MAX_QUESTION] if isinstance(question, str) else ""
+    if not question:
+        return _json_fehler("empty question", 400)
+    reg_key = payload.get("reg_key")
+    reg_key = reg_key if isinstance(reg_key, str) and reg_key in assistent.REGS_BY_KEY else None
+    history = assistent.clean_history(payload.get("history"))
+    # Alles, was der Stream braucht, jetzt lesen: der Generator laeuft nach dem
+    # Ende des Request-Kontexts weiter.
+    profile = db.get_company(uid)
+    analysis = db.latest_analysis(uid)
+    stream = assistent.answer(question, history, reg_key, lang, profile, analysis)
+    return Response(stream, mimetype="application/x-ndjson",
+                    headers={"Cache-Control": "no-store",
+                             # nginx soll jedes Wort sofort weitergeben, nicht puffern
+                             "X-Accel-Buffering": "no"})
+
+
+@app.route("/api/assistent/sprache", methods=["POST"])
+def assistent_sprache_api():
+    """Spracheingabe fuer Browser ohne eigene Erkennung (Firefox): Aufnahme -> Text."""
+    uid, fehler = _assistent_zugang()
+    if fehler:
+        return fehler
+    lang = _lang()
+    if not db.take_quota("assistent_sprache", str(uid), db.ASSISTENT_MAX_PER_HOUR):
+        return _json_fehler(t("err_quota", lang), 429)
+    mime = (request.content_type or "").split(";")[0].strip().lower()
+    if mime not in assistent.AUDIO_TYPES:
+        return _json_fehler(t("assistent_mic_unavailable", lang), 415)
+    if (request.content_length or 0) > assistent.MAX_AUDIO:   # vor dem Einlesen ablehnen
+        return _json_fehler(t("assistent_mic_too_long", lang), 413)
+    audio = request.get_data(cache=False)
+    if not audio:
+        return _json_fehler(t("assistent_mic_nothing", lang), 400)
+    if len(audio) > assistent.MAX_AUDIO:
+        return _json_fehler(t("assistent_mic_too_long", lang), 413)
+    try:
+        text = assistent.transcribe(audio, mime, lang)
+    except assistent.ModelUnavailable as e:
+        app.logger.warning("Spracherkennung: %s", str(e)[:200])
+        return _json_fehler(t("assistent_mic_unavailable", lang), 502)
+    return Response(json.dumps({"text": text}, ensure_ascii=False), mimetype="application/json")
+
+
+# Suchindex ueber die Gesetzestexte vorbauen (dauert einige Sekunden), damit die
+# erste Frage nach einem Neustart nicht darauf wartet.
+if os.getenv("ASSISTENT_WARMUP", "1") == "1":
+    assistent.warm_up(("de",))
 
 
 # ---------------------------------------------------------------------------

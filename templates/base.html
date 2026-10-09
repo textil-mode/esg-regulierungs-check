@@ -211,6 +211,12 @@
     .metric-label { font-size: 13px; color: var(--tm-muted); margin-top: 4px; }
 
     /* Regulierungskarten */
+    .reg-ask { margin-top: 10px; }
+    .ask-btn { font: 700 13px Arial, Helvetica, sans-serif; color: var(--tm-navy); background: #FFFFFF;
+      border: 1px solid var(--tm-navy); border-radius: 4px; padding: 0 14px; min-height: 36px; cursor: pointer; }
+    .ask-btn:hover { background: var(--tm-navy); color: #FFFFFF; }
+    .ask-btn:focus-visible { outline: 2px solid var(--tm-blue); outline-offset: 2px; }
+    @media print { .reg-ask { display: none; } }
     .reg-card { border: 1px solid var(--tm-line); padding: 14px 16px; margin-bottom: 10px; background: var(--tm-box); color: #000000; }
     .reg-card-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
     .badge { padding: 3px 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
@@ -523,5 +529,10 @@
     window.addEventListener('resize', function () { if (open) clamp(open); });
   })();
   </script>
+  {% if assistent_config %}
+  {# Regulierungs-Assistent (static/assistent.js): nur fuer angemeldete, freigeschaltete Konten #}
+  <script id="assistent-config" type="application/json">{{ assistent_config|tojson }}</script>
+  <script src="{{ url_for('static', filename='assistent.js') }}?v=1" defer></script>
+  {% endif %}
 </body>
 </html>

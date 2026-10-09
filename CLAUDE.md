@@ -68,6 +68,7 @@
 | "Passage" auf 280 Zeichen gekappt (+ " …"). Das statische `key_article` wird NICHT mehr vorangestellt — die Begruendungstexte tragen die Fundstelle seit Prompt v5 selbst, sonst stuenden zwei widerspruechliche Angaben da und die Kappung griffe nur auf den halben Text | `views.py` `_shorten_passage`, `_card_html` | ✅ |
 | Fehler-Regulierung als rote ✕-Karte sichtbar | `views.py` `APPLIES_ORDER` + `BADGE_STYLES` | ✅ |
 | i18n (DE / EN / ES / FR / IT / ZH) | `i18n.py` | ✅ |
+| **Regulierungs-Assistent** (Chat unten rechts, nur angemeldet; Knopf "Nachfragen" je Ergebniskarte; Spracheingabe) — siehe eigenen Abschnitt | `assistent.py`, `static/assistent.js`, `/api/assistent`, `/api/assistent/sprache` | ✅ |
 
 ---
 
@@ -754,6 +755,45 @@ recherchiert, Fundstellen je Eintrag als Kommentar.
 - Belege: `test_katalog_erweiterung.py` (ohne Netz), `test_lawparse.py` (Quellen, im
   Container grün).
 
+### Regulierungs-Assistent (09.10.2026)
+
+Chat unten rechts für angemeldete, freigeschaltete Konten. Vorbild: der go-textile-Chatbot
+(`Zwischenspeicher/go-textile-chatbot`), gleiche Funktionsweise, t+m-Design.
+
+- **Widget** `static/assistent.js` (Shadow DOM). Konfiguration (Adressen, Texte, Sprache,
+  `sid`) kommt aus `app._assistent_config` als JSON in `base.html`; ohne Anmeldung fehlt beides.
+  Verlauf nur im Browser-Tab (`sessionStorage`, Schlüssel `esg-assistent-<sid>`; `sid` entsteht je
+  Anmeldung neu, fremde Schlüssel werden beim Laden gelöscht). Der Server speichert keine Gespräche.
+- **Knopf „Nachfragen“** auf jeder Ergebniskarte (`views._ask_html`, nicht bei Fehlerkarten):
+  stellt eine vorformulierte Frage und schickt den `reg_key` mit.
+- **Was an Gemini geht** (`assistent.answer`):
+  1. `systemInstruction` = Regeln + KATALOG aller 30 Regulierungen (Kriterien, Status,
+     erste Schritte, Leitlinien), **pro Tag byte-gleich** → Gemini cached ihn implizit
+     (gemessen: ~18.400 von ~28.000 Token zwischengespeichert ab der zweiten Frage).
+  2. Frage + **ganzes Profil ohne Firmennamen** (`_PROFILE_LABELS`) + letztes Prüfergebnis
+     (mit „gilt ab“) + **Gesetzesauszüge**: genannte Regulierungen (Erkennung über Kürzel und
+     `_ALIASES`, max. 3) bekommen `lawparse.build_context` wie die Prüfung, dazu BM25-Treffer
+     über alle Texte (Index aus `law_texts`, ~3.400 Abschnitte, Vorbau beim Start in einem
+     Thread, prüft alle 10 min, ob sich Texte geändert haben). Budget 45.000 Zeichen
+     (`ASSISTENT_CONTEXT_CHARS`).
+  Anders als die Prüfung wird hier **nichts zwischengespeichert** — deshalb darf das ganze
+  Profil mit, ohne die Cache-Invariante zu berühren.
+- **Stream**: NDJSON `meta` / `token` / `notice` / `sources`. `notice` (ausgelastet,
+  unterbrochen) zeigt das Widget an, nimmt es aber nicht in den Verlauf. Header
+  `X-Accel-Buffering: no`; nginx hat für `/esg/` ohnehin `proxy_buffering off`.
+- **Ausweichen**: wie die Prüfung über `GOOGLE_FALLBACK_MODELS`, aber nur **vor dem ersten
+  Wort**; bricht ein Modell mitten in der Antwort ab, kommt kein zweites hinterher.
+- **Kontingent** `db.ASSISTENT_MAX_PER_HOUR` = 40 je Konto (Fragen und Spracheingabe getrennt).
+  `take_quota` räumt seitdem selbst per `_prune` auf (Datenschutzerklärung: 3 Stunden).
+- **Spracheingabe**: Chrome/Edge/Safari über die Spracherkennung des Browsers, Firefox nimmt
+  auf und schickt an `/api/assistent/sprache` (Gemini transkribiert). Dafür muss nginx
+  `Permissions-Policy … microphone=(self)` setzen (in `/esg/` und im Legacy-Block von
+  `sites-enabled/default`) — seit 09.10.2026 so.
+- **Kosten**: ~28.000 Token je Frage, davon ~2/3 zwischengespeichert; Antwortzeit 1–3 s.
+- **Logs** enthalten Dauer, Umfang, genutzte Regulierungen und Token, **nie die Frage**
+  (so steht es in Ziffer 7 der Datenschutzerklärung).
+- Tests: `test_assistent.py` (56 Prüfungen, Modell und Netz als Attrappe, eigene DB).
+
 ### Ausweichmodelle bei Lastspitzen (28.09.2026)
 
 Anlass: `gemini-3.1-flash-lite` antwortete minutenlang mit `503 high demand`. NFRD
@@ -846,7 +886,10 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `testzugang.py` | Sperrt abgelaufene Testzugaenge und benachrichtigt die Betroffenen; von app.py (Anmeldung, Kontenliste) und vom stuendlichen Cron genutzt, `--probe` zeigt ohne zu sperren |
 | `test_testzugang.py` | Tests dazu (eigene DB `data/esg_testzugang_test.db`, Attrappe statt Versand, Fristen per Direktzugriff verschoben) |
 | `test_admin_loeschen.py` | Tests zum Entfernen von Konten durch den Admin (eigene DB `data/esg_admin_loeschen_test.db`, Attrappe statt Versand) |
-| `views.py` | Card-Renderer (Kennzahl-Hervorhebung, "Gilt ab", "Erste Schritte", Schwellen-Hinweise) |
+| `views.py` | Card-Renderer (Kennzahl-Hervorhebung, "Gilt ab", "Erste Schritte", Schwellen-Hinweise, Knopf "Nachfragen") |
+| `assistent.py` | Regulierungs-Assistent: Suche in den Gesetzestexten, Katalog, Prompt, Gemini-Stream, Transkription |
+| `static/assistent.js` | Chat-Widget unten rechts |
+| `test_assistent.py` | Tests zum Assistenten (offline, eigene DB `data/esg_assistent_unit_test.db`) |
 | `pdfexport.py` | PDF-Export der Ergebnisse (reportlab, textil+mode-CD) |
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
