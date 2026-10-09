@@ -107,6 +107,8 @@ def attrappe(system, contents, usage=None):
 
 
 assistent.stream_model = attrappe
+_echte_einordnung = assistent.plan_query
+assistent.plan_query = lambda frage_, verlauf_: None   # ohne Netz: Stichwortsuche
 
 PW = "ein-gutes-Passwort-2026"
 FIRMA = "Geheimweberei Musterstadt GmbH"
@@ -339,6 +341,52 @@ assistent.stream_model = _alt_model
 pruefe(any(e["type"] == "notice" and "unterbrochen" in e["text"] for e in ev),
        "Antwort an der Laengengrenze gekappt: Hinweis 'unterbrochen'")
 assistent.httpx.stream = _echt_stream
+
+# --- Vorab-Einordnung der Frage ---
+class _Plain:
+    def __init__(self, status, payload):
+        self.status_code, self._p = status, payload
+
+    def json(self):
+        return self._p
+
+
+_echt_post = assistent.httpx.post
+gesendet: list[dict] = []
+
+
+def falsch_post(url, **kw):
+    gesendet.append(kw["json"])
+    text = json.dumps({"regs": ["EmpCo", "Erfunden", "TKVO", "LkSG", "PPWR"],
+                       "frage": "Ist klimaneutral zulaessig?", "suchbegriffe": "Umweltaussage Kompensation"})
+    return _Plain(200, {"candidates": [{"content": {"parts": [{"text": text}]}}]})
+
+
+assistent.httpx.post = falsch_post
+plan = _echte_einordnung("Dürfen wir klimaneutral auf Hangtags schreiben?",
+                         [{"role": "user", "text": "Vorfrage"}, {"role": "model", "text": "Antwort"}])
+pruefe(plan == {"regs": ["EmpCo", "TKVO", "LkSG"], "frage": "Ist klimaneutral zulaessig?",
+                "suchbegriffe": "Umweltaussage Kompensation"},
+       "Einordnung: unbekannte Kuerzel raus, hoechstens drei")
+pruefe(gesendet and "Vorfrage" in gesendet[0]["contents"][0]["parts"][0]["text"]
+       and FIRMA not in json.dumps(gesendet[0]), "Einordnung sieht den Verlauf, aber keinen Firmennamen")
+assistent.httpx.post = lambda url, **kw: _Plain(503, {})
+pruefe(_echte_einordnung("Frage", []) is None, "Einordnung gestoert: None (Stichwortsuche greift)")
+assistent.httpx.post = lambda url, **kw: _Plain(200, {"candidates": [{"content": {"parts": [{"text": "kein json"}]}}]})
+pruefe(_echte_einordnung("Frage", []) is None, "unlesbare Einordnung: None")
+assistent.httpx.post = _echt_post
+
+assistent.plan_query = lambda f, h: {"regs": ["HinSchG"], "frage": "Brauchen wir eine Meldestelle?",
+                                     "suchbegriffe": "interne Meldestelle Beschaeftigungsgeber"}
+aufrufe.clear()
+ev = zeilen(frage(client_als(uid), {"message": "Und das andere Thema?"}))
+assistent.plan_query = lambda frage_, verlauf_: None
+p_ = aufrufe[0]["contents"][-1]["parts"][-1]["text"] if aufrufe else ""
+pruefe("§ 12" in p_, "Regulierung aus der Einordnung bekommt ihre Auszuege")
+pruefe(ev[0].get("suche") == "Brauchen wir eine Meldestelle?", "meta traegt die eigenstaendige Frage fuer den Verlauf")
+pruefe(p_.startswith("FRAGE: Und das andere Thema?") and "Beantworte jetzt genau diese Frage: Und das andere Thema?" in p_,
+       "Frage steht vorn und hinten im Prompt")
+pruefe("Landes- oder Fachverband" in assistent.catalog_text(), "Verweis auf Landes- oder Fachverband in den Regeln")
 
 r = client_als(uid).post("/api/assistent", data=b"x" * (3 * 1024 * 1024), content_type="application/json",
                          headers={"Origin": BASIS})

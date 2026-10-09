@@ -778,6 +778,15 @@ Chat unten rechts für angemeldete, freigeschaltete Konten. Vorbild: der go-text
      (`ASSISTENT_CONTEXT_CHARS`).
   Anders als die Prüfung wird hier **nichts zwischengespeichert** — deshalb darf das ganze
   Profil mit, ohne die Cache-Invariante zu berühren.
+- **Vorab-Einordnung** (`plan_query`, seit 09.10.2026 nachmittags): ein kurzer Gemini-Aufruf
+  (~1.000 Token, < 1 s, nur Kürzel-Liste + Verlauf, kein Profil) liefert bis zu 3 Regulierungen,
+  die eigenständig formulierte Frage und Fachbegriffe für die Suche. Anlass: die reine
+  Stichwortsuche fand bei „klimaneutral auf Hangtags“ EnEfG statt EmpCo. Fällt der Aufruf aus,
+  gilt die Stichwortsuche (`_ALIASES` + BM25). Die Frage steht im Prompt vorn und hinten.
+- **Antwortregeln** (`SYSTEM_RULES`): erster Satz = direkte Antwort, nichts Ungefragtes
+  anhängen, unpassende Auszüge stillschweigend übergehen. Verweis bei Einzelfallbewertung nach
+  Vorgabe des Nutzers: „… wenden Sie sich an Ihren Landes- oder Fachverband oder auch an
+  textil+mode.“
 - **Stream**: NDJSON `meta` / `token` / `notice` / `sources`. `notice` (ausgelastet,
   unterbrochen) zeigt das Widget an, nimmt es aber nicht in den Verlauf. Header
   `X-Accel-Buffering: no`; nginx hat für `/esg/` ohnehin `proxy_buffering off`.

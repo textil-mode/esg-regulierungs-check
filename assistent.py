@@ -100,7 +100,8 @@ _ALIASES: dict[str, tuple[str, ...]] = {
     "Vernichtungsverbot": ("vernichtung", "unverkauft"),
     "PPWR": ("verpackung", "packaging"),
     "MinRohSorgG": ("konfliktmineral", "mineralische rohstoffe", "3tg"),
-    "EmpCo": ("greenwashing", "umweltaussage", "umweltwerbung"),
+    "EmpCo": ("greenwashing", "umweltaussage", "umweltwerbung", "klimaneutral", "umweltfreundlich",
+              "nachhaltigkeitssiegel"),
     "REACH_XVII": ("reach", "anhang xvii", "azofarb", "dimethylformamid", "pfas"),
     "REACH_ART33": ("svhc", "kandidatenliste", "art. 33", "artikel 33"),
     "SCIP": ("scip",),
@@ -302,27 +303,18 @@ erste Schritte, amtliche Leitlinien und Quellen,
 2. mit jeder Frage das UNTERNEHMENSPROFIL der fragenden Person und das ERGEBNIS IHRER LETZTEN PRUEFUNG,
 3. mit jeder Frage AUSZUEGE AUS DEN GESETZESTEXTEN, passend zur Frage ausgewaehlt.
 
-Regeln:
-- Stuetze jede Aussage auf diese Quellen. Nenne die Fundstelle (z. B. "Art. 2 Abs. 1 CSDDD", \
-"§ 1 LkSG"), wenn du dich auf einen Auszug stuetzt.
-- Steht etwas nicht in den Quellen, sag das offen und verweise auf die amtliche Quelle aus dem \
-Katalog oder auf die Beratung durch textil+mode. Erfinde keine Artikel, Fristen, Schwellenwerte, \
-Grenzwerte oder Zahlen.
-- Betrifft die Frage das eigene Unternehmen ("muessen wir", "gilt das fuer uns"), beziehe das \
-Unternehmensprofil und das Pruefergebnis ein. Kommst du zu einer anderen Einschaetzung als das \
-Pruefergebnis, sag das ausdruecklich und empfiehl, die Angaben zu pruefen und die Pruefung neu zu \
-starten. Fehlt eine Angabe, die es fuer die Antwort braucht, frag danach oder nenne die Bedingung.
-- Vorschriften ausserhalb des Katalogs gehoeren nicht zum Pruefumfang: Sag das, und bewerte sie \
-nicht im Einzelnen.
-- Du gibst allgemeine Informationen, keine Rechtsberatung. Geht es um eine verbindliche \
-Bewertung im Einzelfall, weise in einem Satz auf die Beratung durch textil+mode hin — nicht bei \
-jeder Antwort.
-- Bleib beim Thema (Regulierung, Nachhaltigkeit und Compliance in der Textil- und Modebranche). \
-Andere Anliegen lehnst du freundlich in einem Satz ab.
+Regeln fuer die Antwort:
+- Beantworte GENAU die gestellte Frage. Der erste Satz gibt die direkte Antwort (ja/nein, die Zahl, die Frist, die Pflicht). Danach nur so viel Erlaeuterung, wie die Frage braucht. Hat die Frage mehrere Teile, beantworte jeden.
+- Haenge nichts Ungefragtes an: keine Wiederholung des Pruefergebnisses, keine Liste "Erste Schritte", keine allgemeinen Empfehlungen — ausser die Frage zielt darauf ("was ist zu tun?").
+- Stuetze jede Aussage auf die Quellen und nenne die Fundstelle (z. B. "Art. 2 Abs. 1 CSDDD", "§ 1 LkSG"). Erfinde keine Artikel, Fristen, Schwellenwerte, Grenzwerte oder Zahlen.
+- Die Auszuege sind automatisch ausgewaehlt und nicht alle passen. Nutze nur, was die Frage betrifft; uebergehe den Rest stillschweigend. Sprich nie ueber "die Auszuege" oder "die bereitgestellten Texte" und erklaere nicht, warum ein Auszug nicht passt.
+- Steht die Antwort nicht in den Quellen, sag das in einem Satz und nenne die amtliche Quelle aus dem Katalog.
+- Unternehmensprofil und Pruefergebnis nur heranziehen, wenn die Frage das eigene Unternehmen betrifft ("muessen wir", "gilt das fuer uns", "was bedeutet das fuer uns"). Kommst du dann zu einer anderen Einschaetzung als das Pruefergebnis, sag das und empfiehl, die Angaben zu pruefen und die Pruefung neu zu starten. Haengt die Antwort an einer Angabe, die fehlt, nenne die Bedingung oder frag nach.
+- Vorschriften ausserhalb des Katalogs gehoeren nicht zum Pruefumfang: Sag das, und bewerte sie nicht im Einzelnen.
+- Du gibst allgemeine Informationen, keine Rechtsberatung. Nur wenn es um eine verbindliche Bewertung im Einzelfall geht, schliesse mit einem Satz nach diesem Muster: "Fuer eine verbindliche Bewertung … wenden Sie sich an Ihren Landes- oder Fachverband oder auch an textil+mode." Formulierungen wie "empfiehlt sich die Beratung durch textil+mode" verwendest du nicht. Nicht bei jeder Antwort.
+- Bleib beim Thema (Regulierung, Nachhaltigkeit und Compliance in der Textil- und Modebranche). Andere Anliegen lehnst du freundlich in einem Satz ab.
 - Nenne keinen Firmennamen.
-- Antworte in der Sprache, die unter der Frage angegeben ist. Sachlich, knapp und konkret: kurze \
-Absaetze, Aufzaehlungen mit "- ", Wichtiges **fett**. Keine Begruessung, keine Floskeln. Verlinke \
-nur Adressen aus dem Katalog.
+- Antworte in der Sprache, die unter der Frage angegeben ist. Sachlich, knapp und konkret: kurze Absaetze, Aufzaehlungen mit "- ", Wichtiges **fett**. Keine Begruessung, keine Floskeln. Verlinke nur Adressen aus dem Katalog.
 
 === KATALOG ===
 """
@@ -619,14 +611,80 @@ def sources_for(answer_text: str, used: list[str], asked: list[str]) -> list[dic
     return out
 
 
+PLAN_PROMPT = """Du ordnest Fragen an einen Assistenten fuer ESG-, Produkt- und \
+Chemikalienvorschriften der Textil- und Modebranche den Regulierungen zu. Liste der Regulierungen \
+(Kuerzel: Name):
+{liste}
+
+Antworte NUR mit JSON:
+{{"regs": [bis zu 3 Kuerzel, die die Frage betrifft, wichtigste zuerst; [] wenn keine passt],
+  "frage": "die Frage, eigenstaendig formuliert (Bezuege auf den Gespraechsverlauf aufgeloest)",
+  "suchbegriffe": "6-12 deutsche Fachbegriffe, wie sie im Gesetzestext stehen wuerden"}}
+
+Beispiel: "Duerfen wir klimaneutral auf Hangtags schreiben?" ->
+{{"regs": ["EmpCo"], "frage": "Ist die Werbeaussage klimaneutral auf Etiketten zulaessig?", \
+"suchbegriffe": "Umweltaussage Klimaneutralitaet Kompensation Treibhausgasemissionen irrefuehrend \
+Geschaeftspraxis Nachhaltigkeitssiegel Verbraucher"}}"""
+
+
+def _plan_liste() -> str:
+    return "\n".join(f"{r['key']}: {r['name']}" for r in REGULATIONS)
+
+
+def plan_query(question: str, history: list[dict]) -> dict | None:
+    """Vorab-Einordnung der Frage durch das Modell: Regulierungen, eigenstaendige Frage, Suchbegriffe.
+
+    Die Stichwortsuche allein verfehlt Alltagssprache ("klimaneutral auf Hangtags" fand
+    EnEfG statt EmpCo, 09.10.2026). Ein kurzer Aufruf ohne Gesetzestexte (~1.000 Token,
+    unter einer Sekunde) ordnet die Frage zu. Faellt er aus, gilt die Stichwortsuche.
+    """
+    key = _google_key()
+    if not key or os.getenv("LLM_PROVIDER", "").lower().strip() != "google":
+        return None
+    verlauf = "\n".join(f"{'Nutzer' if m['role'] == 'user' else 'Assistent'}: {m['text'][:400]}"
+                        for m in history[-4:])
+    user = (f"Gespraechsverlauf:\n{verlauf}\n\n" if verlauf else "") + f"Neue Frage: {question}"
+    model = _google_models()[0]
+    try:
+        r = httpx.post(f"{_GOOGLE_BASE}/models/{model}:generateContent",
+                       headers={"x-goog-api-key": key}, timeout=httpx.Timeout(8.0, connect=4.0),
+                       json={"systemInstruction": {"parts": [{"text": PLAN_PROMPT.format(liste=_plan_liste())}]},
+                             "contents": [{"role": "user", "parts": [{"text": user}]}],
+                             "generationConfig": {"temperature": 0, "maxOutputTokens": 300,
+                                                  "responseMimeType": "application/json"}})
+        if r.status_code != 200:
+            _log(f"Einordnung: HTTP {r.status_code}")
+            return None
+        text = "".join(p.get("text", "") for c in r.json().get("candidates", [])
+                       for p in c.get("content", {}).get("parts", []) if not p.get("thought"))
+        data = json.loads(text)
+    except (httpx.HTTPError, ValueError, KeyError) as e:
+        _log(f"Einordnung fehlgeschlagen: {type(e).__name__}")
+        return None
+    if not isinstance(data, dict):
+        return None
+    regs = [k for k in (data.get("regs") or []) if isinstance(k, str) and k in REGS_BY_KEY][:MAX_REGS]
+    frage = data.get("frage") if isinstance(data.get("frage"), str) else ""
+    begriffe = data.get("suchbegriffe") if isinstance(data.get("suchbegriffe"), str) else ""
+    return {"regs": regs, "frage": frage.strip()[:600], "suchbegriffe": begriffe.strip()[:400]}
+
+
 def answer(question: str, history: list[dict], reg_key: str | None, lang: str,
            profile: dict | None, analysis: dict | None) -> Iterator[str]:
     """NDJSON-Zeilen der Antwort. Laeuft ausserhalb des Request-Kontexts (Stream)."""
     started = time.time()
-    search_q = search_query(question, history)
-    asked = ([reg_key] if reg_key in REGS_BY_KEY else []) + detect_regs(search_q)
-    asked = list(dict.fromkeys(asked))
-    yield _line({"type": "meta", "suche": search_q})
+    plan = plan_query(question, history)
+    if plan:
+        eigenstaendig = plan["frage"] or question
+        search_q = f"{eigenstaendig} {plan['suchbegriffe']}".strip()
+        planned = plan["regs"]
+    else:
+        search_q = search_query(question, history)
+        eigenstaendig = search_q
+        planned = []
+    asked = ([reg_key] if reg_key in REGS_BY_KEY else []) + planned + detect_regs(question)
+    asked = list(dict.fromkeys(asked))[:MAX_REGS]
+    yield _line({"type": "meta", "suche": eigenstaendig})
 
     try:
         context, used = excerpts(search_q, asked, lang)
@@ -634,11 +692,15 @@ def answer(question: str, history: list[dict], reg_key: str | None, lang: str,
         _log(f"Auszuege fehlgeschlagen: {e}")
         context, used = "", []
 
-    teile = [profile_block(profile), result_block(analysis, profile),
-             "AUSZUEGE AUS DEN GESETZESTEXTEN:\n" + (context or "(keine passenden Auszuege gefunden)"),
-             "---", f"Frage: {question}"]
-    if search_q != question:
-        teile.append(f"(Im Gespraechszusammenhang gemeint: {search_q})")
+    # Die Frage steht vorn UND hinten: dazwischen liegen bis zu 45.000 Zeichen
+    # Material, und am Anfang allein geriet sie aus dem Blick.
+    teile = [f"FRAGE: {question}",
+             profile_block(profile), result_block(analysis, profile),
+             "AUSZUEGE AUS DEN GESETZESTEXTEN (automatisch ausgewaehlt, nicht alle passen):\n"
+             + (context or "(keine passenden Auszuege gefunden)"),
+             "---", f"Beantworte jetzt genau diese Frage: {question}"]
+    if eigenstaendig != question:
+        teile.append(f"(Im Gespraechszusammenhang gemeint: {eigenstaendig})")
     teile.append(f"Antwortsprache: {_LANG_NAMES.get(lang, 'German')}")
     prompt = "\n\n".join(teile)
 
