@@ -119,6 +119,7 @@ _ALIASES: dict[str, tuple[str, ...]] = {
     "MPDG": ("durchführungsgesetz", "durchfuehrungsgesetz", "dmids", "medizinprodukteberater"),
     "MPAMIV": ("vorkommnis", "anwendermeld", "vigilanz"),
     "MPBetreibV": ("betreiberverordnung", "aufbereitung", "krinko", "op-textil"),
+    "AbwV55": ("wäscherei", "waescherei", "anhang 55", "textilservice", "wäscheabwasser"),
 }
 
 REGS_BY_KEY = {r["key"]: r for r in REGULATIONS}

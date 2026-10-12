@@ -41,7 +41,7 @@ MIN_SECTIONS = 3
 
 # Einzelnormen ohne Artikelgliederung (Katalogerweiterung 29.09.2026): die
 # Quelle ist bewusst nur die eine Vorschrift, nicht das ganze Gesetz.
-SHORT_SOURCES = {"SCIP": 1500, "AbwV38": 5000, "EPR_NL": 5000}
+SHORT_SOURCES = {"SCIP": 1500, "AbwV38": 5000, "EPR_NL": 5000, "AbwV55": 4000}
 
 KEEP_CACHE = "--keep" in sys.argv
 

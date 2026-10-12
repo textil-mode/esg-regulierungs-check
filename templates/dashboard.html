@@ -108,6 +108,10 @@
           <input type="checkbox" id="wet_processing_de" name="wet_processing_de" {{ 'checked' if company.get('wet_processing_de') }}>
           <label for="wet_processing_de">{{ t("field_wet_processing", lang) }}</label>{{ fh("wet_processing") }}
         </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="laundry_de" name="laundry_de" {{ 'checked' if company.get('laundry_de') }}>
+          <label for="laundry_de">{{ t("field_laundry", lang) }}</label>{{ fh("laundry") }}
+        </div>
 
         <div class="label-row" style="margin-top:12px;"><label for="svhc_status">{{ t("field_svhc", lang) }}</label>{{ fh("svhc") }}</div>
         <select name="svhc_status" id="svhc_status">
@@ -147,6 +151,20 @@
         </div>
         {% endfor %}
       </div>
+    </div>
+
+    <!-- Geschaeftsmodell / Taetigkeitsbereich (Nutzervorgabe 12.10.2026) -->
+    <hr>
+    <h3 style="margin-bottom:8px;">{{ t("section_business", lang)|replace("#### ","") }} {{ fh("business") }}</h3>
+    <p class="help-text" style="margin-bottom:12px;">{{ t("business_hint", lang) }}</p>
+    {% set existing_business = company.get('business_activities', []) or [] %}
+    <div class="grid-2 products-grid">
+      {% for v in BUSINESS_ACTIVITIES %}
+      <div class="checkbox-row">
+        <input type="checkbox" name="business_activities" value="{{ v }}" id="biz_{{ loop.index }}" {{ 'checked' if v in existing_business }}>
+        <label for="biz_{{ loop.index }}">{{ t_opt(v, BUSINESS_ACTIVITY_LABELS, lang) }}</label>
+      </div>
+      {% endfor %}
     </div>
 
     <!-- Rolle in der Wertschöpfungskette -->

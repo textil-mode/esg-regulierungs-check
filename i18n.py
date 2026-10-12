@@ -2443,12 +2443,12 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Synthèse", "it": "Sintesi", "zh": "摘要",
     },
     "results_hint": {
-        "de": "Fragen zu Ihrem Ergebnis? Der ESG-Regulierungs-Check bietet eine erste Orientierung. Für eine vertiefte Einordnung einzelner Regelungen und ihrer Auswirkungen auf Ihr Unternehmen steht Ihnen das Team von textil+mode und seiner Mitgliedsverbände gerne zur Verfügung.",
-        "en": "Questions about your result? The ESG Regulation Check offers a first orientation. For a deeper assessment of individual rules and their effects on your company, the team of textil+mode and its member associations is happy to help.",
-        "es": "¿Preguntas sobre su resultado? La Verificación de Regulaciones ESG ofrece una primera orientación. Para una valoración más profunda de normas concretas y de sus efectos sobre su empresa, el equipo de textil+mode y de sus asociaciones miembro está a su disposición.",
-        "fr": "Des questions sur votre résultat ? La Vérification des Réglementations ESG offre une première orientation. Pour une analyse approfondie de règles précises et de leurs effets sur votre entreprise, l'équipe de textil+mode et de ses fédérations membres se tient à votre disposition.",
-        "it": "Domande sul suo risultato? La Verifica delle Normative ESG offre un primo orientamento. Per un inquadramento più approfondito delle singole norme e dei loro effetti sulla sua azienda, il team di textil+mode e delle sue associazioni membro è a sua disposizione.",
-        "zh": "对结果有疑问？ESG 法规检查提供的是初步定位。如需就个别规定及其对贵公司的影响作更深入的评估，textil+mode 及其会员协会的团队乐意提供帮助。",
+        "de": "Der ESG-Regulierungs-Check bietet eine erste Orientierung. Für eine vertiefte Einordnung einzelner Regelungen und ihrer Auswirkungen auf Ihr Unternehmen steht Ihnen das Team von textil+mode und seiner Mitgliedsverbände gerne zur Verfügung.",
+        "en": "The ESG Regulation Check offers a first orientation. For a deeper assessment of individual rules and their effects on your company, the team of textil+mode and its member associations is happy to help.",
+        "es": "La Verificación de Regulaciones ESG ofrece una primera orientación. Para una valoración más profunda de normas concretas y de sus efectos sobre su empresa, el equipo de textil+mode y de sus asociaciones miembro está a su disposición.",
+        "fr": "La Vérification des Réglementations ESG offre une première orientation. Pour une analyse approfondie de règles précises et de leurs effets sur votre entreprise, l'équipe de textil+mode et de ses fédérations membres se tient à votre disposition.",
+        "it": "La Verifica delle Normative ESG offre un primo orientamento. Per un inquadramento più approfondito delle singole norme e dei loro effetti sulla sua azienda, il team di textil+mode e delle sue associazioni membro è a sua disposizione.",
+        "zh": "ESG 法规检查提供的是初步定位。如需就个别规定及其对贵公司的影响作更深入的评估，textil+mode 及其会员协会的团队乐意提供帮助。",
     },
     "pdf_source": {
         "de": "Quelle", "en": "Source", "es": "Fuente",
@@ -2666,6 +2666,55 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Affiché parce que « Textiles médicaux et de santé » est coché. Sélection multiple possible. La réponse détermine l'examen du MDR, de la MPDG, de la MPAMIV et de la MPBetreibV.",
         "it": "Compare perché è selezionato «Tessili medicali e sanitari». Selezione multipla possibile. La risposta determina la valutazione di MDR, MPDG, MPAMIV e MPBetreibV.",
         "zh": "因已勾选“医疗与卫生用纺织品”而显示。可多选。该信息决定对 MDR、MPDG、MPAMIV 和 MPBetreibV 的审查。",
+    },
+    # Nutzervorgabe 12.10.2026: Waescherei, Geschaeftsmodell
+    "field_laundry": {
+        "de": "Abwasser aus gewerblicher Wäscherei",
+        "en": "Wastewater from commercial laundering",
+        "es": "Aguas residuales de lavandería industrial",
+        "fr": "Eaux usées de blanchisserie industrielle",
+        "it": "Acque reflue da lavanderia industriale",
+        "zh": "商业洗衣产生的废水",
+    },
+    "section_business": {
+        "de": "#### Geschäftsmodell / Tätigkeitsbereich",
+        "en": "#### Business model / fields of activity",
+        "es": "#### Modelo de negocio / ámbito de actividad",
+        "fr": "#### Modèle d'affaires / domaine d'activité",
+        "it": "#### Modello di business / settore di attività",
+        "zh": "#### 商业模式 / 业务领域",
+    },
+    "business_hint": {
+        "de": "Mehrfachauswahl möglich.",
+        "en": "Multi-select possible.",
+        "es": "Selección múltiple posible.",
+        "fr": "Sélection multiple possible.",
+        "it": "Selezione multipla possibile.",
+        "zh": "可多选。",
+    },
+    "results_role_title": {
+        "de": "Hinweis zur Einordnung Ihres Ergebnisses",
+        "en": "Note on interpreting your result",
+        "es": "Nota sobre la interpretación de su resultado",
+        "fr": "Remarque sur l'interprétation de votre résultat",
+        "it": "Nota sull'interpretazione del suo risultato",
+        "zh": "关于结果解读的提示",
+    },
+    "results_role_text": {
+        "de": "Die Begriffe „Hersteller“, „Importeur“ oder „Händler“ können je nach Rechtsvorschrift unterschiedlich definiert sein. Daher können einzelne Anforderungen auch für Unternehmen gelten, die sich selbst nicht diesen Kategorien zuordnen. Entscheidend sind die jeweiligen gesetzlichen Definitionen und die konkrete Tätigkeit Ihres Unternehmens.",
+        "en": "The terms “manufacturer”, “importer” or “distributor” may be defined differently depending on the legislation. Individual requirements may therefore also apply to companies that do not assign themselves to these categories. What matters are the respective legal definitions and the specific activities of your company.",
+        "es": "Los términos «fabricante», «importador» o «distribuidor» pueden definirse de forma distinta según la norma. Por ello, determinados requisitos pueden aplicarse también a empresas que no se adscriben a estas categorías. Lo decisivo son las definiciones legales correspondientes y la actividad concreta de su empresa.",
+        "fr": "Les notions de « fabricant », d'« importateur » ou de « distributeur » peuvent être définies différemment selon la réglementation. Certaines exigences peuvent donc aussi s'appliquer à des entreprises qui ne se rattachent pas elles-mêmes à ces catégories. Ce qui compte, ce sont les définitions légales applicables et l'activité concrète de votre entreprise.",
+        "it": "I termini «fabbricante», «importatore» o «distributore» possono essere definiti in modo diverso a seconda della normativa. Singoli requisiti possono quindi applicarsi anche a imprese che non si collocano in queste categorie. Decisive sono le rispettive definizioni di legge e l'attività concreta della sua impresa.",
+        "zh": "“制造商”“进口商”或“经销商”等术语在不同法规中的定义可能不同。因此，个别要求也可能适用于并未将自身归入这些类别的企业。关键在于相应的法律定义以及贵公司的具体业务活动。",
+    },
+    "results_questions_title": {
+        "de": "Fragen zu Ihrem Ergebnis?",
+        "en": "Questions about your result?",
+        "es": "¿Preguntas sobre su resultado?",
+        "fr": "Des questions sur votre résultat ?",
+        "it": "Domande sul suo risultato?",
+        "zh": "对结果有疑问？",
     },
 }
 
@@ -2909,6 +2958,15 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
         "fr": "La nouvelle version du 14.02.2025 a remplacé le règlement de 1998 sur les exploitants de dispositifs médicaux et s'applique depuis le 20.02.2025 ; pour les produits de l'annexe XVI du MDR, depuis le 01.08.2025 (§ 20, al. 2).",
         "it": "La nuova versione del 14.02.2025 ha sostituito il regolamento del 1998 sui gestori di dispositivi medici e si applica dal 20.02.2025; per i prodotti dell'allegato XVI MDR dal 01.08.2025 (§ 20, comma 2).",
         "zh": "2025 年 2 月 14 日的新版本取代了 1998 年的《医疗器械运营者条例》，自 2025 年 2 月 20 日起适用；对于 MDR 附件 XVI 所列产品，自 2025 年 8 月 1 日起适用（第 20 条第 2 款）。",
+    },
+    # AbwV Anhang 55 (12.10.2026)
+    "abwv55": {
+        "de": "Datum der Neubekanntmachung der Abwasserverordnung, in der Anhang 55 in seiner geltenden Fassung steht; Anforderungen an Wäschereiabwasser bestanden bereits vorher.",
+        "en": "Date of the new promulgation of the German Wastewater Ordinance containing Annex 55 in its current version; requirements for laundry wastewater already existed before.",
+        "es": "Fecha de la nueva publicación del Reglamento alemán de aguas residuales, que contiene el anexo 55 en su versión vigente; los requisitos para las aguas residuales de lavandería ya existían antes.",
+        "fr": "Date de la nouvelle publication du règlement allemand sur les eaux usées, qui contient l'annexe 55 dans sa version en vigueur ; des exigences pour les eaux usées de blanchisserie existaient déjà auparavant.",
+        "it": "Data della nuova pubblicazione del regolamento tedesco sulle acque reflue, che contiene l'allegato 55 nella versione vigente; i requisiti per le acque reflue di lavanderia esistevano già prima.",
+        "zh": "德国《废水条例》重新公布的日期，附件 55 的现行文本即载于该版本；对洗衣废水的要求在此之前已经存在。",
     },
 }
 
@@ -4544,6 +4602,31 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
         "it": "Mantenere dimostrabili la formazione e le conoscenze aggiornate del personale addetto al ricondizionamento, perché committente e autorità possono verificarle (§ 5, § 8, comma 4).",
         "zh": "保持再处理人员的培训和最新知识可供证明，因为委托方和主管机构可对此进行检查（第 5 条、第 8 条第 4 款）。",
     },
+    # AbwV Anhang 55 (12.10.2026)
+    "abwv55_1": {
+        "de": "Betriebstagebuch der eingesetzten Wasch- und Hilfsmittel führen und mit Herstellerangaben belegen, dass sie keine der nach Teil B unzulässigen Stoffe enthalten.",
+        "en": "Keep an operating log of the detergents and auxiliaries used and document with manufacturer information that they contain none of the substances prohibited under Part B.",
+        "es": "Llevar un registro de explotación de los detergentes y auxiliares empleados y acreditar con datos del fabricante que no contienen ninguna de las sustancias prohibidas en la parte B.",
+        "fr": "Tenir un journal d'exploitation des lessives et auxiliaires utilisés et justifier, au moyen des indications du fabricant, qu'ils ne contiennent aucune des substances interdites par la partie B.",
+        "it": "Tenere un registro di esercizio dei detersivi e ausiliari impiegati e documentare con le indicazioni del fabbricante che non contengono nessuna delle sostanze vietate dalla parte B.",
+        "zh": "建立所用洗涤剂和助剂的运营日志，并以制造商说明证明其不含 B 部分所禁止的任何物质。",
+    },
+    "abwv55_2": {
+        "de": "Waschgut nach Bereichen erfassen: Krankenhaus- und Heimwäsche, Berufskleidung, Putztücher, Teppiche und Matten haben eigene Grenzwerte vor der Vermischung (Teil D).",
+        "en": "Record the items washed by category: hospital and care-home linen, workwear, cleaning cloths, carpets and mats have their own limit values before mixing (Part D).",
+        "es": "Registrar la ropa lavada por ámbitos: la ropa hospitalaria y de residencias, la ropa de trabajo, los paños de limpieza, las alfombras y las esteras tienen valores límite propios antes de la mezcla (parte D).",
+        "fr": "Recenser le linge lavé par catégorie : linge hospitalier et de maisons de retraite, vêtements de travail, chiffons de nettoyage, tapis et tapis de sol ont leurs propres valeurs limites avant mélange (partie D).",
+        "it": "Rilevare i capi lavati per settore: biancheria ospedaliera e di case di cura, abbigliamento da lavoro, panni per la pulizia, tappeti e stuoie hanno valori limite propri prima della miscelazione (parte D).",
+        "zh": "按类别记录所洗物品：医院和护理院布草、工作服、清洁布、地毯和地垫在混合前各有限值（D 部分）。",
+    },
+    "abwv55_3": {
+        "de": "Bei Einleitung in die öffentliche Kanalisation die Indirekteinleitergenehmigung bzw. die Satzung des Abwasserbetriebs prüfen; dort werden die Anforderungen konkret festgesetzt.",
+        "en": "If discharging into the public sewer, check the indirect discharge permit or the statutes of the wastewater utility; the requirements are specified there.",
+        "es": "En caso de vertido a la red pública de alcantarillado, comprobar la autorización de vertido indirecto o el reglamento de la empresa de saneamiento, donde se fijan concretamente los requisitos.",
+        "fr": "En cas de rejet dans le réseau public d'assainissement, vérifier l'autorisation de rejet indirect ou le règlement du service d'assainissement, qui fixent concrètement les exigences.",
+        "it": "In caso di scarico nella rete fognaria pubblica, verificare l'autorizzazione allo scarico indiretto o il regolamento del gestore delle acque reflue, dove i requisiti sono fissati in concreto.",
+        "zh": "如排入公共下水道，请核查间接排放许可或污水处理企业的章程，具体要求在其中确定。",
+    },
 }
 
 
@@ -5212,6 +5295,39 @@ COUPLING_FACTS: dict[str, dict[str, str]] = {
         "it": "L'impresa indica la categoria di prodotto «Tessili medicali e sanitari»; secondo quanto dichiarato, resta da chiarire se fabbrichi, commerci o ricondizioni dispositivi medici.",
         "zh": "公司列有“医疗与卫生用纺织品”产品类别；据其提供的信息，其是否生产、经销或再处理医疗器械尚不明确。",
     },
+    # AbwV Anhang 55 (12.10.2026)
+    "abwv55_waescherei": {
+        "de": "Das Unternehmen gibt an, dass an einem Standort in Deutschland bei der gewerblichen Reinigung oder Aufbereitung von Textilien Abwasser entsteht; für Abwasser, dessen Schadstofffracht im Wesentlichen aus dem Waschen verunreinigter Textilien in Betrieben stammt, gilt Anhang 55 der Abwasserverordnung.",
+        "en": "The company states that wastewater is generated at a site in Germany during the commercial cleaning or reprocessing of textiles; Annex 55 of the German Wastewater Ordinance (AbwV) applies to wastewater whose pollutant load originates essentially from washing soiled textiles in businesses.",
+        "es": "La empresa indica que en una planta en Alemania se generan aguas residuales durante la limpieza o el reprocesamiento comercial de textiles; a las aguas residuales cuya carga contaminante procede esencialmente del lavado de textiles sucios en empresas se aplica el anexo 55 del Reglamento alemán de aguas residuales (AbwV).",
+        "fr": "L'entreprise indique que des eaux usées sont produites sur un site en Allemagne lors du nettoyage ou du retraitement professionnel de textiles ; l'annexe 55 du règlement allemand sur les eaux usées (AbwV) s'applique aux eaux usées dont la charge polluante provient pour l'essentiel du lavage de textiles souillés dans des entreprises.",
+        "it": "L'impresa dichiara che in uno stabilimento in Germania si producono acque reflue durante la pulizia o il ricondizionamento commerciale di tessili; alle acque reflue il cui carico inquinante deriva essenzialmente dal lavaggio di tessili sporchi in aziende si applica l'allegato 55 del regolamento tedesco sulle acque reflue (AbwV).",
+        "zh": "公司表示，其在德国的某一场所在商业清洗或再处理纺织品时产生废水；污染物负荷主要来自企业清洗脏污纺织品的废水，适用德国《废水条例》（AbwV）附件 55。",
+    },
+    "abwv55_taetigkeit": {
+        "de": "Das Unternehmen nennt als Tätigkeit eine gewerbliche Wäscherei, Textilreinigung oder einen Textilservice, gibt aber kein Abwasser aus gewerblicher Wäscherei an einem Standort in Deutschland an.",
+        "en": "The company states commercial laundering, textile cleaning or textile service as an activity but does not state any wastewater from commercial laundering at a site in Germany.",
+        "es": "La empresa indica como actividad una lavandería industrial, la limpieza textil o un servicio textil, pero no indica aguas residuales de lavandería industrial en ninguna planta en Alemania.",
+        "fr": "L'entreprise indique comme activité une blanchisserie industrielle, le nettoyage textile ou un service textile, mais n'indique pas d'eaux usées de blanchisserie industrielle sur un site en Allemagne.",
+        "it": "L'impresa indica come attività una lavanderia industriale, la pulitura tessile o un servizio tessile, ma non indica acque reflue da lavanderia industriale in uno stabilimento in Germania.",
+        "zh": "公司将商业洗衣、纺织品清洗或纺织品服务列为其业务，但未说明在德国的场所产生商业洗衣废水。",
+    },
+    "abwv55_branche": {
+        "de": "Das Unternehmen ordnet sich der Branche „Wäscherei und chemische Reinigung“ zu, gibt aber kein Abwasser aus gewerblicher Wäscherei an einem Standort in Deutschland an.",
+        "en": "The company assigns itself to the sector “Washing and (dry-)cleaning of textile and fur products” but does not state any wastewater from commercial laundering at a site in Germany.",
+        "es": "La empresa se adscribe al sector «Lavado y limpieza de prendas textiles y de piel», pero no indica aguas residuales de lavandería industrial en ninguna planta en Alemania.",
+        "fr": "L'entreprise se rattache au secteur « Blanchisserie-teinturerie », mais n'indique pas d'eaux usées de blanchisserie industrielle sur un site en Allemagne.",
+        "it": "L'impresa si colloca nel settore «Lavanderia e pulitura a secco», ma non indica acque reflue da lavanderia industriale in uno stabilimento in Germania.",
+        "zh": "公司将自身归入“洗衣及干洗”行业，但未说明在德国的场所产生商业洗衣废水。",
+    },
+    "abwv55_keine": {
+        "de": "Das Unternehmen gibt kein Abwasser aus gewerblicher Wäscherei an einem Standort in Deutschland an; Anhang 55 der Abwasserverordnung gilt nur für Abwasser aus dem Waschen verunreinigter Textilien in Betrieben und öffentlichen Einrichtungen.",
+        "en": "The company does not state any wastewater from commercial laundering at a site in Germany; Annex 55 of the German Wastewater Ordinance (AbwV) applies only to wastewater from washing soiled textiles in businesses and public institutions.",
+        "es": "La empresa no indica aguas residuales de lavandería industrial en ninguna planta en Alemania; el anexo 55 del Reglamento alemán de aguas residuales (AbwV) solo se aplica a las aguas residuales procedentes del lavado de textiles sucios en empresas e instituciones públicas.",
+        "fr": "L'entreprise n'indique pas d'eaux usées de blanchisserie industrielle sur un site en Allemagne ; l'annexe 55 du règlement allemand sur les eaux usées (AbwV) ne s'applique qu'aux eaux usées issues du lavage de textiles souillés dans des entreprises et des établissements publics.",
+        "it": "L'impresa non indica acque reflue da lavanderia industriale in uno stabilimento in Germania; l'allegato 55 del regolamento tedesco sulle acque reflue (AbwV) si applica solo alle acque reflue derivanti dal lavaggio di tessili sporchi in aziende e istituzioni pubbliche.",
+        "zh": "公司未说明在德国的场所产生商业洗衣废水；德国《废水条例》（AbwV）附件 55 仅适用于企业和公共机构清洗脏污纺织品所产生的废水。",
+    },
 }
 
 COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
@@ -5822,6 +5938,33 @@ COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
             "zh": "因此，是否负有 MPBetreibV 规定的义务，取决于公司是否为医疗机构再处理医疗器械或备妥医疗器械供使用，须个案审查。",
         },
     },
+    # AbwV Anhang 55 (12.10.2026)
+    "AbwV55": {
+        "ja": {
+            "de": "Das Abwasser muss deshalb die allgemeinen Anforderungen des Anhangs 55 erfüllen; je nach Waschgut kommen Grenzwerte vor der Vermischung hinzu, etwa für Krankenhauswäsche, Berufskleidung oder Putztücher. Nicht erfasst ist die Wäsche von Haushalts- und Hoteltextilien ohne chlorhaltige Waschmittel.",
+            "en": "The wastewater must therefore meet the general requirements of Annex 55; depending on the items washed, limit values before mixing are added, for example for hospital linen, workwear or cleaning cloths. Washing household and hotel textiles without chlorine-containing detergents is not covered.",
+            "es": "Por tanto, las aguas residuales deben cumplir los requisitos generales del anexo 55; según la ropa lavada se añaden valores límite antes de la mezcla, por ejemplo para ropa hospitalaria, ropa de trabajo o paños de limpieza. No está incluido el lavado de textiles domésticos y de hotel sin detergentes con cloro.",
+            "fr": "Les eaux usées doivent donc satisfaire aux exigences générales de l'annexe 55 ; selon le linge lavé s'y ajoutent des valeurs limites avant mélange, par exemple pour le linge hospitalier, les vêtements de travail ou les chiffons de nettoyage. Le lavage de textiles ménagers et hôteliers sans lessives chlorées n'est pas visé.",
+            "it": "Le acque reflue devono quindi soddisfare i requisiti generali dell'allegato 55; a seconda dei capi lavati si aggiungono valori limite prima della miscelazione, ad esempio per biancheria ospedaliera, abbigliamento da lavoro o panni per la pulizia. Non rientra il lavaggio di tessili domestici e alberghieri senza detersivi contenenti cloro.",
+            "zh": "因此，废水必须符合附件 55 的一般要求；根据所洗物品，还须遵守混合前的限值，例如医院布草、工作服或清洁布。不使用含氯洗涤剂清洗家用纺织品和酒店纺织品的情况不在适用范围内。",
+        },
+        "nein": {
+            "de": "Anhang 55 der Abwasserverordnung ist für das Unternehmen damit nicht einschlägig.",
+            "en": "Annex 55 of the German Wastewater Ordinance (AbwV) therefore does not apply to the company.",
+            "es": "Por tanto, el anexo 55 del Reglamento alemán de aguas residuales (AbwV) no es aplicable a la empresa.",
+            "fr": "L'annexe 55 du règlement allemand sur les eaux usées (AbwV) ne s'applique donc pas à l'entreprise.",
+            "it": "L'allegato 55 del regolamento tedesco sulle acque reflue (AbwV) non è quindi applicabile all'impresa.",
+            "zh": "因此，德国《废水条例》（AbwV）附件 55 不适用于该公司。",
+        },
+        "moeglich": {
+            "de": "Ob Anhang 55 greift, ist deshalb anhand der Standorte in Deutschland zu prüfen; die chemische Reinigung ohne Wasser fällt nicht darunter.",
+            "en": "Whether Annex 55 applies must therefore be assessed on the basis of the sites in Germany; dry-cleaning without water is not covered.",
+            "es": "Por ello, si se aplica el anexo 55 debe examinarse a partir de las plantas en Alemania; la limpieza en seco sin agua no está incluida.",
+            "fr": "L'applicabilité de l'annexe 55 doit donc être examinée au regard des sites en Allemagne ; le nettoyage à sec sans eau n'est pas visé.",
+            "it": "Se si applichi l'allegato 55 va quindi valutato in base agli stabilimenti in Germania; la pulitura a secco senza acqua non vi rientra.",
+            "zh": "因此，是否适用附件 55，须根据德国各场所的情况进行审查；不使用水的干洗不在适用范围内。",
+        },
+    },
 }
 
 COUPLING_PASSAGES: dict[str, dict[str, str]] = {
@@ -6012,6 +6155,15 @@ COUPLING_PASSAGES: dict[str, dict[str, str]] = {
         "fr": "§ 8, al. 1, MPBetreibV : Le retraitement de produits destinés à être utilisés à faible charge microbienne ou stériles doit être effectué selon des procédés validés appropriés, en tenant compte des indications du fabricant.",
         "it": "§ 8, comma 1, MPBetreibV: Il ricondizionamento di prodotti destinati a essere utilizzati a bassa carica microbica o sterili deve essere eseguito con procedure convalidate idonee, tenendo conto delle indicazioni del fabbricante.",
         "zh": "MPBetreibV 第 8 条第 1 款：对按预期以低菌或无菌状态使用的产品进行再处理，须在考虑制造商说明的前提下，采用适当的经验证程序进行。",
+    },
+    # AbwV Anhang 55 (12.10.2026)
+    "AbwV55": {
+        "de": "Anhang 55 Teil A Abs. 1 AbwV: Dieser Anhang gilt für Abwasser, dessen Schadstofffracht im Wesentlichen aus dem Waschen von verunreinigten Textilien, Teppichen, Matten und Vliesen in Betrieben und öffentlichen Einrichtungen stammt.",
+        "en": "Annex 55, Part A(1) AbwV: This Annex applies to wastewater whose pollutant load originates essentially from the washing of soiled textiles, carpets, mats and nonwovens in businesses and public institutions.",
+        "es": "Anexo 55, parte A, apdo. 1, AbwV: El presente anexo se aplica a las aguas residuales cuya carga contaminante procede esencialmente del lavado de textiles, alfombras, esteras y no tejidos sucios en empresas e instituciones públicas.",
+        "fr": "Annexe 55, partie A, al. 1, AbwV : La présente annexe s'applique aux eaux usées dont la charge polluante provient pour l'essentiel du lavage de textiles, tapis, tapis de sol et non-tissés souillés dans des entreprises et des établissements publics.",
+        "it": "Allegato 55, parte A, c. 1, AbwV: Il presente allegato si applica alle acque reflue il cui carico inquinante deriva essenzialmente dal lavaggio di tessili, tappeti, stuoie e tessuti non tessuti sporchi in aziende e istituzioni pubbliche.",
+        "zh": "德国《废水条例》（AbwV）附件 55 A 部分第 1 款：本附件适用于污染物负荷主要来自企业和公共机构清洗脏污纺织品、地毯、地垫和无纺布的废水。",
     },
 }
 
@@ -6276,12 +6428,12 @@ SITE_TYPE_LABELS: dict[str, dict[str, str]] = {
         "zh": "分支机构 / 营业机构（在法律上或组织上具有独立性的机构）",
     },
     "Produktionsstätte / Werk (Herstellung, Verarbeitung oder Veredelung)": {
-        "de": "Produktionsstätte / Werk (Herstellung, Verarbeitung oder Veredelung)",
-        "en": "Production site / plant (manufacturing, processing or finishing)",
-        "es": "Planta de producción / fábrica (fabricación, transformación o acabado)",
-        "fr": "Site de production / usine (fabrication, transformation ou ennoblissement)",
-        "it": "Stabilimento produttivo / impianto (fabbricazione, trasformazione o nobilitazione)",
-        "zh": "生产基地 / 工厂（生产、加工或整理）",
+        "de": "Produktions- / Betriebsstätte (Herstellung, Verarbeitung, Reinigung oder Aufbereitung)",
+        "en": "Production / operating site (manufacturing, processing, cleaning or reprocessing)",
+        "es": "Planta de producción / explotación (fabricación, transformación, limpieza o reprocesamiento)",
+        "fr": "Site de production / d'exploitation (fabrication, transformation, nettoyage ou retraitement)",
+        "it": "Stabilimento produttivo / operativo (fabbricazione, lavorazione, pulitura o ricondizionamento)",
+        "zh": "生产 / 经营场所（生产、加工、清洗或再处理）",
     },
     "Lager / Logistikzentrum (Lagerung, Versand oder Distribution)": {
         "de": "Lager / Logistikzentrum (Lagerung, Versand oder Distribution)",
@@ -6516,20 +6668,20 @@ ROLE_LABELS: dict[str, dict[str, str]] = {
         "zh": "制造商（自行生产或委托生产，并以自有名称/品牌销售）",
     },
     "Importeur (bringt Produkte aus einem Drittstaat auf den EU-Markt)": {
-        "de": "Importeur (bringt Produkte aus einem Drittstaat auf den EU-Markt)",
-        "en": "Importer (places products from a third country on the EU market)",
-        "es": "Importador (introduce en el mercado de la UE productos procedentes de un tercer país)",
-        "fr": "Importateur (met sur le marché de l'UE des produits provenant d'un pays tiers)",
-        "it": "Importatore (immette sul mercato UE prodotti provenienti da un paese terzo)",
-        "zh": "进口商（将第三国产品投放欧盟市场）",
+        "de": "Importeur (Bringt Produkte aus einem Nicht-EU-Land erstmals auf den EU-Markt, beispielsweise direkt beschaffte Berufskleidung oder Hotelwäsche.)",
+        "en": "Importer (Places products from a non-EU country on the EU market for the first time, for example directly sourced workwear or hotel linen.)",
+        "es": "Importador (Introduce por primera vez en el mercado de la UE productos procedentes de un país no perteneciente a la UE, por ejemplo ropa de trabajo o ropa de hotel adquirida directamente.)",
+        "fr": "Importateur (Met pour la première fois sur le marché de l'UE des produits provenant d'un pays hors UE, par exemple des vêtements de travail ou du linge d'hôtel achetés directement.)",
+        "it": "Importatore (Immette per la prima volta sul mercato UE prodotti provenienti da un paese extra UE, ad esempio abbigliamento da lavoro o biancheria alberghiera acquistati direttamente.)",
+        "zh": "进口商（首次将来自非欧盟国家的产品投放欧盟市场，例如直接采购的工作服或酒店布草。）",
     },
     "Händler/Vertreiber (stellt Produkte anderer Unternehmen auf dem Markt bereit)": {
-        "de": "Händler/Vertreiber (stellt Produkte anderer Unternehmen auf dem Markt bereit)",
-        "en": "Distributor/retailer (makes other companies' products available on the market)",
-        "es": "Distribuidor (comercializa en el mercado productos de otras empresas)",
-        "fr": "Distributeur (met à disposition sur le marché des produits d'autres entreprises)",
-        "it": "Distributore (mette a disposizione sul mercato prodotti di altre imprese)",
-        "zh": "经销商/分销商（在市场上提供其他企业的产品）",
+        "de": "Händler / Vertreiber (Stellt Produkte anderer Unternehmen auf dem Markt bereit, beispielsweise durch Verkauf oder gegebenenfalls Vermietung.)",
+        "en": "Distributor / reseller (Makes products of other companies available on the market, for example by selling or, where applicable, renting them out.)",
+        "es": "Distribuidor / comercializador (Comercializa productos de otras empresas, por ejemplo mediante su venta o, en su caso, su alquiler.)",
+        "fr": "Distributeur / revendeur (Met à disposition sur le marché les produits d'autres entreprises, par exemple par la vente ou, le cas échéant, la location.)",
+        "it": "Distributore / rivenditore (Mette a disposizione sul mercato prodotti di altre imprese, ad esempio tramite vendita o, se del caso, noleggio.)",
+        "zh": "经销商 / 分销商（在市场上提供其他企业的产品，例如通过销售或必要时出租。）",
     },
     "Markeninhaber / Vertrieb unter eigener oder lizenzierter Marke": {
         "de": "Markeninhaber / Vertrieb unter eigener oder lizenzierter Marke",
@@ -6540,12 +6692,12 @@ ROLE_LABELS: dict[str, dict[str, str]] = {
         "zh": "品牌所有者 / 以自有品牌销售",
     },
     "Zulieferer": {
-        "de": "Zulieferer",
-        "en": "Supplier",
-        "es": "Proveedor",
-        "fr": "Fournisseur",
-        "it": "Fornitore",
-        "zh": "供应商",
+        "de": "Zulieferer (Liefert Produkte, Materialien oder Komponenten an andere Unternehmen zur Weiterverarbeitung oder Verwendung.)",
+        "en": "Supplier (Supplies products, materials or components to other companies for further processing or use.)",
+        "es": "Proveedor (Suministra productos, materiales o componentes a otras empresas para su transformación posterior o su uso.)",
+        "fr": "Fournisseur (Livre des produits, matériaux ou composants à d'autres entreprises en vue de leur transformation ou de leur utilisation.)",
+        "it": "Fornitore (Fornisce prodotti, materiali o componenti ad altre imprese per l'ulteriore lavorazione o l'utilizzo.)",
+        "zh": "供应商（向其他企业供应产品、材料或部件，供其进一步加工或使用。）",
     },
 }
 
@@ -6810,6 +6962,59 @@ MEDICAL_ACTIVITY_LABELS: dict[str, dict[str, str]] = {
     },
 }
 
+# Geschaeftsmodell / Taetigkeitsbereich (Key = DE-Wert, DB-kompatibel),
+# siehe regulations.BUSINESS_ACTIVITIES.
+BUSINESS_ACTIVITY_LABELS: dict[str, dict[str, str]] = {
+    "Herstellung von Textilien oder Bekleidung": {
+        "de": "Herstellung von Textilien oder Bekleidung",
+        "en": "Manufacture of textiles or apparel",
+        "es": "Fabricación de textiles o prendas de vestir",
+        "fr": "Fabrication de textiles ou de vêtements",
+        "it": "Fabbricazione di tessili o abbigliamento",
+        "zh": "生产纺织品或服装",
+    },
+    "Handel / Vertrieb von Textilprodukten": {
+        "de": "Handel / Vertrieb von Textilprodukten",
+        "en": "Trade / distribution of textile products",
+        "es": "Comercio / distribución de productos textiles",
+        "fr": "Commerce / distribution de produits textiles",
+        "it": "Commercio / distribuzione di prodotti tessili",
+        "zh": "纺织产品贸易 / 经销",
+    },
+    "Gewerbliche Wäscherei / Textilreinigung": {
+        "de": "Gewerbliche Wäscherei / Textilreinigung",
+        "en": "Commercial laundry / textile cleaning",
+        "es": "Lavandería industrial / limpieza textil",
+        "fr": "Blanchisserie industrielle / nettoyage textile",
+        "it": "Lavanderia industriale / pulitura tessile",
+        "zh": "商业洗衣 / 纺织品清洗",
+    },
+    "Vermietung / Leasing von Textilien": {
+        "de": "Vermietung / Leasing von Textilien",
+        "en": "Rental / leasing of textiles",
+        "es": "Alquiler / arrendamiento de textiles",
+        "fr": "Location / crédit-bail de textiles",
+        "it": "Noleggio / leasing di tessili",
+        "zh": "纺织品出租 / 融资租赁",
+    },
+    "Textilservice / Full-Service-Versorgung": {
+        "de": "Textilservice / Full-Service-Versorgung",
+        "en": "Textile service / full-service supply",
+        "es": "Servicio textil / suministro de servicio integral",
+        "fr": "Service textile / approvisionnement en service complet",
+        "it": "Servizio tessile / fornitura full service",
+        "zh": "纺织品服务 / 全方位供应服务",
+    },
+    "Sonstige textile Dienstleistungen": {
+        "de": "Sonstige textile Dienstleistungen",
+        "en": "Other textile services",
+        "es": "Otros servicios textiles",
+        "fr": "Autres services textiles",
+        "it": "Altri servizi tessili",
+        "zh": "其他纺织服务",
+    },
+}
+
 
 # ---------- Ausfuellhilfen / Erlaeuterungen zu Fachbegriffen ----------
 #
@@ -6948,28 +7153,28 @@ FIELD_HELP: dict[str, dict[str, str]] = {
         "zh": "如果贵公司将产品从第三国输入欧盟，并首次在欧盟市场上提供该产品，请勾选此项。例如：贵公司在亚洲委托生产，自行将产品输入欧盟并在此销售或交付。相反，如果贵公司采购的货物已由另一家企业输入欧盟并在欧盟市场上提供，则原则上贵公司不是进口商。",
     },
     "products": {
-        "de": "Kreuzen Sie alle Produktkategorien an, die Ihr Unternehmen herstellt, einführt oder vertreibt – auch wenn sie nur einen kleinen Teil des Sortiments ausmachen. Produktbezogene regulatorische Anforderungen können für einzelne Warengruppen gelten, unabhängig vom Schwerpunkt Ihrer Geschäftstätigkeit.",
-        "en": "Tick all product categories that your company manufactures, imports or distributes – even where they account for only a small part of the range. Product-related regulatory requirements can apply to individual product groups, irrespective of the main focus of your business activity.",
-        "es": "Marque todas las categorías de productos que su empresa fabrica, importa o distribuye, aunque representen solo una pequeña parte del surtido. Las exigencias regulatorias relativas a los productos pueden aplicarse a grupos de mercancías concretos, con independencia del foco principal de su actividad empresarial.",
-        "fr": "Cochez toutes les catégories de produits que votre entreprise fabrique, importe ou distribue – même si elles ne représentent qu'une petite part de l'assortiment. Les exigences réglementaires liées aux produits peuvent s'appliquer à des groupes de marchandises isolés, indépendamment de l'activité principale de votre entreprise.",
-        "it": "Selezioni tutte le categorie di prodotto che la sua azienda produce, importa o distribuisce – anche se rappresentano solo una piccola parte dell'assortimento. I requisiti normativi relativi ai prodotti possono valere per singoli gruppi merceologici, indipendentemente dal fulcro della sua attività.",
-        "zh": "请勾选贵公司生产、进口或销售的所有产品类别——即使其在产品组合中占比很小。与产品相关的监管要求可能针对个别品类适用，而与贵公司经营活动的重心无关。",
+        "de": "Kreuzen Sie alle Produktkategorien an, die Ihr Unternehmen herstellt, einführt, vertreibt, vermietet, verleast oder im Rahmen seiner Dienstleistungen bereitstellt – auch wenn sie nur einen kleinen Teil Ihrer Geschäftstätigkeit ausmachen. Produktbezogene regulatorische Anforderungen können für einzelne Warengruppen gelten, unabhängig vom Schwerpunkt Ihrer Geschäftstätigkeit.",
+        "en": "Tick all product categories that your company manufactures, imports, distributes, rents out, leases or provides as part of its services – even if they account for only a small part of your business. Product-related regulatory requirements may apply to individual product groups regardless of the focus of your business.",
+        "es": "Marque todas las categorías de producto que su empresa fabrica, importa, distribuye, alquila, arrienda o pone a disposición en el marco de sus servicios, aunque solo representen una pequeña parte de su actividad. Los requisitos regulatorios relativos a productos pueden aplicarse a determinados grupos de productos, con independencia del enfoque principal de su actividad.",
+        "fr": "Cochez toutes les catégories de produits que votre entreprise fabrique, importe, distribue, loue, donne en crédit-bail ou met à disposition dans le cadre de ses services – même si elles ne représentent qu'une petite partie de votre activité. Des exigences réglementaires relatives aux produits peuvent s'appliquer à certains groupes de produits, indépendamment de l'activité principale de votre entreprise.",
+        "it": "Spunti tutte le categorie di prodotto che la sua impresa fabbrica, importa, distribuisce, noleggia, concede in leasing o mette a disposizione nell'ambito dei propri servizi, anche se rappresentano solo una piccola parte della sua attività. I requisiti normativi relativi ai prodotti possono applicarsi a singoli gruppi di prodotti, indipendentemente dall'attività principale della sua impresa.",
+        "zh": "请勾选贵公司生产、进口、经销、出租、融资租赁或在其服务范围内提供的所有产品类别，即使这些产品只占贵公司业务的一小部分。与产品相关的监管要求可能适用于个别产品组，与贵公司的业务重点无关。",
     },
     "roles": {
-        "de": "Wählen Sie alle Rollen aus, die Ihr Unternehmen tatsächlich übernimmt. Mehrere Rollen können gleichzeitig zutreffen. Entscheidend ist die tatsächliche Tätigkeit Ihres Unternehmens – auch bei Lizenzmodellen. Die genaue rechtliche Einordnung als Hersteller, Importeur, Händler oder anderer Wirtschaftsakteur kann je nach Regulierung abweichen.",
-        "en": "Select all roles that your company actually performs. Several roles can apply at the same time. What counts is the actual activity of your company – including under licensing models. The precise legal classification as manufacturer, importer, distributor or other economic operator may differ from one regulation to another.",
-        "es": "Seleccione todos los roles que su empresa asume efectivamente. Pueden aplicarse varios roles a la vez. Lo determinante es la actividad real de su empresa, también en los modelos de licencia. La calificación jurídica exacta como fabricante, importador, distribuidor u otro agente económico puede variar según la regulación.",
-        "fr": "Sélectionnez tous les rôles que votre entreprise assume effectivement. Plusieurs rôles peuvent s'appliquer simultanément. C'est l'activité réelle de votre entreprise qui est déterminante – y compris dans les modèles de licence. La qualification juridique exacte de fabricant, d'importateur, de distributeur ou d'autre opérateur économique peut varier selon la réglementation.",
-        "it": "Selezioni tutti i ruoli che la sua azienda svolge effettivamente. Più ruoli possono valere contemporaneamente. È determinante l'attività effettiva della sua azienda – anche nei modelli di licenza. L'esatto inquadramento giuridico come fabbricante, importatore, distributore o altro operatore economico può variare a seconda della normativa.",
-        "zh": "请选择贵公司实际承担的所有角色。可同时适用多个角色。关键在于贵公司的实际经营活动——在品牌授权模式下同样如此。作为制造商、进口商、经销商或其他经济经营者的确切法律定性，可能因法规而异。",
+        "de": "Mehrfachauswahl möglich. Wählen Sie alle Rollen aus, die Ihr Unternehmen beim Umgang mit Produkten übernimmt.\nEntscheidend ist beispielsweise, ob Sie Textilien selbst herstellen, aus Nicht-EU-Ländern einführen, unter eigener Marke anbieten oder an andere Unternehmen weitergeben.\nAuch Unternehmen, die Textilien vermieten oder verleasen, können je nach Tätigkeit mehrere Rollen übernehmen.\nDie Auswahl hilft dabei, produktbezogene regulatorische Anforderungen zu ermitteln, etwa aus der EUDR, PPWR oder EmpCo sowie zum Vernichtungsverbot.",
+        "en": "Multi-select possible. Select all roles that your company takes on when dealing with products.\nWhat matters, for example, is whether you manufacture textiles yourself, import them from non-EU countries, offer them under your own brand or pass them on to other companies.\nCompanies that rent out or lease textiles may also take on several roles depending on their activities.\nThe selection helps to identify product-related regulatory requirements, for example under the EUDR, PPWR or EmpCo and the destruction ban.",
+        "es": "Selección múltiple posible. Seleccione todos los papeles que asume su empresa en relación con los productos.\nEs decisivo, por ejemplo, si fabrica textiles usted mismo, los importa de países no pertenecientes a la UE, los ofrece con marca propia o los suministra a otras empresas.\nTambién las empresas que alquilan o arriendan textiles pueden asumir varios papeles según su actividad.\nLa selección ayuda a determinar los requisitos regulatorios relativos a productos, por ejemplo de la EUDR, el PPWR o la EmpCo y en relación con la prohibición de destrucción.",
+        "fr": "Sélection multiple possible. Sélectionnez tous les rôles que votre entreprise assume dans le traitement des produits.\nCe qui compte, par exemple, c'est de savoir si vous fabriquez vous-même des textiles, les importez de pays hors UE, les proposez sous votre propre marque ou les transmettez à d'autres entreprises.\nLes entreprises qui louent ou donnent en crédit-bail des textiles peuvent également assumer plusieurs rôles selon leur activité.\nLa sélection aide à déterminer les exigences réglementaires relatives aux produits, par exemple au titre de l'EUDR, du PPWR ou de l'EmpCo ainsi que de l'interdiction de destruction.",
+        "it": "Selezione multipla possibile. Selezioni tutti i ruoli che la sua impresa assume nella gestione dei prodotti.\nÈ decisivo, ad esempio, se fabbrica tessili in proprio, li importa da paesi extra UE, li offre con marchio proprio o li fornisce ad altre imprese.\nAnche le imprese che noleggiano o concedono in leasing tessili possono assumere più ruoli a seconda dell'attività.\nLa selezione aiuta a individuare i requisiti normativi relativi ai prodotti, ad esempio derivanti da EUDR, PPWR o EmpCo e dal divieto di distruzione.",
+        "zh": "可多选。请选择贵公司在处理产品时承担的所有角色。\n关键在于，例如贵公司是否自行生产纺织品、从非欧盟国家进口、以自有品牌提供，或转交给其他企业。\n出租或融资租赁纺织品的企业，也可能因业务不同而承担多个角色。\n此项选择有助于确定与产品相关的监管要求，例如 EUDR、PPWR 或 EmpCo 以及销毁禁令方面的要求。",
     },
     "materials": {
-        "de": "Wählen Sie alle Materialien aus, die in Ihren Produkten enthalten sind – einschließlich Materialien in zugekauften Bestandteilen. Die Materialzusammensetzung kann für die Prüfung einzelner regulatorischer Anforderungen relevant sein. Ist Ihnen die Zusammensetzung bei Teilen Ihres Sortiments nicht bekannt, wählen Sie zusätzlich „Nicht bekannt / kann nicht ausgeschlossen werden“.",
-        "en": "Select all materials contained in your products – including materials in bought-in components. The material composition can be relevant for assessing individual regulatory requirements. If you do not know the composition for parts of your range, additionally select “Not known / cannot be ruled out”.",
-        "es": "Seleccione todos los materiales presentes en sus productos, incluidos los materiales de los componentes comprados. La composición material puede ser relevante para comprobar determinadas exigencias regulatorias. Si desconoce la composición en parte de su surtido, seleccione además «No se conoce / no puede descartarse».",
-        "fr": "Sélectionnez tous les matériaux présents dans vos produits – y compris les matériaux contenus dans les composants achetés. La composition des matériaux peut être pertinente pour l'examen de certaines exigences réglementaires. Si vous ne connaissez pas la composition pour une partie de votre assortiment, sélectionnez également « Inconnu / ne peut pas être exclu ».",
-        "it": "Selezioni tutti i materiali contenuti nei suoi prodotti – compresi i materiali dei componenti acquistati. La composizione dei materiali può essere rilevante per la verifica di singoli requisiti normativi. Se non conosce la composizione per una parte dell'assortimento, selezioni anche «Non noto / non può essere escluso».",
-        "zh": "请选择贵公司产品中含有的所有材料——包括外购部件中的材料。材料构成可能与个别监管要求的审查相关。如果贵公司对部分产品的材料构成不了解，请同时选择“不清楚 / 无法排除”。",
+        "de": "Wählen Sie alle Materialien aus, die in Ihren Produkten oder in den von Ihnen gereinigten, gepflegten, vermieteten oder verleasten Textilien enthalten sind – einschließlich Materialien in zugekauften Bestandteilen. Die Materialzusammensetzung kann für die Prüfung einzelner regulatorischer Anforderungen relevant sein. Ist Ihnen die Zusammensetzung bei Teilen Ihres Sortiments oder der von Ihnen betreuten Textilien nicht bekannt, wählen Sie zusätzlich „Nicht bekannt / kann nicht ausgeschlossen werden“.",
+        "en": "Select all materials contained in your products or in the textiles you clean, care for, rent out or lease – including materials in purchased components. The material composition may be relevant for assessing individual regulatory requirements. If you do not know the composition for part of your range or of the textiles you handle, also select “Not known / cannot be ruled out”.",
+        "es": "Seleccione todos los materiales presentes en sus productos o en los textiles que limpia, cuida, alquila o arrienda, incluidos los materiales de los componentes comprados. La composición material puede ser relevante para comprobar determinadas exigencias regulatorias. Si desconoce la composición en parte de su surtido o de los textiles que gestiona, seleccione además «No se conoce / no puede descartarse».",
+        "fr": "Sélectionnez tous les matériaux présents dans vos produits ou dans les textiles que vous nettoyez, entretenez, louez ou donnez en crédit-bail – y compris les matériaux contenus dans les composants achetés. La composition des matériaux peut être pertinente pour l'examen de certaines exigences réglementaires. Si vous ne connaissez pas la composition pour une partie de votre assortiment ou des textiles dont vous vous occupez, sélectionnez également « Inconnu / ne peut pas être exclu ».",
+        "it": "Selezioni tutti i materiali contenuti nei suoi prodotti o nei tessili che lava, cura, noleggia o concede in leasing – compresi i materiali dei componenti acquistati. La composizione dei materiali può essere rilevante per la verifica di singoli requisiti normativi. Se non conosce la composizione per una parte dell'assortimento o dei tessili che gestisce, selezioni anche «Non noto / non può essere escluso».",
+        "zh": "请选择贵公司产品中，或贵公司清洗、护理、出租或融资租赁的纺织品中含有的所有材料——包括外购部件中的材料。材料构成可能与个别监管要求的审查相关。如果贵公司对部分产品或所负责纺织品的材料构成不了解，请同时选择“不清楚 / 无法排除”。",
     },
     "markets": {
         "de": "Wählen Sie aus, in welchen Märkten Ihr Unternehmen seine Produkte verkauft oder vertreibt – unabhängig davon, wo diese hergestellt werden. Die Absatzmärkte sind relevant, weil bestimmte regulatorische Anforderungen davon abhängen, ob Produkte in Deutschland, in anderen EU-/EWR-Staaten oder außerhalb der EU angeboten oder verkauft werden.",
@@ -6980,12 +7185,12 @@ FIELD_HELP: dict[str, dict[str, str]] = {
         "zh": "请选择贵公司在哪些市场销售或分销其产品——与产品的生产地无关。销售市场具有重要意义，因为某些监管要求取决于产品是在德国、其他欧盟 / 欧洲经济区国家还是在欧盟以外提供或销售。",
     },
     "sites": {
-        "de": "Geben Sie an, welche Arten von Standorten Ihr Unternehmen unterhält, in welcher Region sie liegen und wie viele es jeweils sind. Die Standortart und der Standort können für die Prüfung einzelner regulatorischer Anforderungen relevant sein.",
-        "en": "State what types of sites your company maintains, in which region they are located and how many there are of each. The type of site and its location can be relevant for assessing individual regulatory requirements.",
-        "es": "Indique qué tipos de emplazamientos mantiene su empresa, en qué región se encuentran y cuántos hay de cada uno. El tipo de emplazamiento y su ubicación pueden ser relevantes para comprobar determinadas exigencias regulatorias.",
-        "fr": "Indiquez quels types de sites votre entreprise exploite, dans quelle région ils se situent et combien il y en a de chaque. Le type de site et sa localisation peuvent être pertinents pour l'examen de certaines exigences réglementaires.",
-        "it": "Indichi quali tipi di sedi la sua azienda mantiene, in quale regione si trovano e quante sono per ciascun tipo. Il tipo di sede e la sua ubicazione possono essere rilevanti per la verifica di singoli requisiti normativi.",
-        "zh": "请说明贵公司设有哪些类型的经营场所、位于哪个地区以及各有多少处。场所类型及其所在地可能与个别监管要求的审查相关。",
+        "de": "Geben Sie an, welche Arten von Standorten Ihr Unternehmen unterhält, in welcher Region sie liegen und wie viele es jeweils sind.\nStandorte, an denen Textilien gewaschen, gereinigt oder aufbereitet werden, zählen zu den Produktions- bzw. Betriebsstätten. Reine Annahmestellen oder Kundenbüros sind als Filialen bzw. Niederlassungen anzugeben. Die Standortart und der Standort können für die Prüfung einzelner regulatorischer Anforderungen relevant sein.",
+        "en": "State what types of sites your company maintains, in which region they are located and how many there are of each.\nSites where textiles are washed, cleaned or reprocessed count as production or operating sites. Pure drop-off points or customer offices are to be stated as branches or branch offices. The type of site and its location can be relevant for assessing individual regulatory requirements.",
+        "es": "Indique qué tipos de instalaciones mantiene su empresa, en qué región se encuentran y cuántas hay de cada tipo.\nLas instalaciones en las que se lavan, limpian o reprocesan textiles se consideran plantas de producción o de explotación. Los puntos de recogida o las oficinas de atención al cliente deben indicarse como sucursales o delegaciones. El tipo de instalación y su ubicación pueden ser relevantes para comprobar determinadas exigencias regulatorias.",
+        "fr": "Indiquez quels types de sites votre entreprise exploite, dans quelle région ils se trouvent et combien il y en a de chaque type.\nLes sites où des textiles sont lavés, nettoyés ou retraités comptent parmi les sites de production ou d'exploitation. Les simples points de dépôt ou bureaux clients sont à indiquer comme filiales ou établissements. Le type de site et sa localisation peuvent être pertinents pour l'examen de certaines exigences réglementaires.",
+        "it": "Indichi quali tipi di sedi mantiene la sua impresa, in quale regione si trovano e quante ce ne sono per ciascun tipo.\nLe sedi in cui i tessili vengono lavati, puliti o ricondizionati rientrano tra gli stabilimenti produttivi o operativi. I semplici punti di raccolta o gli uffici clienti vanno indicati come filiali o sedi secondarie. Il tipo di sede e la sua ubicazione possono essere rilevanti per la verifica di singoli requisiti normativi.",
+        "zh": "请说明贵公司设有哪些类型的场所、位于哪个地区以及各有多少个。\n清洗、洗涤或再处理纺织品的场所属于生产或经营场所。单纯的收件点或客户办公室应作为分店或分支机构填写。场所类型和地点可能与个别监管要求的审查相关。",
     },
     "metric_yes": {
         "de": "Nach Ihren Angaben spricht alles dafür, dass diese Regulierung Ihr Unternehmen erfasst. Die Karte nennt die Fundstelle, den Anwendungsbeginn und erste Schritte. Eine rechtliche Prüfung des Einzelfalls ersetzt das nicht.",
@@ -7043,6 +7248,23 @@ FIELD_HELP: dict[str, dict[str, str]] = {
         "fr": "Un textile n'est un dispositif médical que si le fabricant lui confère une destination médicale – par exemple des bas de compression, des bandages, des pansements ou des champs opératoires. Est également fabricant quiconque fait fabriquer de tels produits et les commercialise sous son propre nom. Le retraitement consiste à nettoyer, désinfecter ou stériliser des dispositifs médicaux usagés, par ex. des textiles chirurgicaux, et à les remettre à disposition. Si vous ne le savez pas, choisissez « Inconnu / reste à clarifier ».",
         "it": "Un tessile è un dispositivo medico solo se il fabbricante gli attribuisce una destinazione d'uso medica, ad esempio calze a compressione, bendaggi, medicazioni o teli chirurgici. È fabbricante anche chi fa fabbricare tali prodotti e li commercializza con il proprio nome. Ricondizionare significa pulire, disinfettare o sterilizzare dispositivi medici usati, ad es. tessili chirurgici, e renderli nuovamente disponibili. Se non lo sa, selezioni «Non noto / ancora da chiarire».",
         "zh": "只有当制造商赋予纺织品医疗预期用途时，该纺织品才属于医疗器械，例如压力袜、护具、伤口敷料或手术铺单。委托他人生产此类产品并以自有名称销售者，同样属于制造商。再处理是指对使用过的医疗器械（例如手术用纺织品）进行清洗、消毒或灭菌后再次提供使用。如不清楚，请选择“不清楚 / 有待澄清”。",
+    },
+    # Nutzervorgabe 12.10.2026: Waescherei, Geschaeftsmodell
+    "laundry": {
+        "de": "Setzen Sie den Haken, wenn an einem Standort Ihres Unternehmens in Deutschland bei der gewerblichen Reinigung oder Aufbereitung von Textilien Abwasser entsteht, z. B. in einer industriellen Wäscherei oder einem Textilservicebetrieb. Dies gilt auch bei Einleitung in die öffentliche Kanalisation. Je nach Art der gereinigten Textilien und den eingesetzten Verfahren können besondere abwasserrechtliche Anforderungen gelten.",
+        "en": "Tick the box if wastewater is generated at one of your company's sites in Germany during the commercial cleaning or reprocessing of textiles, e.g. in an industrial laundry or a textile service company. This also applies if the wastewater is discharged into the public sewer system. Depending on the type of textiles cleaned and the processes used, special wastewater requirements may apply.",
+        "es": "Marque la casilla si en alguna planta de su empresa en Alemania se generan aguas residuales durante la limpieza o el reprocesamiento comercial de textiles, p. ej. en una lavandería industrial o en una empresa de servicios textiles. Esto también se aplica en caso de vertido a la red pública de alcantarillado. Según el tipo de textiles limpiados y los procedimientos empleados, pueden aplicarse requisitos especiales en materia de aguas residuales.",
+        "fr": "Cochez la case si, sur un site de votre entreprise en Allemagne, des eaux usées sont produites lors du nettoyage ou du retraitement professionnel de textiles, par ex. dans une blanchisserie industrielle ou une entreprise de services textiles. Cela vaut également en cas de rejet dans le réseau public d'assainissement. Selon le type de textiles nettoyés et les procédés utilisés, des exigences particulières en matière d'eaux usées peuvent s'appliquer.",
+        "it": "Spunti la casella se in uno stabilimento della sua impresa in Germania si producono acque reflue durante la pulizia o il ricondizionamento commerciale di tessili, ad es. in una lavanderia industriale o in un'impresa di servizi tessili. Ciò vale anche in caso di scarico nella rete fognaria pubblica. A seconda del tipo di tessili trattati e dei procedimenti impiegati, possono applicarsi requisiti particolari in materia di acque reflue.",
+        "zh": "如果贵公司在德国的某一场所在商业清洗或再处理纺织品时产生废水（例如在工业洗衣厂或纺织品服务企业），请勾选此项。排入公共下水道的情况同样适用。根据所清洗纺织品的种类和所采用的工艺，可能适用特殊的废水法规要求。",
+    },
+    "business": {
+        "de": "Wählen Sie alle Tätigkeitsbereiche aus, in denen Ihr Unternehmen aktiv ist – auch wenn diese nur einen Teil Ihrer Geschäftstätigkeit ausmachen.",
+        "en": "Select all fields of activity in which your company is active – even if they account for only part of your business.",
+        "es": "Seleccione todos los ámbitos de actividad en los que opera su empresa, aunque solo representen una parte de su actividad.",
+        "fr": "Sélectionnez tous les domaines d'activité dans lesquels votre entreprise est active – même s'ils ne représentent qu'une partie de votre activité.",
+        "it": "Selezioni tutti i settori di attività in cui la sua impresa opera, anche se rappresentano solo una parte della sua attività.",
+        "zh": "请选择贵公司开展业务的所有领域，即使这些领域只占贵公司业务的一部分。",
     },
 }
 

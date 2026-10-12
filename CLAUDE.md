@@ -36,7 +36,7 @@
 | **Bremse gegen Mail-Fluten** (3 Anfragen je Adresse und 10 je Quell-IP in 60 min, ueber `db.take_quota` in derselben Tabelle wie die Login-Bremse) | `db.RESET_MAIL_*`, `app._forgot_password` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
 | Stammdaten-Frage "Import von Produkten aus Nicht-EU-Ländern" (internes Feld weiterhin `eu_importer`) | `templates/dashboard.html`, `db.eu_importer` | ✅ |
-| Analyse über 33 Regulierungen: 18 regelbasiert, 15 über das LLM (Volltext + Guidelines); MPDG, MPAMIV und MPBetreibV erscheinen nur bei „Medizin- und Gesundheitstextilien“ | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
+| Analyse über 34 Regulierungen: 19 regelbasiert, 15 über das LLM (Volltext + Guidelines); MPDG, MPAMIV und MPBetreibV erscheinen nur bei „Medizin- und Gesundheitstextilien“ | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
 | **Datentrennung im globalen Cache** (siehe Invariante unten): der Prompt zeigt exakt die `relevant_fields` der Regulierung, der Firmenname steht nirgends darin, und der System-Prompt verbietet das Nennen eines Namens | `llm.py` `_format_profile`, `_SYSTEM_BASE` | ✅ |
 | **Handlungsplan je Karte**: "Gilt ab" mit unternehmensindividueller Frist (Phase-in) und aufklappbare "Erste Schritte" (2-4 kuratierte Stichpunkte + Leitlinien-Link) | `deadlines.py`, `regulations.py` `FIRST_STEPS_BY_REG_KEY`, `views.py` | ✅ |
@@ -51,7 +51,7 @@
 | **Erstkonsolidierung ≠ Notbehelf**: ist die einzige konsolidierte Fassung auf den ABl.-Tag datiert (z. B. ESG-Rating-VO), gibt es keine spaeteren Aenderungen — der Ursprungstext ist der geltende Text, es wird nicht gewarnt | `fetcher.py` `_is_initial_consolidation` | ✅ |
 | **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
 | **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
-| **Watchdog** (`python watchdog.py`): laedt alle 33 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
+| **Watchdog** (`python watchdog.py`): laedt alle 34 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
 | **Linkwaechter** (`python linkwaechter.py`, Cron montags 03:45): prueft alle Links aus `regulations.py`, sucht fuer defekte eine Ersatzadresse, Mail an mschuckert@textil-mode.de — siehe eigenen Abschnitt | `linkwaechter.py`, `check_links.py` | ✅ |
 | **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen, letzte Linkpruefung) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
 | **"Gesetzesstand vom …"** auf jeder Ergebnis-Karte | `app.py` `law_dates`, `views.py` | ✅ |
@@ -796,6 +796,37 @@ anderen aufzublähen. Umgesetzt als **bedingte Zusatzfrage + drei regelbasierte 
   für jeden erreichbaren Fall in 6 Sprachen, Ausblenden in Karten und PDF, Speichern,
   Formular, Katalog).
 
+### Waescherei, Geschaeftsmodell, Hilfetexte (Nutzervorgabe 12.10.2026)
+
+Deutsche Texte woertlich nach Vorgabe des Nutzers, die uebrigen fuenf Sprachen uebersetzt.
+
+- **Neues Haekchen `laundry_de`** „Abwasser aus gewerblicher Waescherei“ direkt nach dem
+  Abwasser-Feld (Anhang 38), Ausfuellhilfe `laundry`. Spalte `laundry_de`.
+- **Neue Regulierung AbwV55** (Abwasserverordnung Anhang 55 – Waeschereien, Nr. 34,
+  regelbasiert, `abwv55_status`): Haekchen → „Relevant“ (Folgesatz nennt die Ausnahme fuer
+  Haushalts-/Hoteltextilien ohne Chlormittel, Teil A Abs. 2 Nr. 7); ohne Haekchen, aber
+  Taetigkeit Waescherei oder Textilservice bzw. Branche „Waescherei und chemische
+  Reinigung“ → „Pruefen“; sonst „nicht einschlaegig“. Datum: Neubekanntmachung der AbwV
+  vom 17.06.2004 (Ersteinfuehrung des Anhangs nicht verlaesslich belegbar, Hinweis
+  `abwv55` auf der Karte).
+- **Neue Mehrfachauswahl `business_activities`** „Geschaeftsmodell / Taetigkeitsbereich“
+  (`regulations.BUSINESS_ACTIVITIES`, 6 Werte) zwischen Produktkategorien und Rollen.
+  Wirkt bisher nur auf AbwV55 und steht im Profil des Assistenten — **in keinem LLM-Prompt**,
+  damit der Cache der uebrigen Regulierungen unberuehrt bleibt.
+- **Neue Ausfuellhilfen:** `products`, `roles` (mit Absaetzen; `.fh-box` hat dafuer jetzt
+  `white-space: pre-line`), `materials`, `sites`, dazu `laundry`, `business`.
+- **Nur Anzeige geaendert, Schluessel unveraendert** (keine Migration, kein Cache-Verlust,
+  `_ROLE_ZULIEFERER`/`_ROLE_HAENDLER` greifen weiter): Rollen Importeur, Haendler/Vertreiber,
+  Zulieferer (`i18n.ROLE_LABELS`) und Standortart „Produktions- / Betriebsstaette (Herstellung,
+  Verarbeitung, Reinigung oder Aufbereitung)“ (`i18n.SITE_TYPE_LABELS`). Der LLM-Prompt sieht
+  weiter den alten Schluesseltext — bewusst, sonst haetten sich alle Cache-Eintraege mit
+  Rollen oder Standorten verschoben.
+- **Hinweis vor dem Pruefergebnis** (`views._results_hint_html`): zwei Teile mit
+  Ueberschrift (`results_role_title/_text`, `results_questions_title`, `results_hint`),
+  groessere Schrift, hellblau abgesetzt. Nicht im PDF (dort steht `pdf_disclaimer`).
+- Datenschutzerklaerung Ziffer 2.2 nennt die beiden neuen Angaben.
+- Belege: `test_waescherei.py` (46 Pruefungen, u. a. Vorgabetexte zeichengenau).
+
 ### Linkwaechter: woechentliche Linkpruefung mit Ersatzsuche (12.10.2026)
 
 Nutzerwunsch: regelmaessig pruefen, ob alle Links noch passen, mit Mail; defekte
@@ -846,7 +877,7 @@ Chat unten rechts für angemeldete, freigeschaltete Konten. Vorbild: der go-text
 - **Knopf „Nachfragen“** auf jeder Ergebniskarte (`views._ask_html`, nicht bei Fehlerkarten):
   stellt eine vorformulierte Frage und schickt den `reg_key` mit.
 - **Was an Gemini geht** (`assistent.answer`):
-  1. `systemInstruction` = Regeln + KATALOG aller Regulierungen (seit 12.10.2026: 33) (Kriterien, Status,
+  1. `systemInstruction` = Regeln + KATALOG aller Regulierungen (seit 12.10.2026: 34) (Kriterien, Status,
      erste Schritte, Leitlinien), **pro Tag byte-gleich** → Gemini cached ihn implizit
      (gemessen: ~18.400 von ~28.000 Token zwischengespeichert ab der zweiten Frage).
   2. Frage + **ganzes Profil ohne Firmennamen** (`_PROFILE_LABELS`) + letztes Prüfergebnis
@@ -960,7 +991,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `lawparse.py` | Zerlegt Gesetzestexte in Artikel-/§-/Anhang-Abschnitte und baut daraus den LLM-Kontext (Anwendungsbereich statt Praeambel) |
 | `test_lawparse.py` | Tests dazu — laufen gegen eine Kopie der DB (`data/esg_lawparse_test.db`), nie gegen `data/esg.db` |
 | `test_cache_stability.py` | Beweist die Wortstabilitaet der Begruendungen (6 Szenarien, eigene DB `data/esg_cache_test.db`). Ohne Argument mit Platzhalter statt LLM (kostenlos), mit `--live` echte Calls |
-| `regulations.py` | 33 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
+| `regulations.py` | 34 Regulierungen + Guidelines-Map + Veröffentlichungs- **und Anwendungsdaten** + Auswahllisten |
 | `watchdog.py` | Wöchentlicher Aktualitäts-Wächter (Cron auf dem VPS), schreibt `watchdog_runs` |
 | `i18n.py` | Übersetzungen (6 Sprachen) |
 | `db.py` | SQLite-Schema, Migrationen, Cache-Zugriff |
@@ -978,6 +1009,7 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `assistent.py` | Regulierungs-Assistent: Suche in den Gesetzestexten, Katalog, Prompt, Gemini-Stream, Transkription |
 | `static/assistent.js` | Chat-Widget unten rechts |
 | `test_medizinprodukte.py` | Tests zum nationalen Medizinprodukterecht und zur Zusatzfrage (eigene DB `data/esg_medizin_test.db`, kein Netz, kein LLM) |
+| `test_waescherei.py` | Tests zu AbwV55, Geschaeftsmodell und den Vorgabetexten vom 12.10.2026 (eigene DB, kein Netz/LLM) |
 | `linkwaechter.py` | Woechentliche Linkpruefung mit Ersatzsuche und Mail (Cron), Ergebnis in `link_checks` |
 | `test_linkwaechter.py` | Tests dazu (eigene DB `data/esg_linkwaechter_test.db`, kein Netz/KI/Mail) |
 | `test_assistent.py` | Tests zum Assistenten (offline, eigene DB `data/esg_assistent_unit_test.db`) |
@@ -1157,9 +1189,9 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 
 1. https://ki-textil-mode.de/esg/ (bzw. Legacy https://schuckert.cloud/regulierungs-check) → Login-Seite laedt, Logo oben links sichtbar, Footer "© 2026 · Alle Rechte vorbehalten".
 2. Nach Login: Dashboard mit Button "Regulierungsliste" oben rechts neben "Jetzt pruefen". Rechts in der Rechts-Spalte die Checkbox "Import von Produkten aus Nicht-EU-Ländern".
-3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 33 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
+3. https://ki-textil-mode.de/esg/regulierungsliste → Tabelle mit 34 Zeilen, Stand = Veroeffentlichungsdatum (DD.MM.YYYY), Guidelines klickbar.
 4. Footer unten rechts: `<details>` "Hinweis" → auf Klick Popover mit Claude-Code-/Codex-Text.
-5. "Jetzt pruefen" laeuft bis 33/33 durch (ohne Medizintextilien erscheinen 30 Karten), keine rote ✕-Fehlerkarte. "Passage" max. ~280 Zeichen.
+5. "Jetzt pruefen" laeuft bis 34/34 durch (ohne Medizintextilien erscheinen 31 Karten), keine rote ✕-Fehlerkarte. "Passage" max. ~280 Zeichen.
 
 ---
 

@@ -12,7 +12,8 @@ from typing import Optional
 
 import bcrypt
 
-from regulations import (BRANCHES, MATERIALS, MEDICAL_ACTIVITIES, PRODUCT_CATEGORIES,
+from regulations import (BRANCHES, BUSINESS_ACTIVITIES, MATERIALS, MEDICAL_ACTIVITIES,
+                         PRODUCT_CATEGORIES,
                          SALES_MARKETS, SVHC_OPTIONS,
                          SITE_TYPES, VALUE_CHAIN_ROLES)
 
@@ -64,6 +65,10 @@ COMPANY_EXTRA_COLUMNS = [
     # Seit 12.10.2026: Taetigkeit mit Medizinprodukten (MDR, MPDG, MPAMIV,
     # MPBetreibV); im Formular nur bei "Medizin- und Gesundheitstextilien".
     ("medical_activities_json", "TEXT"),
+    # Seit 12.10.2026 (Nutzervorgabe): Abwasser aus gewerblicher Waescherei in
+    # Deutschland (AbwV Anhang 55) und Geschaeftsmodell / Taetigkeitsbereich.
+    ("laundry_de", "INTEGER DEFAULT 0"),
+    ("business_activities_json", "TEXT"),
 ]
 
 # Umbenannte Auswahlwerte: alter Wert -> heutiger Wert. Anders als bei den
@@ -1350,6 +1355,8 @@ def get_company(user_id: int) -> Optional[dict]:
         json.loads(data.pop("sales_markets_json") or "[]"), SALES_MARKETS)
     data["medical_activities"] = _known(
         json.loads(data.pop("medical_activities_json") or "[]"), MEDICAL_ACTIVITIES)
+    data["business_activities"] = _known(
+        json.loads(data.pop("business_activities_json") or "[]"), BUSINESS_ACTIVITIES)
     # Die Branchenliste wurde am 08.09.2026 auf die NACE-Klassen der Textil-,
     # Bekleidungs- und Lederwirtschaft umgestellt. Eine Branche aus einem
     # Altprofil steht nicht mehr im Formular; wuerde sie durchgereicht, stuende
@@ -1363,6 +1370,7 @@ def get_company(user_id: int) -> Optional[dict]:
     data["env_claims"] = bool(data.get("env_claims"))
     data["eu_importer"] = bool(data.get("eu_importer"))
     data["wet_processing_de"] = bool(data.get("wet_processing_de"))
+    data["laundry_de"] = bool(data.get("laundry_de"))
     data["energy_gwh"] = float(data.get("energy_gwh") or 0)
     if data.get("svhc_status") not in SVHC_OPTIONS:
         data["svhc_status"] = SVHC_OPTIONS[0]
@@ -1381,6 +1389,8 @@ def upsert_company(user_id: int, data: dict) -> None:
         _known(data.get("sales_markets"), SALES_MARKETS), ensure_ascii=False)
     medical_json = json.dumps(
         _known(data.get("medical_activities"), MEDICAL_ACTIVITIES), ensure_ascii=False)
+    business_json = json.dumps(
+        _known(data.get("business_activities"), BUSINESS_ACTIVITIES), ensure_ascii=False)
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute(
@@ -1391,9 +1401,10 @@ def upsert_company(user_id: int, data: dict) -> None:
                 env_claims, product_categories_json, employees_de, language,
                 eu_importer, value_chain_roles_json, materials_json,
                 revenue_eu_eur, sales_markets_json,
-                energy_gwh, wet_processing_de, svhc_status, medical_activities_json
+                energy_gwh, wet_processing_de, svhc_status, medical_activities_json,
+                laundry_de, business_activities_json
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 name=excluded.name,
                 employees=excluded.employees,
@@ -1418,7 +1429,9 @@ def upsert_company(user_id: int, data: dict) -> None:
                 energy_gwh=excluded.energy_gwh,
                 wet_processing_de=excluded.wet_processing_de,
                 svhc_status=excluded.svhc_status,
-                medical_activities_json=excluded.medical_activities_json
+                medical_activities_json=excluded.medical_activities_json,
+                laundry_de=excluded.laundry_de,
+                business_activities_json=excluded.business_activities_json
             """,
             (
                 user_id,
@@ -1447,6 +1460,8 @@ def upsert_company(user_id: int, data: dict) -> None:
                 data.get("svhc_status") if data.get("svhc_status") in SVHC_OPTIONS
                 else SVHC_OPTIONS[0],
                 medical_json,
+                1 if data.get("laundry_de") else 0,
+                business_json,
             ),
         )
 

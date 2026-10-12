@@ -239,8 +239,13 @@ def _thresholds_html(profile: dict, language: str) -> str:
 
 
 def _results_hint_html(language: str) -> str:
-    """Hinweis ueber der Ergebnisliste: das Ergebnis ist eine Erstorientierung."""
-    return (f'\n<div class="results-hint">{escape(t("results_hint", language))}</div>')
+    """Hinweis ueber der Ergebnisliste (Nutzervorgabe 12.10.2026): Rollenbegriffe sind je
+    Vorschrift verschieden definiert, und das Ergebnis ist eine Erstorientierung."""
+    return ('\n<div class="results-hint">'
+            f'<h4>{escape(t("results_role_title", language))}</h4>'
+            f'<p>{escape(t("results_role_text", language))}</p>'
+            f'<h4>{escape(t("results_questions_title", language))}</h4>'
+            f'<p>{escape(t("results_hint", language))}</p></div>')
 
 
 def _ask_html(r: dict, language: str) -> str:

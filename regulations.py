@@ -958,6 +958,43 @@ REGULATIONS = [
         ),
         "key_article": "§§ 2, 5, 8",
     },
+    # --- Gewerbliche Waeschereien (12.10.2026, Nutzervorgabe) ---
+    {
+        "nr": 34,
+        "key": "AbwV55",
+        "relevant_fields": ["laundry_de", "business_activities", "branch"],
+        "name": "AbwV Anhang 55 – Abwasseranforderungen für Wäschereien",
+        "full_name": "Abwasserverordnung (AbwV), Anhang 55 – Wäschereien",
+        "url": "https://www.gesetze-im-internet.de/abwv/anhang_55.html",
+        "text_url": "https://www.gesetze-im-internet.de/abwv/anhang_55.html",
+        "scope": "DE",
+        # Am Primaertext geprueft am 12.10.2026 (https://www.gesetze-im-internet.de/abwv/anhang_55.html,
+        # Fundstelle des Originaltextes BGBl. I 2004, 1180-1181; AbwV i. d. F. der Bek. vom 17.06.2004,
+        # zuletzt geaendert durch Art. 1 V v. 17.4.2024 I Nr. 132).
+        "criteria": (
+            "Anhang 55 gilt für Abwasser, dessen Schadstofffracht im Wesentlichen aus dem Waschen von "
+            "verunreinigten Textilien, Teppichen, Matten und Vliesen in Betrieben und öffentlichen "
+            "Einrichtungen stammt (Teil A Abs. 1). Er gilt nicht für Wollwäschereien, die Textilreinigung "
+            "in nichtwässrigen Flotten (chemische Reinigung), die Textilherstellung und -veredlung (dafür "
+            "Anhang 38), das Waschen von Filtertextilien, Münz-Waschsalons und für die Wäsche von "
+            "Haushalts-, Gaststätten- und Hoteltextilien, wenn keine chlororganischen oder Chlor "
+            "abspaltenden Wasch- und Waschhilfsmittel eingesetzt werden (Teil A Abs. 2). Allgemein dürfen "
+            "u. a. schwer abbaubare organische Komplexbildner, Reste von Wasch- und Hilfsmitteln, Biozide "
+            "aus der Ausrüstung in Standbädern und Chlorverbindungen aus Waschmitteln (außer im "
+            "Klarspülbereich bei Krankenhaus- und Heimwäsche sowie Berufskleidung des Fleisch und Fisch "
+            "verarbeitenden Gewerbes) nicht im Abwasser enthalten sein; der Nachweis kann über ein "
+            "Betriebstagebuch der eingesetzten Mittel geführt werden (Teil B). An der Einleitungsstelle in "
+            "ein Gewässer gelten CSB 100 mg/l, BSB5 25 mg/l, Stickstoff 20 mg/l und Phosphor 2 mg/l "
+            "(Teil C). Vor der Vermischung gelten AOX-Frachten für Krankenhaus- und Heimwäsche (18 g/t) "
+            "und Berufskleidung des Fleisch und Fisch verarbeitenden Gewerbes (40 g/t), sofern dieses "
+            "Waschgut mehr als 10 % der Waschkapazität ausmacht, sowie Grenzwerte für Kohlenwasserstoffe, "
+            "AOX und Schwermetalle beim Waschen von Putztüchern, Berufskleidung aus Metallbearbeitung, "
+            "Maschinenbau, Kfz- und Chemiebetrieben, Teppichen und Matten (Teil D). Für Indirekteinleiter "
+            "in die öffentliche Kanalisation werden die Anforderungen über die Genehmigung nach § 58 WHG "
+            "festgesetzt. Keine Größenschwelle. Branche: gewerbliche Wäschereien und Textilservice."
+        ),
+        "key_article": "Anhang 55 Teil A–D",
+    },
 ]
 
 
@@ -1130,6 +1167,10 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "Rijkswaterstaat (Afval Circulair) – UPV textiel",
          "url": "https://afvalcirculair.nl/uitgebreide-producentenverantwoordelijkheid-upv/overzicht-upv/upv-textiel/"},
     ],
+    "AbwV55": [
+        {"name": "Umweltbundesamt – Anforderungen an das Einleiten von Abwasser (Abwasserverordnung)",
+         "url": "https://www.umweltbundesamt.de/themen/wasser/abwasser/anforderungen-an-das-einleiten-von-abwasser"},
+    ],
     # --- Nationales Medizinprodukterecht (12.10.2026), Links am 12.10.2026 geprueft ---
     "MPDG": [
         {"name": "BfArM – Übersicht der Meldewege für Medizinprodukte",
@@ -1208,6 +1249,7 @@ FIRST_STEPS_BY_REG_KEY: dict[str, list[str]] = {
     "MPDG": ["mpdg_1", "mpdg_2", "mpdg_3", "mpdg_4"],
     "MPAMIV": ["mpamiv_1", "mpamiv_2", "mpamiv_3"],
     "MPBetreibV": ["mpbetreibv_1", "mpbetreibv_2", "mpbetreibv_3"],
+    "AbwV55": ["abwv55_1", "abwv55_2", "abwv55_3"],
 }
 
 
@@ -1287,6 +1329,10 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     "MPAMIV": "27.04.2021",
     # BGBl. 2025 I Nr. 38 vom 19.02.2025 (Inkrafttreten 20.02.2025)
     "MPBetreibV": "19.02.2025",
+    # Bekanntmachung der Neufassung der AbwV vom 17.06.2004 (BGBl. I S. 1108); Anhang 55 steht
+    # dort auf S. 1180-1181 ("Fundstelle des Originaltextes"). Das Datum der Ersteinfuehrung
+    # des Anhangs liess sich am 12.10.2026 nicht verlaesslich belegen.
+    "AbwV55": "17.06.2004",
 }
 
 # Regulierungen, deren Datum oben nur ein Entwurfsstand ist (keine Verkuendung).
@@ -1403,6 +1449,9 @@ APPLICATION_BY_REG_KEY: dict[str, dict] = {
     "MPAMIV": {"applies_from": "26.05.2021"},
     # Fussnote gesetze-im-internet.de: "gem. Art. 3 Satz 1 dieser V am 20.2.2025 in Kraft getreten".
     "MPBetreibV": {"applies_from": "20.02.2025", "note": "mpbetreibv"},
+    # Datum der Neubekanntmachung (siehe PUBLISHED_BY_REG_KEY); der Hinweis sagt, dass die
+    # Anforderungen schon vorher bestanden.
+    "AbwV55": {"applies_from": "17.06.2004", "note": "abwv55"},
 }
 
 
@@ -1835,6 +1884,29 @@ def abwv38_status(profile: dict):
     return "nein", "abwv_keine"
 
 
+# Anhang 55 AbwV (Waeschereien), Nutzervorgabe 12.10.2026. Das Haekchen
+# "Abwasser aus gewerblicher Waescherei" traegt die Entscheidung; ohne Haekchen
+# deuten Taetigkeit (Waescherei, Textilservice) oder Branche nur auf "Pruefen".
+# "Ja" trotz der Ausnahme fuer Hotel- und Haushaltswaesche ohne Chlormittel
+# (Teil A Abs. 2 Nr. 7): fuer Textilservice-Betriebe mit Berufs-, Krankenhaus-
+# oder Putztuchwaesche ist der Anhang der Regelfall, die Ausnahme nennt der
+# Folgesatz.
+_WAESCHEREI_TAETIGKEITEN = frozenset({
+    "Gewerbliche Wäscherei / Textilreinigung", "Textilservice / Full-Service-Versorgung",
+})
+
+
+def abwv55_status(profile: dict):
+    """Abwasserverordnung Anhang 55: Abwasser aus gewerblicher Waescherei in Deutschland."""
+    if profile.get("laundry_de"):
+        return "ja", "abwv55_waescherei"
+    if set(profile.get("business_activities") or ()) & _WAESCHEREI_TAETIGKEITEN:
+        return "moeglich", "abwv55_taetigkeit"
+    if (profile.get("branch") or "") == "Wäscherei und chemische Reinigung":
+        return "moeglich", "abwv55_branche"
+    return "nein", "abwv55_keine"
+
+
 # Ruecknahmesysteme in Frankreich und den Niederlanden. Zuerst ueber das LLM
 # bewertet; im Live-Test am 29.09.2026 schloss es aus dem Absatzmarkt
 # "Niederlande" auf eine Pflicht in Frankreich und zitierte einen Artikel, der in
@@ -1908,6 +1980,7 @@ _COUPLINGS: dict[str, tuple[str, object]] = {
     "MPDG":            ("MPDG", mpdg_status),
     "MPAMIV":          ("MPAMIV", mpamiv_status),
     "MPBetreibV":      ("MPBetreibV", mpbetreibv_status),
+    "AbwV55":          ("AbwV Anhang 55", abwv55_status),
 }
 
 # child_key -> erlaeuternde Beziehung (warum die Eltern-Pflicht hier bindet)
@@ -2206,6 +2279,20 @@ SVHC_OPTIONS = [
     "Nicht bekannt",
     "Ja",
     "Nein",
+]
+
+# Geschaeftsmodell / Taetigkeitsbereich (Mehrfachauswahl, Nutzervorgabe 12.10.2026).
+# Traegt bisher nur AbwV Anhang 55 (Waescherei, Textilservice) und steht dem
+# Regulierungs-Assistenten im Profil zur Verfuegung; in keinem LLM-Prompt, damit
+# der Cache der uebrigen Regulierungen unberuehrt bleibt.
+# Uebersetzungen: siehe i18n.BUSINESS_ACTIVITY_LABELS.
+BUSINESS_ACTIVITIES = [
+    "Herstellung von Textilien oder Bekleidung",
+    "Handel / Vertrieb von Textilprodukten",
+    "Gewerbliche Wäscherei / Textilreinigung",
+    "Vermietung / Leasing von Textilien",
+    "Textilservice / Full-Service-Versorgung",
+    "Sonstige textile Dienstleistungen",
 ]
 
 # Taetigkeit mit Medizinprodukten (Mehrfachauswahl, seit 12.10.2026).

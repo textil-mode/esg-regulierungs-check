@@ -46,6 +46,7 @@ from i18n import (
     LEGAL_FORM_LABELS,
     LOCATION_LABELS,
     MATERIAL_GROUP_LABELS,
+    BUSINESS_ACTIVITY_LABELS,
     MATERIAL_LABELS,
     MEDICAL_ACTIVITY_LABELS,
     PRODUCT_CAT_LABELS,
@@ -75,6 +76,7 @@ from regulations import (
     LEGAL_FORMS,
     LOCATIONS,
     MATERIAL_GROUPS,
+    BUSINESS_ACTIVITIES,
     MATERIALS,
     MEDICAL_ACTIVITIES,
     MEMBER_ASSOCIATIONS,
@@ -345,6 +347,7 @@ def _inject_globals():
         SALES_MARKET_LABELS=SALES_MARKET_LABELS,
         SVHC_LABELS=SVHC_LABELS,
         MEDICAL_ACTIVITY_LABELS=MEDICAL_ACTIVITY_LABELS,
+        BUSINESS_ACTIVITY_LABELS=BUSINESS_ACTIVITY_LABELS,
         MEMBER_ASSOCIATIONS=MEMBER_ASSOCIATIONS,
         ACCOUNT_TYPE_USER=db.ACCOUNT_TYPE_USER,
         ACCOUNT_TYPE_TEST=db.ACCOUNT_TYPE_TEST,
@@ -1404,6 +1407,7 @@ def dashboard():
         SALES_MARKETS=SALES_MARKETS,
         SVHC_OPTIONS=SVHC_OPTIONS,
         MEDICAL_ACTIVITIES=MEDICAL_ACTIVITIES,
+        BUSINESS_ACTIVITIES=BUSINESS_ACTIVITIES,
         reg_count=len(REGULATIONS),
     )
 
@@ -1464,6 +1468,7 @@ def save_company():
         "env_claims": "env_claims" in f,
         "eu_importer": "eu_importer" in f,
         "wet_processing_de": "wet_processing_de" in f,
+        "laundry_de": "laundry_de" in f,
         "energy_gwh": _parse_gwh(f.get("energy_gwh")),
         "svhc_status": f.get("svhc_status") or SVHC_OPTIONS[0],
         "product_categories": f.getlist("product_categories"),
@@ -1473,6 +1478,7 @@ def save_company():
         # Nur sichtbar bei "Medizin- und Gesundheitstextilien"; ohne die
         # Kategorie werten die Regeln das Feld nicht aus (siehe _med_prelude).
         "medical_activities": f.getlist("medical_activities"),
+        "business_activities": f.getlist("business_activities"),
         "sites": sites,
         "language": lang,
     }

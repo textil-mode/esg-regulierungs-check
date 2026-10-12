@@ -116,6 +116,8 @@ _PROFILE_LABELS: dict[str, str] = {
     "wet_processing_de": "Wet processing of textiles with wastewater at a site in Germany",
     "svhc_status": "Products contain SVHC (ECHA Candidate List) above 0.1 %",
     "medical_activities": "Activities involving medical devices",
+    "laundry_de": "Wastewater from commercial laundering of textiles at a site in Germany",
+    "business_activities": "Business model / fields of activity",
 }
 
 _USER_TEMPLATE = """{profile}
@@ -183,8 +185,9 @@ def _format_profile(profile: dict, reg: dict) -> str:
 # Mehrfachauswahl-Felder: im Prompt als Aufzaehlung, im Cache-Schluessel
 # sortiert (die Reihenfolge im Formular ist bedeutungslos).
 _LIST_FIELDS = frozenset({"product_categories", "value_chain_roles", "materials",
-                          "sales_markets", "medical_activities"})
-_BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer", "wet_processing_de"})
+                          "sales_markets", "medical_activities", "business_activities"})
+_BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer", "wet_processing_de",
+                          "laundry_de"})
 _INT_FIELDS = frozenset({"employees", "employees_de"})
 _FLOAT_FIELDS = frozenset({"revenue_eur", "revenue_eu_eur", "balance_sheet_eur", "energy_gwh"})
 # Kleine Kommazahlen: im Prompt mit zwei Nachkommastellen (7,5 GWh darf nicht zu "8" werden).
