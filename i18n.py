@@ -2232,6 +2232,63 @@ UI: dict[str, dict[str, str]] = {
         "it": "Il watchdog non si avvia dall'interfaccia ma tramite cron sul server (python watchdog.py).",
         "zh": "监测程序不从界面启动，而是由服务器上的 cron 运行（python watchdog.py）。",
     },
+    # Woechentliche Linkpruefung (linkwaechter.py, 12.10.2026)
+    "admin_links_last": {
+        "de": "Letzte Linkprüfung", "en": "Last link check", "es": "Última comprobación de enlaces",
+        "fr": "Dernière vérification des liens", "it": "Ultimo controllo dei link", "zh": "最近一次链接检查",
+    },
+    "admin_links_checked": {
+        "de": "Links geprüft", "en": "links checked", "es": "enlaces comprobados",
+        "fr": "liens vérifiés", "it": "link controllati", "zh": "个链接已检查",
+    },
+    "admin_links_broken": {
+        "de": "defekt", "en": "broken", "es": "rotos", "fr": "défectueux", "it": "non funzionanti",
+        "zh": "失效",
+    },
+    "admin_links_unknown": {
+        "de": "unklar", "en": "unclear", "es": "dudosos", "fr": "incertains", "it": "incerti",
+        "zh": "不明确",
+    },
+    "admin_links_redirected": {
+        "de": "weitergeleitet", "en": "redirected", "es": "redirigidos", "fr": "redirigés",
+        "it": "reindirizzati", "zh": "已重定向",
+    },
+    "admin_links_suggestion": {
+        "de": "Vorschlag", "en": "Suggestion", "es": "Propuesta", "fr": "Proposition",
+        "it": "Proposta", "zh": "建议",
+    },
+    "admin_links_no_suggestion": {
+        "de": "Keine Ersatzadresse gefunden – bitte von Hand suchen.",
+        "en": "No replacement address found – please search manually.",
+        "es": "No se encontró ninguna dirección alternativa; búsquela manualmente.",
+        "fr": "Aucune adresse de remplacement trouvée – veuillez chercher manuellement.",
+        "it": "Nessun indirizzo sostitutivo trovato – cercare manualmente.",
+        "zh": "未找到替代地址，请手动查找。",
+    },
+    "admin_links_details": {
+        "de": "Unklare und weitergeleitete Links (funktionieren, Adresse kann aktualisiert werden)",
+        "en": "Unclear and redirected links (working; the address can be updated)",
+        "es": "Enlaces dudosos y redirigidos (funcionan; la dirección puede actualizarse)",
+        "fr": "Liens incertains et redirigés (fonctionnent ; l'adresse peut être mise à jour)",
+        "it": "Link incerti e reindirizzati (funzionano; l'indirizzo può essere aggiornato)",
+        "zh": "不明确和已重定向的链接（仍可用，可更新地址）",
+    },
+    "admin_links_hint": {
+        "de": "Läuft wöchentlich per Cron (python linkwaechter.py) und meldet defekte Links per Mail. "
+              "Ersatzadressen werden gesucht und gegengeprüft, aber nie automatisch übernommen.",
+        "en": "Runs weekly by cron (python linkwaechter.py) and reports broken links by email. "
+              "Replacement addresses are searched for and verified, but never adopted automatically.",
+        "es": "Se ejecuta semanalmente mediante cron (python linkwaechter.py) e informa de los enlaces "
+              "rotos por correo. Se buscan y verifican direcciones alternativas, pero nunca se adoptan "
+              "automáticamente.",
+        "fr": "S'exécute chaque semaine par cron (python linkwaechter.py) et signale les liens défectueux "
+              "par e-mail. Des adresses de remplacement sont recherchées et vérifiées, mais jamais "
+              "reprises automatiquement.",
+        "it": "Viene eseguito ogni settimana tramite cron (python linkwaechter.py) e segnala via e-mail i "
+              "link non funzionanti. Gli indirizzi sostitutivi vengono cercati e verificati, ma mai "
+              "adottati automaticamente.",
+        "zh": "每周由 cron 运行（python linkwaechter.py），并通过电子邮件报告失效链接。系统会查找并核验替代地址，但绝不会自动采用。",
+    },
     "admin_regstatus_no_text": {
         "de": "kein Text im Cache", "en": "no text cached", "es": "sin texto en caché",
         "fr": "aucun texte en cache", "it": "nessun testo in cache", "zh": "缓存中无文本",

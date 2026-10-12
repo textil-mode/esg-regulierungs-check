@@ -256,6 +256,16 @@ def init_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_mail_log_time
                 ON mail_log (logged_at);
+            -- Woechentliche Linkpruefung (linkwaechter.py), seit 12.10.2026.
+            CREATE TABLE IF NOT EXISTS link_checks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                started_at TEXT NOT NULL,
+                finished_at TEXT NOT NULL,
+                checked INTEGER NOT NULL DEFAULT 0,
+                broken_json TEXT NOT NULL DEFAULT '[]',
+                unknown_json TEXT NOT NULL DEFAULT '[]',
+                redirected_json TEXT NOT NULL DEFAULT '[]'
+            );
             CREATE TABLE IF NOT EXISTS watchdog_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 started_at TEXT NOT NULL,
@@ -1562,6 +1572,45 @@ def watchdog_changes_by_reg(limit_runs: int = 50) -> dict[str, dict]:
             if key and key not in out:
                 out[key] = {**entry, "run_at": row["started_at"]}
     return out
+
+
+# ---------- Linkpruefung ----------
+def save_link_check(started_at: str, checked: int, broken: list[dict],
+                    unknown: list[dict], redirected: list[dict]) -> int:
+    """Speichert einen Lauf von `linkwaechter.py`.
+
+    `broken`:     [{where, label, url, note, http_status, suggestions: [{url, source, note}]}]
+    `unknown`:    [{where, label, url, note}]
+    `redirected`: [{where, label, url, final_url}]
+    """
+    init_db()
+    with _conn() as c:
+        cur = c.execute(
+            "INSERT INTO link_checks (started_at, finished_at, checked, broken_json, "
+            "unknown_json, redirected_json) VALUES (?, ?, ?, ?, ?, ?)",
+            (started_at, datetime.utcnow().isoformat(), checked,
+             json.dumps(broken, ensure_ascii=False),
+             json.dumps(unknown, ensure_ascii=False),
+             json.dumps(redirected, ensure_ascii=False)),
+        )
+        return cur.lastrowid
+
+
+def latest_link_check() -> Optional[dict]:
+    init_db()
+    with _conn() as c:
+        row = c.execute("SELECT * FROM link_checks ORDER BY id DESC LIMIT 1").fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "started_at": row["started_at"],
+        "finished_at": row["finished_at"],
+        "checked": row["checked"],
+        "broken": json.loads(row["broken_json"] or "[]"),
+        "unknown": json.loads(row["unknown_json"] or "[]"),
+        "redirected": json.loads(row["redirected_json"] or "[]"),
+    }
 
 
 def latest_analysis(user_id: int) -> Optional[dict]:

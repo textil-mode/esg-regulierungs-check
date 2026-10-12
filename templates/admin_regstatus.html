@@ -25,6 +25,48 @@
     <div class="run-hint">{{ t("admin_regstatus_run_hint", lang) }}</div>
   </div>
 
+  {# Woechentliche Linkpruefung (linkwaechter.py) #}
+  <div class="run-box">
+    <strong>{{ t("admin_links_last", lang) }}:</strong>
+    {% if link_check %}
+      {{ link_check.finished_at[:16].replace("T", " ") }} UTC ·
+      {{ link_check.checked }} {{ t("admin_links_checked", lang) }} ·
+      {{ t("admin_links_broken", lang) }}: {{ link_check.broken|length }} ·
+      {{ t("admin_links_unknown", lang) }}: {{ link_check.unknown|length }} ·
+      {{ t("admin_links_redirected", lang) }}: {{ link_check.redirected|length }}
+      {% if link_check.broken %}
+      <ul class="run-errors">
+        {% for b in link_check.broken %}
+        <li><code>{{ b.where }}</code>: <a href="{{ b.url }}" target="_blank" rel="noopener">{{ b.url }}</a> — {{ b.note }}
+          {% for s in b.suggestions %}
+          <div class="link-suggestion">{{ t("admin_links_suggestion", lang) }} ({{ s.source }}, {{ s.note }}):
+            <a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.url }}</a></div>
+          {% else %}
+          <div class="link-suggestion">{{ t("admin_links_no_suggestion", lang) }}</div>
+          {% endfor %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if link_check.unknown or link_check.redirected %}
+      <details class="link-details">
+        <summary>{{ t("admin_links_details", lang) }}</summary>
+        <ul>
+          {% for u in link_check.unknown %}
+          <li>{{ t("admin_links_unknown", lang) }} · <code>{{ u.where }}</code>: <a href="{{ u.url }}" target="_blank" rel="noopener">{{ u.url }}</a> — {{ u.note }}</li>
+          {% endfor %}
+          {% for w in link_check.redirected %}
+          <li>{{ t("admin_links_redirected", lang) }} · <code>{{ w.where }}</code>: {{ w.url }} → <a href="{{ w.final_url }}" target="_blank" rel="noopener">{{ w.final_url }}</a></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+    {% else %}
+      {{ t("admin_regstatus_never", lang) }}
+    {% endif %}
+    <div class="run-hint">{{ t("admin_links_hint", lang) }}</div>
+  </div>
+
   <div style="overflow-x:auto;">
     <table class="reg-table">
       <thead>
@@ -92,6 +134,10 @@
     padding: 12px 14px; margin-bottom: 16px; font-size: 14px; color: #000000; }
   .run-errors { margin: 6px 0 0; padding-left: 18px; color: #A32020; font-size: 13px; }
   .run-hint { color: #5A5A5A; font-size: 12px; margin-top: 6px; }
+  .link-suggestion { color: #000000; margin: 2px 0 4px; word-break: break-all; }
+  .run-errors a, .link-details a { word-break: break-all; }
+  .link-details { margin-top: 8px; font-size: 13px; }
+  .link-details ul { margin: 6px 0 0; padding-left: 18px; }
   /* Warn-Badge: gedecktes Rot, das einzige Rot der Oberflaeche */
   .badge-base-act { background: #A32020; color: #FFFFFF; }
   .base-act-warn { margin-top: 6px; font-size: 12px; color: #000000; line-height: 1.4;

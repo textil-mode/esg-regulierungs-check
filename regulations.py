@@ -1147,7 +1147,7 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "ZLG – Zentralstelle der Länder für Gesundheitsschutz: Medizinprodukte",
          "url": "https://www.zlg.de/medizinprodukte"},
         {"name": "Bundesministerium für Gesundheit – Medizinprodukte",
-         "url": "https://www.bundesgesundheitsministerium.de/themen/gesundheitswesen/medizinprodukte.html"},
+         "url": "https://www.bundesgesundheitsministerium.de/themen/gesundheitswesen/medizinprodukte"},
     ],
 }
 

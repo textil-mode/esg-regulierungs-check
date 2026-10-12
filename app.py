@@ -1307,7 +1307,8 @@ def admin_reg_status():
             "change": changes.get(key),
         })
     return render_template(
-        "admin_regstatus.html", rows=rows, last_run=db.latest_watchdog_run(), lang=lang
+        "admin_regstatus.html", rows=rows, last_run=db.latest_watchdog_run(),
+        link_check=db.latest_link_check(), lang=lang
     )
 
 

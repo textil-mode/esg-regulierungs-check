@@ -52,7 +52,8 @@
 | **Textversionierung** (`law_versions`: reg_key, language, sha256, text, url, fetched_at); `current_text_hash(reg_key, language)` als Schluessel fuer nachgelagerte Caches | `fetcher.py` | ✅ |
 | **Anwendungsdaten + Status je Regulierung** (`applies_from`, abgeleiteter Status `in_kraft`/`gilt_ab`/`entwurf`/`rueckzug_angekuendigt`), Spalte "Gilt ab / Status" in der Regulierungsliste | `regulations.py` `application_for`, `templates/regulierungsliste.html` | ✅ |
 | **Watchdog** (`python watchdog.py`): laedt alle 33 Texte mit `force=True`, vergleicht Hashes, schreibt `watchdog_runs`; bei Aenderung LLM-Zusammenfassung als **Vorschlag** (nie automatische `criteria`-Aenderung) | `watchdog.py` | ✅ |
-| **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
+| **Linkwaechter** (`python linkwaechter.py`, Cron montags 03:45): prueft alle Links aus `regulations.py`, sucht fuer defekte eine Ersatzadresse, Mail an mschuckert@textil-mode.de — siehe eigenen Abschnitt | `linkwaechter.py`, `check_links.py` | ✅ |
+| **Admin-Seite Regulierungs-Status** (Gesetzesstand, Fassungszahl, letzter Watchdog-Lauf, erkannte Aenderungen, letzte Linkpruefung) | `/admin/regulierungs-status`, `templates/admin_regstatus.html` | ✅ |
 | **"Gesetzesstand vom …"** auf jeder Ergebnis-Karte | `app.py` `law_dates`, `views.py` | ✅ |
 | **PDF-Export im textil+mode-CD** (Logo, Verlaufskante, Statusfarben; gleicher Umfang wie das frühere CSV plus Kopfbereich und Zusammenfassung). Chinesisch nutzt die nicht eingebettete CID-Schrift STSong-Light — siehe Modul-Docstring | `/download-pdf`, `pdfexport.py` | ✅ |
 | Fullscreen-Ansicht Ergebnisse | `/fullscreen` | ✅ |
@@ -795,6 +796,38 @@ anderen aufzublähen. Umgesetzt als **bedingte Zusatzfrage + drei regelbasierte 
   für jeden erreichbaren Fall in 6 Sprachen, Ausblenden in Karten und PDF, Speichern,
   Formular, Katalog).
 
+### Linkwaechter: woechentliche Linkpruefung mit Ersatzsuche (12.10.2026)
+
+Nutzerwunsch: regelmaessig pruefen, ob alle Links noch passen, mit Mail; defekte
+Links moeglichst mit neuer Adresse.
+
+- **`linkwaechter.py`** nutzt `check_links.collect()`/`check()` (Rechtsquellen `url`,
+  Volltextquellen `text_url`, Leitlinien — derzeit 109 Links), speichert jeden Lauf in
+  `link_checks` und zeigt den letzten auf `/admin/regulierungs-status` (eigener Kasten).
+- **Cron auf dem VPS** (eingerichtet 12.10.2026, nur im Hauptcontainer):
+  `45 3 * * 1 docker exec esg-ki-textil-mode python linkwaechter.py >> /var/log/esg-linkwaechter.log 2>&1`
+  Von Hand: `python linkwaechter.py --probe` (prueft, speichert nichts, mailt nicht).
+- **Einstufung gegen Fehlalarme** (`einstufen`): Der erste Probelauf meldete 10 von 109
+  Links als defekt, 8 davon falsch. Seitdem: 401/403/429 und EUR-Lex-Bot-Schutz →
+  „unklar, im Browser pruefen“ (ECHA, Légifrance sperren Server-Abrufe; Cellar hat REACH
+  nicht als HTML); 5xx/keine Verbindung → nach 30 s erneut, bleibt es dabei „unklar“, und
+  **erst defekt, wenn derselbe Link auch im Lauf davor nicht erreichbar war**. 404, 410
+  und als 200 getarnte Fehlerseiten sind sofort defekt.
+- **Mail** (`LINKCHECK_MAIL_TO`, Voreinstellung mschuckert@textil-mode.de, nur Deutsch,
+  Protokoll in `mail_log` als `link_check`): jede Woche, solange etwas defekt ist, und einmal
+  Entwarnung, wenn danach alles wieder geht. Keine Mail fuer „unklar“ oder Weiterleitungen.
+- **Ersatzsuche** fuer jeden defekten Link: (1) gesetze-im-internet.de — neues Kuerzel
+  derselben Vorschrift aus der amtlichen `Teilliste_<Buchstabe>.html` (Fall MPBetreibV:
+  `mpbetreibv/` → `mpbetreibv_2025/`, nie zurueck auf eine aeltere Fassung), darunter
+  dieselbe Einzelnorm oder der Volltext `BJNR…html`; (2) sonst Gemini mit Google-Suche
+  (`tools: google_search`, nur Titel und alte Adresse gehen raus, abschaltbar mit
+  `LINKCHECK_KI=0`). Jeder Kandidat wird abgerufen; bei der KI-Suche zusaetzlich
+  geprueft, ob mindestens die Haelfte der Titelwoerter auf der Seite steht.
+- **Bewusst keine automatische Uebernahme.** Die Links stehen im Code; eine falsche
+  Fundstelle waere schlimmer als eine tote. Vorschlag pruefen, in `regulations.py`
+  eintragen, deployen.
+- Belege: `test_linkwaechter.py` (32 Pruefungen, Netz/KI/Mail als Attrappe).
+
 ### Regulierungs-Assistent (09.10.2026)
 
 Chat unten rechts für angemeldete, freigeschaltete Konten. Vorbild: der go-textile-Chatbot
@@ -939,6 +972,8 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `assistent.py` | Regulierungs-Assistent: Suche in den Gesetzestexten, Katalog, Prompt, Gemini-Stream, Transkription |
 | `static/assistent.js` | Chat-Widget unten rechts |
 | `test_medizinprodukte.py` | Tests zum nationalen Medizinprodukterecht und zur Zusatzfrage (eigene DB `data/esg_medizin_test.db`, kein Netz, kein LLM) |
+| `linkwaechter.py` | Woechentliche Linkpruefung mit Ersatzsuche und Mail (Cron), Ergebnis in `link_checks` |
+| `test_linkwaechter.py` | Tests dazu (eigene DB `data/esg_linkwaechter_test.db`, kein Netz/KI/Mail) |
 | `test_assistent.py` | Tests zum Assistenten (offline, eigene DB `data/esg_assistent_unit_test.db`) |
 | `pdfexport.py` | PDF-Export der Ergebnisse (reportlab, textil+mode-CD) |
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
