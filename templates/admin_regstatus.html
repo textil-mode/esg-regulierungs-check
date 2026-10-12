@@ -5,6 +5,7 @@
   <h2 style="margin-top:0;">{{ t("admin_regstatus_title", lang) }}</h2>
   <p style="font-size:13px;color:#5A5A5A;max-width:760px;">{{ t("admin_regstatus_hint", lang) }}</p>
 
+  {% if watchdog_stale %}<div class="stale-warn">{{ t("admin_watchdog_stale", lang) }}</div>{% endif %}
   <div class="run-box">
     <strong>{{ t("admin_regstatus_last_run", lang) }}:</strong>
     {% if last_run %}
@@ -26,6 +27,7 @@
   </div>
 
   {# Woechentliche Linkpruefung (linkwaechter.py) #}
+  {% if links_stale %}<div class="stale-warn">{{ t("admin_links_stale", lang) }}</div>{% endif %}
   <div class="run-box">
     <strong>{{ t("admin_links_last", lang) }}:</strong>
     {% if link_check %}
@@ -134,6 +136,8 @@
     padding: 12px 14px; margin-bottom: 16px; font-size: 14px; color: #000000; }
   .run-errors { margin: 6px 0 0; padding-left: 18px; color: #A32020; font-size: 13px; }
   .run-hint { color: #5A5A5A; font-size: 12px; margin-top: 6px; }
+  .stale-warn { background: #FFFFFF; border-left: 4px solid #A32020; color: #A32020;
+    padding: 8px 12px; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
   .link-suggestion { color: #000000; margin: 2px 0 4px; word-break: break-all; }
   .run-errors a, .link-details a { word-break: break-all; }
   .link-details { margin-top: 8px; font-size: 13px; }

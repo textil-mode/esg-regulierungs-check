@@ -6,6 +6,8 @@ Leitlinien) mit derselben Logik wie `check_links.py`, sucht fuer jeden
 defekten Link eine Ersatzadresse, speichert das Ergebnis in `link_checks`
 (sichtbar auf /admin/regulierungs-status) und schickt eine Mail, sobald
 etwas defekt ist — und einmal Entwarnung, wenn danach wieder alles geht.
+Im ersten Lauf jedes Monats kommt ausserdem ein Lebenszeichen, wenn sonst
+nichts zu melden ist; bleibt es aus, laeuft die Pruefung nicht.
 
 **Nichts wird automatisch ersetzt.** Die Links stehen im Code
 (`regulations.py`); eine falsche Fundstelle in einem Compliance-Werkzeug ist
@@ -370,6 +372,25 @@ def mail_entwarnung(lauf: dict) -> tuple[str, str]:
             f"Admin-Seite: {_admin_link()}\n")
 
 
+def mail_lebenszeichen(lauf: dict) -> tuple[str, str]:
+    """Monatliche Bestaetigung, dass die Pruefung laeuft (Nutzerwunsch 12.10.2026).
+
+    Ohne sie hiesse Stille zweierlei: alles in Ordnung — oder die Pruefung
+    lief gar nicht (Container, Cron oder Mailversand ausgefallen). Bleibt diese
+    Mail am Monatsanfang aus, klemmt etwas.
+    """
+    unklar = (f" {len(lauf['unknown'])} Seiten sperren automatische Abrufe oder waren kurz "
+              "gestört; sie zählen nicht als defekt und stehen auf der Admin-Seite."
+              if lauf["unknown"] else "")
+    return ("ESG-Check: Linkprüfung läuft – alles in Ordnung",
+            "Hallo,\n\n"
+            "dies ist das monatliche Lebenszeichen der wöchentlichen Linkprüfung des "
+            f"ESG-Regulierungs-Checks: {lauf['checked']} Links geprüft, keiner defekt.{unklar}\n\n"
+            "Bleibt diese Nachricht am Anfang eines Monats aus, läuft die Prüfung nicht mehr "
+            "(Container, Cron-Eintrag oder Mailversand auf dem Server prüfen).\n\n"
+            f"Admin-Seite: {_admin_link()}\n")
+
+
 def _admin_link() -> str:
     basis = (os.environ.get("PUBLIC_BASE_URL") or "").rstrip("/")
     return f"{basis}{ADMIN_PFAD}" if basis else ADMIN_PFAD
@@ -414,10 +435,15 @@ def lauf(items=None, pruefer=check, suche=_gemini_suche, versand=None,
         return bericht
 
     db.save_link_check(gestartet, len(ergebnisse), defekt, unklar, weiter)
+    # Erster Lauf eines Kalendermonats (auch nach einem Ausfall): Lebenszeichen,
+    # wenn es nichts anderes zu melden gibt — jede Mail ist zugleich eines.
+    neuer_monat = not vorher or (vorher.get("started_at") or "")[:7] != gestartet[:7]
     if defekt:
         _senden(*mail_defekt(bericht), versand=versand)
     elif vorher and vorher.get("broken"):
         _senden(*mail_entwarnung(bericht), versand=versand)
+    elif neuer_monat:
+        _senden(*mail_lebenszeichen(bericht), versand=versand)
     return bericht
 
 

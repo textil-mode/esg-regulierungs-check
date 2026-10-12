@@ -1282,6 +1282,8 @@ def admin_reg_status():
         return redirect(url_for("dashboard"))
 
     lang = _lang()
+    last_run = db.latest_watchdog_run()
+    link_check = db.latest_link_check()
     changes = db.watchdog_changes_by_reg()
     rows = []
     for reg in REGULATIONS:
@@ -1307,9 +1309,28 @@ def admin_reg_status():
             "change": changes.get(key),
         })
     return render_template(
-        "admin_regstatus.html", rows=rows, last_run=db.latest_watchdog_run(),
-        link_check=db.latest_link_check(), lang=lang
+        "admin_regstatus.html", rows=rows, last_run=last_run, link_check=link_check,
+        # Beide Laeufe kommen woechentlich per Cron. Faellt der aus, sieht man es
+        # sonst nirgends — die Seite zeigt dann einfach den alten Stand.
+        watchdog_stale=_lauf_veraltet(last_run and (last_run["finished_at"] or last_run["started_at"])),
+        links_stale=_lauf_veraltet(link_check and link_check["finished_at"]),
+        lang=lang
     )
+
+
+# Woechentlicher Cron plus ein Tag Spielraum.
+LAUF_VERALTET_TAGE = 8
+
+
+def _lauf_veraltet(zeitpunkt: str | None) -> bool:
+    """True, wenn es keinen Lauf gibt oder der letzte aelter als 8 Tage ist (UTC)."""
+    if not zeitpunkt:
+        return True
+    try:
+        stand = datetime.fromisoformat(zeitpunkt)
+    except ValueError:
+        return True
+    return datetime.utcnow() - stand > timedelta(days=LAUF_VERALTET_TAGE)
 
 
 @app.route("/set-language", methods=["POST"])

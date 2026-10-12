@@ -816,6 +816,12 @@ Links moeglichst mit neuer Adresse.
 - **Mail** (`LINKCHECK_MAIL_TO`, Voreinstellung mschuckert@textil-mode.de, nur Deutsch,
   Protokoll in `mail_log` als `link_check`): jede Woche, solange etwas defekt ist, und einmal
   Entwarnung, wenn danach alles wieder geht. Keine Mail fuer „unklar“ oder Weiterleitungen.
+- **Lebenszeichen** (Nutzerwunsch, gleicher Tag): Der erste Lauf eines Kalendermonats schickt
+  „Linkpruefung laeuft – alles in Ordnung“, wenn sonst nichts zu melden ist. Bleibt die Mail
+  am Monatsanfang aus, laeuft die Pruefung nicht (Container, Cron oder Mailversand).
+- **Warnhinweis auf der Admin-Seite** (`app._lauf_veraltet`, `LAUF_VERALTET_TAGE` = 8): roter
+  Kasten, wenn der letzte Linkwaechter- **oder** Watchdog-Lauf aelter als 8 Tage ist oder es
+  noch keinen gab. Beide haengen am woechentlichen Cron.
 - **Ersatzsuche** fuer jeden defekten Link: (1) gesetze-im-internet.de — neues Kuerzel
   derselben Vorschrift aus der amtlichen `Teilliste_<Buchstabe>.html` (Fall MPBetreibV:
   `mpbetreibv/` → `mpbetreibv_2025/`, nie zurueck auf eine aeltere Fassung), darunter
@@ -826,7 +832,7 @@ Links moeglichst mit neuer Adresse.
 - **Bewusst keine automatische Uebernahme.** Die Links stehen im Code; eine falsche
   Fundstelle waere schlimmer als eine tote. Vorschlag pruefen, in `regulations.py`
   eintragen, deployen.
-- Belege: `test_linkwaechter.py` (32 Pruefungen, Netz/KI/Mail als Attrappe).
+- Belege: `test_linkwaechter.py` (39 Pruefungen, Netz/KI/Mail als Attrappe).
 
 ### Regulierungs-Assistent (09.10.2026)
 

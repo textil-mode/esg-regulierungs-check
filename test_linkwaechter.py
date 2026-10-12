@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 BASE = Path(__file__).parent
@@ -147,10 +148,22 @@ def block_c() -> None:
     def suche(l, u):
         return (neu, []) if u == b else ("", [])
 
-    # 1: alles gut, kein Vorlauf -> keine Mail
+    # 1: allererster Lauf, alles gut -> Lebenszeichen
     r = lw.lauf(items, pruefer_aus({a, b}), suche, versand)
-    check("C alles erreichbar: keine Mail", not gesendet and not r["broken"])
+    check("C erster Lauf: Lebenszeichen", len(gesendet) == 1 and "Linkprüfung läuft" in gesendet[0][1]
+          and not r["broken"], str([g[1] for g in gesendet]))
     check("C Lauf gespeichert", db.latest_link_check()["checked"] == 2)
+    # gleicher Monat, alles gut -> keine Mail
+    lw.lauf(items, pruefer_aus({a, b}), suche, versand)
+    check("C weiterer Lauf im selben Monat: keine Mail", len(gesendet) == 1)
+    # Vorlauf aus dem Vormonat -> wieder Lebenszeichen
+    with db._conn() as c:                                   # noqa: SLF001
+        c.execute("UPDATE link_checks SET started_at = '2020-01-27T03:45:00' "
+                  "WHERE id = (SELECT MAX(id) FROM link_checks)")
+    lw.lauf(items, pruefer_aus({a, b}), suche, versand)
+    check("C erster Lauf im neuen Monat: Lebenszeichen", len(gesendet) == 2
+          and "Bleibt diese Nachricht" in gesendet[1][2])
+    gesendet.clear()
 
     # 2: b defekt -> Mail mit Vorschlag
     r = lw.lauf(items, pruefer_aus({a, neu}), suche, versand)
@@ -209,6 +222,21 @@ def block_d() -> None:
     check("D Weiterleitung aufklappbar", "https://a.example/2" in html)
     check("D Link in der Mail zeigt auf die Admin-Seite",
           lw._admin_link() == "https://test.example/esg/admin/regulierungs-status")
+    # Warnhinweis: frischer Linklauf -> keine Warnung; Watchdog nie gelaufen -> Warnung
+    check("D frische Linkpruefung: keine Warnung", "letzte Linkprüfung ist älter" not in html)
+    check("D Watchdog nie gelaufen: Warnung", "letzte Watchdog-Lauf ist älter" in html)
+    with db._conn() as con:                                 # noqa: SLF001
+        con.execute("UPDATE link_checks SET finished_at = '2020-01-01T03:45:00'")
+    html = c.get("/admin/regulierungs-status").get_data(as_text=True)
+    check("D Linkpruefung aelter als 8 Tage: Warnung", "letzte Linkprüfung ist älter" in html)
+    run = db.start_watchdog_run("de")
+    db.finish_watchdog_run(run, 33, [], [])
+    html = c.get("/admin/regulierungs-status").get_data(as_text=True)
+    check("D frischer Watchdog-Lauf: Warnung weg", "letzte Watchdog-Lauf ist älter" not in html)
+    check("D Grenze 8 Tage", flaskapp._lauf_veraltet(None)
+          and not flaskapp._lauf_veraltet(datetime.utcnow().isoformat())
+          and flaskapp._lauf_veraltet((datetime.utcnow() - timedelta(days=9)).isoformat())
+          and not flaskapp._lauf_veraltet((datetime.utcnow() - timedelta(days=7)).isoformat()))
 
 
 def block_e() -> None:

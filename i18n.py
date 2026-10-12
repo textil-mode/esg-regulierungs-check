@@ -2273,6 +2273,42 @@ UI: dict[str, dict[str, str]] = {
         "it": "Link incerti e reindirizzati (funzionano; l'indirizzo può essere aggiornato)",
         "zh": "不明确和已重定向的链接（仍可用，可更新地址）",
     },
+    "admin_links_stale": {
+        "de": "Achtung: Die letzte Linkprüfung ist älter als 8 Tage oder hat nie stattgefunden. "
+              "Der wöchentliche Lauf auf dem Server ist offenbar ausgefallen – Container und "
+              "Cron-Eintrag prüfen (python linkwaechter.py).",
+        "en": "Warning: the last link check is more than 8 days old or has never run. The weekly "
+              "run on the server appears to have failed – check the container and the cron entry "
+              "(python linkwaechter.py).",
+        "es": "Atención: la última comprobación de enlaces tiene más de 8 días o nunca se ha "
+              "ejecutado. La ejecución semanal en el servidor parece haber fallado; compruebe el "
+              "contenedor y la entrada de cron (python linkwaechter.py).",
+        "fr": "Attention : la dernière vérification des liens date de plus de 8 jours ou n'a jamais "
+              "eu lieu. L'exécution hebdomadaire sur le serveur semble avoir échoué – vérifier le "
+              "conteneur et l'entrée cron (python linkwaechter.py).",
+        "it": "Attenzione: l'ultimo controllo dei link risale a più di 8 giorni fa o non è mai stato "
+              "eseguito. L'esecuzione settimanale sul server sembra non essere avvenuta – verificare "
+              "il container e la voce cron (python linkwaechter.py).",
+        "zh": "注意：最近一次链接检查已超过 8 天或从未运行。服务器上的每周运行似乎已中断，请检查容器和 cron 条目（python linkwaechter.py）。",
+    },
+    "admin_watchdog_stale": {
+        "de": "Achtung: Der letzte Watchdog-Lauf ist älter als 8 Tage oder hat nie stattgefunden. "
+              "Gesetzesänderungen werden derzeit nicht erkannt – Container und Cron-Eintrag prüfen "
+              "(python watchdog.py).",
+        "en": "Warning: the last watchdog run is more than 8 days old or has never run. Changes to "
+              "legislation are currently not being detected – check the container and the cron entry "
+              "(python watchdog.py).",
+        "es": "Atención: la última ejecución del watchdog tiene más de 8 días o nunca se ha realizado. "
+              "Actualmente no se detectan cambios legislativos; compruebe el contenedor y la entrada "
+              "de cron (python watchdog.py).",
+        "fr": "Attention : la dernière exécution du watchdog date de plus de 8 jours ou n'a jamais eu "
+              "lieu. Les modifications législatives ne sont actuellement pas détectées – vérifier le "
+              "conteneur et l'entrée cron (python watchdog.py).",
+        "it": "Attenzione: l'ultima esecuzione del watchdog risale a più di 8 giorni fa o non è mai "
+              "avvenuta. Le modifiche legislative al momento non vengono rilevate – verificare il "
+              "container e la voce cron (python watchdog.py).",
+        "zh": "注意：最近一次监测运行已超过 8 天或从未运行。目前无法检测法律变更，请检查容器和 cron 条目（python watchdog.py）。",
+    },
     "admin_links_hint": {
         "de": "Läuft wöchentlich per Cron (python linkwaechter.py) und meldet defekte Links per Mail. "
               "Ersatzadressen werden gesucht und gegengeprüft, aber nie automatisch übernommen.",
