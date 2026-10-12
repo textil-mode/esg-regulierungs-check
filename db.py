@@ -12,7 +12,8 @@ from typing import Optional
 
 import bcrypt
 
-from regulations import (BRANCHES, MATERIALS, PRODUCT_CATEGORIES, SALES_MARKETS, SVHC_OPTIONS,
+from regulations import (BRANCHES, MATERIALS, MEDICAL_ACTIVITIES, PRODUCT_CATEGORIES,
+                         SALES_MARKETS, SVHC_OPTIONS,
                          SITE_TYPES, VALUE_CHAIN_ROLES)
 
 
@@ -60,6 +61,9 @@ COMPANY_EXTRA_COLUMNS = [
     ("energy_gwh", "REAL DEFAULT 0"),
     ("wet_processing_de", "INTEGER DEFAULT 0"),
     ("svhc_status", "TEXT"),
+    # Seit 12.10.2026: Taetigkeit mit Medizinprodukten (MDR, MPDG, MPAMIV,
+    # MPBetreibV); im Formular nur bei "Medizin- und Gesundheitstextilien".
+    ("medical_activities_json", "TEXT"),
 ]
 
 # Umbenannte Auswahlwerte: alter Wert -> heutiger Wert. Anders als bei den
@@ -1334,6 +1338,8 @@ def get_company(user_id: int) -> Optional[dict]:
         json.loads(data.pop("materials_json") or "[]"), MATERIALS)
     data["sales_markets"] = _known(
         json.loads(data.pop("sales_markets_json") or "[]"), SALES_MARKETS)
+    data["medical_activities"] = _known(
+        json.loads(data.pop("medical_activities_json") or "[]"), MEDICAL_ACTIVITIES)
     # Die Branchenliste wurde am 08.09.2026 auf die NACE-Klassen der Textil-,
     # Bekleidungs- und Lederwirtschaft umgestellt. Eine Branche aus einem
     # Altprofil steht nicht mehr im Formular; wuerde sie durchgereicht, stuende
@@ -1363,6 +1369,8 @@ def upsert_company(user_id: int, data: dict) -> None:
         _known(data.get("materials"), MATERIALS), ensure_ascii=False)
     markets_json = json.dumps(
         _known(data.get("sales_markets"), SALES_MARKETS), ensure_ascii=False)
+    medical_json = json.dumps(
+        _known(data.get("medical_activities"), MEDICAL_ACTIVITIES), ensure_ascii=False)
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         c.execute(
@@ -1373,9 +1381,9 @@ def upsert_company(user_id: int, data: dict) -> None:
                 env_claims, product_categories_json, employees_de, language,
                 eu_importer, value_chain_roles_json, materials_json,
                 revenue_eu_eur, sales_markets_json,
-                energy_gwh, wet_processing_de, svhc_status
+                energy_gwh, wet_processing_de, svhc_status, medical_activities_json
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 name=excluded.name,
                 employees=excluded.employees,
@@ -1399,7 +1407,8 @@ def upsert_company(user_id: int, data: dict) -> None:
                 sales_markets_json=excluded.sales_markets_json,
                 energy_gwh=excluded.energy_gwh,
                 wet_processing_de=excluded.wet_processing_de,
-                svhc_status=excluded.svhc_status
+                svhc_status=excluded.svhc_status,
+                medical_activities_json=excluded.medical_activities_json
             """,
             (
                 user_id,
@@ -1427,6 +1436,7 @@ def upsert_company(user_id: int, data: dict) -> None:
                 1 if data.get("wet_processing_de") else 0,
                 data.get("svhc_status") if data.get("svhc_status") in SVHC_OPTIONS
                 else SVHC_OPTIONS[0],
+                medical_json,
             ),
         )
 

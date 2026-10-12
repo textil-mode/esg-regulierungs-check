@@ -655,7 +655,8 @@ REGULATIONS = [
     {
         "nr": 25,
         "key": "MDR",
-        "relevant_fields": ["product_categories", "value_chain_roles", "sales_markets"],
+        "relevant_fields": ["product_categories", "value_chain_roles", "sales_markets",
+                            "medical_activities"],
         "name": "MDR – EU-Medizinprodukteverordnung",
         "full_name": "Verordnung (EU) 2017/745 über Medizinprodukte",
         "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32017R0745&locale=de",
@@ -857,6 +858,106 @@ REGULATIONS = [
         ),
         "key_article": "Art. 1, 2, 3–5, 7",
     },
+    # --- Nationales Medizinprodukterecht (12.10.2026) ---
+    # Nur sichtbar, wenn das Profil "Medizin- und Gesundheitstextilien" fuehrt
+    # (siehe `hidden_card`); entschieden regelbasiert ueber `medical_activities`.
+    # Die MPAV (Abgabeverordnung) steht bewusst nicht als eigene Karte hier,
+    # sondern als erster Schritt "mdr_5" bei der MDR — fuer Textilien greift
+    # sie fast nie (Verschreibungs-/Apothekenpflicht haengt an Stoffen und an
+    # den Anlagen 1 und 2).
+    {
+        "nr": 31,
+        "key": "MPDG",
+        "relevant_fields": ["product_categories", "medical_activities", "value_chain_roles",
+                            "sales_markets"],
+        "name": "MPDG – Medizinprodukterecht-Durchführungsgesetz",
+        "full_name": "Gesetz zur Durchführung unionsrechtlicher Vorschriften betreffend Medizinprodukte (Medizinprodukterecht-Durchführungsgesetz – MPDG) vom 28.04.2020 (BGBl. I S. 960)",
+        "url": "https://www.gesetze-im-internet.de/mpdg/BJNR096010020.html",
+        "text_url": "https://www.gesetze-im-internet.de/mpdg/BJNR096010020.html",
+        "scope": "DE",
+        # Am Primaertext geprueft am 12.10.2026 (https://www.gesetze-im-internet.de/mpdg/BJNR096010020.html,
+        # Stand: zuletzt geaendert durch Art. 3 G v. 23.10.2024 I Nr. 324 – §§ 2, 3, 4, 8, 12, 13, 73, 81, 83, 92–94).
+        "criteria": (
+            "Das MPDG ergänzt die MDR in Deutschland und gilt für alle Produkte in deren "
+            "Anwendungsbereich (§ 2 Abs. 1). Wer Produkte, die bestimmungsgemäß keimarm oder steril zur "
+            "Anwendung kommen, ausschließlich für andere aufbereitet, muss dies vor Aufnahme der "
+            "Tätigkeit über das Deutsche Medizinprodukteinformations- und Datenbanksystem (DMIDS) der "
+            "zuständigen Behörde anzeigen (§ 4 Abs. 1). Für Anwender und Patienten bestimmte "
+            "Produktinformationen müssen in deutscher Sprache vorliegen, die EU-Konformitätserklärung "
+            "in deutscher oder englischer Sprache (§ 8). Verboten ist das Inverkehrbringen bei "
+            "begründetem Verdacht einer unvertretbaren Gefährdung oder nach Ablauf des Verwendbarkeits"
+            "datums (§ 12) sowie von gefälschten Produkten (§ 13). Sicherheitsanweisungen im Feld sind "
+            "auf Deutsch abzufassen; Hersteller mit Sitz in Deutschland dokumentieren "
+            "Sicherheitskorrekturmaßnahmen und melden deren Abschluss (§ 73). Importeure und Händler "
+            "melden eine angenommene schwerwiegende Gefahr dem BfArM über das DMIDS, Fälschungen der "
+            "Landesbehörde (§ 81). Medizinprodukteberater brauchen Sachkenntnis (§ 83). Verstöße sind "
+            "straf- oder bußgeldbewehrt (§§ 92–94). Gilt seit 26.05.2021. Keine Größenschwelle. "
+            "Branche: Hersteller, Importeure, Händler und Aufbereiter textiler Medizinprodukte."
+        ),
+        "key_article": "§§ 2, 4, 8, 12, 13, 73, 81",
+    },
+    {
+        "nr": 32,
+        "key": "MPAMIV",
+        "relevant_fields": ["product_categories", "medical_activities", "value_chain_roles",
+                            "sales_markets"],
+        "name": "MPAMIV – Medizinprodukte-Anwendermelde- und Informationsverordnung",
+        "full_name": "Verordnung über die Meldung von mutmaßlichen schwerwiegenden Vorkommnissen bei Medizinprodukten sowie zum Informationsaustausch der zuständigen Behörden (MPAMIV) vom 21.04.2021 (BGBl. I S. 833)",
+        "url": "https://www.gesetze-im-internet.de/mpamiv/BJNR083310021.html",
+        "text_url": "https://www.gesetze-im-internet.de/mpamiv/BJNR083310021.html",
+        "scope": "DE",
+        # Am Primaertext geprueft am 12.10.2026 (https://www.gesetze-im-internet.de/mpamiv/BJNR083310021.html,
+        # Stand: geaendert durch Art. 2 V v. 21.4.2021 I 833 – §§ 1–4, 6, 7).
+        "criteria": (
+            "Die MPAMIV gilt für Produkte im Anwendungsbereich der MDR und der IVDR (§ 1). Wer Produkte "
+            "beruflich oder gewerblich betreibt oder anwendet, muss dabei aufgetretene mutmaßliche "
+            "schwerwiegende Vorkommnisse unverzüglich der zuständigen Bundesoberbehörde (BfArM) melden "
+            "(§ 3), und zwar über das DMIDS (§ 6). Patienten sollen Vorkommnisse unter anderem dem "
+            "Händler mitteilen, der das Produkt bereitgestellt hat (§ 4). Ein mutmaßliches "
+            "schwerwiegendes Vorkommnis ist eines, das zum Tod oder zu einer schwerwiegenden "
+            "Verschlechterung des Gesundheitszustands geführt hat oder hätte führen können (§ 2). Hält "
+            "der Hersteller eine solche Meldung nicht für ein schwerwiegendes Vorkommnis, muss er seine "
+            "Begründung innerhalb von 15 Tagen über das DMIDS vorlegen; das BfArM kann eine Meldung nach "
+            "Art. 87 MDR verlangen (§ 7 Abs. 3). Die eigenen Meldepflichten von Herstellern folgen aus "
+            "Art. 87 MDR, die von Importeuren und Händlern aus Art. 13, 14 MDR in Verbindung mit § 81 "
+            "MPDG. Gilt seit 26.05.2021. Keine Größenschwelle. Branche: Hersteller textiler "
+            "Medizinprodukte; Betreiber und Anwender in Gesundheitseinrichtungen."
+        ),
+        "key_article": "§§ 2, 3, 4, 7",
+    },
+    {
+        "nr": 33,
+        "key": "MPBetreibV",
+        "relevant_fields": ["product_categories", "medical_activities", "value_chain_roles",
+                            "sales_markets"],
+        "name": "MPBetreibV – Medizinprodukte-Betreiberverordnung",
+        "full_name": "Verordnung über das Betreiben und Benutzen von Medizinprodukten (Medizinprodukte-Betreiberverordnung – MPBetreibV) vom 14.02.2025 (BGBl. 2025 I Nr. 38)",
+        # Neufassung 2025 unter neuem Kuerzel: die alte Adresse .../mpbetreibv/ liefert seit
+        # der Abloesung 404. Bei einer erneuten Neufassung `url`/`text_url` nachziehen.
+        "url": "https://www.gesetze-im-internet.de/mpbetreibv_2025/BJNR0260B0025.html",
+        "text_url": "https://www.gesetze-im-internet.de/mpbetreibv_2025/BJNR0260B0025.html",
+        "scope": "DE",
+        # Am Primaertext geprueft am 12.10.2026 (https://www.gesetze-im-internet.de/mpbetreibv_2025/BJNR0260B0025.html,
+        # Stand: zuletzt geaendert durch Art. 1 V v. 31.10.2025 I Nr. 263 – §§ 1–3, 5, 8, 9, 20).
+        "criteria": (
+            "Die MPBetreibV gilt für das Betreiben und Benutzen von Medizinprodukten einschließlich "
+            "der damit zusammenhängenden Tätigkeiten, zu denen ausdrücklich die Aufbereitung gehört "
+            "(§ 1 Abs. 1, § 2 Abs. 1 Nr. 4). Betreiber ist, wer für die Gesundheitseinrichtung "
+            "verantwortlich ist, in der das Produkt betrieben oder benutzt wird, oder wer Produkte "
+            "außerhalb von Gesundheitseinrichtungen zur Benutzung bereithält (§ 2 Abs. 2). Die "
+            "Aufbereitung keimarm oder steril zur Benutzung kommender Produkte ist unter "
+            "Berücksichtigung der Herstellerangaben mit geeigneten validierten Verfahren durchzuführen; "
+            "ordnungsgemäß ist sie bei Beachtung der gemeinsamen Empfehlung von KRINKO und BfArM (§ 8 "
+            "Abs. 1, 2). Für Produkte der Gruppe „Kritisch C“ ist ein von einer anerkannten Benannten "
+            "Stelle zertifiziertes Qualitätsmanagementsystem Voraussetzung (§ 8 Abs. 3). Der Betreiber "
+            "darf nur Betriebe mit der Aufbereitung beauftragen, die die Anforderungen an Ausbildung "
+            "und Kenntnis nach § 5 erfüllen; die zuständige Behörde kann das beim Auftragnehmer "
+            "kontrollieren (§ 8 Abs. 4). Die Neufassung gilt seit 20.02.2025 und hat die Verordnung von "
+            "1998 abgelöst. Keine Größenschwelle. Branche: Textildienstleister und Wäschereien, die "
+            "Medizinprodukte wie OP-Textilien für Gesundheitseinrichtungen aufbereiten."
+        ),
+        "key_article": "§§ 2, 5, 8",
+    },
 ]
 
 
@@ -1029,6 +1130,25 @@ GUIDELINES_BY_REG_KEY: dict[str, list[dict]] = {
         {"name": "Rijkswaterstaat (Afval Circulair) – UPV textiel",
          "url": "https://afvalcirculair.nl/uitgebreide-producentenverantwoordelijkheid-upv/overzicht-upv/upv-textiel/"},
     ],
+    # --- Nationales Medizinprodukterecht (12.10.2026), Links am 12.10.2026 geprueft ---
+    "MPDG": [
+        {"name": "BfArM – Übersicht der Meldewege für Medizinprodukte",
+         "url": "https://www.bfarm.de/DE/Medizinprodukte/Antraege-und-Meldungen/Uebersicht-Meldewege/_node.html"},
+        {"name": "BfArM – Deutsches Medizinprodukteinformations- und Datenbanksystem (DMIDS)",
+         "url": "https://www.bfarm.de/DE/Medizinprodukte/Aufgaben/DMIDS/_node.html"},
+    ],
+    "MPAMIV": [
+        {"name": "BfArM – Vorkommnis melden: Hersteller und Bevollmächtigte",
+         "url": "https://www.bfarm.de/DE/Medizinprodukte/Antraege-und-Meldungen/Vorkommnis-melden/Hersteller-und-Bevollmaechtigte/_node.html"},
+        {"name": "BfArM – Vorkommnis melden: Anwender, Betreiber, Händler",
+         "url": "https://www.bfarm.de/DE/Medizinprodukte/Antraege-und-Meldungen/Vorkommnis-melden/Anwender-Betreiber-Haendler/_node.html"},
+    ],
+    "MPBetreibV": [
+        {"name": "ZLG – Zentralstelle der Länder für Gesundheitsschutz: Medizinprodukte",
+         "url": "https://www.zlg.de/medizinprodukte"},
+        {"name": "Bundesministerium für Gesundheit – Medizinprodukte",
+         "url": "https://www.bundesgesundheitsministerium.de/themen/gesundheitswesen/medizinprodukte.html"},
+    ],
 }
 
 
@@ -1040,8 +1160,8 @@ def guidelines_for(reg_key: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Erste Schritte je Regulierung — statisch, kuratiert, kein LLM.
 #
-# Zwei bis vier Stichpunkte, die beschreiben, womit ein erfasstes Unternehmen
-# anfaengt. Hergeleitet aus dem Gesetzestext (Fundstelle steht jeweils im
+# Zwei bis vier Stichpunkte (bei der MDR fuenf, der fuenfte ist der Hinweis
+# zur MPAV), die beschreiben, womit ein erfasstes Unternehmen anfaengt. Hergeleitet aus dem Gesetzestext (Fundstelle steht jeweils im
 # uebersetzten Text) und den kuratierten Guidelines; NICHT aus einer
 # LLM-Antwort. Hier stehen nur die Schluessel — die Texte liegen in sechs
 # Sprachen in `i18n.FIRST_STEPS`, wie bei allen anderen Inhalten der App.
@@ -1077,12 +1197,17 @@ FIRST_STEPS_BY_REG_KEY: dict[str, list[str]] = {
     "TKVO": ["tkvo_1", "tkvo_2", "tkvo_3", "tkvo_4"],
     "GPSR": ["gpsr_1", "gpsr_2", "gpsr_3", "gpsr_4"],
     "PSA": ["psa_1", "psa_2", "psa_3", "psa_4"],
-    "MDR": ["mdr_1", "mdr_2", "mdr_3", "mdr_4"],
+    # mdr_5: Abgabe nach der MPAV (bewusst keine eigene Karte, siehe REGULATIONS)
+    "MDR": ["mdr_1", "mdr_2", "mdr_3", "mdr_4", "mdr_5"],
     "Schuhkennzeichnung": ["schuh_1", "schuh_2", "schuh_3"],
     "EnEfG": ["enefg_1", "enefg_2", "enefg_3", "enefg_4"],
     "AbwV38": ["abwv38_1", "abwv38_2", "abwv38_3", "abwv38_4"],
     "EPR_FR": ["eprfr_1", "eprfr_2", "eprfr_3", "eprfr_4"],
     "EPR_NL": ["eprnl_1", "eprnl_2", "eprnl_3", "eprnl_4"],
+    # --- Nationales Medizinprodukterecht (12.10.2026) ---
+    "MPDG": ["mpdg_1", "mpdg_2", "mpdg_3", "mpdg_4"],
+    "MPAMIV": ["mpamiv_1", "mpamiv_2", "mpamiv_3"],
+    "MPBetreibV": ["mpbetreibv_1", "mpbetreibv_2", "mpbetreibv_3"],
 }
 
 
@@ -1154,6 +1279,14 @@ PUBLISHED_BY_REG_KEY: dict[str, str] = {
     "EPR_FR": "11.02.2020",
     # Staatsblad 2023, 132, uitgegeven 21.04.2023 (Besluit vom 14.04.2023)
     "EPR_NL": "21.04.2023",
+    # --- Nationales Medizinprodukterecht (12.10.2026) ---
+    # BGBl. I Nr. 23 vom 22.05.2020, S. 960 (§ 88 trat "am Tag nach der Verkuendung",
+    # dem 23.05.2020, in Kraft — Fussnote gesetze-im-internet.de)
+    "MPDG": "22.05.2020",
+    # BGBl. I Nr. 19 vom 27.04.2021, S. 833
+    "MPAMIV": "27.04.2021",
+    # BGBl. 2025 I Nr. 38 vom 19.02.2025 (Inkrafttreten 20.02.2025)
+    "MPBetreibV": "19.02.2025",
 }
 
 # Regulierungen, deren Datum oben nur ein Entwurfsstand ist (keine Verkuendung).
@@ -1263,6 +1396,13 @@ APPLICATION_BY_REG_KEY: dict[str, dict] = {
     "EPR_FR": {"applies_from": "01.01.2007", "note": "eprfr"},
     # Art. 8 Besluit uitgebreide producentenverantwoordelijkheid textiel: „Dit besluit treedt in werking met ingang 
     "EPR_NL": {"applies_from": "01.07.2023", "note": "eprnl"},
+    # --- Nationales Medizinprodukterecht (12.10.2026) ---
+    # Fussnote gesetze-im-internet.de: Inkrafttreten "auf den 26.5.2021 verschoben" (Art. 17 Abs. 1 Satz 2).
+    "MPDG": {"applies_from": "26.05.2021"},
+    # Fussnote gesetze-im-internet.de: "tritt gem. Art. 9 Abs. 1 Satz 1 dieser V am 26.5.2021 in Kraft".
+    "MPAMIV": {"applies_from": "26.05.2021"},
+    # Fussnote gesetze-im-internet.de: "gem. Art. 3 Satz 1 dieser V am 20.2.2025 in Kraft getreten".
+    "MPBetreibV": {"applies_from": "20.02.2025", "note": "mpbetreibv"},
 }
 
 
@@ -1544,17 +1684,123 @@ def psa_status(profile: dict):
     return _category_status(profile, "Schutztextilien / PSA", "psa")
 
 
+_MED_CATEGORY = "Medizin- und Gesundheitstextilien"
+
+
+def _med_activities(profile: dict) -> set[str]:
+    return set(profile.get("medical_activities") or ())
+
+
 def mdr_status(profile: dict):
     """MDR: Kategorie "Medizin- und Gesundheitstextilien".
 
     Nicht jedes Gesundheitstextil ist ein Medizinprodukt — entscheidend ist die
     vom Hersteller bestimmte medizinische Zweckbestimmung (Art. 2 Nr. 1 MDR).
-    Die Kategorie allein traegt deshalb hoechstens "moeglich".
+    Die Kategorie allein traegt deshalb hoechstens "moeglich". Erst die
+    Zusatzfrage `medical_activities` (seit 12.10.2026) hebt auf "ja"
+    (Hersteller, Import/Handel) oder senkt auf "nein" (keine Zweckbestimmung).
+    Ohne Antwort bleibt alles wie vorher.
     """
-    applies, fact = _category_status(profile, "Medizin- und Gesundheitstextilien", "mdr")
-    if applies == "ja":
-        return "moeglich", fact
-    return applies, fact
+    applies, fact = _category_status(profile, _MED_CATEGORY, "mdr")
+    if applies != "ja" and fact != "mdr_zulieferer":
+        return applies, fact            # Kategorie fehlt oder nur ausserhalb der EU
+    acts = _med_activities(profile)
+    if MED_HERSTELLER in acts:
+        return "ja", "med_hersteller", "mdr_hersteller"
+    if MED_HANDEL in acts:
+        return "ja", "med_handel", "mdr_handel"
+    if MED_AUFBEREITUNG in acts:
+        return "moeglich", "med_aufbereitung", "mdr_aufbereitung"
+    if acts == {MED_KEINE}:
+        return "nein", "med_keine"
+    return "moeglich", fact
+
+
+# --- Nationales Medizinprodukterecht (12.10.2026) -------------------------
+# Drei Karten, die nur erscheinen, wenn das Profil die Kategorie
+# "Medizin- und Gesundheitstextilien" fuehrt. Ohne sie liefern die Funktionen
+# `("nein", "med_kategorie_keine")` — `hidden_card` blendet genau diesen Fall
+# aus. Grundlage: Primaertexte vom 12.10.2026 (siehe Kommentare in REGULATIONS).
+#
+#  - MPDG gilt fuer alle Wirtschaftsakteure der MDR in Deutschland; fuer
+#    Aufbereiter fuer Dritte zusaetzlich die Anzeigepflicht nach § 4 Abs. 1.
+#  - MPAMIV verpflichtet Betreiber/Anwender (§ 3) und Hersteller (§ 7 Abs. 3).
+#    Importeure und Haendler melden nach Art. 13/14 MDR i. V. m. § 81 MPDG,
+#    nicht nach der MPAMIV — deshalb "nein" fuer reinen Handel.
+#  - MPBetreibV trifft Textilunternehmen nur ueber die Aufbereitung (§ 8).
+
+def _med_prelude(profile: dict):
+    """Gemeinsame Vorpruefung: (applies, fact) oder None, wenn weiter zu pruefen."""
+    if _MED_CATEGORY not in set(profile.get("product_categories") or ()):
+        return "nein", "med_kategorie_keine"
+    if _only_outside_eu(profile):
+        return "nein", "kein_eu_markt"
+    if _med_activities(profile) == {MED_KEINE}:
+        return "nein", "med_keine"
+    return None
+
+
+def mpdg_status(profile: dict):
+    """MPDG: deutsches Durchfuehrungsgesetz zur MDR."""
+    early = _med_prelude(profile)
+    if early:
+        return early
+    acts = _med_activities(profile)
+    if MED_AUFBEREITUNG in acts:
+        return "ja", "med_aufbereitung", "mpdg_aufbereitung"
+    if MED_HERSTELLER in acts:
+        return "ja", "med_hersteller", "mpdg_hersteller"
+    if MED_HANDEL in acts:
+        return "ja", "med_handel", "mpdg_handel"
+    if _only_supplier(profile):
+        return "moeglich", "med_zulieferer"
+    return "moeglich", "med_unklar"
+
+
+def mpamiv_status(profile: dict):
+    """MPAMIV: Meldung mutmasslicher schwerwiegender Vorkommnisse."""
+    early = _med_prelude(profile)
+    if early:
+        return early
+    acts = _med_activities(profile)
+    if MED_HERSTELLER in acts:
+        return "ja", "med_hersteller", "mpamiv_hersteller"
+    if MED_AUFBEREITUNG in acts:
+        return "moeglich", "med_aufbereitung", "mpamiv_aufbereitung"
+    if MED_HANDEL in acts:
+        return "nein", "med_handel", "mpamiv_handel"
+    if _only_supplier(profile):
+        return "moeglich", "med_zulieferer"
+    return "moeglich", "med_unklar"
+
+
+def mpbetreibv_status(profile: dict):
+    """MPBetreibV: fuer Textilunternehmen ueber die Aufbereitung (§ 8)."""
+    early = _med_prelude(profile)
+    if early:
+        return early
+    acts = _med_activities(profile)
+    if MED_AUFBEREITUNG in acts:
+        return "ja", "med_aufbereitung", "mpbetreibv_aufbereitung"
+    if acts & {MED_HERSTELLER, MED_HANDEL}:
+        fact = "med_hersteller" if MED_HERSTELLER in acts else "med_handel"
+        return "nein", fact, "mpbetreibv_keine_aufbereitung"
+    return "moeglich", "med_unklar"
+
+
+# Faelle, in denen eine Karte gar nicht erscheint (statt "nicht einschlaegig").
+# Nur die drei nationalen Medizinprodukte-Regelungen: fuer die vielen
+# Unternehmen ohne Medizintextilien waeren sie drei graue Karten ohne Nutzen.
+_HIDDEN_FACTS: dict[str, frozenset[str]] = {
+    "MPDG": frozenset({"med_kategorie_keine"}),
+    "MPAMIV": frozenset({"med_kategorie_keine"}),
+    "MPBetreibV": frozenset({"med_kategorie_keine"}),
+}
+
+
+def hidden_card(reg_key: str, verdict: dict | None) -> bool:
+    """True, wenn das Ergebnis nicht als Karte erscheinen soll."""
+    return bool(verdict) and verdict.get("fact") in _HIDDEN_FACTS.get(reg_key, ())
 
 
 def schuh_status(profile: dict):
@@ -1658,6 +1904,10 @@ _COUPLINGS: dict[str, tuple[str, object]] = {
     "AbwV38":          ("AbwV Anhang 38", abwv38_status),
     "EPR_FR":          ("REP TLC", epr_fr_status),
     "EPR_NL":          ("UPV Textiel", epr_nl_status),
+    # Nationales Medizinprodukterecht (12.10.2026)
+    "MPDG":            ("MPDG", mpdg_status),
+    "MPAMIV":          ("MPAMIV", mpamiv_status),
+    "MPBetreibV":      ("MPBetreibV", mpbetreibv_status),
 }
 
 # child_key -> erlaeuternde Beziehung (warum die Eltern-Pflicht hier bindet)
@@ -1957,3 +2207,17 @@ SVHC_OPTIONS = [
     "Ja",
     "Nein",
 ]
+
+# Taetigkeit mit Medizinprodukten (Mehrfachauswahl, seit 12.10.2026).
+# Erscheint im Formular nur, wenn "Medizin- und Gesundheitstextilien"
+# angekreuzt ist. Traegt MDR, MPDG, MPAMIV und MPBetreibV. Leer bleibt
+# erlaubt (Altprofile) und fuehrt zu "Pruefen".
+# Uebersetzungen: siehe i18n.MEDICAL_ACTIVITY_LABELS.
+MED_HERSTELLER = ("Hersteller von Medizinprodukten (medizinische Zweckbestimmung, "
+                  "Vermarktung unter eigenem Namen oder eigener Marke)")
+MED_HANDEL = "Import oder Handel mit Medizinprodukten anderer Hersteller"
+MED_AUFBEREITUNG = ("Aufbereitung von Medizinprodukten für Kliniken, Praxen oder "
+                    "Pflegeeinrichtungen, auch im Mietservice (z. B. OP-Textilien)")
+MED_KEINE = "Keine Produkte mit medizinischer Zweckbestimmung"
+MED_UNKLAR = "Nicht bekannt / noch zu klären"
+MEDICAL_ACTIVITIES = [MED_HERSTELLER, MED_HANDEL, MED_AUFBEREITUNG, MED_KEINE, MED_UNKLAR]

@@ -233,11 +233,12 @@ def test_schwellen_naehe(fehler: list[str]) -> None:
 
 
 def test_erste_schritte(fehler: list[str]) -> None:
-    print("\n[5] Erste Schritte: 2-4 Stichpunkte je Regulierung, sechs Sprachen")
+    print("\n[5] Erste Schritte: 2-5 Stichpunkte je Regulierung, sechs Sprachen")
     for reg in regulations.REGULATIONS:
         steps = regulations.first_steps_for(reg["key"])
-        if not 2 <= len(steps) <= 4:
-            _fail(f"{reg['key']}: {len(steps)} Stichpunkte (erlaubt 2-4)", fehler)
+        # 5 seit 12.10.2026: die MDR traegt zusaetzlich den MPAV-Hinweis (mdr_5)
+        if not 2 <= len(steps) <= 5:
+            _fail(f"{reg['key']}: {len(steps)} Stichpunkte (erlaubt 2-5)", fehler)
         for step in steps:
             for lang in i18n.LANG_CODES:
                 if not i18n.t_first_step(step, lang):

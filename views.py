@@ -324,7 +324,10 @@ def render_cards_html(results: list[dict], language: str = "de",
     Schritte und Schwellen-Hinweise — die Karten sehen dann aus wie vorher.
     """
     lang_dict = I18N.get(language, I18N["de"])
-    shown = [r for r in results if (r.get("applies") or "").lower() in APPLIES_ORDER]
+    # `hidden`: Ergebnis gehoert zum Lauf, erscheint aber nicht als Karte
+    # (nationales Medizinprodukterecht ohne Medizintextilien, siehe llm.deterministic_result).
+    shown = [r for r in results
+             if (r.get("applies") or "").lower() in APPLIES_ORDER and not r.get("hidden")]
     shown.sort(key=lambda r: (APPLIES_ORDER.get((r.get("applies") or "").lower(), 9), r["nr"]))
 
     if not shown:

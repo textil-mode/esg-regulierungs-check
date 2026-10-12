@@ -2557,6 +2557,23 @@ UI: dict[str, dict[str, str]] = {
         "de": "Die Aufnahme ist zu lang.", "en": "The recording is too long.", "es": "La grabación es demasiado larga.",
         "fr": "L'enregistrement est trop long.", "it": "La registrazione è troppo lunga.", "zh": "录音过长。",
     },
+    # Nationales Medizinprodukterecht (12.10.2026)
+    "section_medical": {
+        "de": "#### Tätigkeit mit Medizinprodukten",
+        "en": "#### Activities involving medical devices",
+        "es": "#### Actividad con productos sanitarios",
+        "fr": "#### Activité liée aux dispositifs médicaux",
+        "it": "#### Attività con dispositivi medici",
+        "zh": "#### 与医疗器械相关的业务",
+    },
+    "medical_hint": {
+        "de": "Erscheint, weil „Medizin- und Gesundheitstextilien“ angekreuzt ist. Mehrfachauswahl möglich. Die Angabe steuert die Prüfung von MDR, MPDG, MPAMIV und MPBetreibV.",
+        "en": "Shown because “Medical and healthcare textiles” is selected. Multi-select possible. The answer determines the assessment of the MDR, MPDG, MPAMIV and MPBetreibV.",
+        "es": "Aparece porque está marcada «Textiles médicos y sanitarios». Selección múltiple posible. La respuesta determina la evaluación del MDR, la MPDG, la MPAMIV y la MPBetreibV.",
+        "fr": "Affiché parce que « Textiles médicaux et de santé » est coché. Sélection multiple possible. La réponse détermine l'examen du MDR, de la MPDG, de la MPAMIV et de la MPBetreibV.",
+        "it": "Compare perché è selezionato «Tessili medicali e sanitari». Selezione multipla possibile. La risposta determina la valutazione di MDR, MPDG, MPAMIV e MPBetreibV.",
+        "zh": "因已勾选“医疗与卫生用纺织品”而显示。可多选。该信息决定对 MDR、MPDG、MPAMIV 和 MPBetreibV 的审查。",
+    },
 }
 
 
@@ -2790,6 +2807,15 @@ APPLIES_NOTES: dict[str, dict[str, str]] = {
         "fr": "Un projet de loi du gouvernement (BT-Drs. 21/8027) prévoit de relever le seuil applicable au système de management à 23,6 GWh et de limiter les plans de mise en œuvre à la tranche de 2,77 à 23,6 GWh ; il n'est pas encore adopté.",
         "it": "Un disegno di legge del governo (BT-Drs. 21/8027) prevede di innalzare la soglia per il sistema di gestione a 23,6 GWh e di limitare i piani di attuazione alla fascia tra 2,77 e 23,6 GWh; non è ancora stato approvato.",
         "zh": "一项政府草案（BT-Drs. 21/8027）拟将管理体系的门槛提高至 23.6 GWh，并将实施计划的适用范围限定在 2.77 至 23.6 GWh；该草案尚未通过。",
+    },
+    # Nationales Medizinprodukterecht (12.10.2026)
+    "mpbetreibv": {
+        "de": "Die Neufassung vom 14.02.2025 hat die Medizinprodukte-Betreiberverordnung von 1998 abgelöst und gilt seit 20.02.2025; für Produkte nach Anhang XVI MDR gilt sie seit 01.08.2025 (§ 20 Abs. 2).",
+        "en": "The new version of 14.02.2025 replaced the 1998 Medical Device Operator Ordinance and has applied since 20.02.2025; for products under Annex XVI MDR it has applied since 01.08.2025 (Section 20(2)).",
+        "es": "La nueva versión de 14.02.2025 sustituyó al Reglamento de operadores de productos sanitarios de 1998 y se aplica desde el 20.02.2025; para los productos del anexo XVI del MDR, desde el 01.08.2025 (§ 20, apdo. 2).",
+        "fr": "La nouvelle version du 14.02.2025 a remplacé le règlement de 1998 sur les exploitants de dispositifs médicaux et s'applique depuis le 20.02.2025 ; pour les produits de l'annexe XVI du MDR, depuis le 01.08.2025 (§ 20, al. 2).",
+        "it": "La nuova versione del 14.02.2025 ha sostituito il regolamento del 1998 sui gestori di dispositivi medici e si applica dal 20.02.2025; per i prodotti dell'allegato XVI MDR dal 01.08.2025 (§ 20, comma 2).",
+        "zh": "2025 年 2 月 14 日的新版本取代了 1998 年的《医疗器械运营者条例》，自 2025 年 2 月 20 日起适用；对于 MDR 附件 XVI 所列产品，自 2025 年 8 月 1 日起适用（第 20 条第 2 款）。",
     },
 }
 
@@ -4336,6 +4362,95 @@ FIRST_STEPS: dict[str, dict[str, str]] = {
         "it": "Seguire la procedura legislativa relativa allo stampato del Bundestag (BT-Drs.) 21/8027, poiché soglie e scadenze dovrebbero cambiare.",
         "zh": "跟踪联邦议院印刷品（BT-Drs.）21/8027 所涉立法程序，因为门槛和期限预计将发生变化。",
     },
+    # Nationales Medizinprodukterecht (12.10.2026)
+    "mdr_5": {
+        "de": "Abgabe klären: Produkte, die nicht für Laien bestimmt sind (z. B. OP-Textilien), nur an Fachkreise abgeben; Produkte mit verschreibungs- oder apothekenpflichtigen Stoffen unterliegen der Verschreibungs- bzw. Apothekenpflicht (§§ 2 bis 4 MPAV).",
+        "en": "Clarify supply: supply products not intended for lay persons (e.g. surgical textiles) only to healthcare professionals; products containing prescription-only or pharmacy-only substances are subject to prescription or pharmacy-only requirements (Sections 2 to 4 MPAV).",
+        "es": "Aclarar la dispensación: entregar los productos no destinados a profanos (p. ej., textiles quirúrgicos) solo a profesionales; los productos con sustancias sujetas a prescripción o de venta exclusiva en farmacias están sujetos a la obligación de prescripción o de dispensación en farmacia (§§ 2 a 4 MPAV).",
+        "fr": "Clarifier la délivrance : ne remettre les produits non destinés aux profanes (par ex. textiles chirurgicaux) qu'aux professionnels ; les produits contenant des substances soumises à prescription ou réservées aux pharmacies sont soumis à l'obligation de prescription ou de vente en pharmacie (§§ 2 à 4 MPAV).",
+        "it": "Chiarire la fornitura: consegnare i prodotti non destinati a profani (ad es. tessili chirurgici) solo a operatori professionali; i prodotti con sostanze soggette a prescrizione o vendibili solo in farmacia sono soggetti all'obbligo di prescrizione o di vendita in farmacia (§§ da 2 a 4 MPAV).",
+        "zh": "明确交付规则：非供外行人使用的产品（例如手术用纺织品）只能交付给专业人员；含有处方药或药房专售物质的产品须遵守处方或药房专售要求（MPAV 第 2 至 4 条）。",
+    },
+    "mpdg_1": {
+        "de": "Klären, welche eigenen Produkte im Anwendungsbereich der MDR in Deutschland bereitgestellt werden, und Gebrauchsanweisung und Kennzeichnung für Anwender und Patienten auf Deutsch bereitstellen (§ 8).",
+        "en": "Clarify which of the company's products within the scope of the MDR are made available in Germany, and provide instructions for use and labelling for users and patients in German (Section 8).",
+        "es": "Aclarar qué productos propios incluidos en el ámbito del MDR se comercializan en Alemania y facilitar en alemán las instrucciones de uso y el etiquetado para usuarios y pacientes (§ 8).",
+        "fr": "Déterminer quels produits de l'entreprise relevant du MDR sont mis à disposition en Allemagne et fournir en allemand la notice d'utilisation et l'étiquetage destinés aux utilisateurs et aux patients (§ 8).",
+        "it": "Chiarire quali prodotti propri rientranti nel MDR sono messi a disposizione in Germania e fornire in tedesco istruzioni per l'uso ed etichettatura destinate a utilizzatori e pazienti (§ 8).",
+        "zh": "明确公司哪些属于 MDR 适用范围的产品在德国提供，并以德语向使用者和患者提供使用说明和标签（第 8 条）。",
+    },
+    "mpdg_2": {
+        "de": "Als Aufbereiter für andere: die Tätigkeit vor Aufnahme über das DMIDS anzeigen und Änderungen unverzüglich nachmelden (§ 4 Abs. 1, 3).",
+        "en": "As reprocessor for others: notify the activity via the DMIDS before starting it and report changes without delay (Section 4(1), (3)).",
+        "es": "Como reprocesador para terceros: comunicar la actividad a través del DMIDS antes de iniciarla y notificar sin demora las modificaciones (§ 4, apdos. 1 y 3).",
+        "fr": "En tant que retraiteur pour des tiers : déclarer l'activité via le DMIDS avant son début et signaler sans délai les modifications (§ 4, al. 1 et 3).",
+        "it": "In qualità di ricondizionatore per terzi: notificare l'attività tramite il DMIDS prima di avviarla e comunicare senza indugio le modifiche (§ 4, commi 1 e 3).",
+        "zh": "作为为他人提供再处理服务者：在开展业务前通过 DMIDS 报备，并及时报告变更（第 4 条第 1、3 款）。",
+    },
+    "mpdg_3": {
+        "de": "Als Importeur oder Händler den Meldeweg festlegen: schwerwiegende Gefahr an das BfArM über das DMIDS, Fälschungsverdacht an die Landesbehörde (§ 81).",
+        "en": "As importer or distributor, define the reporting channel: serious risk to the BfArM via the DMIDS, suspected falsification to the state authority (Section 81).",
+        "es": "Como importador o distribuidor, definir la vía de notificación: riesgo grave al BfArM a través del DMIDS, sospecha de falsificación a la autoridad del Land (§ 81).",
+        "fr": "En tant qu'importateur ou distributeur, définir le circuit de signalement : risque grave au BfArM via le DMIDS, suspicion de falsification à l'autorité du Land (§ 81).",
+        "it": "In qualità di importatore o distributore, definire il canale di segnalazione: rischio grave al BfArM tramite il DMIDS, sospetto di falsificazione all'autorità del Land (§ 81).",
+        "zh": "作为进口商或经销商，确定报告渠道：严重风险通过 DMIDS 报告 BfArM，伪造嫌疑报告州主管机构（第 81 条）。",
+    },
+    "mpdg_4": {
+        "de": "Außendienst und Beratung prüfen: Wer Fachkreise über Medizinprodukte informiert oder in ihre Handhabung einweist, braucht als Medizinprodukteberater nachweisbare Sachkenntnis und regelmäßige Schulung (§ 83).",
+        "en": "Review field sales and advisory staff: anyone who informs healthcare professionals about medical devices or instructs them in their handling needs demonstrable expertise and regular training as a medical device consultant (Section 83).",
+        "es": "Revisar el servicio externo y el asesoramiento: quien informa a profesionales sobre productos sanitarios o les instruye en su manejo necesita, como asesor de productos sanitarios, conocimientos acreditables y formación periódica (§ 83).",
+        "fr": "Vérifier le service commercial et le conseil : quiconque informe des professionnels sur des dispositifs médicaux ou les forme à leur manipulation doit, en tant que conseiller en dispositifs médicaux, disposer de connaissances démontrables et d'une formation régulière (§ 83).",
+        "it": "Verificare servizio esterno e consulenza: chi informa operatori professionali sui dispositivi medici o li istruisce nel loro utilizzo necessita, in qualità di consulente per dispositivi medici, di competenze dimostrabili e formazione periodica (§ 83).",
+        "zh": "审查外勤与咨询人员：向专业人员介绍医疗器械或指导其操作者，作为医疗器械顾问须具备可证明的专业知识并定期接受培训（第 83 条）。",
+    },
+    "mpamiv_1": {
+        "de": "Internen Ablauf festlegen, wie Hinweise auf mutmaßliche schwerwiegende Vorkommnisse – etwa von Kliniken oder Patienten – erfasst, bewertet und weitergegeben werden.",
+        "en": "Define an internal procedure for how indications of suspected serious incidents – for example from hospitals or patients – are recorded, assessed and passed on.",
+        "es": "Establecer un procedimiento interno para registrar, evaluar y transmitir los indicios de presuntos incidentes graves, por ejemplo procedentes de clínicas o pacientes.",
+        "fr": "Définir une procédure interne sur la manière dont les signalements d'incidents graves présumés – par exemple de cliniques ou de patients – sont enregistrés, évalués et transmis.",
+        "it": "Definire una procedura interna per registrare, valutare e trasmettere le segnalazioni di presunti incidenti gravi, ad esempio da parte di cliniche o pazienti.",
+        "zh": "制定内部流程，明确如何记录、评估和转交疑似严重事件的线索（例如来自医院或患者的线索）。",
+    },
+    "mpamiv_2": {
+        "de": "Als Hersteller die 15-Tage-Frist für eine Begründung gegenüber dem BfArM einplanen, wenn eine Anwendermeldung nicht als schwerwiegendes Vorkommnis eingestuft wird (§ 7 Abs. 3).",
+        "en": "As manufacturer, plan for the 15-day deadline for a justification to the BfArM if a user report is not classified as a serious incident (Section 7(3)).",
+        "es": "Como fabricante, prever el plazo de 15 días para presentar una justificación al BfArM cuando una notificación de usuario no se clasifique como incidente grave (§ 7, apdo. 3).",
+        "fr": "En tant que fabricant, prévoir le délai de 15 jours pour une justification auprès du BfArM lorsqu'un signalement d'utilisateur n'est pas qualifié d'incident grave (§ 7, al. 3).",
+        "it": "In qualità di fabbricante, pianificare il termine di 15 giorni per una motivazione al BfArM quando una segnalazione di un utilizzatore non è classificata come incidente grave (§ 7, comma 3).",
+        "zh": "作为制造商，如使用者报告未被归类为严重事件，须预留向 BfArM 提交理由的 15 天期限（第 7 条第 3 款）。",
+    },
+    "mpamiv_3": {
+        "de": "Zugang zum DMIDS des BfArM einrichten, über das Meldungen und Begründungen laufen (§ 6, § 7 Abs. 3).",
+        "en": "Set up access to the BfArM's DMIDS, through which reports and justifications are submitted (Section 6, Section 7(3)).",
+        "es": "Configurar el acceso al DMIDS del BfArM, a través del cual se tramitan las notificaciones y justificaciones (§ 6, § 7, apdo. 3).",
+        "fr": "Mettre en place l'accès au DMIDS du BfArM, par lequel transitent les signalements et justifications (§ 6, § 7, al. 3).",
+        "it": "Predisporre l'accesso al DMIDS del BfArM, attraverso il quale passano segnalazioni e motivazioni (§ 6, § 7, comma 3).",
+        "zh": "开通 BfArM 的 DMIDS 访问权限，报告和理由均通过该系统提交（第 6 条、第 7 条第 3 款）。",
+    },
+    "mpbetreibv_1": {
+        "de": "Aufbereitungsverfahren für jedes Produkt validieren und dokumentieren, Herstellerangaben zur Aufbereitung einholen und die KRINKO-BfArM-Empfehlung zugrunde legen (§ 8 Abs. 1, 2).",
+        "en": "Validate and document the reprocessing procedure for each product, obtain the manufacturer's reprocessing information and base the procedure on the KRINKO-BfArM recommendation (Section 8(1), (2)).",
+        "es": "Validar y documentar el procedimiento de reprocesamiento de cada producto, obtener las indicaciones del fabricante sobre el reprocesamiento y basarse en la recomendación KRINKO-BfArM (§ 8, apdos. 1 y 2).",
+        "fr": "Valider et documenter le procédé de retraitement de chaque produit, obtenir les indications du fabricant relatives au retraitement et s'appuyer sur la recommandation KRINKO-BfArM (§ 8, al. 1 et 2).",
+        "it": "Convalidare e documentare la procedura di ricondizionamento per ogni prodotto, acquisire le indicazioni del fabbricante sul ricondizionamento e basarsi sulla raccomandazione KRINKO-BfArM (§ 8, commi 1 e 2).",
+        "zh": "对每种产品的再处理程序进行验证并形成文件，获取制造商关于再处理的说明，并以 KRINKO 与 BfArM 的联合建议为依据（第 8 条第 1、2 款）。",
+    },
+    "mpbetreibv_2": {
+        "de": "Einstufung der aufbereiteten Produkte prüfen; für „Kritisch C“ ein Qualitätsmanagementsystem von einer anerkannten Benannten Stelle zertifizieren lassen (§ 8 Abs. 3).",
+        "en": "Check the classification of the reprocessed products; for “Critical C”, have a quality management system certified by a recognised notified body (Section 8(3)).",
+        "es": "Comprobar la clasificación de los productos reprocesados; para «Crítico C», hacer certificar un sistema de gestión de la calidad por un organismo notificado reconocido (§ 8, apdo. 3).",
+        "fr": "Vérifier la classification des produits retraités ; pour « Critique C », faire certifier un système de management de la qualité par un organisme notifié reconnu (§ 8, al. 3).",
+        "it": "Verificare la classificazione dei prodotti ricondizionati; per «Critico C», far certificare un sistema di gestione della qualità da un organismo notificato riconosciuto (§ 8, comma 3).",
+        "zh": "核查再处理产品的分类；对于“关键 C”类，须由经认可的公告机构对质量管理体系进行认证（第 8 条第 3 款）。",
+    },
+    "mpbetreibv_3": {
+        "de": "Ausbildung und aktuelle Kenntnis der Beschäftigten in der Aufbereitung nachweisbar halten, weil Auftraggeber und Behörde sie prüfen können (§ 5, § 8 Abs. 4).",
+        "en": "Keep the training and up-to-date knowledge of reprocessing staff demonstrable, because clients and the authority may check them (Section 5, Section 8(4)).",
+        "es": "Mantener acreditables la formación y los conocimientos actualizados del personal de reprocesamiento, ya que el cliente y la autoridad pueden comprobarlos (§ 5, § 8, apdo. 4).",
+        "fr": "Pouvoir justifier de la formation et des connaissances à jour du personnel chargé du retraitement, car le donneur d'ordre et l'autorité peuvent les contrôler (§ 5, § 8, al. 4).",
+        "it": "Mantenere dimostrabili la formazione e le conoscenze aggiornate del personale addetto al ricondizionamento, perché committente e autorità possono verificarle (§ 5, § 8, comma 4).",
+        "zh": "保持再处理人员的培训和最新知识可供证明，因为委托方和主管机构可对此进行检查（第 5 条、第 8 条第 4 款）。",
+    },
 }
 
 
@@ -4947,6 +5062,63 @@ COUPLING_FACTS: dict[str, dict[str, str]] = {
         "it": "Secondo quanto dichiarato, l'impresa vende nei Paesi Bassi, ma è solo fornitore; l'obbligo grava su chi vi immette sul mercato i prodotti tessili finiti.",
         "zh": "据公司提供的信息，其在荷兰销售，但仅为供应商；负有义务的是在当地将纺织成品投放市场的一方。",
     },
+    # Nationales Medizinprodukterecht (12.10.2026)
+    "med_kategorie_keine": {
+        "de": "Das Unternehmen führt die Produktkategorie „Medizin- und Gesundheitstextilien“ nicht; die Vorschrift gilt nur für Medizinprodukte.",
+        "en": "The company does not list the product category “Medical and healthcare textiles”; the provision applies only to medical devices.",
+        "es": "La empresa no incluye la categoría de producto «Textiles médicos y sanitarios»; la norma solo se aplica a productos sanitarios.",
+        "fr": "L'entreprise n'indique pas la catégorie de produits « Textiles médicaux et de santé » ; la disposition ne s'applique qu'aux dispositifs médicaux.",
+        "it": "L'impresa non indica la categoria di prodotto «Tessili medicali e sanitari»; la disposizione si applica solo ai dispositivi medici.",
+        "zh": "公司未列有“医疗与卫生用纺织品”产品类别；该规定仅适用于医疗器械。",
+    },
+    "med_keine": {
+        "de": "Das Unternehmen führt die Produktkategorie „Medizin- und Gesundheitstextilien“, gibt aber an, keine Produkte mit medizinischer Zweckbestimmung anzubieten (Art. 2 Nr. 1 MDR).",
+        "en": "The company lists the product category “Medical and healthcare textiles” but states that it offers no products with a medical intended purpose (Art. 2(1) MDR).",
+        "es": "La empresa incluye la categoría de producto «Textiles médicos y sanitarios», pero indica que no ofrece productos con una finalidad prevista médica (art. 2, punto 1, MDR).",
+        "fr": "L'entreprise indique la catégorie de produits « Textiles médicaux et de santé », mais déclare ne proposer aucun produit ayant une destination médicale (art. 2, point 1, MDR).",
+        "it": "L'impresa indica la categoria di prodotto «Tessili medicali e sanitari», ma dichiara di non offrire prodotti con una destinazione d'uso medica (art. 2, punto 1, MDR).",
+        "zh": "公司列有“医疗与卫生用纺织品”产品类别，但表示不提供具有医疗预期用途的产品（MDR 第 2 条第 1 点）。",
+    },
+    "med_hersteller": {
+        "de": "Das Unternehmen gibt an, Medizinprodukte mit medizinischer Zweckbestimmung herzustellen oder herstellen zu lassen und unter eigenem Namen oder eigener Marke zu vermarkten.",
+        "en": "The company states that it manufactures, or has manufactured, medical devices with a medical intended purpose and markets them under its own name or trademark.",
+        "es": "La empresa indica que fabrica o encarga fabricar productos sanitarios con finalidad prevista médica y los comercializa con su propio nombre o marca.",
+        "fr": "L'entreprise déclare fabriquer ou faire fabriquer des dispositifs médicaux ayant une destination médicale et les commercialiser sous son propre nom ou sa propre marque.",
+        "it": "L'impresa dichiara di fabbricare o far fabbricare dispositivi medici con destinazione d'uso medica e di commercializzarli con il proprio nome o marchio.",
+        "zh": "公司表示其生产或委托生产具有医疗预期用途的医疗器械，并以自有名称或商标销售。",
+    },
+    "med_handel": {
+        "de": "Das Unternehmen gibt an, Medizinprodukte anderer Hersteller zu importieren oder damit zu handeln.",
+        "en": "The company states that it imports or trades in medical devices of other manufacturers.",
+        "es": "La empresa indica que importa o comercializa productos sanitarios de otros fabricantes.",
+        "fr": "L'entreprise déclare importer ou commercialiser des dispositifs médicaux d'autres fabricants.",
+        "it": "L'impresa dichiara di importare o commerciare dispositivi medici di altri fabbricanti.",
+        "zh": "公司表示其进口或经销其他制造商的医疗器械。",
+    },
+    "med_aufbereitung": {
+        "de": "Das Unternehmen gibt an, Medizinprodukte wie OP-Textilien für Kliniken, Praxen oder Pflegeeinrichtungen aufzubereiten.",
+        "en": "The company states that it reprocesses medical devices such as surgical textiles for hospitals, practices or care facilities.",
+        "es": "La empresa indica que reprocesa productos sanitarios, como textiles quirúrgicos, para clínicas, consultas o centros asistenciales.",
+        "fr": "L'entreprise déclare retraiter des dispositifs médicaux tels que des textiles chirurgicaux pour des cliniques, cabinets ou établissements de soins.",
+        "it": "L'impresa dichiara di ricondizionare dispositivi medici come tessili chirurgici per cliniche, studi medici o strutture di assistenza.",
+        "zh": "公司表示其为医院、诊所或护理机构再处理手术用纺织品等医疗器械。",
+    },
+    "med_zulieferer": {
+        "de": "Das Unternehmen führt die Produktkategorie „Medizin- und Gesundheitstextilien“, ist nach seinen Angaben aber nur Zulieferer; ob es selbst Medizinprodukte herstellt, mit ihnen handelt oder sie aufbereitet, ist offen.",
+        "en": "The company lists the product category “Medical and healthcare textiles” but, according to its information, is only a supplier; whether it itself manufactures, trades in or reprocesses medical devices is open.",
+        "es": "La empresa incluye la categoría de producto «Textiles médicos y sanitarios», pero según sus datos es solo proveedora; está abierto si ella misma fabrica, comercializa o reprocesa productos sanitarios.",
+        "fr": "L'entreprise indique la catégorie de produits « Textiles médicaux et de santé », mais n'est selon ses indications qu'un fournisseur ; il reste à déterminer si elle fabrique, commercialise ou retraite elle-même des dispositifs médicaux.",
+        "it": "L'impresa indica la categoria di prodotto «Tessili medicali e sanitari», ma secondo quanto dichiarato è solo fornitore; resta da chiarire se essa stessa fabbrichi, commerci o ricondizioni dispositivi medici.",
+        "zh": "公司列有“医疗与卫生用纺织品”产品类别，但据其提供的信息仅为供应商；其本身是否生产、经销或再处理医疗器械尚不明确。",
+    },
+    "med_unklar": {
+        "de": "Das Unternehmen führt die Produktkategorie „Medizin- und Gesundheitstextilien“; ob es Medizinprodukte herstellt, mit ihnen handelt oder sie aufbereitet, ist nach seinen Angaben offen.",
+        "en": "The company lists the product category “Medical and healthcare textiles”; according to its information, it is open whether it manufactures, trades in or reprocesses medical devices.",
+        "es": "La empresa incluye la categoría de producto «Textiles médicos y sanitarios»; según sus datos, está abierto si fabrica, comercializa o reprocesa productos sanitarios.",
+        "fr": "L'entreprise indique la catégorie de produits « Textiles médicaux et de santé » ; selon ses indications, il reste à déterminer si elle fabrique, commercialise ou retraite des dispositifs médicaux.",
+        "it": "L'impresa indica la categoria di prodotto «Tessili medicali e sanitari»; secondo quanto dichiarato, resta da chiarire se fabbrichi, commerci o ricondizioni dispositivi medici.",
+        "zh": "公司列有“医疗与卫生用纺织品”产品类别；据其提供的信息，其是否生产、经销或再处理医疗器械尚不明确。",
+    },
 }
 
 COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
@@ -5257,6 +5429,31 @@ COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
         },
     },
     "MDR": {
+        # Zusatzfrage Taetigkeit mit Medizinprodukten (12.10.2026)
+        "mdr_hersteller": {
+            "de": "Als Hersteller treffen das Unternehmen damit die Pflichten nach Art. 10 MDR, insbesondere Risiko- und Qualitätsmanagement, klinische Bewertung, technische Dokumentation und eine verantwortliche Person nach Art. 15.",
+            "en": "As manufacturer, the company is therefore subject to the obligations under Art. 10 MDR, in particular risk and quality management, clinical evaluation, technical documentation and a person responsible for regulatory compliance under Art. 15.",
+            "es": "Como fabricante, la empresa está sujeta por tanto a las obligaciones del art. 10 del MDR, en particular la gestión de riesgos y de la calidad, la evaluación clínica, la documentación técnica y una persona responsable del cumplimiento de la normativa conforme al art. 15.",
+            "fr": "En tant que fabricant, l'entreprise est donc soumise aux obligations de l'art. 10 du MDR, notamment la gestion des risques et de la qualité, l'évaluation clinique, la documentation technique et une personne chargée de veiller au respect de la réglementation conformément à l'art. 15.",
+            "it": "In qualità di fabbricante, l'impresa è quindi soggetta agli obblighi dell'art. 10 MDR, in particolare gestione del rischio e della qualità, valutazione clinica, documentazione tecnica e una persona responsabile del rispetto della normativa ai sensi dell'art. 15.",
+            "zh": "因此，作为制造商，公司须履行 MDR 第 10 条规定的义务，特别是风险管理和质量管理、临床评价、技术文件以及第 15 条规定的法规合规负责人。",
+        },
+        "mdr_handel": {
+            "de": "Als Importeur oder Händler muss das Unternehmen damit vor der Bereitstellung CE-Kennzeichnung, EU-Konformitätserklärung, Kennzeichnung und Gebrauchsanweisung prüfen und Verdachtsfälle melden (Art. 13, 14 MDR).",
+            "en": "As importer or distributor, the company must therefore check the CE marking, the EU declaration of conformity, the labelling and the instructions for use before making the product available, and report suspected cases (Art. 13, 14 MDR).",
+            "es": "Como importador o distribuidor, la empresa debe por tanto comprobar el marcado CE, la declaración UE de conformidad, el etiquetado y las instrucciones de uso antes de la comercialización, y notificar los casos sospechosos (arts. 13 y 14 del MDR).",
+            "fr": "En tant qu'importateur ou distributeur, l'entreprise doit donc vérifier le marquage CE, la déclaration UE de conformité, l'étiquetage et la notice d'utilisation avant la mise à disposition, et signaler les cas suspects (art. 13 et 14 du MDR).",
+            "it": "In qualità di importatore o distributore, l'impresa deve quindi verificare la marcatura CE, la dichiarazione di conformità UE, l'etichettatura e le istruzioni per l'uso prima della messa a disposizione e segnalare i casi sospetti (artt. 13 e 14 MDR).",
+            "zh": "因此，作为进口商或经销商，公司须在提供产品前核查 CE 标志、欧盟符合性声明、标签和使用说明，并报告可疑情况（MDR 第 13、14 条）。",
+        },
+        "mdr_aufbereitung": {
+            "de": "Die Aufbereitung von Mehrwegprodukten im Auftrag macht das Unternehmen nicht zum Hersteller; Pflichten aus der MDR entstehen aber, wenn es Einmalprodukte aufbereitet (Art. 17) oder Systeme und Behandlungseinheiten für das Inverkehrbringen sterilisiert (Art. 22 Abs. 3).",
+            "en": "Reprocessing reusable devices on behalf of others does not make the company a manufacturer; obligations under the MDR do arise, however, if it reprocesses single-use devices (Art. 17) or sterilises systems and procedure packs for the purpose of placing them on the market (Art. 22(3)).",
+            "es": "El reprocesamiento por encargo de productos reutilizables no convierte a la empresa en fabricante; sin embargo, surgen obligaciones del MDR si reprocesa productos de un solo uso (art. 17) o esteriliza sistemas y kits para procedimientos con vistas a su introducción en el mercado (art. 22, apdo. 3).",
+            "fr": "Le retraitement de dispositifs réutilisables pour le compte de tiers ne fait pas de l'entreprise un fabricant ; des obligations au titre du MDR naissent toutefois si elle retraite des dispositifs à usage unique (art. 17) ou stérilise des systèmes et nécessaires en vue de leur mise sur le marché (art. 22, par. 3).",
+            "it": "Il ricondizionamento per conto terzi di dispositivi riutilizzabili non rende l'impresa fabbricante; sorgono tuttavia obblighi ai sensi del MDR se ricondiziona dispositivi monouso (art. 17) o sterilizza sistemi e kit procedurali ai fini dell'immissione sul mercato (art. 22, par. 3).",
+            "zh": "受托再处理可重复使用的器械并不会使公司成为制造商；但如果公司再处理一次性器械（第 17 条），或为投放市场而对系统和组合包进行灭菌（第 22 条第 3 款），则须承担 MDR 规定的义务。",
+        },
         "nein": {
             "de": "Die Medizinprodukte-Verordnung ist für das Unternehmen damit nicht einschlägig.",
             "en": "The Medical Device Regulation therefore does not apply to the company.",
@@ -5411,6 +5608,125 @@ COUPLING_CONCLUSIONS: dict[str, dict[str, dict[str, str]]] = {
             "fr": "L'existence de l'obligation doit donc être vérifiée au regard des livraisons effectives vers les Pays-Bas.",
             "it": "Se l'obbligo sussista va quindi verificato sulla base delle forniture effettive verso i Paesi Bassi.",
             "zh": "因此，是否负有该义务，须根据实际向荷兰的供货情况予以核查。",
+        },
+    },
+    # Nationales Medizinprodukterecht (12.10.2026)
+    "MPDG": {
+        "mpdg_aufbereitung": {
+            "de": "Wer keimarm oder steril anzuwendende Produkte ausschließlich für andere aufbereitet, muss dies nach § 4 Abs. 1 MPDG vor Aufnahme der Tätigkeit über das DMIDS der zuständigen Behörde anzeigen und jede Änderung unverzüglich nachmelden (§ 4 Abs. 3).",
+            "en": "Anyone who reprocesses products intended to be used in a low-germ or sterile state exclusively for others must, under Section 4(1) MPDG, notify the competent authority via the DMIDS before starting the activity and report any change without delay (Section 4(3)).",
+            "es": "Quien reprocesa exclusivamente para terceros productos destinados a utilizarse con baja carga microbiana o estériles debe, conforme al § 4, apdo. 1, MPDG, comunicarlo a la autoridad competente a través del DMIDS antes de iniciar la actividad y notificar sin demora cualquier modificación (§ 4, apdo. 3).",
+            "fr": "Quiconque retraite exclusivement pour des tiers des produits destinés à être utilisés à faible charge microbienne ou stériles doit, selon le § 4, al. 1, MPDG, le déclarer à l'autorité compétente via le DMIDS avant le début de l'activité et signaler sans délai toute modification (§ 4, al. 3).",
+            "it": "Chi ricondiziona esclusivamente per terzi prodotti destinati a essere utilizzati a bassa carica microbica o sterili deve, ai sensi del § 4, comma 1, MPDG, notificarlo all'autorità competente tramite il DMIDS prima di avviare l'attività e comunicare senza indugio ogni modifica (§ 4, comma 3).",
+            "zh": "根据 MPDG 第 4 条第 1 款，专门为他人再处理须以低菌或无菌状态使用的产品者，须在开展业务前通过 DMIDS 向主管机构报备，并须及时报告任何变更（第 4 条第 3 款）。",
+        },
+        "mpdg_hersteller": {
+            "de": "Für die in Deutschland bereitgestellten Produkte gelten damit die deutschen Ergänzungen zur MDR: Produktinformationen auf Deutsch (§ 8), Sicherheitsanweisungen im Feld auf Deutsch sowie Dokumentation und Abschlussmeldung von Sicherheitskorrekturmaßnahmen (§ 73).",
+            "en": "The German supplements to the MDR therefore apply to the products made available in Germany: product information in German (Section 8), field safety notices in German, and documentation and notification of completion of field safety corrective actions (Section 73).",
+            "es": "A los productos comercializados en Alemania se aplican por tanto los complementos alemanes al MDR: información del producto en alemán (§ 8), avisos de seguridad en campo en alemán, y documentación y comunicación de la conclusión de las acciones correctivas de seguridad en campo (§ 73).",
+            "fr": "Les compléments allemands au MDR s'appliquent donc aux produits mis à disposition en Allemagne : informations sur le produit en allemand (§ 8), avis de sécurité en allemand ainsi que documentation et notification de l'achèvement des mesures correctives de sécurité (§ 73).",
+            "it": "Ai prodotti messi a disposizione in Germania si applicano quindi le integrazioni tedesche al MDR: informazioni sul prodotto in tedesco (§ 8), avvisi di sicurezza in tedesco nonché documentazione e notifica della conclusione delle azioni correttive di sicurezza (§ 73).",
+            "zh": "因此，在德国提供的产品适用德国对 MDR 的补充规定：产品信息须使用德语（第 8 条），现场安全通告须使用德语，并须记录现场安全纠正措施并报告其完成情况（第 73 条）。",
+        },
+        "mpdg_handel": {
+            "de": "Als Importeur oder Händler muss das Unternehmen damit eine angenommene schwerwiegende Gefahr dem BfArM über das DMIDS und Fälschungsverdacht der zuständigen Landesbehörde melden (§ 81) und darf Produkte nur mit deutschsprachigen Informationen an Anwender und Patienten abgeben (§ 8 Abs. 2).",
+            "en": "As importer or distributor, the company must therefore report a presumed serious risk to the BfArM via the DMIDS and suspected falsification to the competent state authority (Section 81), and may supply products to users and patients only with information in German (Section 8(2)).",
+            "es": "Como importador o distribuidor, la empresa debe por tanto notificar al BfArM a través del DMIDS un riesgo grave presunto y a la autoridad competente del Land la sospecha de falsificación (§ 81), y solo puede entregar productos a usuarios y pacientes con información en alemán (§ 8, apdo. 2).",
+            "fr": "En tant qu'importateur ou distributeur, l'entreprise doit donc signaler un risque grave présumé au BfArM via le DMIDS et une suspicion de falsification à l'autorité compétente du Land (§ 81), et ne peut remettre des produits aux utilisateurs et aux patients qu'avec des informations en allemand (§ 8, al. 2).",
+            "it": "In qualità di importatore o distributore, l'impresa deve quindi segnalare un presunto rischio grave al BfArM tramite il DMIDS e un sospetto di falsificazione all'autorità competente del Land (§ 81), e può consegnare prodotti a utilizzatori e pazienti solo con informazioni in tedesco (§ 8, comma 2).",
+            "zh": "因此，作为进口商或经销商，公司须通过 DMIDS 向 BfArM 报告推定的严重风险，并向主管州机构报告伪造嫌疑（第 81 条）；且只能在附有德语信息的情况下向使用者和患者交付产品（第 8 条第 2 款）。",
+        },
+        "nein": {
+            "de": "Das Medizinprodukterecht-Durchführungsgesetz ist für das Unternehmen damit nicht einschlägig.",
+            "en": "The German Medical Devices Implementation Act (MPDG) therefore does not apply to the company.",
+            "es": "Por tanto, la Ley alemana de aplicación del Derecho de productos sanitarios (MPDG) no es aplicable a la empresa.",
+            "fr": "La loi allemande d'application du droit des dispositifs médicaux (MPDG) ne s'applique donc pas à l'entreprise.",
+            "it": "La legge tedesca di attuazione della normativa sui dispositivi medici (MPDG) non è quindi applicabile all'impresa.",
+            "zh": "因此，德国《医疗器械法实施法》（MPDG）不适用于该公司。",
+        },
+        "moeglich": {
+            "de": "Ob Pflichten aus dem MPDG bestehen, hängt deshalb davon ab, ob das Unternehmen Medizinprodukte herstellt, mit ihnen handelt oder sie für andere aufbereitet; das ist im Einzelfall zu prüfen.",
+            "en": "Whether obligations under the MPDG exist therefore depends on whether the company manufactures, trades in or reprocesses medical devices for others; this has to be assessed case by case.",
+            "es": "Por ello, la existencia de obligaciones derivadas de la MPDG depende de si la empresa fabrica, comercializa o reprocesa para terceros productos sanitarios; debe examinarse caso por caso.",
+            "fr": "L'existence d'obligations au titre de la MPDG dépend donc du fait que l'entreprise fabrique, commercialise ou retraite pour des tiers des dispositifs médicaux ; elle doit être examinée au cas par cas.",
+            "it": "La sussistenza di obblighi derivanti dalla MPDG dipende quindi dal fatto che l'impresa fabbrichi, commerci o ricondizioni per terzi dispositivi medici; va valutata caso per caso.",
+            "zh": "因此，是否负有 MPDG 规定的义务，取决于公司是否生产、经销或为他人再处理医疗器械，须个案审查。",
+        },
+    },
+    "MPAMIV": {
+        "mpamiv_hersteller": {
+            "de": "Hält das Unternehmen als Hersteller eine Anwendermeldung beim BfArM nicht für ein schwerwiegendes Vorkommnis, muss es seine Begründung innerhalb von 15 Tagen über das DMIDS vorlegen (§ 7 Abs. 3 MPAMIV); die eigene Meldepflicht folgt aus Art. 87 MDR.",
+            "en": "If the company, as manufacturer, does not consider a user report to the BfArM to be a serious incident, it must submit its justification via the DMIDS within 15 days (Section 7(3) MPAMIV); its own reporting obligation follows from Art. 87 MDR.",
+            "es": "Si la empresa, como fabricante, no considera incidente grave una notificación de usuario ante el BfArM, debe presentar su justificación a través del DMIDS en un plazo de 15 días (§ 7, apdo. 3, MPAMIV); su propia obligación de notificación se deriva del art. 87 del MDR.",
+            "fr": "Si l'entreprise, en tant que fabricant, ne considère pas un signalement d'utilisateur au BfArM comme un incident grave, elle doit présenter sa justification via le DMIDS dans un délai de 15 jours (§ 7, al. 3, MPAMIV) ; sa propre obligation de notification découle de l'art. 87 du MDR.",
+            "it": "Se l'impresa, in qualità di fabbricante, non ritiene che una segnalazione di un utilizzatore al BfArM costituisca un incidente grave, deve presentare la propria motivazione tramite il DMIDS entro 15 giorni (§ 7, comma 3, MPAMIV); il proprio obbligo di segnalazione deriva dall'art. 87 MDR.",
+            "zh": "如果公司作为制造商认为向 BfArM 提交的使用者报告不构成严重事件，须在 15 天内通过 DMIDS 提交理由（MPAMIV 第 7 条第 3 款）；其自身的报告义务源自 MDR 第 87 条。",
+        },
+        "mpamiv_aufbereitung": {
+            "de": "Die Meldepflicht nach § 3 MPAMIV trifft, wer Produkte beruflich betreibt oder anwendet, in der Regel also die Gesundheitseinrichtung; ob das Unternehmen bei der Aufbereitung selbst in diese Rolle kommt, ist im Einzelfall zu prüfen.",
+            "en": "The reporting obligation under Section 3 MPAMIV applies to those who operate or use products professionally, i.e. usually the healthcare institution; whether the company itself takes on this role when reprocessing has to be assessed case by case.",
+            "es": "La obligación de notificación del § 3 MPAMIV recae en quien opera o utiliza productos profesionalmente, es decir, por lo general en el centro sanitario; si la empresa asume ella misma ese papel al reprocesar debe examinarse caso por caso.",
+            "fr": "L'obligation de notification du § 3 MPAMIV incombe à quiconque exploite ou utilise des produits à titre professionnel, c'est-à-dire en règle générale à l'établissement de santé ; il convient d'examiner au cas par cas si l'entreprise assume elle-même ce rôle lors du retraitement.",
+            "it": "L'obbligo di segnalazione del § 3 MPAMIV grava su chi gestisce o utilizza prodotti a livello professionale, di norma quindi sulla struttura sanitaria; se l'impresa assuma essa stessa tale ruolo nel ricondizionamento va valutato caso per caso.",
+            "zh": "MPAMIV 第 3 条规定的报告义务适用于以职业方式运营或使用产品者，通常即医疗机构；公司在再处理过程中是否自身承担这一角色，须个案审查。",
+        },
+        "mpamiv_handel": {
+            "de": "Die MPAMIV verpflichtet Betreiber, Anwender und Hersteller; Importeure und Händler melden nach Art. 13 und 14 MDR in Verbindung mit § 81 MPDG, nicht nach dieser Verordnung.",
+            "en": "The MPAMIV places obligations on operators, users and manufacturers; importers and distributors report under Art. 13 and 14 MDR in conjunction with Section 81 MPDG, not under this ordinance.",
+            "es": "La MPAMIV obliga a operadores, usuarios y fabricantes; los importadores y distribuidores notifican conforme a los arts. 13 y 14 del MDR en relación con el § 81 MPDG, no conforme a este reglamento.",
+            "fr": "La MPAMIV impose des obligations aux exploitants, utilisateurs et fabricants ; les importateurs et distributeurs signalent en vertu des art. 13 et 14 du MDR en liaison avec le § 81 MPDG, et non en vertu de ce règlement.",
+            "it": "La MPAMIV obbliga gestori, utilizzatori e fabbricanti; importatori e distributori effettuano le segnalazioni ai sensi degli artt. 13 e 14 MDR in combinato disposto con il § 81 MPDG, non ai sensi di questo regolamento.",
+            "zh": "MPAMIV 规定的义务针对运营者、使用者和制造商；进口商和经销商依据 MDR 第 13、14 条并结合 MPDG 第 81 条进行报告，而非依据本条例。",
+        },
+        "nein": {
+            "de": "Die Medizinprodukte-Anwendermelde- und Informationsverordnung ist für das Unternehmen damit nicht einschlägig.",
+            "en": "The German Medical Device User Reporting and Information Ordinance (MPAMIV) therefore does not apply to the company.",
+            "es": "Por tanto, el Reglamento alemán de notificación por usuarios e información sobre productos sanitarios (MPAMIV) no es aplicable a la empresa.",
+            "fr": "Le règlement allemand sur les signalements des utilisateurs et l'information relatifs aux dispositifs médicaux (MPAMIV) ne s'applique donc pas à l'entreprise.",
+            "it": "Il regolamento tedesco sulle segnalazioni degli utilizzatori e sull'informazione relativa ai dispositivi medici (MPAMIV) non è quindi applicabile all'impresa.",
+            "zh": "因此，德国《医疗器械使用者报告与信息条例》（MPAMIV）不适用于该公司。",
+        },
+        "moeglich": {
+            "de": "Ob Pflichten aus der MPAMIV bestehen, hängt deshalb davon ab, ob das Unternehmen Hersteller von Medizinprodukten ist oder sie beruflich betreibt oder anwendet; das ist im Einzelfall zu prüfen.",
+            "en": "Whether obligations under the MPAMIV exist therefore depends on whether the company is a manufacturer of medical devices or operates or uses them professionally; this has to be assessed case by case.",
+            "es": "Por ello, la existencia de obligaciones derivadas de la MPAMIV depende de si la empresa es fabricante de productos sanitarios o los opera o utiliza profesionalmente; debe examinarse caso por caso.",
+            "fr": "L'existence d'obligations au titre de la MPAMIV dépend donc du fait que l'entreprise soit fabricant de dispositifs médicaux ou les exploite ou utilise à titre professionnel ; elle doit être examinée au cas par cas.",
+            "it": "La sussistenza di obblighi derivanti dalla MPAMIV dipende quindi dal fatto che l'impresa sia fabbricante di dispositivi medici o li gestisca o utilizzi a livello professionale; va valutata caso per caso.",
+            "zh": "因此，是否负有 MPAMIV 规定的义务，取决于公司是否为医疗器械制造商，或是否以职业方式运营或使用医疗器械，须个案审查。",
+        },
+    },
+    "MPBetreibV": {
+        "mpbetreibv_aufbereitung": {
+            "de": "Die Aufbereitung ist damit mit geeigneten validierten Verfahren unter Berücksichtigung der Herstellerangaben durchzuführen; bei Beachtung der KRINKO-BfArM-Empfehlung wird sie als ordnungsgemäß vermutet, für Produkte „Kritisch C“ ist ein zertifiziertes Qualitätsmanagementsystem Voraussetzung (§ 8 Abs. 1 bis 3).",
+            "en": "Reprocessing must therefore be carried out using suitable validated procedures, taking the manufacturer's information into account; it is presumed to be proper if the KRINKO-BfArM recommendation is observed, and for “Critical C” products a certified quality management system is a prerequisite (Section 8(1) to (3)).",
+            "es": "El reprocesamiento debe realizarse por tanto con procedimientos validados adecuados y teniendo en cuenta las indicaciones del fabricante; se presume correcto si se observa la recomendación KRINKO-BfArM, y para los productos «Crítico C» es requisito un sistema de gestión de la calidad certificado (§ 8, apdos. 1 a 3).",
+            "fr": "Le retraitement doit donc être effectué selon des procédés validés appropriés, en tenant compte des indications du fabricant ; il est présumé conforme si la recommandation KRINKO-BfArM est respectée, et pour les produits « Critique C », un système de management de la qualité certifié est une condition préalable (§ 8, al. 1 à 3).",
+            "it": "Il ricondizionamento deve quindi essere eseguito con procedure convalidate idonee, tenendo conto delle indicazioni del fabbricante; si presume corretto se si osserva la raccomandazione KRINKO-BfArM, e per i prodotti «Critico C» è presupposto un sistema di gestione della qualità certificato (§ 8, commi da 1 a 3).",
+            "zh": "因此，再处理须在考虑制造商说明的前提下，采用适当的经验证程序进行；遵守 KRINKO 与 BfArM 的联合建议即推定为合规，对于“关键 C”类产品，须以经认证的质量管理体系为前提（第 8 条第 1 至 3 款）。",
+        },
+        "mpbetreibv_keine_aufbereitung": {
+            "de": "Die Betreiberverordnung richtet sich an Betreiber und Benutzer in Gesundheitseinrichtungen und an die Aufbereitung; Herstellung und Handel allein lösen keine Pflichten aus ihr aus.",
+            "en": "The Operator Ordinance is addressed to operators and users in healthcare institutions and to reprocessing; manufacturing and trading alone do not trigger obligations under it.",
+            "es": "El Reglamento de operadores se dirige a operadores y usuarios en centros sanitarios y al reprocesamiento; la fabricación y el comercio por sí solos no generan obligaciones derivadas de él.",
+            "fr": "Le règlement sur les exploitants s'adresse aux exploitants et utilisateurs dans les établissements de santé ainsi qu'au retraitement ; la fabrication et le commerce à eux seuls n'entraînent pas d'obligations à ce titre.",
+            "it": "Il regolamento sui gestori si rivolge a gestori e utilizzatori nelle strutture sanitarie e al ricondizionamento; la sola fabbricazione e il solo commercio non fanno sorgere obblighi in base ad esso.",
+            "zh": "《运营者条例》针对医疗机构中的运营者和使用者以及再处理活动；仅从事生产和经销不会产生该条例规定的义务。",
+        },
+        "nein": {
+            "de": "Die Medizinprodukte-Betreiberverordnung ist für das Unternehmen damit nicht einschlägig.",
+            "en": "The German Medical Device Operator Ordinance (MPBetreibV) therefore does not apply to the company.",
+            "es": "Por tanto, el Reglamento alemán de operadores de productos sanitarios (MPBetreibV) no es aplicable a la empresa.",
+            "fr": "Le règlement allemand sur les exploitants de dispositifs médicaux (MPBetreibV) ne s'applique donc pas à l'entreprise.",
+            "it": "Il regolamento tedesco sui gestori di dispositivi medici (MPBetreibV) non è quindi applicabile all'impresa.",
+            "zh": "因此，德国《医疗器械运营者条例》（MPBetreibV）不适用于该公司。",
+        },
+        "moeglich": {
+            "de": "Ob Pflichten aus der MPBetreibV bestehen, hängt deshalb davon ab, ob das Unternehmen Medizinprodukte für Gesundheitseinrichtungen aufbereitet oder zur Benutzung bereithält; das ist im Einzelfall zu prüfen.",
+            "en": "Whether obligations under the MPBetreibV exist therefore depends on whether the company reprocesses medical devices for healthcare institutions or keeps them ready for use; this has to be assessed case by case.",
+            "es": "Por ello, la existencia de obligaciones derivadas de la MPBetreibV depende de si la empresa reprocesa productos sanitarios para centros sanitarios o los mantiene disponibles para su uso; debe examinarse caso por caso.",
+            "fr": "L'existence d'obligations au titre de la MPBetreibV dépend donc du fait que l'entreprise retraite des dispositifs médicaux pour des établissements de santé ou les tienne à disposition pour l'utilisation ; elle doit être examinée au cas par cas.",
+            "it": "La sussistenza di obblighi derivanti dalla MPBetreibV dipende quindi dal fatto che l'impresa ricondizioni dispositivi medici per strutture sanitarie o li tenga a disposizione per l'uso; va valutata caso per caso.",
+            "zh": "因此，是否负有 MPBetreibV 规定的义务，取决于公司是否为医疗机构再处理医疗器械或备妥医疗器械供使用，须个案审查。",
         },
     },
 }
@@ -5578,6 +5894,31 @@ COUPLING_PASSAGES: dict[str, dict[str, str]] = {
         "fr": "Art. 1, par. 1, Besluit UPV textiel : Est producteur quiconque, à titre professionnel et quelle que soit la technique de vente, met des produits textiles sur le marché aux Pays-Bas (in de handel brengt).",
         "it": "Art. 1, par. 1, Besluit UPV textiel: È produttore chiunque, a titolo professionale e indipendentemente dalla tecnica di vendita, immette prodotti tessili sul mercato nei Paesi Bassi (in de handel brengt).",
         "zh": "荷兰《Besluit UPV textiel》（纺织品生产者延伸责任法令）第 1 条第 1 款：凡以职业身份、不论采用何种销售方式在荷兰将纺织品投放市场（in de handel brengt）者，即为生产者。",
+    },
+    # Nationales Medizinprodukterecht (12.10.2026)
+    "MPDG": {
+        "de": "§ 2 Abs. 1 MPDG: Dieses Gesetz ist anzuwenden auf Produkte im Anwendungsbereich der Verordnung (EU) 2017/745 und der Verordnung (EU) 2017/746.",
+        "en": "Section 2(1) MPDG: This Act applies to products within the scope of Regulation (EU) 2017/745 and Regulation (EU) 2017/746.",
+        "es": "§ 2, apdo. 1, MPDG: La presente ley se aplica a los productos incluidos en el ámbito de aplicación del Reglamento (UE) 2017/745 y del Reglamento (UE) 2017/746.",
+        "fr": "§ 2, al. 1, MPDG : La présente loi s'applique aux produits relevant du champ d'application du règlement (UE) 2017/745 et du règlement (UE) 2017/746.",
+        "it": "§ 2, comma 1, MPDG: La presente legge si applica ai prodotti rientranti nell'ambito di applicazione del regolamento (UE) 2017/745 e del regolamento (UE) 2017/746.",
+        "zh": "MPDG 第 2 条第 1 款：本法适用于属于（欧盟）第 2017/745 号条例和（欧盟）第 2017/746 号条例适用范围的产品。",
+    },
+    "MPAMIV": {
+        "de": "§ 3 Satz 1 MPAMIV: Wer Produkte beruflich oder gewerblich betreibt oder anwendet, hat dabei aufgetretene mutmaßliche schwerwiegende Vorkommnisse unverzüglich der zuständigen Bundesoberbehörde zu melden.",
+        "en": "Section 3 sentence 1 MPAMIV: Anyone who operates or uses products professionally or commercially must report suspected serious incidents that occur in the process to the competent higher federal authority without delay.",
+        "es": "§ 3, frase 1, MPAMIV: Quien opere o utilice productos con fines profesionales o comerciales debe notificar sin demora a la autoridad federal superior competente los presuntos incidentes graves que se produzcan.",
+        "fr": "§ 3, phrase 1, MPAMIV : Quiconque exploite ou utilise des produits à titre professionnel ou commercial doit signaler sans délai à l'autorité fédérale supérieure compétente les incidents graves présumés survenus à cette occasion.",
+        "it": "§ 3, frase 1, MPAMIV: Chi gestisce o utilizza prodotti a livello professionale o commerciale deve segnalare senza indugio all'autorità federale superiore competente i presunti incidenti gravi verificatisi.",
+        "zh": "MPAMIV 第 3 条第 1 句：以职业或商业方式运营或使用产品者，须将在此过程中出现的疑似严重事件立即报告主管联邦高级机构。",
+    },
+    "MPBetreibV": {
+        "de": "§ 8 Abs. 1 MPBetreibV: Die Aufbereitung von bestimmungsgemäß keimarm oder steril zur Benutzung kommenden Produkten ist unter Berücksichtigung der Angaben des Herstellers mit geeigneten validierten Verfahren durchzuführen.",
+        "en": "Section 8(1) MPBetreibV: The reprocessing of products intended to be used in a low-germ or sterile state shall be carried out using suitable validated procedures, taking into account the manufacturer's information.",
+        "es": "§ 8, apdo. 1, MPBetreibV: El reprocesamiento de productos destinados a utilizarse con baja carga microbiana o estériles debe realizarse con procedimientos validados adecuados, teniendo en cuenta las indicaciones del fabricante.",
+        "fr": "§ 8, al. 1, MPBetreibV : Le retraitement de produits destinés à être utilisés à faible charge microbienne ou stériles doit être effectué selon des procédés validés appropriés, en tenant compte des indications du fabricant.",
+        "it": "§ 8, comma 1, MPBetreibV: Il ricondizionamento di prodotti destinati a essere utilizzati a bassa carica microbica o sterili deve essere eseguito con procedure convalidate idonee, tenendo conto delle indicazioni del fabbricante.",
+        "zh": "MPBetreibV 第 8 条第 1 款：对按预期以低菌或无菌状态使用的产品进行再处理，须在考虑制造商说明的前提下，采用适当的经验证程序进行。",
     },
 }
 
@@ -6331,6 +6672,51 @@ SVHC_LABELS: dict[str, dict[str, str]] = {
     "Nein": {"de": "Nein", "en": "No", "es": "No", "fr": "Non", "it": "No", "zh": "否"},
 }
 
+# Taetigkeit mit Medizinprodukten (Key = DE-Wert, DB-kompatibel),
+# siehe regulations.MEDICAL_ACTIVITIES.
+MEDICAL_ACTIVITY_LABELS: dict[str, dict[str, str]] = {
+    "Hersteller von Medizinprodukten (medizinische Zweckbestimmung, Vermarktung unter eigenem Namen oder eigener Marke)": {
+        "de": "Hersteller von Medizinprodukten (medizinische Zweckbestimmung, Vermarktung unter eigenem Namen oder eigener Marke)",
+        "en": "Manufacturer of medical devices (medical intended purpose, marketed under own name or trademark)",
+        "es": "Fabricante de productos sanitarios (finalidad prevista médica, comercialización con nombre o marca propios)",
+        "fr": "Fabricant de dispositifs médicaux (destination médicale, commercialisation sous son propre nom ou sa propre marque)",
+        "it": "Fabbricante di dispositivi medici (destinazione d'uso medica, commercializzazione con nome o marchio propri)",
+        "zh": "医疗器械制造商（具有医疗预期用途，以自有名称或商标销售）",
+    },
+    "Import oder Handel mit Medizinprodukten anderer Hersteller": {
+        "de": "Import oder Handel mit Medizinprodukten anderer Hersteller",
+        "en": "Import of or trade in medical devices of other manufacturers",
+        "es": "Importación o comercio de productos sanitarios de otros fabricantes",
+        "fr": "Importation ou commerce de dispositifs médicaux d'autres fabricants",
+        "it": "Importazione o commercio di dispositivi medici di altri fabbricanti",
+        "zh": "进口或经销其他制造商的医疗器械",
+    },
+    "Aufbereitung von Medizinprodukten für Kliniken, Praxen oder Pflegeeinrichtungen, auch im Mietservice (z. B. OP-Textilien)": {
+        "de": "Aufbereitung von Medizinprodukten für Kliniken, Praxen oder Pflegeeinrichtungen, auch im Mietservice (z. B. OP-Textilien)",
+        "en": "Reprocessing of medical devices for hospitals, practices or care facilities, including rental services (e.g. surgical textiles)",
+        "es": "Reprocesamiento de productos sanitarios para clínicas, consultas o centros asistenciales, también en servicio de alquiler (p. ej., textiles quirúrgicos)",
+        "fr": "Retraitement de dispositifs médicaux pour des cliniques, cabinets ou établissements de soins, y compris en location (par ex. textiles chirurgicaux)",
+        "it": "Ricondizionamento di dispositivi medici per cliniche, studi medici o strutture di assistenza, anche a noleggio (ad es. tessili chirurgici)",
+        "zh": "为医院、诊所或护理机构再处理医疗器械，包括租赁服务（例如手术用纺织品）",
+    },
+    "Keine Produkte mit medizinischer Zweckbestimmung": {
+        "de": "Keine Produkte mit medizinischer Zweckbestimmung",
+        "en": "No products with a medical intended purpose",
+        "es": "Ningún producto con finalidad prevista médica",
+        "fr": "Aucun produit ayant une destination médicale",
+        "it": "Nessun prodotto con destinazione d'uso medica",
+        "zh": "无具有医疗预期用途的产品",
+    },
+    "Nicht bekannt / noch zu klären": {
+        "de": "Nicht bekannt / noch zu klären",
+        "en": "Not known / still to be clarified",
+        "es": "No se sabe / pendiente de aclarar",
+        "fr": "Inconnu / reste à clarifier",
+        "it": "Non noto / ancora da chiarire",
+        "zh": "不清楚 / 有待澄清",
+    },
+}
+
 
 # ---------- Ausfuellhilfen / Erlaeuterungen zu Fachbegriffen ----------
 #
@@ -6555,6 +6941,15 @@ FIELD_HELP: dict[str, dict[str, str]] = {
         "fr": "La date à laquelle l'application a téléchargé pour la dernière fois le texte légal depuis la source officielle. La version consolidée est utilisée lorsqu'elle existe, c'est-à-dire le texte intégrant les modifications ultérieures. Une date ancienne ne signifie pas que le texte est périmé, mais seulement qu'aucun nouveau téléchargement n'a eu lieu depuis.",
         "it": "La data in cui l'applicazione ha scaricato per l'ultima volta il testo normativo dalla fonte ufficiale. Ove disponibile viene usata la versione consolidata, cioè il testo comprensivo delle modifiche successive. Una data meno recente non significa che il testo sia superato, ma solo che da allora non è avvenuto un nuovo scaricamento.",
         "zh": "本应用最近一次从官方来源下载相关法律文本的日期。如有合并版本，则使用合并版，即包含后续修订的文本。日期较早并不意味着文本过时，只说明此后未再进行新的抓取。",
+    },
+    # Nationales Medizinprodukterecht (12.10.2026)
+    "medical": {
+        "de": "Ein Textil ist nur dann ein Medizinprodukt, wenn der Hersteller ihm eine medizinische Zweckbestimmung gibt – etwa Kompressionsstrümpfe, Bandagen, Wundauflagen oder OP-Abdeckungen. Hersteller ist auch, wer solche Produkte herstellen lässt und unter eigenem Namen vermarktet. Aufbereitung heißt: gebrauchte Medizinprodukte, z. B. OP-Textilien, reinigen, desinfizieren oder sterilisieren und wieder bereitstellen. Wenn Sie es nicht wissen, wählen Sie „Nicht bekannt / noch zu klären“.",
+        "en": "A textile is a medical device only if the manufacturer assigns it a medical intended purpose – for example compression stockings, supports, wound dressings or surgical drapes. Anyone who has such products made and markets them under their own name is also a manufacturer. Reprocessing means cleaning, disinfecting or sterilising used medical devices, e.g. surgical textiles, and making them available again. If you do not know, select “Not known / still to be clarified”.",
+        "es": "Un textil solo es un producto sanitario si el fabricante le atribuye una finalidad prevista médica, por ejemplo medias de compresión, vendajes, apósitos o paños quirúrgicos. También es fabricante quien encarga la fabricación de estos productos y los comercializa con su propio nombre. Reprocesar significa limpiar, desinfectar o esterilizar productos sanitarios usados, p. ej. textiles quirúrgicos, y volver a ponerlos a disposición. Si no lo sabe, seleccione «No se sabe / pendiente de aclarar».",
+        "fr": "Un textile n'est un dispositif médical que si le fabricant lui confère une destination médicale – par exemple des bas de compression, des bandages, des pansements ou des champs opératoires. Est également fabricant quiconque fait fabriquer de tels produits et les commercialise sous son propre nom. Le retraitement consiste à nettoyer, désinfecter ou stériliser des dispositifs médicaux usagés, par ex. des textiles chirurgicaux, et à les remettre à disposition. Si vous ne le savez pas, choisissez « Inconnu / reste à clarifier ».",
+        "it": "Un tessile è un dispositivo medico solo se il fabbricante gli attribuisce una destinazione d'uso medica, ad esempio calze a compressione, bendaggi, medicazioni o teli chirurgici. È fabbricante anche chi fa fabbricare tali prodotti e li commercializza con il proprio nome. Ricondizionare significa pulire, disinfettare o sterilizzare dispositivi medici usati, ad es. tessili chirurgici, e renderli nuovamente disponibili. Se non lo sa, selezioni «Non noto / ancora da chiarire».",
+        "zh": "只有当制造商赋予纺织品医疗预期用途时，该纺织品才属于医疗器械，例如压力袜、护具、伤口敷料或手术铺单。委托他人生产此类产品并以自有名称销售者，同样属于制造商。再处理是指对使用过的医疗器械（例如手术用纺织品）进行清洗、消毒或灭菌后再次提供使用。如不清楚，请选择“不清楚 / 有待澄清”。",
     },
 }
 

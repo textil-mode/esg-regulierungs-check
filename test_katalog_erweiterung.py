@@ -231,7 +231,8 @@ def block_d() -> None:
 def block_e() -> None:
     print("\n--- E  Katalog ---")
     by_key = {r["key"]: r for r in regs.REGULATIONS}
-    check("E 30 Regulierungen, alle neuen vorhanden", len(regs.REGULATIONS) == 30
+    # 33 seit 12.10.2026 (MPDG, MPAMIV, MPBetreibV — test_medizinprodukte.py)
+    check("E 33 Regulierungen, alle neuen vorhanden", len(regs.REGULATIONS) == 33
           and all(k in by_key for k in NEUE), str(len(regs.REGULATIONS)))
     check("E Nummern eindeutig", len({r["nr"] for r in regs.REGULATIONS}) == len(regs.REGULATIONS))
     for key in NEUE:

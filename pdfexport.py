@@ -396,7 +396,7 @@ def render_pdf(results: list[dict], language: str = "de",
     lang_dict = I18N.get(language, I18N["de"])
 
     shown = [r for r in results
-             if (r.get("applies") or "").lower() in APPLIES_ORDER]
+             if (r.get("applies") or "").lower() in APPLIES_ORDER and not r.get("hidden")]
     shown.sort(key=lambda r: (APPLIES_ORDER.get((r.get("applies") or "").lower(), 9),
                               r.get("nr", 0)))
 

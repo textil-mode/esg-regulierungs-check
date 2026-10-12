@@ -132,6 +132,23 @@
       {% endfor %}
     </div>
 
+    <!-- Taetigkeit mit Medizinprodukten: nur bei "Medizin- und Gesundheitstextilien"
+         (syncMedicalBlock unten). Ohne JavaScript bleibt der Block sichtbar. -->
+    {% set med_cat = "Medizin- und Gesundheitstextilien" %}
+    {% set existing_med = company.get('medical_activities', []) or [] %}
+    <div id="medical-block" class="medical-block" data-category="{{ med_cat }}" {{ '' if med_cat in existing_prods else 'hidden' }}>
+      <h4 class="material-group">{{ t("section_medical", lang)|replace("#### ","") }} {{ fh("medical") }}</h4>
+      <p class="help-text" style="margin-bottom:8px;">{{ t("medical_hint", lang) }}</p>
+      <div class="grid-2 products-grid">
+        {% for v in MEDICAL_ACTIVITIES %}
+        <div class="checkbox-row">
+          <input type="checkbox" name="medical_activities" value="{{ v }}" id="med_{{ loop.index }}" {{ 'checked' if v in existing_med }}>
+          <label for="med_{{ loop.index }}">{{ t_opt(v, MEDICAL_ACTIVITY_LABELS, lang) }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
     <!-- Rolle in der Wertschöpfungskette -->
     <hr>
     <h3 style="margin-bottom:8px;">{{ t("section_roles", lang)|replace("#### ","") }} {{ fh("roles") }}</h3>
@@ -266,6 +283,18 @@
 </div>
 
 <script>
+/* --- Zusatzfrage Medizinprodukte nur bei "Medizin- und Gesundheitstextilien" --- */
+function syncMedicalBlock() {
+  const block = document.getElementById('medical-block');
+  if (!block) return;
+  const cat = document.querySelector('input[name="product_categories"][value="' + block.dataset.category + '"]');
+  block.hidden = !(cat && cat.checked);
+}
+document.querySelectorAll('input[name="product_categories"]').forEach(cb => {
+  cb.addEventListener('change', syncMedicalBlock);
+});
+syncMedicalBlock();
+
 /* --- Zahlenformatierung live bei Eingabe --- */
 
 // Mitarbeiter: "23 000" (Leerzeichen als Tausender)
@@ -450,6 +479,7 @@ async function runAutofill() {
       });
       count++;
     }
+    syncMedicalBlock();
     if (f.hq_location) {
       // Nur die erste Standort-Zeile vorbelegen, wenn sie noch leer ist (count 0)
       const firstRow = document.querySelector('#sites-container .site-row');

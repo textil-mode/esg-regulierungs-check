@@ -47,6 +47,7 @@ from i18n import (
     LOCATION_LABELS,
     MATERIAL_GROUP_LABELS,
     MATERIAL_LABELS,
+    MEDICAL_ACTIVITY_LABELS,
     PRODUCT_CAT_LABELS,
     ROLE_LABELS,
     SALES_MARKET_LABELS,
@@ -75,6 +76,7 @@ from regulations import (
     LOCATIONS,
     MATERIAL_GROUPS,
     MATERIALS,
+    MEDICAL_ACTIVITIES,
     MEMBER_ASSOCIATIONS,
     PRODUCT_CATEGORIES,
     REGULATIONS,
@@ -342,6 +344,7 @@ def _inject_globals():
         MATERIAL_GROUP_LABELS=MATERIAL_GROUP_LABELS,
         SALES_MARKET_LABELS=SALES_MARKET_LABELS,
         SVHC_LABELS=SVHC_LABELS,
+        MEDICAL_ACTIVITY_LABELS=MEDICAL_ACTIVITY_LABELS,
         MEMBER_ASSOCIATIONS=MEMBER_ASSOCIATIONS,
         ACCOUNT_TYPE_USER=db.ACCOUNT_TYPE_USER,
         ACCOUNT_TYPE_TEST=db.ACCOUNT_TYPE_TEST,
@@ -1378,6 +1381,7 @@ def dashboard():
         MATERIAL_GROUPS=MATERIAL_GROUPS,
         SALES_MARKETS=SALES_MARKETS,
         SVHC_OPTIONS=SVHC_OPTIONS,
+        MEDICAL_ACTIVITIES=MEDICAL_ACTIVITIES,
         reg_count=len(REGULATIONS),
     )
 
@@ -1444,6 +1448,9 @@ def save_company():
         "value_chain_roles": f.getlist("value_chain_roles"),
         "materials": f.getlist("materials"),
         "sales_markets": f.getlist("sales_markets"),
+        # Nur sichtbar bei "Medizin- und Gesundheitstextilien"; ohne die
+        # Kategorie werten die Regeln das Feld nicht aus (siehe _med_prelude).
+        "medical_activities": f.getlist("medical_activities"),
         "sites": sites,
         "language": lang,
     }

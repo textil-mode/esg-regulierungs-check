@@ -21,7 +21,7 @@ from typing import Callable
 import db
 from fetcher import current_text_hash
 from i18n import coupling_texts, normalize_lang
-from regulations import coupling_premise, coupling_verdict, relevant_fields_for
+from regulations import coupling_premise, coupling_verdict, hidden_card, relevant_fields_for
 
 
 class _TruncatedJSON(ValueError):
@@ -115,6 +115,7 @@ _PROFILE_LABELS: dict[str, str] = {
     "energy_gwh": "Total final energy consumption in Germany (GWh/year, average of the last 3 years; 0 = not stated)",
     "wet_processing_de": "Wet processing of textiles with wastewater at a site in Germany",
     "svhc_status": "Products contain SVHC (ECHA Candidate List) above 0.1 %",
+    "medical_activities": "Activities involving medical devices",
 }
 
 _USER_TEMPLATE = """{profile}
@@ -182,7 +183,7 @@ def _format_profile(profile: dict, reg: dict) -> str:
 # Mehrfachauswahl-Felder: im Prompt als Aufzaehlung, im Cache-Schluessel
 # sortiert (die Reihenfolge im Formular ist bedeutungslos).
 _LIST_FIELDS = frozenset({"product_categories", "value_chain_roles", "materials",
-                          "sales_markets"})
+                          "sales_markets", "medical_activities"})
 _BOOL_FIELDS = frozenset({"b2c", "listed", "env_claims", "eu_importer", "wet_processing_de"})
 _INT_FIELDS = frozenset({"employees", "employees_de"})
 _FLOAT_FIELDS = frozenset({"revenue_eur", "revenue_eu_eur", "balance_sheet_eur", "energy_gwh"})
@@ -431,8 +432,15 @@ def deterministic_result(reg: dict, profile: dict, language: str) -> dict | None
     if not texts:
         return None
     reason, passage = texts
-    return {**_enrich(reg, {}), "applies": verdict["applies"],
-            "reason": reason, "passage": passage}
+    result = {**_enrich(reg, {}), "applies": verdict["applies"],
+              "reason": reason, "passage": passage}
+    # Karten, die fuer dieses Profil gar nicht erscheinen sollen (nationales
+    # Medizinprodukterecht ohne Medizintextilien). Das Ergebnis bleibt im Lauf,
+    # damit Zaehler und Speicherung unveraendert arbeiten; views.py und
+    # pdfexport.py lassen es weg.
+    if hidden_card(reg["key"], verdict):
+        result["hidden"] = True
+    return result
 
 
 def _cache_hit(rows: list[dict], reg: dict, language: str,
