@@ -119,20 +119,31 @@ def _celex_of(url: str) -> str | None:
     return None
 
 
-def _check_cellar(celex: str, client: httpx.Client) -> tuple[bool, str]:
-    """Gegenprobe ueber publications.europa.eu — derselbe Weg wie fetcher._cellar_text.
+# Die Gegenprobe hat drei Ausgaenge, nicht zwei: neben "geht" und "geht nicht"
+# den Fall, dass wir es gerade nicht wissen koennen (09.11.2026). Vorher fiel
+# der auf "geht nicht" und loeste eine Defekt-Mail aus.
+CELLAR_OK = "ok"
+CELLAR_UNKLAR = "unklar"
+CELLAR_DEFEKT = "defekt"
 
-    Eine datumslose konsolidierte ID (`02024L1760`) liefert in Cellar 404; die
-    juengste datierte Fassung wird deshalb — genau wie in `fetcher` — per SPARQL
-    aufgeloest, bevor abgerufen wird.
+# Welcher Result-Status zu welchem Ausgang gehoert. "UNKNOWN" landet in
+# `linkwaechter.einstufen` in der Liste der unklaren Faelle: Admin-Seite ja,
+# Mail nein.
+CELLAR_STATUS = {CELLAR_OK: "OK_VIA_CELLAR",
+                 CELLAR_UNKLAR: "UNKNOWN",
+                 CELLAR_DEFEKT: "BROKEN"}
+
+
+def _cellar_abruf(celex: str, client: httpx.Client) -> tuple[bool, str]:
+    """Holt ein Dokument aus Cellar. Rueckgabe: (erreichbar, Kurzbefund).
+
+    Cellar liefert je nach `Accept` unterschiedlich; derselbe Satz Typen wie in
+    `fetcher._cellar_text`, in derselben Reihenfolge. Fuer `32017R0745` kommt
+    erst mit `application/xhtml+xml` ein Dokument — wer nur `text/html` fragt,
+    sieht einen 404 und haelt die Adresse fuer tot.
     """
-    resolved = celex
-    if UNDATED_CONSOLIDATED.match(celex):
-        resolved, kind = _latest_consolidated(celex)
-        if kind != RESOLVE_CONSOLIDATED:
-            return False, (f"Konsolidierung zu {celex} nicht aufloesbar "
-                           f"(SPARQL); Basisakt {resolved} wird geprueft")
-    target = f"https://publications.europa.eu/resource/celex/{resolved}"
+    target = f"https://publications.europa.eu/resource/celex/{celex}"
+    status: int | None = None
     for accept in ("text/html", "application/xhtml+xml", "text/plain"):
         try:
             r = client.get(
@@ -143,10 +154,47 @@ def _check_cellar(celex: str, client: httpx.Client) -> tuple[bool, str]:
             )
         except Exception as exc:  # noqa: BLE001
             return False, f"Cellar-Fehler: {type(exc).__name__}"
+        status = r.status_code
         if r.status_code == 200 and len(r.content) > 2000:
-            return True, (f"Cellar-Gegenprobe OK ({celex}, {len(r.content)} Bytes, "
-                          f"{r.headers.get('content-type', '?')})")
-    return False, f"Cellar-Gegenprobe fehlgeschlagen ({celex}, HTTP {r.status_code})"
+            return True, (f"{len(r.content)} Bytes, "
+                          f"{r.headers.get('content-type', '?')}")
+    return False, f"HTTP {status}"
+
+
+def _check_cellar(celex: str, client: httpx.Client) -> tuple[str, str]:
+    """Gegenprobe ueber publications.europa.eu — derselbe Weg wie fetcher._cellar_text.
+
+    Eine datumslose konsolidierte ID (`02024L1760`) liefert in Cellar 404; die
+    juengste datierte Fassung wird deshalb — genau wie in `fetcher` — per SPARQL
+    aufgeloest, bevor abgerufen wird.
+
+    Scheitert diese Auflösung, ist das ein Ausfall beim Amt fuer
+    Veroeffentlichungen und sagt nichts ueber unsere Adresse. Dann wird der
+    Basisakt abgerufen — das versprach die Notiz schon vorher, der Code tat es
+    aber nicht und meldete "defekt" (Befund 09.11.2026: die MDR-Quelle lief
+    laut `law_texts` am selben Morgen um 03:17 einwandfrei, der Linkwaechter
+    meldete sie um 03:45 als defekt). Beide Ausgaenge dieses Zweigs sind
+    "unklar": die geltende Fassung konnte nicht geprueft werden.
+    """
+    resolved = celex
+    if UNDATED_CONSOLIDATED.match(celex):
+        resolved, kind = _latest_consolidated(celex)
+        if kind != RESOLVE_CONSOLIDATED:
+            erreichbar, befund = _cellar_abruf(resolved, client)
+            if erreichbar:
+                return CELLAR_UNKLAR, (
+                    f"Konsolidierung zu {celex} nicht aufloesbar (SPARQL); "
+                    f"Basisakt {resolved} ist abrufbar ({befund}) — welche "
+                    f"Fassung gilt, blieb ungeprueft")
+            return CELLAR_UNKLAR, (
+                f"Konsolidierung zu {celex} nicht aufloesbar (SPARQL), "
+                f"Basisakt {resolved} ebenfalls nicht ({befund}) — das Amt "
+                f"fuer Veroeffentlichungen antwortet gerade nicht")
+
+    erreichbar, befund = _cellar_abruf(resolved, client)
+    if erreichbar:
+        return CELLAR_OK, f"Cellar-Gegenprobe OK ({celex}, {befund})"
+    return CELLAR_DEFEKT, f"Cellar-Gegenprobe fehlgeschlagen ({celex}, {befund})"
 
 
 def check(url: str, where: str, label: str, client: httpx.Client) -> Result:
@@ -169,8 +217,8 @@ def check(url: str, where: str, label: str, client: httpx.Client) -> Result:
     if is_eurlex and waf:
         celex = _celex_of(url)
         if celex:
-            ok, note = _check_cellar(celex, client)
-            return Result(url, where, label, "OK_VIA_CELLAR" if ok else "BROKEN",
+            zustand, note = _check_cellar(celex, client)
+            return Result(url, where, label, CELLAR_STATUS[zustand],
                           resp.status_code, final, ctype, length,
                           f"EUR-Lex-Bot-Schutz (HTTP {resp.status_code}). {note}")
         return Result(url, where, label, "UNKNOWN", resp.status_code, final,
@@ -185,8 +233,8 @@ def check(url: str, where: str, label: str, client: httpx.Client) -> Result:
     if is_eurlex and resp.status_code >= 400:
         celex = _celex_of(url)
         if celex and UNDATED_CONSOLIDATED.match(celex):
-            ok, note = _check_cellar(celex, client)
-            return Result(url, where, label, "OK_VIA_CELLAR" if ok else "BROKEN",
+            zustand, note = _check_cellar(celex, client)
+            return Result(url, where, label, CELLAR_STATUS[zustand],
                           resp.status_code, final, ctype, length,
                           f"datumslose konsolidierte Fassung (HTTP "
                           f"{resp.status_code} bei Direktabruf ist hier normal). {note}")

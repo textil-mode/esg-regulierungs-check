@@ -44,9 +44,14 @@ def check(label: str, ok: bool, detail: str = "") -> None:
 
 # --- Attrappen --------------------------------------------------------------
 class Antwort:
-    def __init__(self, url: str, text: str = "", status: int = 200):
+    def __init__(self, url: str, text: str = "", status: int = 200,
+                 ctype: str = "text/html"):
         self.url, self.text, self.status_code = url, text, status
         self.content = text.encode("iso-8859-1", errors="replace")
+        # Die echte httpx-Antwort hat `headers`; ohne das lief die
+        # Cellar-Gegenprobe im Test in einen AttributeError (bemerkt am
+        # 09.11.2026, als Block F sie erstmals aufrief).
+        self.headers = {"content-type": ctype}
 
 
 class Client:
@@ -295,8 +300,101 @@ def block_e() -> None:
           eintrag is not None and "seit mindestens einer Woche" in eintrag["note"], str(r["broken"]))
 
 
+# ---------------------------------------------------------------------------
+def block_f() -> None:
+    """Cellar-Gegenprobe: vier Ausgaenge (Befund 09.11.2026).
+
+    Eine datumslose CELEX-ID beantwortet EUR-Lex immer mit 404 — der Direktabruf
+    kann gar nicht gelingen. Ob die Quelle lebt, entscheidet allein die
+    Gegenprobe ueber Cellar. Faellt dort die SPARQL-Auflösung aus, ist das ein
+    Ausfall beim Amt fuer Veroeffentlichungen und sagt nichts ueber unsere
+    Adresse: dann "unklar", nie "defekt".
+    """
+    print("\n--- F  Cellar-Gegenprobe ---")
+    import check_links
+
+    CELEX = "02017R0745"                      # MDR, wie im echten Fall
+    DATIERT = "02017R0745-20261109"
+    RES = "https://publications.europa.eu/resource/celex/"
+    GROSS = "x" * 3000                        # ueber der 2000-Byte-Schwelle
+    original = check_links._latest_consolidated
+
+    def sparql(ergebnis, art):
+        check_links._latest_consolidated = lambda c: (ergebnis, art)
+
+    try:
+        # 1. Normalfall: Auflösung klappt, Dokument da -> ok
+        sparql(DATIERT, check_links.RESOLVE_CONSOLIDATED)
+        zustand, note = check_links._check_cellar(CELEX, Client({RES + DATIERT: GROSS}))
+        check("F Auflösung + Dokument: ok", zustand == check_links.CELLAR_OK, note)
+
+        # 2. Auflösung klappt, Dokument fehlt -> defekt (echter Befund)
+        zustand, note = check_links._check_cellar(CELEX, Client({}))
+        check("F Auflösung ok, Dokument fehlt: defekt",
+              zustand == check_links.CELLAR_DEFEKT, note)
+
+        # 3. SPARQL weg, Basisakt abrufbar -> unklar, und der Abruf findet
+        #    wirklich statt (frueher kehrte die Funktion vorher zurueck)
+        sparql("32017R0745", "base_act")
+        klient = Client({RES + "32017R0745": GROSS})
+        zustand, note = check_links._check_cellar(CELEX, klient)
+        check("F SPARQL weg, Basisakt da: unklar",
+              zustand == check_links.CELLAR_UNKLAR, note)
+        check("F … und der Basisakt wird tatsaechlich abgerufen",
+              any("32017R0745" in u for u in klient.abrufe), str(klient.abrufe))
+        check("F … die Notiz sagt, dass die Fassung ungeprueft blieb",
+              "ungeprueft" in note, note)
+
+        # 4. SPARQL weg, Basisakt auch nicht erreichbar -> weiterhin unklar.
+        #    Das Amt antwortet nicht; unsere Adresse ist deshalb nicht tot.
+        zustand, note = check_links._check_cellar(CELEX, Client({}))
+        check("F SPARQL weg, Basisakt weg: unklar (nicht defekt)",
+              zustand == check_links.CELLAR_UNKLAR, note)
+
+        # 5. Accept-Typen der Reihe nach: erst xhtml liefert das Dokument.
+        #    Wer nur text/html fragt, haelt die Adresse fuer tot.
+        class NurXhtml(Client):
+            def get(self, url, headers=None, follow_redirects=True):
+                self.abrufe.append(url)
+                if (headers or {}).get("Accept") != "application/xhtml+xml":
+                    return Antwort(url, "", 404)
+                return Antwort(url, GROSS, 200)
+
+        sparql(DATIERT, check_links.RESOLVE_CONSOLIDATED)
+        zustand, note = check_links._check_cellar(CELEX, NurXhtml({}))
+        check("F nur application/xhtml+xml antwortet: trotzdem ok",
+              zustand == check_links.CELLAR_OK, note)
+
+        # 6. Durchgereicht bis zum Result: unklar -> UNKNOWN, also keine Mail
+        check("F Zuordnung der Zustaende auf den Result-Status",
+              check_links.CELLAR_STATUS == {check_links.CELLAR_OK: "OK_VIA_CELLAR",
+                                            check_links.CELLAR_UNKLAR: "UNKNOWN",
+                                            check_links.CELLAR_DEFEKT: "BROKEN"},
+              str(check_links.CELLAR_STATUS))
+
+        # 7. Und der ganze Weg: 404 auf die datumslose Adresse, SPARQL weg
+        #    -> UNKNOWN, und `einstufen` meldet nichts per Mail.
+        sparql("32017R0745", "base_act")
+        url = f"https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A{CELEX}"
+
+        class EurLex(Client):
+            def get(self, ziel, headers=None, follow_redirects=True):
+                self.abrufe.append(ziel)
+                if ziel == url:
+                    return Antwort(ziel, "The requested document does not exist", 404)
+                return Antwort(ziel, GROSS, 200)
+
+        r = check_links.check(url, "REGULATIONS[MDR].text_url", "MDR", EurLex({}))
+        check("F ganzer Weg: Status UNKNOWN", r.status == "UNKNOWN", f"{r.status} / {r.note}")
+        defekt, unklar = lw.einstufen([r], None, warten=0)
+        check("F ganzer Weg: nichts als defekt gemeldet", not defekt, str(defekt))
+        check("F ganzer Weg: steht unter den unklaren Faellen", len(unklar) == 1, str(unklar))
+    finally:
+        check_links._latest_consolidated = original
+
+
 if __name__ == "__main__":
-    for block in (block_a, block_b, block_c, block_d, block_e):
+    for block in (block_a, block_b, block_c, block_d, block_e, block_f):
         block()
     print()
     if _failures:
