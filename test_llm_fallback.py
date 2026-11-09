@@ -37,6 +37,10 @@ os.environ["GOOGLE_API_KEY"] = "AQtest-geheim-123"
 os.environ["OPENAI_MODEL"] = "haupt-modell"
 os.environ["GOOGLE_MODEL"] = "haupt-modell"
 os.environ["GOOGLE_FALLBACK_MODELS"] = "ausweich-a,ausweich-b"
+# Kein Index-Vorbau im Test: sonst laeuft beim Messen der
+# Thread-Basislinie noch "assistent-index", und das Warten auf die
+# Mail-Threads wird wirkungslos (Befund 09.11.2026).
+os.environ["ASSISTENT_WARMUP"] = "0"
 
 if TEST_DB.exists():
     TEST_DB.unlink()

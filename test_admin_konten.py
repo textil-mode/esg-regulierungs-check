@@ -15,6 +15,10 @@ if TEST_DB.exists():
 os.environ["ESG_DB_PATH"] = str(TEST_DB)
 for v in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "MAIL_FROM"):
     os.environ[v] = ""
+# Kein Index-Vorbau im Test: sonst laeuft beim Messen der
+# Thread-Basislinie noch "assistent-index", und das Warten auf die
+# Mail-Threads wird wirkungslos (Befund 09.11.2026).
+os.environ["ASSISTENT_WARMUP"] = "0"
 os.environ["PUBLIC_BASE_URL"] = "https://test.example"
 
 import db  # noqa: E402

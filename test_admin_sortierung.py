@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
+from datetime import datetime, timedelta
 import sys
 from pathlib import Path
 
@@ -30,6 +31,10 @@ if TEST_DB.exists():
 os.environ["ESG_DB_PATH"] = str(TEST_DB)
 for _var in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "MAIL_FROM", "MAIL_FROM_NAME"):
     os.environ[_var] = ""
+# Kein Index-Vorbau im Test: sonst laeuft beim Messen der
+# Thread-Basislinie noch "assistent-index", und das Warten auf die
+# Mail-Threads wird wirkungslos (Befund 09.11.2026).
+os.environ["ASSISTENT_WARMUP"] = "0"
 os.environ["PUBLIC_BASE_URL"] = "https://test.example"
 
 import db  # noqa: E402
@@ -68,10 +73,18 @@ with sqlite3.connect(TEST_DB) as c:
         for zeit in pruefungen:
             c.execute("INSERT INTO analyses (user_id, created_at, result_json) VALUES (?, ?, '[]')",
                       (uid, zeit))
+    # Die beiden offenen Anfragen brauchen JUNGE Zeitpunkte: `app.admin_accounts`
+    # ruft `db.purge_stale_pending()`, und das loescht Anfragen, die aelter als
+    # PENDING_MAX_DAYS (30 Tage) sind. Mit festen Daten vom September lief der
+    # Test bis Ende Oktober gruen und ab dem 29.10. nicht mehr - die Tabelle
+    # "Offene Zugangsanfragen" fehlte dann in der Seite (bemerkt 09.11.2026).
+    # offen1 bleibt der aeltere der beiden, damit die Reihenfolge stimmt.
+    jung2 = (datetime.utcnow() - timedelta(days=1)).isoformat()
+    jung1 = (datetime.utcnow() - timedelta(days=2)).isoformat()
     c.execute("INSERT INTO users (email, pw_hash, created_at, approved)"
-              " VALUES ('offen2@example.org', 'x', '2026-09-29T10:00:00', 0)")
+              " VALUES ('offen2@example.org', 'x', ?, 0)", (jung2,))
     c.execute("INSERT INTO users (email, pw_hash, created_at, approved)"
-              " VALUES ('offen1@example.org', 'x', '2026-09-28T10:00:00', 0)")
+              " VALUES ('offen1@example.org', 'x', ?, 0)", (jung1,))
 
 client = flaskapp.app.test_client()
 with client.session_transaction() as sess:

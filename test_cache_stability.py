@@ -40,6 +40,10 @@ SOURCE_DB = BASE / "data" / "esg.db"
 LIVE = "--live" in sys.argv
 
 os.environ["ESG_DB_PATH"] = str(TEST_DB)
+# Kein Index-Vorbau im Test: sonst laeuft beim Messen der
+# Thread-Basislinie noch "assistent-index", und das Warten auf die
+# Mail-Threads wird wirkungslos (Befund 09.11.2026).
+os.environ["ASSISTENT_WARMUP"] = "0"
 if not LIVE:
     # Der Platzhalter ersetzt `_analyze_one`; der Client wird nie befragt, darf
     # aber auch nicht schon beim Anlegen einen API-Key verlangen.

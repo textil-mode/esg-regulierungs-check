@@ -39,6 +39,10 @@ for _var in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD",
              "MAIL_FROM", "MAIL_FROM_NAME"):
     os.environ[_var] = ""
 BASIS = "https://test.example"
+# Kein Index-Vorbau im Test: sonst laeuft beim Messen der
+# Thread-Basislinie noch "assistent-index", und das Warten auf die
+# Mail-Threads wird wirkungslos (Befund 09.11.2026).
+os.environ["ASSISTENT_WARMUP"] = "0"
 os.environ["PUBLIC_BASE_URL"] = BASIS
 
 import db  # noqa: E402

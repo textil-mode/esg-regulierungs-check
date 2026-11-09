@@ -776,7 +776,19 @@ def transcribe(audio: bytes, mime: str, lang: str) -> str:
 
 
 def warm_up(langs: Iterable[str] = ("de",)) -> None:
-    """Suchindex im Hintergrund vorbauen, damit die erste Frage nicht wartet."""
+    """Suchindex im Hintergrund vorbauen, damit die erste Frage nicht wartet.
+
+    `ASSISTENT_WARMUP=0` schaltet den Vorbau ab. Das brauchen die Testlaeufe:
+    Sie messen nach `import app` ihre Thread-Basislinie und warten darauf, dass
+    die Hintergrund-Threads der Anwendung fertig sind. Laeuft hier noch ein
+    Indexer-Thread, ist die Basislinie zu hoch und das Warten wirkungslos — die
+    Tests pruefen dann Mails, die noch gar nicht verschickt sind (Befund
+    09.11.2026). Im Betrieb bleibt der Vorbau an; eine Frage ohne fertigen Index
+    baut ihn selbst auf, nur eben langsamer.
+    """
+    if os.getenv("ASSISTENT_WARMUP", "1").strip() == "0":
+        return
+
     def run():
         for lang in langs:
             try:

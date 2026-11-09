@@ -911,6 +911,14 @@ Chat unten rechts für angemeldete, freigeschaltete Konten. Vorbild: der go-text
 - **Kosten**: ~28.000 Token je Frage, davon ~2/3 zwischengespeichert; Antwortzeit 1–3 s.
 - **Logs** enthalten Dauer, Umfang, genutzte Regulierungen und Token, **nie die Frage**
   (so steht es in Ziffer 7 der Datenschutzerklärung).
+- **`ASSISTENT_WARMUP=0` schaltet den Index-Vorbau ab** (seit 09.11.2026). Im
+  Betrieb bleibt er an; jede Testdatei, die `app` importiert, setzt ihn auf `0`.
+  **Grund:** `warm_up` startet beim Import den Thread `assistent-index`. Die
+  Testdateien messen danach ihre Thread-Basislinie (`BASIS_THREADS`) und warten
+  in `ruhe()`, bis die Zahl wieder darunter liegt. Mit dem Indexer-Thread war die
+  Basislinie 2 statt 1 — die Bedingung konnte nie erfüllt sein, `ruhe()` kehrte
+  sofort zurück und wartete nie auf die Mail-Threads. Gemessen am 09.11.2026:
+  ohne Schalter 2 Threads nach `import app`, mit Schalter 1.
 - Tests: `test_assistent.py` (56 Prüfungen, Modell und Netz als Attrappe, eigene DB).
 
 ### Ausweichmodelle bei Lastspitzen (28.09.2026)
@@ -1201,6 +1209,21 @@ Ein Lauf dauert ~45 s und kostet nur dann LLM-Tokens, wenn sich ein Text geaende
 - **Nur explizit geänderte Dateien stagen**, kein `git add -A`.
 - Syntax-Check vor Commit: `./.venv/Scripts/python.exe -m py_compile app.py db.py fetcher.py regulations.py llm.py i18n.py views.py`.
 - Feature-Arbeit: neuer Commit, neuer Tag, wenn wieder "stabil".
+- **Vor dem Messen von `BASIS_THREADS` darf kein Thread der Anwendung laufen.**
+  Jede Testdatei, die `app` importiert, setzt deshalb `ASSISTENT_WARMUP=0` (siehe
+  Assistenten-Abschnitt). Wer einen weiteren Hintergrund-Thread beim Import
+  einbaut, muss ihn genauso abschaltbar machen — sonst sind alle `ruhe()`-Aufrufe
+  wirkungslos, und zwar lautlos: Negativprüfungen der Art „es geht **keine** Mail
+  raus" laufen dann grün, ohne etwas zu prüfen. Am 09.11.2026 waren vier Dateien
+  rot und sieben solcher Prüfungen wertlos — drei Wochen unbemerkt.
+- **Keine festen Datumsangaben, wo eine Frist mitrechnet.** `test_admin_sortierung`
+  legte offene Zugangsanfragen mit Daten vom September an; `app.admin_accounts`
+  ruft `db.purge_stale_pending()`, und ab dem 31. Tag löschte das die Anfragen
+  beim Seitenaufruf — der Test lief ab Ende Oktober rot, ohne dass sich Code
+  geändert hatte. Solche Zeitpunkte relativ zur Laufzeit erzeugen
+  (`datetime.utcnow() - timedelta(days=…)`). Absichtlich abgelaufene Werte
+  (`'2020-01-01'` in `test_reset_code`, `test_linkwaechter`) sind davon nicht
+  betroffen.
 
 ---
 

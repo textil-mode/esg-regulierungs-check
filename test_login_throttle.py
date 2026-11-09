@@ -28,6 +28,10 @@ TEST_DB.parent.mkdir(parents=True, exist_ok=True)
 if TEST_DB.exists():
     TEST_DB.unlink()
 os.environ["ESG_DB_PATH"] = str(TEST_DB)
+# Kein Index-Vorbau im Test: sonst laeuft beim Messen der
+# Thread-Basislinie noch "assistent-index", und das Warten auf die
+# Mail-Threads wird wirkungslos (Befund 09.11.2026).
+os.environ["ASSISTENT_WARMUP"] = "0"
 
 import db  # noqa: E402  (muss NACH dem Setzen von ESG_DB_PATH importiert werden)
 
