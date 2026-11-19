@@ -15,7 +15,9 @@ Bloecke:
   G  .ics: ein VEVENT je datiertem offenem Schritt, Faltung, Escaping
   H  gesehen: Version aus der DB
   I  Erinnerungen an/aus
-  J  Env PFLICHTEN_PLAN=aus: 404 auch fuer Admin, Karten aus dem Code
+  J  Env PFLICHTEN_PLAN=aus: 404 auch fuer Admin (auch /admin/pflichten*), Karten aus dem Code
+  L  Quelle der ersten Schritte (Karte + Assistent): Schalter aus -> Code, an -> DB
+  M  Abbestellen markiert offene Hinweise als gesendet
 """
 from __future__ import annotations
 
@@ -338,6 +340,31 @@ def block_j() -> None:
               and "DB-Titel Testschritt" not in html)
         html = _client(ADMIN_ID, ADMIN).get("/passwort-aendern").get_data(as_text=True)
         check("J kein Menuepunkt", "/meine-pflichten" not in html)
+        # F3: auch die Admin-Seiten sind aus (lesen und schreiben, beide Admin-Arten)
+        admin = _client(ADMIN_ID, ADMIN)
+        for pfad in ("/admin/pflichten", "/admin/pflichten/vorschlaege",
+                     f"/admin/pflichten/schritt/{EUDR[0]}", "/admin/pflichten/neu/EUDR",
+                     "/admin/pflichten/export.json"):
+            r = admin.get(pfad)
+            check(f"J Admin GET {pfad}: 404", r.status_code == 404, str(r.status_code))
+        vorher = pdb.einstellung("pflichten_plan_aktiv", "0")
+        r = admin.post("/admin/pflichten/schalter", data={"aktiv": "0"})
+        check("J Admin POST Schalter: 404, Schalter unveraendert", r.status_code == 404
+              and pdb.einstellung("pflichten_plan_aktiv", "0") == vorher, str(r.status_code))
+        n = len(pdb.offene_vorschlaege())
+        r = admin.post(f"/admin/pflichten/schritt/{EUDR[0]}", data={"deaktivieren": "1"})
+        check("J Admin POST Handpflege: 404, kein Vorschlag",
+              r.status_code == 404 and len(pdb.offene_vorschlaege()) == n, str(r.status_code))
+        import pflichten_vorschlag
+        gestartet = []
+        alt_start = pflichten_vorschlag.starte_startbestand
+        pflichten_vorschlag.starte_startbestand = lambda **kw: gestartet.append(1) or True
+        try:
+            r = admin.post("/admin/pflichten/startbestand")
+        finally:
+            pflichten_vorschlag.starte_startbestand = alt_start
+        check("J Admin POST Startbestand: 404, kein Lauf",
+              r.status_code == 404 and not gestartet, str(r.status_code))
     finally:
         os.environ.pop("PFLICHTEN_PLAN", None)
 
@@ -360,9 +387,61 @@ def block_k() -> None:
     check("K keine unaufgeloesten Platzhalter", not re.search(r"\{(datum|anzahl|faellig|erledigt|gesamt|periode)\}", html))
 
 
+def block_l() -> None:
+    print("\n--- L  Quelle der ersten Schritte ---")
+    import assistent
+    _sql("UPDATE pflicht_schritt_texte SET titel='DB-Titel Quelle' WHERE schritt_id=?"
+         " AND sprache='de'", (EUDR[0],))
+    karte = [{"nr": 1, "key": "EUDR", "name": "EUDR", "full_name": "x",
+              "url": "https://example.org", "applies": "ja", "reason": "r", "passage": "p"}]
+    code = i18n.t_first_step("eudr_1", "de")
+    vorher = pdb.einstellung("pflichten_plan_aktiv", "0")
+    try:
+        pdb.setze_einstellung("pflichten_plan_aktiv", "0")
+        titel = pdb.erste_schritte_titel("EUDR", "de")
+        check("L Schalter aus: Hilfsfunktion liefert Code-Titel",
+              code in titel and "DB-Titel Quelle" not in titel, str(titel))
+        html = render_cards_html(karte, "de", profile=PROFIL)
+        check("L Schalter aus: Karte aus dem Code", code in html and "DB-Titel Quelle" not in html)
+        assistent._catalog_cache = None
+        text = assistent.catalog_text(HEUTE)
+        check("L Schalter aus: Assistent aus dem Code",
+              code in text and "DB-Titel Quelle" not in text)
+        pdb.setze_einstellung("pflichten_plan_aktiv", "1")
+        titel = pdb.erste_schritte_titel("EUDR", "de")
+        check("L Schalter an: Hilfsfunktion liefert DB-Titel", "DB-Titel Quelle" in titel,
+              str(titel))
+        check("L Schalter an: inaktiver Schritt fehlt",
+              len(titel) == len(pdb.schritte_fuer("EUDR", "de")), str(titel))
+        html = render_cards_html(karte, "de", profile=PROFIL)
+        check("L Schalter an: Karte aus der DB", "DB-Titel Quelle" in html)
+        text = assistent.catalog_text(HEUTE)
+        check("L Schalter an: Assistent aus der DB (Cache folgt dem Schalter)",
+              "DB-Titel Quelle" in text)
+    finally:
+        pdb.setze_einstellung("pflichten_plan_aktiv", vorher)
+        assistent._catalog_cache = None
+
+
+def block_m() -> None:
+    print("\n--- M  Abbestellen ---")
+    for text in ("eins", "zwei"):
+        pdb.neuer_hinweis(UID, "EUDR", "inhalt", text, HEUTE)
+    check("M vorher: zwei offene Hinweise", len(pdb.offene_hinweise(UID)) == 2)
+    c = _client(UID, "mitglied@example.org")
+    r = c.post("/konto/erinnerungen", data={"an": "0"})
+    check("M abbestellt", r.status_code in (302, 303) and _erinnerungen(UID) == 0)
+    check("M offene Hinweise als gesendet markiert", pdb.offene_hinweise(UID) == [],
+          str(pdb.offene_hinweise(UID)))
+    pdb.neuer_hinweis(ADMIN_ID, "EUDR", "inhalt", "fremd", HEUTE)
+    c.post("/konto/erinnerungen", data={"an": "1"})
+    check("M wieder an; Hinweise anderer Konten unberuehrt",
+          _erinnerungen(UID) == 1 and len(pdb.offene_hinweise(ADMIN_ID)) == 1)
+
+
 if __name__ == "__main__":
     for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-                  block_i, block_j, block_k):
+                  block_i, block_j, block_k, block_l, block_m):
         block()
     print()
     if _failures:

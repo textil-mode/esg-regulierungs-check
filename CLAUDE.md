@@ -39,7 +39,7 @@
 | Analyse über 34 Regulierungen: 19 regelbasiert, 15 über das LLM (Volltext + Guidelines); MPDG, MPAMIV und MPBetreibV erscheinen nur bei „Medizin- und Gesundheitstextilien“ | `app.py` `_run_analysis_bg`, `llm.py` | ✅ |
 | **Result-Cache, nutzeruebergreifend und wortstabil** (`analysis_cache`, PK `(reg_key, profile_hash, reg_hash)`): `profile_hash` deckt nur die `relevant_fields` der jeweiligen Reg ab (Firmenname o. Ä. verwirft nichts), `reg_hash` zusaetzlich Kriterien, Prompt-Stand und Gesetzesstand (`fetcher.current_text_hash`). Ist die Quelle gerade nicht abrufbar (`None`), gilt der zuletzt gespeicherte Eintrag weiter statt jedes Mal neu zu formulieren | `db.py`, `llm.py` `plan_analysis` | ✅ |
 | **Datentrennung im globalen Cache** (siehe Invariante unten): der Prompt zeigt exakt die `relevant_fields` der Regulierung, der Firmenname steht nirgends darin, und der System-Prompt verbietet das Nennen eines Namens | `llm.py` `_format_profile`, `_SYSTEM_BASE` | ✅ |
-| **Handlungsplan je Karte**: "Gilt ab" mit unternehmensindividueller Frist (Phase-in) und aufklappbare "Erste Schritte" (2-4 kuratierte Stichpunkte + Leitlinien-Link) | `deadlines.py`, `regulations.py` `FIRST_STEPS_BY_REG_KEY`, `views.py` | ✅ |
+| **Handlungsplan je Karte**: "Gilt ab" mit unternehmensindividueller Frist (Phase-in) und aufklappbare "Erste Schritte" (2-4 kuratierte Stichpunkte + Leitlinien-Link). Quelle der ersten Schritte (Karte **und** Assistent): bis zum Einschalten des Pflichten-Plans der Code, ab Schalter `pflichten_plan_aktiv` = an der freigegebene Katalog in der DB (`pflichten_db.erste_schritte_titel`) | `deadlines.py`, `regulations.py` `FIRST_STEPS_BY_REG_KEY`, `pflichten_db.py`, `views.py` | ✅ |
 | **Schwellen-Naehe** ("Was waere wenn"): Hinweis, wenn das Profil ±20 % um eine Schwelle liegt (LkSG 1000, HinSchG 50, CSRD 1000/450 Mio., CSDDD 5000/1,5 Mrd.) | `thresholds.py`, `views.py` | ✅ |
 | **Deterministische Begruendungen ohne LLM** fuer die gekoppelten Regs (CSRD, CSRD_DE, TaxonomieVO, HinSchG, CSR-RUG): handgeschriebene Bausteine in 6 Sprachen, 0 LLM-Calls, fuer immer byte-stabil | `regulations.py` `coupling_verdict`, `i18n.py` `coupling_texts`, `llm.py` `deterministic_result` | ✅ |
 | Gesetzestext-Cache mit ETag / Last-Modified | `fetcher.py` `law_texts` | ✅ |
@@ -948,10 +948,15 @@ Löst die festen „Ersten Schritte“ aus `regulations.FIRST_STEPS_BY_REG_KEY` 
   (Schalter auch unter „Passwort ändern“).
 - **Schalter `pflichten_plan_aktiv`** (Tabelle `pflicht_einstellungen`, Standard `0`):
   aus = Seite nur für Admins, normale Konten bekommen 404, keine Erinnerungen, keine
-  Hinweise. Umschalten auf `/admin/pflichten` (nur Stamm-Admins).
+  Hinweise. Umschalten auf `/admin/pflichten` (nur Stamm-Admins). **Karten und
+  Assistent lesen die ersten Schritte erst ab Schalter an aus der DB**
+  (`pflichten_db.erste_schritte_titel`), vorher aus dem Code
+  (`regulations.first_steps_for` + `i18n.t_first_step`): Die Startbestand-Phase ist
+  Probebetrieb, für Mitglieder ändert sich bis zum Einschalten nichts.
 - **Env `PFLICHTEN_PLAN=aus`** (für den Legacy-Container `esg-regulierungs-check`):
-  Funktion komplett aus, auch für Admins; die Karten zeigen die ersten Schritte wieder
-  aus dem Code; der Watchdog macht keine Pflichten-Vorschläge.
+  Funktion komplett aus, auch für Admins (`/meine-pflichten*` **und** alle
+  `/admin/pflichten*`-Routen liefern 404); die Karten zeigen die ersten Schritte aus
+  dem Code; der Watchdog macht keine Pflichten-Vorschläge.
 - **Admin-Seiten** (deutsch, lesen alle Admins, schreiben nur Stamm-Admins aus
   `ADMIN_EMAILS` = `pflichten_db.STAMM_ADMINS`, sonst 403): `/admin/pflichten`
   (Katalog, Schalter, Knopf „Startbestand prüfen“), `/admin/pflichten/schritt/<id>`
@@ -983,10 +988,22 @@ Löst die festen „Ersten Schritte“ aus `regulations.FIRST_STEPS_BY_REG_KEY` 
   `--heute YYYY-MM-DD` setzt den Stichtag.
 - **Links in Mails:** `mailer.oeffentlicher_link(pfad)` mit `mailer.APP_PFAD`.
 - **Datenschutz:** `templates/datenschutz.html` Ziffer 2.8 (Stand 19.11.2026).
-- **Offen:** (1) Freigabe der Texte (Datenschutzerklärung, Mailtexte) durch die
-  Rechtsabteilung; (2) Cron auf dem VPS einrichten; (3) Startbestand prüfen lassen und
-  freigeben — **der Schalter bleibt aus, bis der Startbestand freigegeben ist**;
-  (4) im Legacy-Container `PFLICHTEN_PLAN=aus` setzen.
+- **Go-live-Checkliste (in dieser Reihenfolge):**
+  1. Im Legacy-Container `esg-regulierungs-check` die Env `PFLICHTEN_PLAN=aus` **vor
+     oder mit** dem Deploy setzen (sonst zeigt er nach dem Deploy die Pflichten-Seiten
+     und macht Watchdog-Vorschläge).
+  2. Deploy des Hauptcontainers.
+  3. Cron für den täglichen Lauf einrichten (Zeile oben).
+  4. Startbestand prüfen lassen (Knopf auf `/admin/pflichten`) und die Vorschläge
+     freigeben — **der Schalter bleibt aus, bis der Startbestand freigegeben ist**.
+  5. Vor dem Umlegen `docker exec esg-ki-textil-mode python pflichten_erinnerung.py --probe`
+     ansehen: Wer bekäme welche Mail? (Gleicht `nutzer_pflichten` ab, verschickt und
+     markiert nichts.)
+  6. Schalter `pflichten_plan_aktiv` auf an — ab jetzt Karten/Assistent aus der DB,
+     Erinnerungen und Hinweise an Mitglieder.
+  Hinweis: Bestandskonten haben Erinnerungen **standardmäßig an**
+  (`users.erinnerungen` Default 1); die Freigabe dieser Voreinstellung und der Texte
+  (Datenschutzerklärung, Mailtexte) durch die Rechtsabteilung ist offen.
 - Belege: `test_pflichten_db.py`, `test_pflichten_frist.py`, `test_pflichten_plan.py`,
   `test_pflichten_ansicht.py`, `test_pflichten_freigabe.py`,
   `test_pflichten_vorschlag.py`, `test_pflichten_erinnerung.py` (eigene DBs, kein Netz,

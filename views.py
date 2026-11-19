@@ -8,8 +8,8 @@ import re
 from html import escape
 
 from deadlines import deadline_for
-from i18n import t, t_deadline_note, t_first_step, t_help, t_threshold_hint
-from regulations import application_for, first_steps_for, first_steps_link
+from i18n import t, t_deadline_note, t_help, t_threshold_hint
+from regulations import application_for, first_steps_link
 from thresholds import near_thresholds
 
 APPLIES_ORDER = {"error": 0, "ja": 1, "moeglich": 2, "nein": 3}
@@ -206,16 +206,13 @@ def _deadline_html(reg_key: str, profile: dict, language: str, suffix: str = "")
 def _steps_html(reg_key: str, language: str) -> str:
     """Aufklappbarer Block 'Erste Schritte' inkl. weiterfuehrender Leitlinie.
 
-    Mit Pflichten-Plan ist die Datenbank die einzige Quelle (aktive Schritte,
-    nur der Titel); im Legacy-Container (`PFLICHTEN_PLAN=aus`) weiter der Code.
+    Quelle wie im Assistenten (`pflichten_db.erste_schritte_titel`): ab
+    Schalter an die Datenbank (aktive Schritte, nur der Titel), vorher und im
+    Legacy-Container (`PFLICHTEN_PLAN=aus`) der Code.
     """
     import pflichten_db  # spaet: pflichten_db zieht db nach
 
-    if pflichten_db.funktion_aktiv():
-        steps = [s["titel"] for s in pflichten_db.schritte_fuer(reg_key, language)]
-    else:
-        steps = [t_first_step(key, language) for key in first_steps_for(reg_key)]
-    steps = [s for s in steps if s]
+    steps = pflichten_db.erste_schritte_titel(reg_key, language)
     if not steps:
         return ""
     items = "".join(f"<li>{escape(s)}</li>" for s in steps)

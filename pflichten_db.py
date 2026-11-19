@@ -236,6 +236,26 @@ def schritte_fuer(reg_key: str, lang: str, nur_aktiv: bool = True) -> list[dict]
     return [_mit_sprache(r, texte.get(r["id"], {}), lang) for r in rows]
 
 
+def plan_aktiv() -> bool:
+    """Funktion an (Env) UND Schalter `pflichten_plan_aktiv` = `1`."""
+    return funktion_aktiv() and einstellung("pflichten_plan_aktiv", "0") == "1"
+
+
+def erste_schritte_titel(reg_key: str, lang: str) -> list[str]:
+    """Titel der ersten Schritte fuer Karten und Assistent — eine Quelle fuer beide.
+
+    Erst ab Schalter an (und Funktion an) aus der Datenbank (aktive Schritte);
+    vorher aus dem Code (`regulations.first_steps_for` + `i18n.t_first_step`).
+    So aendert sich fuer Mitglieder vor dem Einschalten nichts, auch wenn der
+    Startbestand im Probebetrieb schon bearbeitet wird. Leere Titel fallen weg.
+    """
+    if plan_aktiv():
+        titel = [s["titel"] for s in schritte_fuer(reg_key, lang)]
+    else:
+        titel = [i18n.t_first_step(k, lang) for k in regs.first_steps_for(reg_key)]
+    return [t for t in titel if t]
+
+
 def schritt(schritt_id: int) -> dict | None:
     """Ein Schritt mit allen Texten: `texte = {lang: {titel, beschreibung, daten}}`."""
     with db._conn() as c:
@@ -712,6 +732,14 @@ def hinweise_gesendet(ids: list[int], zeit: str) -> None:
     with db._conn() as c:
         c.executemany("UPDATE pflicht_hinweise SET gesendet_am = ? WHERE id = ?",
                       [(zeit, i) for i in ids])
+
+
+def verwerfe_offene_hinweise(user_id: int, zeit: str) -> None:
+    """Alle noch nicht verschickten Hinweise eines Kontos als gesendet markieren
+    (Abbestellen der Erinnerungen)."""
+    with db._conn() as c:
+        c.execute("UPDATE pflicht_hinweise SET gesendet_am = ?"
+                  " WHERE user_id = ? AND gesendet_am IS NULL", (zeit, user_id))
 
 
 def setze_letzter_gilt_ab(user_id: int, reg_key: str, wert: str) -> None:

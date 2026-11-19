@@ -1351,6 +1351,9 @@ def _lauf_veraltet(zeitpunkt: str | None) -> bool:
 # nicht an Mitglieder.
 # ---------------------------------------------------------------------------
 def _pflichten_admin_lesen():
+    # Legacy-Container (`PFLICHTEN_PLAN=aus`): Funktion komplett aus, auch fuer Admins.
+    if not pdb.funktion_aktiv():
+        abort(404)
     redir = _require_login()
     if redir:
         return redir
@@ -1976,6 +1979,10 @@ def konto_erinnerungen():
     an = 1 if request.form.get("an") == "1" else 0
     with db._conn() as c:
         c.execute("UPDATE users SET erinnerungen = ? WHERE id = ?", (an, _uid()))
+    if not an:
+        # Abbestellt: liegende Hinweise verfallen, sonst kaeme beim Wieder-Einschalten
+        # Wochen spaeter ein Stapel alter Meldungen auf einmal.
+        pdb.verwerfe_offene_hinweise(_uid(), datetime.utcnow().isoformat(timespec="seconds"))
     if request.form.get("zurueck") == "pflichten":
         return redirect(url_for("meine_pflichten"))
     return redirect(url_for("change_password"))
