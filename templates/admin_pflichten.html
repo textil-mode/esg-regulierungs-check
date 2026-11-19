@@ -22,6 +22,18 @@
       <a href="{{ url_for('admin_pflichten_vorschlaege') }}">Offene Vorschläge: {{ offen }}</a>
       · <a href="{{ url_for('admin_pflichten_export') }}">Katalog als JSON exportieren</a>
     </div>
+    {% if darf_schreiben %}
+    <div>
+      <strong>Ungeprüfte Schritte:</strong> {{ ungeprueft }}
+      {% if startbestand_laeuft %}
+      · Die KI prüft den Startbestand gerade (Mail am Ende).
+      {% elif ungeprueft %}
+      <form method="post" action="{{ url_for('admin_pflichten_startbestand') }}" class="pf-inline">
+        <button type="submit" class="btn-secondary">Startbestand ergänzen lassen</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 
   {% for reg in katalog %}

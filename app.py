@@ -836,7 +836,8 @@ def logout():
 # Fest hinterlegte Admins. Sie sind immer Admin, lassen sich in der Oberflaeche
 # nicht aendern und sind die einzigen, die Admin-Rechte vergeben oder entziehen.
 # Weitere Admins stehen in der Datenbank (`users.is_admin`, seit 29.09.2026).
-ADMIN_EMAILS = {"mschuckert@textil-mode.de"}
+# Die Liste selbst steht in `pflichten_db.STAMM_ADMINS` (auch der Watchdog braucht sie).
+ADMIN_EMAILS = set(pdb.STAMM_ADMINS)
 
 
 def _is_stamm_admin() -> bool:
@@ -1381,7 +1382,11 @@ def _schritt_felder_aus_form(form, suffix: str = "") -> dict:
 
 
 def _uebersetzungen(texte_de: dict) -> dict[str, dict]:
-    """Alle sechs Sprachfassungen; fremde ueber `pflichten_vorschlag.uebersetzen`."""
+    """Alle sechs Sprachfassungen; fremde per KI ueber `pflichten_vorschlag.uebersetzen`.
+
+    Wirft bei unbrauchbarer Antwort (`VorschlagFehler`) oder fehlendem LLM —
+    der Aufrufer faellt dann auf den deutschen Text zurueck und sagt es.
+    """
     import asyncio
 
     import pflichten_vorschlag
@@ -1399,6 +1404,8 @@ def admin_pflichten():
     redir = _pflichten_admin_lesen()
     if redir:
         return redir
+    import pflichten_vorschlag
+
     namen = _reg_namen()
     katalog = []
     for reg in REGULATIONS:
@@ -1410,7 +1417,26 @@ def admin_pflichten():
         offen=len(pdb.offene_vorschlaege()), darf_schreiben=_is_stamm_admin(),
         datum=_datum_text, rollen=pflichten.ROLLEN, frist_typen=pdb.FRIST_TYPEN,
         formular=None,
+        ungeprueft=sum(1 for reg in katalog for s in reg["schritte"]
+                       if s["aktiv"] and not s["geprueft_am"]),
+        startbestand_laeuft=pflichten_vorschlag.startbestand_laeuft(),
     )
+
+
+@app.route("/admin/pflichten/startbestand", methods=["POST"])
+def admin_pflichten_startbestand():
+    """KI prueft den ungeprueften Startbestand — im Hintergrund, eine Mail am Ende."""
+    redir = _pflichten_admin_schreiben()
+    if redir:
+        return redir
+    import pflichten_vorschlag
+
+    if pflichten_vorschlag.starte_startbestand():
+        flash("Die KI prüft den Startbestand im Hintergrund. Die Vorschläge erscheinen nach "
+              "und nach unter „Offene Vorschläge“; am Ende kommt eine Mail.", "success")
+    else:
+        flash("Die Prüfung des Startbestands läuft bereits.", "error")
+    return redirect(url_for("admin_pflichten"))
 
 
 @app.route("/admin/pflichten/schalter", methods=["POST"])

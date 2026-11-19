@@ -25,6 +25,11 @@ import i18n
 import regulations as regs
 
 SPRACHEN = ("de", "en", "es", "fr", "it", "zh")
+
+# Fest hinterlegte Haupt-Admins (Stamm-Admins). Hier statt in app.py, damit
+# auch der Watchdog sie ohne Import der Flask-App kennt (KI-Vorschlaege
+# melden sich per Mail an genau diese Adressen). app.ADMIN_EMAILS liest von hier.
+STAMM_ADMINS = frozenset({"mschuckert@textil-mode.de"})
 TEXTFELDER = ("titel", "beschreibung", "daten")
 
 SCHEMA = """

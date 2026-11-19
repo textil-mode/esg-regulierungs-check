@@ -46,6 +46,17 @@ _failures: list[str] = []
 HEUTE = date(2026, 11, 19)
 flaskapp._heute = lambda: HEUTE
 
+import pflichten_vorschlag  # noqa: E402
+
+
+async def _uebersetzen_kopie(texte_de, ask=None):
+    """Kein LLM im Test: fremde Sprachen bekommen den deutschen Text (wie der alte Platzhalter)."""
+    return {lang: {f: texte_de[f] for f in pdb.TEXTFELDER if f in texte_de}
+            for lang in pflichten_vorschlag.ZIELSPRACHEN}
+
+
+pflichten_vorschlag.uebersetzen = _uebersetzen_kopie
+
 
 def check(label: str, ok: bool, detail: str = "") -> None:
     print(f"{'OK  ' if ok else 'FAIL'} {label}{(' — ' + detail) if detail else ''}")
