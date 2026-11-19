@@ -37,10 +37,12 @@ from i18n import normalize_lang, t
 
 # Wohin der Link in der Nachricht zeigt. Dieselbe Variable wie im Mailversand
 # der App — aus dem `Host`-Kopf darf nichts gebaut werden (Befund H1,
-# 24.09.2026), und hier gibt es ohnehin keine Anfrage.
+# 24.09.2026), und hier gibt es ohnehin keine Anfrage. Der App-Pfad (/esg)
+# gehoert dazu: ohne ihn fuehrte der Link live auf 404 (Befund 19.11.2026).
 def _anmeldelink() -> str:
-    basis = (os.environ.get("PUBLIC_BASE_URL") or "").rstrip("/")
-    return f"{basis}/login" if basis else ""
+    if not (os.environ.get("PUBLIC_BASE_URL") or "").strip():
+        return ""
+    return mailer.oeffentlicher_link(f"{mailer.APP_PFAD}/login")
 
 
 def _zeit(iso: Optional[str]) -> str:
