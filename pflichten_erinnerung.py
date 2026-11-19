@@ -12,17 +12,21 @@ Erinnerungen an), hoechstens **eine** Mail je Lauf. Sie buendelt:
   `keine` und erledigte Schritte erinnern nie.
 * **Hinweise** aus `pflicht_hinweise` (Art `inhalt` aus Freigaben, Art `datum`
   aus diesem Lauf). Der Mailtext entsteht hier aus reg_key + Art in der
-  Sprache des Kontos; `text_de` ist nur intern.
+  Sprache des Kontos; `text_de` ist nur intern. Hinweise zu Pflichten, die
+  fuer das Konto entfallen sind, werden still als gesendet markiert.
 * **Datumsaenderungen** (Spec 6.7): je Konto und Pflicht wird der zuletzt
   berechnete Anwendungsbeginn (`deadline_for(...)["gilt_ab"]`) in
   `nutzer_pflichten.letzter_gilt_ab` gespeichert; weicht er ab (und gab es
   einen Vorwert), entsteht ein Hinweis `datum`.
-* **Monatsuebersicht** am Monatsersten: faellig in 90 Tagen, ueberfaellig,
-  Block „laufend“.
+* **Monatsuebersicht** im ersten erfolgreichen Lauf des Monats (normal am
+  1.; scheitert der Versand oder faellt der Lauf aus, holt der naechste Lauf
+  sie nach): faellig in 90 Tagen, ueberfaellig, Block „laufend“. Marker je
+  Konto: `pflicht_erinnerungen` mit schritt_id 0, art 'monat', frist 'YYYY-MM'.
 
-Am Monatsersten geht ausserdem ein Lebenszeichen an die Haupt-Admins mit der
-Zahl der Erinnerungsmails der **letzten 30 Tage** aus `mail_log` (laenger
-haelt das Protokoll nichts vor). Bleibt es aus, laeuft der Cron nicht.
+Ebenso im ersten erfolgreichen Lauf des Monats ein Lebenszeichen an die
+Haupt-Admins mit der Zahl der Erinnerungsmails der **letzten 30 Tage** (ab dem
+Stichtag) aus `mail_log` (laenger haelt das Protokoll nichts vor). Marker:
+Einstellung `lebenszeichen_monat`. Bleibt es aus, laeuft der Cron nicht.
 
 Alles nur, wenn die Funktion an ist (`PFLICHTEN_PLAN` nicht `aus`) und der
 Schalter `pflichten_plan_aktiv` = `1` steht.
@@ -50,7 +54,6 @@ import db  # noqa: E402
 import mailer  # noqa: E402
 import pflichten  # noqa: E402
 import pflichten_db as pdb  # noqa: E402
-import regulations as regs  # noqa: E402
 from i18n import normalize_lang, t  # noqa: E402
 
 PURPOSE = "pflichten_erinnerung"
@@ -122,7 +125,8 @@ def _faellige(uid: int, plan: dict, today: date) -> list[dict]:
 
 
 def _uebersicht(uid: int, plan: dict, today: date) -> dict | None:
-    if today.day != 1 or pdb.erinnerung_vorhanden(uid, *pdb.MONATS_MARKER, today.strftime("%Y-%m")):
+    # Erster erfolgreicher Lauf des Monats: nur der Marker zaehlt, nicht der Tag.
+    if pdb.erinnerung_vorhanden(uid, *pdb.MONATS_MARKER, today.strftime("%Y-%m")):
         return None
     bald, ueber, laufend = [], [], []
     for p in plan["pflichten"]:
@@ -144,20 +148,26 @@ def _uebersicht(uid: int, plan: dict, today: date) -> dict | None:
     return {"bald": bald, "ueberfaellig": ueber, "laufend": laufend}
 
 
+def _aktive_keys(plan: dict) -> set[str]:
+    return {p["reg_key"] for p in plan["pflichten"] if not p["entfaellt"]}
+
+
 def _hinweis_zeilen(hinweise: list[dict], plan: dict, lang: str) -> list[str]:
-    """Eine Zeile je (Regulierung, Art); gleiche Hinweise werden zusammengefasst."""
-    pflichten_nach_key = {p["reg_key"]: p for p in plan["pflichten"]}
-    namen = {r["key"]: r.get("name", r["key"]) for r in regs.REGULATIONS}
+    """Eine Zeile je (Regulierung, Art); gleiche Hinweise werden zusammengefasst.
+
+    Nur Hinweise zu Pflichten, die fuer das Konto (noch) gelten.
+    """
+    pflichten_nach_key = {p["reg_key"]: p for p in plan["pflichten"] if not p["entfaellt"]}
     zeilen, gesehen = [], set()
     for h in hinweise:
         schluessel = (h["reg_key"], h["art"])
-        if schluessel in gesehen:
+        p = pflichten_nach_key.get(h["reg_key"])
+        if p is None or schluessel in gesehen:
             continue
         gesehen.add(schluessel)
-        p = pflichten_nach_key.get(h["reg_key"])
-        name = p["name"] if p else namen.get(h["reg_key"], h["reg_key"])
+        name = p["name"]
         if h["art"] == "datum":
-            gilt_ab = (p or {}).get("gilt_ab") or t("pflichten_mail_datum_offen", lang)
+            gilt_ab = p.get("gilt_ab") or t("pflichten_mail_datum_offen", lang)
             zeilen.append(t("pflichten_mail_hinweis_datum", lang).format(name=name, datum=gilt_ab))
         else:
             zeilen.append(t("pflichten_mail_hinweis_inhalt", lang).format(name=name))
@@ -205,20 +215,33 @@ def mailtext(lang: str, faellig: list[dict], hinweis_zeilen: list[str],
 # ---------------------------------------------------------------------------
 # Versand
 # ---------------------------------------------------------------------------
+def _protokoll(empfaenger: str, purpose: str, status: str, wer: str, **kw) -> None:
+    """`db.log_mail`, das nie wirft: ein kaputtes Protokoll aendert nichts am Versand."""
+    try:
+        db.log_mail(empfaenger, purpose, status, **kw)
+    except Exception as exc:                                  # noqa: BLE001
+        print(f"[pflichten] {wer}: mail_log nicht geschrieben ({status}): {exc!r}", flush=True)
+
+
 def _senden(empfaenger: str, betreff: str, text: str, versand: Versand | None,
-            purpose: str) -> bool:
-    """Ein Versuch; Ergebnis im `mail_log`. Wirft nie."""
+            purpose: str, wer: str) -> bool:
+    """Ein Versuch; Ergebnis im `mail_log`. Wirft nie.
+
+    `wer` erscheint in der Cron-Ausgabe (z. B. „Konto 17“), nie die Adresse.
+    Ist der Versand gelungen, gilt die Mail als gesendet, auch wenn danach das
+    Protokollieren scheitert.
+    """
     try:
         if versand is not None:
             mid = versand(empfaenger, betreff, text)
         else:
             mid = mailer.send(empfaenger, betreff, text)
-        db.log_mail(empfaenger, purpose, "sent", message_id=mid)
-        return True
     except Exception as exc:                                  # noqa: BLE001
-        db.log_mail(empfaenger, purpose, "failed", error=str(exc)[:300])
-        print(f"[pflichten] Mail an {empfaenger} fehlgeschlagen: {exc}", flush=True)
+        _protokoll(empfaenger, purpose, "failed", wer, error=str(exc)[:300])
+        print(f"[pflichten] {wer}: Mail fehlgeschlagen: {exc}", flush=True)
         return False
+    _protokoll(empfaenger, purpose, "sent", wer, message_id=mid)
+    return True
 
 
 def _konto(konto: dict, today: date, versand: Versand | None, probe: bool,
@@ -227,7 +250,13 @@ def _konto(konto: dict, today: date, versand: Versand | None, probe: bool,
     lang = normalize_lang(konto.get("signup_lang"))
     plan = pflichten.plan_fuer(uid, lang, today)        # gleicht nutzer_pflichten ab
     neue_datum = _datumsaenderungen(uid, plan, today, probe)
-    hinweise = pdb.offene_hinweise(uid) + (neue_datum if probe else [])
+    alle_hinweise = pdb.offene_hinweise(uid) + (neue_datum if probe else [])
+    aktiv = _aktive_keys(plan)
+    hinweise = [h for h in alle_hinweise if h["reg_key"] in aktiv]
+    # Hinweise zu entfallenen Pflichten: still erledigen, nie mailen.
+    stumm = [h["id"] for h in alle_hinweise if h["reg_key"] not in aktiv and h.get("id")]
+    if stumm and not probe:
+        pdb.hinweise_gesendet(stumm, _jetzt())
     faellig = _faellige(uid, plan, today)
     uebersicht = _uebersicht(uid, plan, today)
     if not (faellig or hinweise or uebersicht):
@@ -236,7 +265,7 @@ def _konto(konto: dict, today: date, versand: Versand | None, probe: bool,
     betreff, text = mailtext(lang, faellig, _hinweis_zeilen(hinweise, plan, lang), uebersicht)
     if probe:
         print(f"--- an {konto['email']} ({lang}) ---\nBetreff: {betreff}\n{text}\n", flush=True)
-    elif not _senden(konto["email"], betreff, text, versand, PURPOSE):
+    elif not _senden(konto["email"], betreff, text, versand, PURPOSE, f"Konto {uid}"):
         return          # nichts als gesendet markieren; naechster Lauf versucht es wieder
     else:
         zeit = _jetzt()
@@ -254,11 +283,14 @@ def _konto(konto: dict, today: date, versand: Versand | None, probe: bool,
 
 
 def _lebenszeichen(today: date, versand: Versand | None, probe: bool) -> None:
-    """Monatsersten: Zahl der Erinnerungsmails der letzten 30 Tage an die Haupt-Admins."""
+    """Erster erfolgreicher Lauf des Monats: Zahl der Erinnerungsmails der letzten
+    30 Tage (ab dem Stichtag `today`, damit `--heute` wirkt) an die Haupt-Admins.
+    Scheitert der Versand, bleibt der Marker leer und der naechste Lauf versucht es.
+    """
     monat = today.strftime("%Y-%m")
-    if today.day != 1 or pdb.einstellung("lebenszeichen_monat") == monat:
+    if pdb.einstellung("lebenszeichen_monat") == monat:
         return
-    seit = (datetime.utcnow() - timedelta(days=db.MAIL_LOG_KEEP_DAYS)).isoformat()
+    seit = (today - timedelta(days=db.MAIL_LOG_KEEP_DAYS)).isoformat()
     zahlen = pdb.mail_zaehlen(PURPOSE, seit)
     gesendet, fehl = zahlen.get("sent", 0), zahlen.get("failed", 0)
     fehltext = (f" {fehl} Versuche sind fehlgeschlagen (Details im Mailprotokoll der "
@@ -274,7 +306,7 @@ def _lebenszeichen(today: date, versand: Versand | None, probe: bool) -> None:
         print(f"--- Lebenszeichen an {', '.join(sorted(pdb.STAMM_ADMINS))} ---\n{text}",
               flush=True)
         return
-    ok = [_senden(a, betreff, text, versand, PURPOSE_LEBENSZEICHEN)
+    ok = [_senden(a, betreff, text, versand, PURPOSE_LEBENSZEICHEN, "Lebenszeichen")
           for a in sorted(pdb.STAMM_ADMINS)]
     if any(ok):
         pdb.setze_einstellung("lebenszeichen_monat", monat)
@@ -289,7 +321,11 @@ def lauf(today: date, versand: Versand | None = None, probe: bool = False) -> di
     if not _aktiv():
         return zaehler
     # Erst das Lebenszeichen: es zaehlt die Erinnerungen vor diesem Lauf.
-    _lebenszeichen(today, versand, probe)
+    # Ein Fehler darin darf die Mitgliedermails nicht verhindern.
+    try:
+        _lebenszeichen(today, versand, probe)
+    except Exception as exc:                                  # noqa: BLE001
+        print(f"[pflichten] Lebenszeichen uebersprungen: {exc!r}", flush=True)
     for konto in pdb.erinnerungs_konten():
         try:
             _konto(konto, today, versand, probe, zaehler)

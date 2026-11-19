@@ -15,6 +15,14 @@ Bloecke:
   G  Datumsaenderung (EUDR 120 -> 40 Beschaeftigte): genau ein Hinweis 'datum'
   H  Monatserster: Uebersicht mit Block 'laufend', Sprache en, Lebenszeichen
   I  --probe: nichts gesendet, nichts markiert
+  K  30 -> 7 Tage (zweite Mail), geaenderte Frist = neue Erinnerung, Fenstergrenzen
+  L  Versand ok, Protokollieren scheitert: trotzdem als gesendet markiert
+  J  Monatsuebersicht/Lebenszeichen: erster erfolgreicher Lauf des Monats
+     (1. scheitert -> 2. sendet -> 3. nichts)
+
+Vorbedingung: Die November-Uebersicht und das November-Lebenszeichen gelten
+als schon verschickt (Marker gesetzt), damit die Bloecke B-G nur Erinnerungen
+und Hinweise sehen.
 """
 from __future__ import annotations
 
@@ -95,11 +103,12 @@ def _konto(email: str, regs: dict, *, lang=None, approved=True, locked=0,
     return uid
 
 
-def _erinnerungen(uid: int) -> set[tuple[int, str, str]]:
+def _erinnerungen(uid: int, mit_marker: bool = False) -> set[tuple[int, str, str]]:
+    """Protokoll eines Kontos; ohne mit_marker nur echte Schritte (keine Monatsmarker)."""
     with db._conn() as c:
         return {(r["schritt_id"], r["art"], r["frist"]) for r in c.execute(
             "SELECT schritt_id, art, frist FROM pflicht_erinnerungen WHERE user_id = ?",
-            (uid,))}
+            (uid,)) if mit_marker or r["schritt_id"] != 0}
 
 
 def _hinweise(uid: int, art: str | None = None) -> list[dict]:
@@ -136,12 +145,29 @@ UAUS = _konto("aus@beispiel.test", {"EUDR": "ja"}, erinnerungen=0)
 UDAT = _konto("datum@beispiel.test", {"EUDR": "ja"})
 UFEHL = _konto("fehler@beispiel.test", {"EUDR": "ja"})
 UEN = _konto("english@beispiel.test", {"EUDR": "ja"}, lang="en")
+UMON = _konto("monat@beispiel.test", {"EUDR": "ja"})
+# Pflicht entfaellt nach neuer Pruefung; ein Hinweis dazu darf nicht mehr gemailt werden.
+UDROP = _konto("entfallen@beispiel.test", {"GPSR": "ja", "CSRD_DE": "ja"})
+db.save_analysis(UDROP, _karten(GPSR="ja", CSRD_DE="nein"))
 pdb.setze_erledigt(UERL, LKSG[0]["id"], "", True, HEUTE)
 
 with db._conn() as c:
     c.execute(
         "INSERT INTO pflicht_hinweise (user_id, reg_key, art, text_de, erstellt_am)"
         " VALUES (?, 'EUDR', 'inhalt', 'intern', ?)", (U2, HEUTE.isoformat()))
+    for _uid, _reg in ((UFEHL, "EUDR"), (UDROP, "CSRD_DE")):
+        c.execute(
+            "INSERT INTO pflicht_hinweise (user_id, reg_key, art, text_de, erstellt_am)"
+            " VALUES (?, ?, 'inhalt', 'intern', ?)", (_uid, _reg, HEUTE.isoformat()))
+
+
+def _november_erledigt(*uids: int) -> None:
+    for _u in uids:
+        pdb.merke_erinnerungen(_u, [(0, "monat", "2026-11")], "2026-11-01T06:30:00")
+
+
+_november_erledigt(U1, U2, ULO, UERL, ULOCK, UNEU, UAUS, UDAT, UFEHL, UEN, UMON, UDROP)
+pdb.setze_einstellung("lebenszeichen_monat", "2026-11")
 
 ADMIN = sorted(pdb.STAMM_ADMINS)[0]
 LEER = {"erinnerungen": 0, "uebersichten": 0, "hinweise": 0, "konten": 0}
@@ -189,7 +215,7 @@ def block_b() -> None:
     check("B Mail englisch bei signup_lang en",
           len(en) == 1 and en[0][1] == t("pflichten_mail_betreff", "en")
           and en[0][1] != t("pflichten_mail_betreff", "de"), en[0][1] if en else "")
-    check("B kein Lebenszeichen ausserhalb des Monatsersten", V_B.an(ADMIN) == [])
+    check("B kein Lebenszeichen (November schon erledigt)", V_B.an(ADMIN) == [])
     with db._conn() as c:
         n = c.execute("SELECT COUNT(*) FROM mail_log WHERE purpose = 'pflichten_erinnerung'"
                       " AND status = 'sent'").fetchone()[0]
@@ -221,6 +247,9 @@ def block_d() -> None:
     check("D Hinweis als gesendet markiert",
           all(h["gesendet_am"] for h in _hinweise(U2)), str(_hinweise(U2)))
     check("D Zaehler hinweise >= 1", ERG_B["hinweise"] >= 1, str(ERG_B))
+    check("D Hinweis zu entfallener Pflicht: keine Mail", V_B.an("entfallen@beispiel.test") == [])
+    check("D Hinweis zu entfallener Pflicht: still als gesendet markiert",
+          all(h["gesendet_am"] for h in _hinweise(UDROP)), str(_hinweise(UDROP)))
 
 
 def block_e() -> None:
@@ -234,6 +263,8 @@ def block_e() -> None:
                       " AND status = 'failed' AND recipient = 'fehler@beispiel.test'"
                       ).fetchone()[0]
     check("E MailError protokolliert als failed", n == 1, str(n))
+    check("E MailError: Hinweis bleibt ungesendet",
+          [h["gesendet_am"] for h in _hinweise(UFEHL)] == [None], str(_hinweise(UFEHL)))
 
 
 def block_f() -> None:
@@ -243,8 +274,11 @@ def block_f() -> None:
     check("F gleicher Tag erneut: keine Mail an Konto 2", v.an("zwei@beispiel.test") == [])
     check("F gleicher Tag erneut: Fehlerkonto versucht es wieder (und nur das)",
           len(v.an("fehler@beispiel.test")) == 1 and len(v.mails) == 1, str(v.mails)[:120])
-    check("F nach Erfolg: Fehlerkonto jetzt protokolliert", len(_erinnerungen(UFEHL)) == 2,
-          str(_erinnerungen(UFEHL)))
+    check("F nach Erfolg: Fehlerkonto jetzt protokolliert",
+          {(EUDR[0]["id"], "30", "2026-12-19"), (EUDR[1]["id"], "7", "2026-11-24")}
+          <= _erinnerungen(UFEHL), str(_erinnerungen(UFEHL)))
+    check("F nach Erfolg: Hinweis des Fehlerkontos gesendet",
+          all(h["gesendet_am"] for h in _hinweise(UFEHL)), str(_hinweise(UFEHL)))
     v = Versand()
     pe.lauf(date(2026, 11, 20), versand=v)
     check("F Folgetag: keine weitere Mail an Konto 1", v.an("eins@beispiel.test") == [])
@@ -289,12 +323,14 @@ def block_h() -> None:
           kopf in text and gpsr_en in text.split(kopf, 1)[-1], text[:500])
     check("H Uebersicht englisch", mails and mails[0][1] == t("pflichten_mail_betreff", "en"))
     check("H laufend/offen: keine Schritt-Erinnerung, nur Monatsmarker",
-          _erinnerungen(ULO) == {(0, "monat", "2026-12")}, str(_erinnerungen(ULO)))
+          _erinnerungen(ULO, True) == {(0, "monat", "2026-11"), (0, "monat", "2026-12")},
+          str(_erinnerungen(ULO, True)))
     check("H Zaehler uebersichten >= 1", erg["uebersichten"] >= 1, str(erg))
     leb = v.an(ADMIN)
     check("H Lebenszeichen an Admin", len(leb) == 1, str(len(leb)))
-    check("H Lebenszeichen nennt Zahl der letzten 30 Tage",
-          leb and f"{gesendet} " in leb[0][2], (leb[0][2][:300] if leb else "") + f" / {gesendet}")
+    satz = f"In den letzten 30 Tagen gingen {gesendet} Erinnerungsmails an Mitglieder."
+    check("H Lebenszeichen nennt Zahl der letzten 30 Tage (exakter Satz)",
+          bool(leb) and satz in leb[0][2], (leb[0][2][:300] if leb else "") + f" / {satz}")
     with db._conn() as c:
         zwecke = {r[0] for r in c.execute(
             "SELECT purpose FROM mail_log WHERE recipient = ?", (ADMIN,))}
@@ -326,9 +362,92 @@ def block_i() -> None:
     check("I --probe: letzter_gilt_ab nicht gespeichert", alt is None, str(alt))
 
 
+def block_k() -> None:
+    v = Versand()
+    pe.lauf(date(2026, 12, 12), versand=v)
+    mails = v.an("eins@beispiel.test")
+    check("K 30 -> 7 Tage: zweite Mail fuer denselben Schritt",
+          len(mails) == 1 and EUDR[0]["titel"] in mails[0][2], str(len(mails)))
+    check("K Protokoll Art 7 fuer 19.12.",
+          (EUDR[0]["id"], "7", "2026-12-19") in _erinnerungen(U1), str(_erinnerungen(U1)))
+    v = Versand()
+    pe.lauf(date(2026, 12, 12), versand=v)
+    check("K gleicher Tag: keine weitere Mail", v.an("eins@beispiel.test") == [])
+
+    _setze_frist(EUDR[0]["id"], "fest", "22.12.2026")
+    v = Versand()
+    pe.lauf(date(2026, 12, 12), versand=v)
+    check("K geaenderte Frist: neue Erinnerung (Art 30, 22.12.)",
+          len(v.an("eins@beispiel.test")) == 1
+          and (EUDR[0]["id"], "30", "2026-12-22") in _erinnerungen(U1), str(_erinnerungen(U1)))
+
+    tag = date(2027, 3, 10)
+    schritte = []
+    for i, tage in enumerate((-1, 0, 7, 8, 30, 31)):
+        d = date.fromordinal(tag.toordinal() + tage)
+        schritte.append({"id": 9000 + i, "titel": f"T{tage}", "erledigt": False,
+                         "ueberfaellig": tage < 0,
+                         "frist": {"art": "datum", "datum": d, "periode": ""}})
+    schritte.append({"id": 9100, "titel": "keine", "erledigt": False, "ueberfaellig": False,
+                     "frist": {"art": "keine", "datum": None, "periode": ""}})
+    plan = {"pflichten": [{"reg_key": "X", "name": "X", "entfaellt": False,
+                           "schritte": schritte}]}
+    arten = {e["schritt"]["titel"]: e["art"] for e in pe._faellige(U1, plan, tag)}
+    check("K Fenstergrenzen -1/0/7/8/30/31 und 'keine'",
+          arten == {"T0": "7", "T7": "7", "T8": "30", "T30": "30"}, str(arten))
+
+
+def block_l() -> None:
+    uid = _konto("logfehler@beispiel.test", {"EUDR": "ja"})
+    original = db.log_mail
+
+    def kaputt(recipient, purpose, status, **kw):
+        if status == "sent":
+            raise RuntimeError("Protokoll kaputt")
+        return original(recipient, purpose, status, **kw)
+
+    v = Versand()
+    db.log_mail = kaputt
+    try:
+        pe.lauf(date(2026, 12, 12), versand=v)
+    finally:
+        db.log_mail = original
+    check("L Versand ok, Protokoll scheitert: Mail ging raus",
+          len(v.an("logfehler@beispiel.test")) == 1)
+    check("L ... und Erinnerung gilt als gesendet",
+          (EUDR[0]["id"], "30", "2026-12-22") in _erinnerungen(uid), str(_erinnerungen(uid)))
+    with db._conn() as c:
+        n = c.execute("SELECT COUNT(*) FROM mail_log WHERE recipient = 'logfehler@beispiel.test'"
+                      " AND status = 'failed'").fetchone()[0]
+    check("L ... und nicht als failed protokolliert", n == 0, str(n))
+
+
+def block_j() -> None:
+    v = Versand({"monat@beispiel.test", ADMIN})
+    pe.lauf(date(2027, 1, 1), versand=v)
+    check("J 1.: Uebersicht scheitert -> kein Marker",
+          (0, "monat", "2027-01") not in _erinnerungen(UMON, True), str(_erinnerungen(UMON, True)))
+    check("J 1.: Lebenszeichen scheitert -> kein Marker",
+          pdb.einstellung("lebenszeichen_monat") != "2027-01")
+    check("J 1.: andere Konten bekamen ihre Uebersicht trotzdem",
+          len(v.an("lo@beispiel.test")) == 1)
+    v = Versand()
+    pe.lauf(date(2027, 1, 2), versand=v)
+    mails = v.an("monat@beispiel.test")
+    check("J 2.: Uebersicht nachgeholt", len(mails) == 1
+          and t("pflichten_mail_uebersicht", "de") in mails[0][2], str(len(mails)))
+    check("J 2.: Lebenszeichen nachgeholt", len(v.an(ADMIN)) == 1)
+    check("J 2.: Konten mit Januar-Uebersicht bekommen keine zweite",
+          v.an("lo@beispiel.test") == [])
+    v = Versand()
+    pe.lauf(date(2027, 1, 3), versand=v)
+    check("J 3.: keine Uebersicht mehr", v.an("monat@beispiel.test") == [])
+    check("J 3.: kein Lebenszeichen mehr", v.an(ADMIN) == [])
+
+
 def main() -> int:
     for blk in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-                block_i):
+                block_i, block_k, block_l, block_j):
         try:
             blk()
         except Exception as exc:  # noqa: BLE001

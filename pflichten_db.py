@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS nutzer_erledigt (
 CREATE TABLE IF NOT EXISTS pflicht_erinnerungen (
     user_id INTEGER NOT NULL,
     schritt_id INTEGER NOT NULL,
-    art TEXT NOT NULL,                  -- 30 | 7
+    art TEXT NOT NULL,                  -- 30 | 7 | monat (Monatsuebersicht verschickt: schritt_id 0, frist 'YYYY-MM')
     frist TEXT NOT NULL,
     gesendet_am TEXT,
     PRIMARY KEY (user_id, schritt_id, art, frist),
