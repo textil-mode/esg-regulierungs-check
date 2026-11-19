@@ -175,8 +175,8 @@ def block_g() -> None:
     s = _schritt(_pflicht(pflichten.plan_fuer(UID, "de", HEUTE), "EUDR"), sid)
     check("G frisch erledigt: nicht geaendert", s["geaendert"] is False)
     with db._conn() as c:
-        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?"
-                  " WHERE id = ?", ("2026-12-01", sid))
+        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?,"
+                  " meldung_version = version + 1 WHERE id = ?", ("2026-12-01", sid))
         version = c.execute("SELECT version FROM pflicht_schritte WHERE id = ?",
                             (sid,)).fetchone()[0]
     s = _schritt(_pflicht(pflichten.plan_fuer(UID, "de", date(2026, 12, 2)), "EUDR"), sid)
@@ -186,8 +186,8 @@ def block_g() -> None:
     check("G nach markiere_gesehen: False", s["geaendert"] is False)
     # nicht erledigter geaenderter Schritt ist nie 'geaendert'
     with db._conn() as c:
-        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?"
-                  " WHERE id = ?", ("2026-12-01", CSRD[-1]))
+        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?,"
+                  " meldung_version = version + 1 WHERE id = ?", ("2026-12-01", CSRD[-1]))
     pdb.setze_erledigt(UID, CSRD[-1], "", False, HEUTE)
     s = _schritt(_pflicht(pflichten.plan_fuer(UID, "de", date(2026, 12, 2)), "CSRD"), CSRD[-1])
     check("G offener Schritt: geaendert False", s["geaendert"] is False)
@@ -255,16 +255,16 @@ def block_k() -> None:
     # (a) Abhaken an X, dann neue Version mit geaendert_am = X
     pdb.setze_erledigt(uid, sid, "", True, x)
     with db._conn() as c:
-        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?"
-                  " WHERE id = ?", (x.isoformat(), sid))
+        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?,"
+                  " meldung_version = version + 1 WHERE id = ?", (x.isoformat(), sid))
     s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", x), "EUDR"), sid)
     check("K (a) Aenderung am Tag des Abhakens -> geaendert", s["geaendert"] is True)
     # (b) neue Version an X2, dann Abhaken an X2 -> nicht geaendert
     x2 = date(2027, 1, 11)
     pdb.setze_erledigt(uid, sid, "", False, x2)
     with db._conn() as c:
-        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?"
-                  " WHERE id = ?", (x2.isoformat(), sid))
+        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?,"
+                  " meldung_version = version + 1 WHERE id = ?", (x2.isoformat(), sid))
     pdb.setze_erledigt(uid, sid, "", True, x2)
     s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", x2), "EUDR"), sid)
     check("K (b) Abhaken nach Aenderung am selben Tag -> nicht geaendert",
@@ -277,6 +277,19 @@ def block_k() -> None:
                   " WHERE id = ?", (sid_c,))
     s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", x2), "EUDR"), sid_c)
     check("K (c) Version ohne geaendert_am -> nicht geaendert", s["geaendert"] is False)
+    # (d) F6: meldepflichtige Version vor dem Abhaken, danach eine stille (Startbestand)
+    # am selben Tag -> nicht geaendert (frueher: Datumsvergleich -> faelschlich True)
+    sid_d = EUDR[0]
+    with db._conn() as c:
+        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?,"
+                  " meldung_version = version + 1 WHERE id = ?", (x.isoformat(), sid_d))
+    pdb.setze_erledigt(uid, sid_d, "", True, x)
+    with db._conn() as c:
+        c.execute("UPDATE pflicht_schritte SET version = version + 1 WHERE id = ?", (sid_d,))
+    s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", x), "EUDR"), sid_d)
+    check("K (d) stille Version nach Abhaken am selben Tag -> nicht geaendert",
+          s["geaendert"] is False)
+    pdb.setze_erledigt(uid, sid_d, "", False, x)
     with db._conn() as c:
         gesehen = c.execute("SELECT gesehen_version, zustaendig FROM nutzer_schritte"
                             " WHERE user_id = ? AND schritt_id = ?", (uid, sid)).fetchone()
@@ -340,8 +353,32 @@ def block_m() -> None:
           p2["entfaellt"] is True and p2["entfallen_am"] == p["entfallen_am"], str(p2["entfallen_am"]))
 
 
+def block_n() -> None:
+    """F7: Frist-Typwechsel auf jaehrlich zeigt die alte Erledigung im Verlauf."""
+    uid = db.create_user("typwechsel@example.org", "Geheim-Passwort-123")
+    db.save_analysis(uid, _karten(CSRD="ja"))
+    sid = CSRD[0]
+    alt = pdb.schritt(sid)
+    _setze_frist(sid, "keine", "")
+    pdb.setze_erledigt(uid, sid, "", True, date(2026, 3, 4))
+    _setze_frist(sid, "jaehrlich", "31.05.")
+    s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", HEUTE), "CSRD"), sid)
+    check("N jaehrlich: neue Periode offen", s["erledigt"] is False, str(s["frist"]))
+    check("N jaehrlich: alte Erledigung im Verlauf (vor Umstellung)",
+          s["verlauf"] == [{"periode": "", "erledigt_am": "2026-03-04"}], str(s["verlauf"]))
+    pdb.setze_erledigt(uid, sid, "2027", True, HEUTE)
+    s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", date(2027, 6, 1)), "CSRD"), sid)
+    check("N Verlauf: Jahre zuerst, 'vor Umstellung' zuletzt",
+          [v["periode"] for v in s["verlauf"]] == ["2027", ""], str(s["verlauf"]))
+    _setze_frist(sid, "keine", "")
+    s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", HEUTE), "CSRD"), sid)
+    check("N zurueck auf nicht-jaehrlich: '' gilt weiter, kein Verlauf",
+          s["erledigt"] is True and s["verlauf"] == [], str(s))
+    _setze_frist(sid, alt["frist_typ"], alt["frist_wert"])
+
+
 for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-              block_i, block_j, block_k, block_l, block_m):
+              block_i, block_j, block_k, block_l, block_m, block_n):
     block()
 
 print()

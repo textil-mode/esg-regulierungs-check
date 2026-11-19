@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS pflicht_schritte (
     version INTEGER NOT NULL DEFAULT 1,
     geprueft_am TEXT,
     geaendert_am TEXT,                          -- nur bei wesentlicher Freigabe
-    herkunft_key TEXT UNIQUE                    -- alter Schluessel, z. B. eudr_1
+    herkunft_key TEXT UNIQUE,                   -- alter Schluessel, z. B. eudr_1
+    meldung_version INTEGER                     -- Version der letzten meldepflichtigen Freigabe
 );
 CREATE INDEX IF NOT EXISTS idx_pflicht_schritte_reg
     ON pflicht_schritte (reg_key, sortierung);
@@ -140,7 +141,14 @@ CREATE TABLE IF NOT EXISTS pflicht_einstellungen (
 
 
 def init_schema(c: sqlite3.Connection) -> None:
-    """Legt alle Tabellen des Pflichten-Plans an (idempotent)."""
+    """Legt alle Tabellen des Pflichten-Plans an (idempotent).
+
+    Migration: `pflicht_schritte.meldung_version` kam nach dem ersten Stand dazu
+    (Startwert NULL = noch nie meldepflichtig freigegeben).
+    """
+    spalten = {r[1] for r in c.execute("PRAGMA table_info(pflicht_schritte)")}
+    if spalten and "meldung_version" not in spalten:
+        c.execute("ALTER TABLE pflicht_schritte ADD COLUMN meldung_version INTEGER")
     c.executescript(SCHEMA)
 
 
@@ -160,12 +168,16 @@ def seed_aus_code(c: sqlite3.Connection) -> int:
         for pos, key in enumerate(keys, start=1):
             if key in vorhanden:
                 continue
+            # OR IGNORE: legt ein zweiter Prozess (z. B. zwei Worker beim Start)
+            # denselben Schluessel zwischen Lesen und Schreiben an, ist das kein Fehler.
             cur = c.execute(
-                "INSERT INTO pflicht_schritte (reg_key, sortierung, rolle, frist_typ,"
+                "INSERT OR IGNORE INTO pflicht_schritte (reg_key, sortierung, rolle, frist_typ,"
                 " frist_wert, link, quelle, aktiv, version, geprueft_am, geaendert_am,"
                 " herkunft_key) VALUES (?, ?, '', 'keine', '', ?, NULL, 1, 1, NULL, NULL, ?)",
                 (reg_key, pos, url, key),
             )
+            if cur.rowcount != 1:
+                continue
             sid = cur.lastrowid
             for lang, titel in i18n.FIRST_STEPS.get(key, {}).items():
                 c.execute(
@@ -515,6 +527,15 @@ def _link_normalisieren(link):
     return teil[0].lower() + ":" + teil[1] if len(teil) == 2 else link
 
 
+def _ohne_version(snapshot: dict) -> dict:
+    """Schnappschuss ohne Versionsnummer; leere Texte zaehlen wie fehlende."""
+    out = {k: v for k, v in snapshot.items() if k not in ("version", "texte")}
+    out["texte"] = {lang: {f: (t or {}).get(f) or "" for f in TEXTFELDER}
+                    for lang, t in (snapshot.get("texte") or {}).items()
+                    if any((t or {}).get(f) for f in TEXTFELDER)}
+    return out
+
+
 def freigeben(vid: int, admin_email: str, aenderungen: dict | None, today) -> bool:
     """Wendet einen offenen Vorschlag an; Kurzform von `freigeben_mit_grund`."""
     return freigeben_mit_grund(vid, admin_email, aenderungen, today)[0]
@@ -617,13 +638,28 @@ def freigeben_mit_grund(vid: int, admin_email: str, aenderungen: dict | None,
                 (stand["texte"].get("de") or {}).get("titel") or "").strip():
             return abbruch("ungültig: deutscher Titel ist leer")
 
+        if alt is not None and _ohne_version(stand) == _ohne_version(alt):
+            # Inhaltlich nichts geaendert (gleiche Werte, identische Uebersetzung,
+            # schon inaktiver Schritt deaktiviert): wie eine Bestaetigung behandeln —
+            # Version zurueck, kein Versionseintrag, keine Meldung, kein Hinweis.
+            c.execute("UPDATE pflicht_schritte SET version = ?, geprueft_am = ? WHERE id = ?",
+                      (alt["version"], tag, sid))
+            c.execute(
+                "UPDATE pflicht_vorschlaege SET status = 'freigegeben', entschieden_am = ?,"
+                " entschieden_von = ? WHERE id = ?", (tag, admin_email, vid))
+            c.execute("COMMIT")
+            return True, ""
+
         # Schalter in derselben Verbindung lesen (keine zweite waehrend der Sperre).
         schalter = c.execute("SELECT wert FROM pflicht_einstellungen"
                              " WHERE schluessel = 'pflichten_plan_aktiv'").fetchone()
         melden = (v["ausloeser"] != "startbestand"
                   and schalter is not None and schalter[0] == "1")
         if melden:
-            c.execute("UPDATE pflicht_schritte SET geaendert_am = ? WHERE id = ?", (tag, sid))
+            # meldung_version: "geaendert, bitte pruefen" haengt nur an dieser Version,
+            # nicht am Datum — stille Versionen (Startbestand, Schalter aus) zaehlen nie.
+            c.execute("UPDATE pflicht_schritte SET geaendert_am = ?, meldung_version = version"
+                      " WHERE id = ?", (tag, sid))
             stand = _schritt_snapshot(c, sid)
 
         c.execute(

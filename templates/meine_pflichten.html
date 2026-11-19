@@ -128,7 +128,11 @@
           </div>
           {% endif %}
           {% for v in s.verlauf %}
+          {% if v.periode %}
           <div class="pf-meta">{{ t("pflichten_verlauf", lang).format(periode=v.periode, datum=datum(v.erledigt_am)) }}</div>
+          {% else %}
+          <div class="pf-meta">{{ t("pflichten_verlauf_vor_umstellung", lang).format(datum=datum(v.erledigt_am)) }}</div>
+          {% endif %}
           {% endfor %}
           <form method="post" class="pf-zustaendig" action="{{ url_for('pflicht_zustaendig', schritt_id=s.id) }}">
             <label for="z-{{ s.id }}">{{ t("pflichten_zustaendig", lang) }}:</label>

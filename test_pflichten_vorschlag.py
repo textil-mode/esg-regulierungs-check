@@ -402,6 +402,18 @@ def block_j() -> None:
         check("J Admin-Mail mit Anzahl", aufrufe["admin"] == [{"EUDR": 2}], str(aufrufe["admin"]))
         check("J Zusammenfassung bleibt", all(e["summary"] == "Zusammenfassung"
                                               for e in res["changed"]))
+        # F18: Legacy-Container (PFLICHTEN_PLAN=aus): Aenderungen ja, Vorschlaege nein
+        aufrufe["vorschlag"].clear()
+        aufrufe["admin"].clear()
+        os.environ["PFLICHTEN_PLAN"] = "aus"
+        try:
+            res = watchdog.run(use_llm=True)
+        finally:
+            os.environ.pop("PFLICHTEN_PLAN", None)
+        check("J PFLICHTEN_PLAN=aus: Aenderungen erkannt", len(res["changed"]) == 3,
+              str(res["changed"]))
+        check("J PFLICHTEN_PLAN=aus: keine Vorschlaege, keine Admin-Mail",
+              aufrufe["vorschlag"] == [] and aufrufe["admin"] == [], str(aufrufe))
     finally:
         (watchdog.fetch_law_text, watchdog.version_text, watchdog._summarize,
          pv.vorschlaege_aus_aenderung, pv.benachrichtige_admin) = gesichert

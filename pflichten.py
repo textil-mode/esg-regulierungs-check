@@ -88,16 +88,17 @@ ROLLEN = ["gf", "einkauf", "personal", "logistik", "produkt", "nachhaltigkeit", 
 
 
 def _geaendert(schritt: dict, erledigt_am: str | None, gesehen: int | None) -> bool:
-    """Abgehakt, danach eine neue Version freigegeben (am selben Tag oder spaeter).
+    """Abgehakt, danach eine meldepflichtige Version freigegeben.
 
-    `setze_erledigt` setzt `gesehen_version` auf die Version beim Abhaken;
-    Versionen ohne `geaendert_am` (Startbestand) zaehlen nie.
+    `meldung_version` ist die Version der letzten Freigabe mit Hinweis (nicht
+    Startbestand, Schalter an); `setze_erledigt` und "gesehen" setzen
+    `gesehen_version` auf die aktuelle Version. Kein Datumsvergleich: eine
+    stille Version am selben Tag nach dem Abhaken zaehlt nicht.
     """
-    geaendert_am = schritt.get("geaendert_am")
-    if not erledigt_am or not geaendert_am:
+    meldung = schritt.get("meldung_version")
+    if not erledigt_am or meldung is None:
         return False
-    return ((gesehen or 0) < int(schritt.get("version") or 1)
-            and str(geaendert_am)[:10] >= str(erledigt_am)[:10])
+    return (gesehen or 0) < int(meldung)
 
 
 def _schritt_im_plan(s: dict, gilt_ab: str, today: date, zustand: dict,
@@ -109,9 +110,11 @@ def _schritt_im_plan(s: dict, gilt_ab: str, today: date, zustand: dict,
     erledigt = erledigt_am is not None
     verlauf = []
     if jaehrlich:
+        # Jahre absteigend; eine Erledigung mit Periode '' stammt aus der Zeit vor
+        # der Umstellung auf eine jaehrliche Frist und steht zuletzt.
         verlauf = [{"periode": p, "erledigt_am": d}
                    for p, d in sorted(erledigungen.items(), reverse=True)
-                   if p and p != periode]
+                   if p != periode]
     return {
         "id": s["id"], "titel": s.get("titel", ""), "beschreibung": s.get("beschreibung", ""),
         "daten": s.get("daten", ""), "rolle": s.get("rolle", ""), "link": s.get("link"),

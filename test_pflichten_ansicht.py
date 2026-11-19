@@ -284,7 +284,8 @@ def block_g() -> None:
 
 def block_h() -> None:
     print("\n--- H  gesehen ---")
-    _sql("UPDATE pflicht_schritte SET version=3, geaendert_am='2026-11-19' WHERE id=?",
+    _sql("UPDATE pflicht_schritte SET version=3, meldung_version=3, geaendert_am='2026-11-19'"
+         " WHERE id=?",
          (EUDR[0],))
     c = _client(UID, "mitglied@example.org")
     html = c.get("/meine-pflichten").get_data(as_text=True)
@@ -378,7 +379,7 @@ def block_k() -> None:
                   "pflichten_geaendert", "pflichten_entfaellt", "pflichten_ics",
                   "pflichten_erinnerungen_an", "pflichten_erinnerungen_aus",
                   "pflichten_filter_alle", "pflichten_haftung", "pflichten_gilt_dauer",
-                  "pflichten_geaendert_ohne_datum"]
+                  "pflichten_geaendert_ohne_datum", "pflichten_verlauf_vor_umstellung"]
     schluessel += [f"rolle_{r}" for r in pflichten.ROLLEN]
     fehlt = [f"{k}/{l}" for k in schluessel for l in ("de", "en", "es", "fr", "it", "zh")
              if not i18n.UI.get(k, {}).get(l)]

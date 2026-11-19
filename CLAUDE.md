@@ -938,6 +938,18 @@ Löst die festen „Ersten Schritte“ aus `regulations.FIRST_STEPS_BY_REG_KEY` 
   `pflicht_hinweise`; Einstellungen `pflicht_einstellungen`. Neue Spalte
   `users.erinnerungen` (Default 1). Nutzertabellen hängen per ON DELETE CASCADE am
   Konto, `pflicht_hinweise` löscht `db._delete_account_rows` selbst.
+- **„Geändert, bitte prüfen“** hängt an `pflicht_schritte.meldung_version` (Version der
+  letzten meldepflichtigen Freigabe: nicht Startbestand, Schalter an; Migration in
+  `init_schema`, Startwert NULL): markiert, wenn erledigt und `gesehen_version <
+  meldung_version`. Abhaken und „Gesehen“ setzen `gesehen_version` auf die aktuelle
+  Version. Kein Datumsvergleich mehr. Eine Freigabe ohne inhaltliche Änderung (gleiche
+  Werte, identische Übersetzung, schon inaktiven Schritt deaktivieren) zählt wie eine
+  Bestätigung: keine neue Version, kein Hinweis, keine `meldung_version`.
+- **Frist-Typwechsel auf `jaehrlich`:** eine Erledigung aus der Zeit davor (Periode
+  `''`) steht im Verlauf als „vor der Umstellung“; bei nicht-jährlichen Fristen gilt
+  weiter die Periode `''`.
+- **Abbestellen** (`POST /konto/erinnerungen` mit `an=0`) markiert die noch offenen
+  Hinweise des Kontos als gesendet.
 - **Frist-Typen:** `relativ` (`-6m`, `-30d`, `+0d` zum Anwendungsbeginn), `fest`
   (`31.12.2027`), `jaehrlich` (`31.05.`), `keine`. Gilt die Pflicht schon, ist ein
   relativer Schritt `laufend` (kein Datum, keine Erinnerung, nie überfällig); ohne
@@ -984,8 +996,10 @@ Löst die festen „Ersten Schritte“ aus `regulations.FIRST_STEPS_BY_REG_KEY` 
   `mail_log` als `pflichten_erinnerung` bzw. `pflichten_lebenszeichen` (30 Tage).
   Cron (nur Hauptcontainer, **noch einzurichten**):
   `30 6 * * * docker exec esg-ki-textil-mode python pflichten_erinnerung.py >> /var/log/esg-pflichten.log 2>&1`
-  Von Hand: `python pflichten_erinnerung.py --probe` (sendet nichts, zeigt nur),
-  `--heute YYYY-MM-DD` setzt den Stichtag.
+  Von Hand: `python pflichten_erinnerung.py --probe` (sendet und markiert nichts, zeigt
+  nur; gleicht aber `nutzer_pflichten` ab wie jeder Planaufruf),
+  `--heute YYYY-MM-DD` setzt den Stichtag. Die Monatsübersicht wiederholt keine
+  Schritte, die in derselben Mail schon unter „Fristen in den nächsten Tagen“ stehen.
 - **Links in Mails:** `mailer.oeffentlicher_link(pfad)` mit `mailer.APP_PFAD`.
 - **Datenschutz:** `templates/datenschutz.html` Ziffer 2.8 (Stand 19.11.2026).
 - **Go-live-Checkliste (in dieser Reihenfolge):**

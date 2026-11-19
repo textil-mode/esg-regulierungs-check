@@ -37,6 +37,12 @@ Cron (Hauptcontainer):
 Von Hand:
     python pflichten_erinnerung.py --probe                     # nichts senden, nur zeigen
     python pflichten_erinnerung.py --heute 2026-12-01 --probe  # Stichtag vorgeben
+
+`--probe` verschickt nichts und markiert nichts (keine Versandvermerke, keine
+Hinweise, kein `letzter_gilt_ab`, kein Lebenszeichen-Marker). Es gleicht aber
+wie jeder Planaufruf `nutzer_pflichten` mit dem letzten Pruefergebnis ab
+(`plan_fuer` -> `sync_pflichten`): neue Zeilen bzw. `entfallen_am` werden
+geschrieben — dasselbe passiert beim naechsten Aufruf von „Meine Pflichten“.
 """
 from __future__ import annotations
 
@@ -197,13 +203,20 @@ def mailtext(lang: str, faellig: list[dict], hinweis_zeilen: list[str],
         teile += ["", t("pflichten_mail_hinweise", lang)]
         teile += [f"- {z}" for z in hinweis_zeilen]
     if uebersicht:
-        teile += ["", t("pflichten_mail_uebersicht", lang)]
+        # Was oben unter "Fristen in den naechsten Tagen" steht, nicht noch einmal
+        # im 90-Tage-Block; bleibt nichts, entfaellt die Uebersicht in dieser Mail.
+        schon = {e["schritt"]["id"] for e in faellig}
+        bloecke = {k: [(p, s) for p, s in uebersicht[k]
+                       if k != "bald" or s["id"] not in schon]
+                   for k in ("ueberfaellig", "bald", "laufend")}
+        if any(bloecke.values()):
+            teile += ["", t("pflichten_mail_uebersicht", lang)]
         for schluessel, kopf in (("ueberfaellig", "pflichten_mail_ueberfaellig"),
                                  ("bald", "pflichten_mail_90"),
                                  ("laufend", "pflichten_mail_laufend")):
-            if uebersicht[schluessel]:
+            if bloecke[schluessel]:
                 teile += ["", t(kopf, lang)]
-                teile += [_schritt_zeile(p, s, lang) for p, s in uebersicht[schluessel]]
+                teile += [_schritt_zeile(p, s, lang) for p, s in bloecke[schluessel]]
     teile += ["", t("pflichten_mail_link", lang).format(
                   link=mailer.oeffentlicher_link(PFAD_PLAN)),
               "", t("pflichten_mail_abbestellen", lang).format(

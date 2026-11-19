@@ -14,6 +14,9 @@ Bloecke:
   G  deaktivieren: Schritt fehlt in schritte_fuer und im Plan
   H  neu + aenderungen ueberschreiben nachher; Export
   I  Routen-Rechte, Handpflege-Formular, Validierung
+  L  'geaendert' ueber meldung_version (Hand-Freigabe, Abhaken, Startbestand am selben Tag)
+  M  Freigabe ohne inhaltliche Aenderung: kein Hinweis, keine meldung_version, keine Version
+  N  Bestaetigungs-Vorschlag, vom Admin vor der Freigabe geaendert: normale Aenderung
 """
 from __future__ import annotations
 
@@ -574,9 +577,115 @@ def block_k() -> None:
         os.environ.pop("PFLICHTEN_PLAN", None)
 
 
+def _plan_schritt(uid: int, sid: int, tag=HEUTE) -> dict:
+    for p in pflichten.plan_fuer(uid, "de", tag)["pflichten"]:
+        for s in p["schritte"]:
+            if s["id"] == sid:
+                return s
+    raise AssertionError(f"Schritt {sid} nicht im Plan")
+
+
+def _meldung(sid: int):
+    return _eins("SELECT meldung_version FROM pflicht_schritte WHERE id = ?", (sid,))
+
+
+def block_l() -> None:
+    print("\n--- L  geaendert ueber meldung_version ---")
+    pdb.setze_einstellung("pflichten_plan_aktiv", "1")
+    uid = db.create_user("meldung@example.org", PW)
+    db.save_analysis(uid, [{"key": "EUDR", "name": "EUDR", "applies": "ja"}])
+    sid = EUDR[0]
+    rolle = pdb.schritt(sid)["rolle"]
+    neu = "finanzen" if rolle != "finanzen" else "personal"
+    # (1) meldepflichtige Hand-Freigabe, (2) Abhaken, (3) Startbestand-Freigabe - alles heute
+    vid = pdb.neuer_vorschlag("EUDR", "aendern", "hand", {"rolle": neu}, schritt_id=sid)
+    check("L Hand-Freigabe", pdb.freigeben(vid, STAMM, None, HEUTE) is True)
+    version = pdb.schritt(sid)["version"]
+    check("L Hand-Freigabe setzt meldung_version = Version", _meldung(sid) == version,
+          f"{_meldung(sid)} / {version}")
+    pdb.setze_erledigt(uid, sid, "", True, HEUTE)
+    check("L nach Abhaken: nicht geaendert", _plan_schritt(uid, sid)["geaendert"] is False)
+    vid = pdb.neuer_vorschlag("EUDR", "aendern", "startbestand", {"rolle": rolle or "gf"},
+                              schritt_id=sid)
+    check("L Startbestand-Freigabe", pdb.freigeben(vid, STAMM, None, HEUTE) is True)
+    check("L Startbestand: Version +1, meldung_version bleibt",
+          pdb.schritt(sid)["version"] == version + 1 and _meldung(sid) == version,
+          f"{pdb.schritt(sid)['version']} / {_meldung(sid)}")
+    check("L Startbestand am selben Tag nach Abhaken: nicht geaendert",
+          _plan_schritt(uid, sid)["geaendert"] is False)
+    # Schalter aus: Freigabe ohne Meldung
+    pdb.setze_einstellung("pflichten_plan_aktiv", "0")
+    vid = pdb.neuer_vorschlag("EUDR", "aendern", "hand", {"rolle": neu}, schritt_id=sid)
+    pdb.freigeben(vid, STAMM, None, HEUTE)
+    check("L Schalter aus: meldung_version bleibt", _meldung(sid) == version)
+    check("L Schalter aus: nicht geaendert", _plan_schritt(uid, sid)["geaendert"] is False)
+    pdb.setze_einstellung("pflichten_plan_aktiv", "1")
+    # meldepflichtige Freigabe nach dem Abhaken -> geaendert; gesehen -> nicht mehr
+    vid = pdb.neuer_vorschlag("EUDR", "aendern", "watchdog", {"rolle": rolle or "gf"},
+                              schritt_id=sid)
+    pdb.freigeben(vid, STAMM, None, HEUTE)
+    s = pdb.schritt(sid)
+    check("L meldepflichtige Freigabe: meldung_version = neue Version",
+          _meldung(sid) == s["version"], f"{_meldung(sid)} / {s['version']}")
+    check("L meldepflichtige Freigabe nach Abhaken: geaendert",
+          _plan_schritt(uid, sid)["geaendert"] is True)
+    pdb.markiere_gesehen(uid, sid, s["version"])
+    check("L gesehen: nicht mehr geaendert", _plan_schritt(uid, sid)["geaendert"] is False)
+    pdb.setze_erledigt(uid, sid, "", False, HEUTE)
+
+
+def block_m() -> None:
+    print("\n--- M  Freigabe ohne inhaltliche Aenderung ---")
+    pdb.setze_einstellung("pflichten_plan_aktiv", "1")
+    _sql("DELETE FROM pflicht_hinweise")
+    sid = EUDR[0]
+    vorher = pdb.schritt(sid)
+    meldung = _meldung(sid)
+    versionen = _versionen(sid)
+    faelle = [
+        ("gleiches Feld", "aendern", sid, {"rolle": vorher["rolle"]}),
+        ("Fremdsprache identisch", "aendern", sid,
+         {"texte": {"en": {"titel": vorher["texte"]["en"]["titel"]}}}),
+    ]
+    inaktiv = EUDR[1]
+    check("M Vorbedingung: Schritt inaktiv", pdb.schritt(inaktiv)["aktiv"] == 0)
+    faelle.append(("schon inaktiven Schritt deaktivieren", "deaktivieren", inaktiv, {}))
+    for name, art, ziel, nachher in faelle:
+        v_ziel = pdb.schritt(ziel)
+        vid = pdb.neuer_vorschlag("EUDR", art, "hand", nachher, schritt_id=ziel)
+        check(f"M {name}: freigegeben", pdb.freigeben(vid, STAMM, None, HEUTE) is True
+              and pdb.vorschlag(vid)["status"] == "freigegeben")
+        danach = pdb.schritt(ziel)
+        check(f"M {name}: keine neue Version", danach["version"] == v_ziel["version"],
+              f"{v_ziel['version']} -> {danach['version']}")
+        check(f"M {name}: kein Hinweis", _hinweise() == 0, str(_hinweise()))
+    check("M keine meldung_version", _meldung(sid) == meldung, f"{meldung} -> {_meldung(sid)}")
+    check("M kein Versionseintrag", _versionen(sid) == versionen)
+
+
+def block_n() -> None:
+    print("\n--- N  Bestaetigung, vom Admin geaendert ---")
+    pdb.setze_einstellung("pflichten_plan_aktiv", "1")
+    _sql("DELETE FROM pflicht_hinweise")
+    sid = EUDR[2]
+    vorher = pdb.schritt(sid)
+    vid = pdb.neuer_vorschlag("EUDR", "aendern", "startbestand", {}, schritt_id=sid)
+    check("N ist Bestaetigung", pdb.ist_bestaetigung(pdb.vorschlag(vid)))
+    neu = "finanzen" if vorher["rolle"] != "finanzen" else "personal"
+    check("N freigeben mit Aenderung",
+          pdb.freigeben(vid, STAMM, {"rolle": neu}, HEUTE) is True)
+    s = pdb.schritt(sid)
+    check("N Rolle uebernommen", s["rolle"] == neu, s["rolle"])
+    check("N Version +1", s["version"] == vorher["version"] + 1,
+          f"{vorher['version']} -> {s['version']}")
+    check("N Versionseintrag", _eins("SELECT COUNT(*) FROM pflicht_schritt_versionen"
+                                     " WHERE vorschlag_id = ?", (vid,)) == 1)
+    check("N Startbestand: kein Hinweis", _hinweise() == 0)
+
+
 if __name__ == "__main__":
     for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-                  block_i, block_j, block_k):
+                  block_i, block_j, block_k, block_l, block_m, block_n):
         try:
             block()
         except Exception as exc:  # noqa: BLE001 — jeden Block melden, nicht abbrechen

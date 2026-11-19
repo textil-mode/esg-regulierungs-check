@@ -10,6 +10,8 @@ Bloecke:
   C  Einstellungen
   D  Kontoloeschung raeumt alle Nutzer-Tabellen
   E  Neue Spalte users.erinnerungen
+  F  Spalte pflicht_schritte.meldung_version (Migration idempotent, Start NULL)
+  G  Seed mit INSERT OR IGNORE: Wettlauf um herkunft_key wirft nicht
 """
 from __future__ import annotations
 
@@ -151,8 +153,63 @@ def block_e() -> None:
     check("E neues Konto erinnerungen = 1", wert == 1, f"{wert}")
 
 
+def block_f() -> None:
+    import sqlite3
+    with db._conn() as c:
+        cols = {r[1] for r in c.execute("PRAGMA table_info(pflicht_schritte)")}
+        werte = {r[0] for r in c.execute("SELECT meldung_version FROM pflicht_schritte")} \
+            if "meldung_version" in cols else {"fehlt"}
+    check("F Spalte meldung_version", "meldung_version" in cols, str(sorted(cols)))
+    check("F Startwert NULL", werte == {None}, str(werte))
+    # Alte DB ohne Spalte: Migration legt sie an, zweiter Lauf ist ruhig.
+    alt = sqlite3.connect(":memory:")
+    alt.execute(
+        "CREATE TABLE pflicht_schritte (id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " reg_key TEXT NOT NULL, sortierung INTEGER NOT NULL DEFAULT 0,"
+        " rolle TEXT NOT NULL DEFAULT '', frist_typ TEXT NOT NULL DEFAULT 'keine',"
+        " frist_wert TEXT NOT NULL DEFAULT '', link TEXT, quelle TEXT,"
+        " aktiv INTEGER NOT NULL DEFAULT 1, version INTEGER NOT NULL DEFAULT 1,"
+        " geprueft_am TEXT, geaendert_am TEXT, herkunft_key TEXT UNIQUE)")  # Stand aad2d54
+    try:
+        pdb.init_schema(alt)
+        pdb.init_schema(alt)
+        cols = {r[1] for r in alt.execute("PRAGMA table_info(pflicht_schritte)")}
+    except Exception as exc:  # noqa: BLE001
+        cols = {repr(exc)}
+    check("F Migration auf alter Tabelle, idempotent", "meldung_version" in cols, str(cols))
+
+
+class _OhneVorhandene:
+    """Verbindung, die beim Seed 'nichts vorhanden' meldet - wie ein paralleler Prozess,
+    der zwischen Lesen und Schreiben dieselben Schritte angelegt hat."""
+
+    def __init__(self, c):
+        self.c = c
+
+    def execute(self, sql, *args):
+        if sql.startswith("SELECT herkunft_key"):
+            return iter([])
+        return self.c.execute(sql, *args)
+
+
+def block_g() -> None:
+    with db._conn() as c:
+        vorher = c.execute("SELECT COUNT(*) FROM pflicht_schritte").fetchone()[0]
+        texte = c.execute("SELECT COUNT(*) FROM pflicht_schritt_texte").fetchone()[0]
+        try:
+            neu = pdb.seed_aus_code(_OhneVorhandene(c))
+            fehler = ""
+        except Exception as exc:  # noqa: BLE001
+            neu, fehler = None, repr(exc)
+        nachher = c.execute("SELECT COUNT(*) FROM pflicht_schritte").fetchone()[0]
+        texte2 = c.execute("SELECT COUNT(*) FROM pflicht_schritt_texte").fetchone()[0]
+    check("G Wettlauf: kein Fehler, nichts neu", neu == 0, fehler or str(neu))
+    check("G keine Dubletten, keine verwaisten Texte", nachher == vorher and texte2 == texte,
+          f"{vorher}->{nachher}, {texte}->{texte2}")
+
+
 if __name__ == "__main__":
-    for block in (block_a, block_b, block_c, block_d, block_e):
+    for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g):
         block()
     print()
     if TEST_DB.exists():

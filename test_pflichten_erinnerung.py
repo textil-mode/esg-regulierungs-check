@@ -19,6 +19,7 @@ Bloecke:
   L  Versand ok, Protokollieren scheitert: trotzdem als gesendet markiert
   J  Monatsuebersicht/Lebenszeichen: erster erfolgreicher Lauf des Monats
      (1. scheitert -> 2. sendet -> 3. nichts)
+  M  Monatsuebersicht wiederholt keine Schritte aus "Fristen in den naechsten Tagen"
 
 Vorbedingung: Die November-Uebersicht und das November-Lebenszeichen gelten
 als schon verschickt (Marker gesetzt), damit die Bloecke B-G nur Erinnerungen
@@ -445,9 +446,33 @@ def block_j() -> None:
     check("J 3.: kein Lebenszeichen mehr", v.an(ADMIN) == [])
 
 
+def block_m() -> None:
+    tag = date(2027, 3, 1)
+
+    def schritt(sid: int, titel: str, tage: int) -> dict:
+        d = date.fromordinal(tag.toordinal() + tage)
+        return {"id": sid, "titel": titel, "erledigt": False, "ueberfaellig": False,
+                "frist": {"art": "datum", "datum": d, "periode": ""}}
+
+    x = schritt(9200, "Bald-in-5-Tagen", 5)
+    y = schritt(9201, "Spaeter-in-60-Tagen", 60)
+    p = {"reg_key": "X", "name": "Xreg", "entfaellt": False, "schritte": [x, y]}
+    faellig = [{"pflicht": p, "schritt": x, "art": "7", "tage": 5}]
+    _, text = pe.mailtext("de", faellig, [], {"bald": [(p, x), (p, y)], "ueberfaellig": [],
+                                               "laufend": []})
+    kopf = t("pflichten_mail_90", "de")
+    check("M Schritt aus 'naechste Tage' nur einmal in der Mail",
+          text.count("Bald-in-5-Tagen") == 1, text)
+    check("M 90-Tage-Block zeigt die uebrigen", "Spaeter-in-60-Tagen" in text.split(kopf, 1)[-1])
+    _, text = pe.mailtext("de", faellig, [], {"bald": [(p, x)], "ueberfaellig": [],
+                                               "laufend": []})
+    check("M nur doppelte: kein leerer 90-Tage-Block, keine leere Uebersicht",
+          kopf not in text and t("pflichten_mail_uebersicht", "de") not in text, text)
+
+
 def main() -> int:
     for blk in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-                block_i, block_k, block_l, block_j):
+                block_i, block_k, block_l, block_j, block_m):
         try:
             blk()
         except Exception as exc:  # noqa: BLE001

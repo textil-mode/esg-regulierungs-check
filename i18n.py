@@ -2843,6 +2843,14 @@ UI: dict[str, dict[str, str]] = {
         "es": "{periode} hecho el {datum}", "fr": "{periode} effectuée le {datum}",
         "it": "{periode} completato il {datum}", "zh": "{periode} 年于 {datum} 完成",
     },
+    "pflichten_verlauf_vor_umstellung": {
+        "de": "Erledigt am {datum} (vor der Umstellung auf eine jährliche Frist)",
+        "en": "Done on {datum} (before the switch to an annual deadline)",
+        "es": "Hecho el {datum} (antes del cambio a un plazo anual)",
+        "fr": "Effectuée le {datum} (avant le passage à une échéance annuelle)",
+        "it": "Completato il {datum} (prima del passaggio a una scadenza annuale)",
+        "zh": "于 {datum} 完成（改为年度期限之前）",
+    },
     "pflichten_gesehen": {
         "de": "Gesehen", "en": "Seen", "es": "Visto", "fr": "Vu", "it": "Visto", "zh": "已查看",
     },
