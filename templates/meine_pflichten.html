@@ -83,7 +83,7 @@
   {% set hat_ueber = p.schritte | selectattr("ueberfaellig") | list %}
   <details class="pf-pflicht" id="p-{{ p.reg_key }}" {{ 'open' if loop.first or hat_ueber else '' }}>
     <summary>
-      <span class="pf-name">{{ p.name }}{% if p.gilt_ab %} <span class="pf-gilt">– {{ t("pflichten_gilt_ab", lang).format(datum=p.gilt_ab) }}</span>{% endif %}</span>
+      <span class="pf-name">{{ p.name }}{% if p.gilt_bereits %} <span class="pf-gilt">– {{ t("pflichten_gilt_dauer", lang) }}</span>{% elif p.gilt_ab %} <span class="pf-gilt">– {{ t("pflichten_gilt_ab", lang).format(datum=p.gilt_ab) }}</span>{% endif %}</span>
       <span class="pf-stand">{{ t("pflichten_fortschritt", lang).format(erledigt=p.erledigt, gesamt=p.gesamt) }}{% if hat_ueber %} <span class="pf-marke pf-marke-ueber">{{ t("pflichten_ueberfaellig", lang) }}</span>{% endif %}</span>
     </summary>
     <ul class="pf-schritte">
@@ -108,7 +108,7 @@
             {% endif %}
             {% if s.rolle %} · {{ t("rolle_" ~ s.rolle, lang) }}{% endif %}
             {% if s.geaendert %}
-            <span class="pf-marke pf-marke-geaendert">{{ t("pflichten_geaendert", lang).format(datum=datum(s.geaendert_am)) }}</span>
+            <span class="pf-marke pf-marke-geaendert">{% if s.geaendert_am %}{{ t("pflichten_geaendert", lang).format(datum=datum(s.geaendert_am)) }}{% else %}{{ t("pflichten_geaendert_ohne_datum", lang) }}{% endif %}</span>
             <form method="post" class="pf-gesehen" action="{{ url_for('pflicht_gesehen', schritt_id=s.id) }}">
               <input type="hidden" name="rolle" value="{{ rolle }}">
               <button type="submit" class="btn btn-secondary">{{ t("pflichten_gesehen", lang) }}</button>

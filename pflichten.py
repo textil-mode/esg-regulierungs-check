@@ -181,11 +181,17 @@ def plan_fuer(user_id: int, lang: str, today: date) -> dict:
             "schritte": schritte,
         })
 
-    plan["pflichten"].sort(key=lambda p: (
+    plan["pflichten"].sort(key=sortier_schluessel)
+    return plan
+
+
+def sortier_schluessel(p: dict) -> tuple:
+    """Reihenfolge im Plan: aktive vor entfallenen, Ueberfaellige zuerst,
+    dann naechste offene Frist (ohne Frist zuletzt), dann Name."""
+    return (
         p["entfaellt"],
         not any(s["ueberfaellig"] for s in p["schritte"]),
         p["naechste_frist"] is None,
         p["naechste_frist"] or date.max,
         p["name"].casefold(),
-    ))
-    return plan
+    )

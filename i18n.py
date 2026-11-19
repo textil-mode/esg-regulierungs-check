@@ -2759,6 +2759,16 @@ UI: dict[str, dict[str, str]] = {
         "it": "data aperta (inizio dell’applicazione non ancora determinato)",
         "zh": "日期待定（适用开始日期尚未确定）",
     },
+    "pflichten_gilt_dauer": {
+        "de": "gilt (Daueraufgabe)", "en": "applies (ongoing task)",
+        "es": "se aplica (tarea permanente)", "fr": "s’applique (tâche permanente)",
+        "it": "si applica (compito permanente)", "zh": "适用（长期任务）",
+    },
+    "pflichten_geaendert_ohne_datum": {
+        "de": "geändert, bitte prüfen", "en": "changed, please review",
+        "es": "modificado, revíselo", "fr": "modifié, veuillez vérifier",
+        "it": "modificato, la preghiamo di verificare", "zh": "已更改，请核查",
+    },
     "pflichten_ueberfaellig": {
         "de": "überfällig", "en": "overdue", "es": "vencido",
         "fr": "en retard", "it": "scaduto", "zh": "已逾期",

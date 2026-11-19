@@ -83,23 +83,32 @@ EUDR = [s["id"] for s in pdb.schritte_fuer("EUDR", "de")]
 TKVO = [s["id"] for s in pdb.schritte_fuer("TKVO", "de")]
 LKSG = [s["id"] for s in pdb.schritte_fuer("LkSG", "de")]
 CSRD = [s["id"] for s in pdb.schritte_fuer("CSRD", "de")]
-assert len(EUDR) >= 4 and len(TKVO) >= 2 and LKSG and CSRD, "Startbestand fehlt"
+assert len(EUDR) >= 4 and len(TKVO) >= 3 and LKSG and CSRD, "Startbestand fehlt"
 
 # Fristen: EUDR gilt ab 30.12.2026 (in der Zukunft), TKVO seit 2012.
 _sql("UPDATE pflicht_schritte SET frist_typ='fest', frist_wert='31.12.2026', rolle='einkauf'"
      " WHERE id=?", (EUDR[0],))
 _sql("UPDATE pflicht_schritte SET frist_typ='relativ', frist_wert='+0d', rolle='personal'"
      " WHERE id=?", (EUDR[1],))
-_sql("UPDATE pflicht_schritte SET frist_typ='jaehrlich', frist_wert='31.05.' WHERE id=?",
-     (EUDR[2],))
+_sql("UPDATE pflicht_schritte SET frist_typ='jaehrlich', frist_wert='31.05.', rolle='logistik'"
+     " WHERE id=?", (EUDR[2],))
 _sql("UPDATE pflicht_schritte SET aktiv=0 WHERE id=?", (EUDR[3],))
 _sql("UPDATE pflicht_schritte SET frist_typ='relativ', frist_wert='-6m' WHERE id=?", (TKVO[0],))
+# TKVO: ein Logistik-Schritt spaet (30.06.2027), ein ueberfaelliger (01.11.2026).
+_sql("UPDATE pflicht_schritte SET frist_typ='fest', frist_wert='30.06.2027', rolle='logistik'"
+     " WHERE id=?", (TKVO[1],))
+_sql("UPDATE pflicht_schritte SET frist_typ='fest', frist_wert='01.11.2026' WHERE id=?", (TKVO[2],))
 _sql("UPDATE pflicht_schritte SET frist_typ='fest', frist_wert='01.03.2027' WHERE id=?",
      (CSRD[0],))
 
 
 def _karten(**applies: str) -> list[dict]:
     return [{"key": k, "name": f"{k} Testname", "applies": v} for k, v in applies.items()]
+
+
+def _erinnerungen(uid: int) -> int:
+    with db._conn() as c:
+        return c.execute("SELECT erinnerungen FROM users WHERE id=?", (uid,)).fetchone()[0]
 
 
 def block_a() -> None:
@@ -114,6 +123,11 @@ def block_a() -> None:
     check("A Menue: kein Link fuer Mitglied", "/meine-pflichten" not in html)
     html = _client(ADMIN_ID, ADMIN).get("/passwort-aendern").get_data(as_text=True)
     check("A Menue: Link fuer Admin", "/meine-pflichten" in html)
+    r = _client(UID, "mitglied@example.org").post("/konto/erinnerungen", data={"an": "0"})
+    check("A Erinnerungen-Schalter Mitglied: 404", r.status_code == 404
+          and _erinnerungen(UID) == 1, str(r.status_code))
+    html = _client(UID, "mitglied@example.org").get("/passwort-aendern").get_data(as_text=True)
+    check("A Kontoseite Mitglied: kein Erinnerungsschalter", "/konto/erinnerungen" not in html)
 
 
 def block_b() -> None:
@@ -142,6 +156,19 @@ def block_c() -> str:
     check("C inaktiver Schritt nicht sichtbar", f'id="s-{EUDR[3]}"' not in html)
     check("C LkSG (nein) nicht im Plan", f'id="s-{LKSG[0]}"' not in html)
     check("C Rollenname uebersetzt", i18n.t("rolle_einkauf", "de") in html)
+    kopf = html[html.find('id="p-TKVO"'):]
+    kopf = kopf[:kopf.find("</summary>")]
+    check("C geltende Pflicht: 'gilt (Daueraufgabe)' statt Datum",
+          i18n.t("pflichten_gilt_dauer", "de") in kopf and "08.05.2012" not in kopf, " ".join(kopf.split())[:160])
+    kopf = html[html.find('id="p-EUDR"'):]
+    kopf = kopf[:kopf.find("</summary>")]
+    check("C kuenftige Pflicht: 'gilt fuer Sie ab 30.12.2026'",
+          i18n.t("pflichten_gilt_ab", "de").format(datum="30.12.2026") in kopf, " ".join(kopf.split())[:160])
+    # Faellig in 90 Tagen: EUDR 30.12. und 31.12.2026; nicht TKVO 01.11.2026 (ueberfaellig),
+    # nicht CSRD 01.03.2027 / TKVO 30.06.2027 / EUDR 31.05.2027 (spaeter).
+    check("C 'faellig in 90 Tagen' ohne Ueberfaellige = 2",
+          "· 3 Pflichten · 2 Schritte fällig in 90 Tagen" in html,
+          re.search(r"·[^<]*fällig[^<]*", html).group(0) if re.search(r"·[^<]*fällig[^<]*", html) else "")
     return html
 
 
@@ -200,6 +227,12 @@ def block_f() -> None:
     check("F Einkauf-Schritt sichtbar", f'id="s-{EUDR[0]}"' in html)
     check("F Personal-Schritt ausgeblendet", f'id="s-{EUDR[1]}"' not in html)
     check("F TKVO (keine Einkauf-Schritte) entfaellt aus der Anzeige", f'id="s-{TKVO[0]}"' not in html)
+    html = _client(UID, "mitglied@example.org").get("/meine-pflichten").get_data(as_text=True)
+    check("F ohne Filter: TKVO (ueberfaellig) vor EUDR",
+          0 < html.find('id="p-TKVO"') < html.find('id="p-EUDR"'))
+    html = _client(UID, "mitglied@example.org").get("/meine-pflichten?rolle=logistik")         .get_data(as_text=True)
+    check("F Filter logistik sortiert neu: EUDR (31.05.2027) vor TKVO (30.06.2027)",
+          0 < html.find('id="p-EUDR"') < html.find('id="p-TKVO"'))
     html = _client(UID, "mitglied@example.org").get("/meine-pflichten?rolle=quatsch") \
         .get_data(as_text=True)
     check("F unbekannte Rolle = alle", f'id="s-{EUDR[1]}"' in html)
@@ -262,11 +295,6 @@ def block_h() -> None:
           str(zustand.get(EUDR[0])))
 
 
-def _erinnerungen(uid: int) -> int:
-    with db._conn() as c:
-        return c.execute("SELECT erinnerungen FROM users WHERE id=?", (uid,)).fetchone()[0]
-
-
 def block_i() -> None:
     print("\n--- I  Erinnerungen ---")
     c = _client(UID, "mitglied@example.org")
@@ -301,6 +329,9 @@ def block_j() -> None:
         r = _client(UID, "mitglied@example.org").post(
             f"/meine-pflichten/{EUDR[1]}/erledigt", data={"erledigt": "1"})
         check("J POST: 404", r.status_code == 404, str(r.status_code))
+        r = _client(ADMIN_ID, ADMIN).post("/konto/erinnerungen", data={"an": "0"})
+        check("J Erinnerungen-Schalter Admin: 404", r.status_code == 404
+              and _erinnerungen(ADMIN_ID) == 1, str(r.status_code))
         html = render_cards_html(karte, "de", profile=PROFIL)
         code = i18n.t_first_step("eudr_1", "de")
         check("J Karte aus i18n.FIRST_STEPS", code and code in html
@@ -319,7 +350,8 @@ def block_k() -> None:
                   "pflichten_daten", "pflichten_zustaendig", "pflichten_geprueft",
                   "pflichten_geaendert", "pflichten_entfaellt", "pflichten_ics",
                   "pflichten_erinnerungen_an", "pflichten_erinnerungen_aus",
-                  "pflichten_filter_alle", "pflichten_haftung"]
+                  "pflichten_filter_alle", "pflichten_haftung", "pflichten_gilt_dauer",
+                  "pflichten_geaendert_ohne_datum"]
     schluessel += [f"rolle_{r}" for r in pflichten.ROLLEN]
     fehlt = [f"{k}/{l}" for k in schluessel for l in ("de", "en", "es", "fr", "it", "zh")
              if not i18n.UI.get(k, {}).get(l)]

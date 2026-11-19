@@ -1430,6 +1430,7 @@ def _plan_gefiltert(uid: int, lang: str, heute: date, rolle: str) -> dict:
                              "gesamt": len(schritte),
                              "naechste_frist": None if p["entfaellt"] or not offen
                              else min(offen)})
+        behalten.sort(key=pflichten.sortier_schluessel)
         plan["pflichten"] = behalten
     return plan
 
@@ -1482,10 +1483,16 @@ def meine_pflichten():
         for s in p["schritte"]:
             if s["geaendert"]:
                 s["geaendert_am"] = (pdb.schritt(s["id"]) or {}).get("geaendert_am")
+    # Faellig in 90 Tagen: offen, datiert, heute <= Frist <= heute + 90.
+    # Ueberfaellige zaehlen hier nicht mit (sie stehen markiert oben).
     grenze = heute + timedelta(days=90)
     faellig = sum(1 for p in aktiv for s in p["schritte"]
                   if not s["erledigt"] and s["frist"]["art"] == "datum"
-                  and s["frist"]["datum"] <= grenze)
+                  and heute <= s["frist"]["datum"] <= grenze)
+    # Kopfzeile: gilt die Pflicht schon, ist sie eine Daueraufgabe.
+    for p in aktiv:
+        beginn = pflichten._tag_monat_jahr(p["gilt_ab"]) if p["gilt_ab"] else None
+        p["gilt_bereits"] = beginn is not None and beginn <= heute
     return render_template(
         "meine_pflichten.html",
         plan=plan, aktiv=aktiv, entfallen=entfallen, rolle=rolle,
@@ -1607,14 +1614,13 @@ def meine_pflichten_ics():
 
 @app.route("/konto/erinnerungen", methods=["POST"])
 def konto_erinnerungen():
-    redir = _require_login()
-    if redir:
-        return redir
+    zugang = _pflichten_zugang()
+    if zugang:
+        return zugang
     an = 1 if request.form.get("an") == "1" else 0
     with db._conn() as c:
         c.execute("UPDATE users SET erinnerungen = ? WHERE id = ?", (an, _uid()))
-    ziel = request.form.get("zurueck")
-    if ziel == "pflichten" and _pflichten_sichtbar():
+    if request.form.get("zurueck") == "pflichten":
         return redirect(url_for("meine_pflichten"))
     return redirect(url_for("change_password"))
 
