@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import difflib
 import os
 import sys
 import traceback
@@ -29,16 +28,17 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 import db  # noqa: E402
+import lawparse  # noqa: E402
 import pflichten_db  # noqa: E402
 import pflichten_vorschlag  # noqa: E402
 from fetcher import fetch_law_text, version_text  # noqa: E402
 from regulations import REGULATIONS  # noqa: E402
 
 
-# Wieviel Diff-Umgebung das LLM je Fassung sieht. Bewusst knapp: eine
-# Konsolidierung aendert oft hunderte Zeilen, und der Vorschlag soll nur die
-# Richtung angeben, nicht den Rechtsakt nacherzaehlen.
-DIFF_MAX_CHARS = 15_000
+# Diff-Auszug liegt in lawparse (auch pflichten_vorschlag braucht ihn);
+# die alten Namen bleiben hier erhalten.
+DIFF_MAX_CHARS = lawparse.DIFF_MAX_CHARS
+_diff_excerpt = lawparse.diff_auszug
 
 _SUMMARY_SYSTEM = (
     "Du bist Jurist und vergleichst zwei Fassungen eines EU- oder Bundesgesetzes. "
@@ -47,30 +47,6 @@ _SUMMARY_SYSTEM = (
     "Fristen und Anwendungsdaten. Reine Formatierungs- oder Layout-Unterschiede "
     "nennst du als 'keine inhaltliche Aenderung erkennbar'. Erfinde nichts."
 )
-
-
-def _diff_excerpt(old: str, new: str) -> str:
-    """Unified Diff, auf DIFF_MAX_CHARS je Fassung begrenzt."""
-    old_lines = (old or "").splitlines()
-    new_lines = (new or "").splitlines()
-    diff = difflib.unified_diff(old_lines, new_lines, lineterm="", n=2)
-    removed: list[str] = []
-    added: list[str] = []
-    for line in diff:
-        if line.startswith("---") or line.startswith("+++") or line.startswith("@@"):
-            continue
-        if line.startswith("-") and len("\n".join(removed)) < DIFF_MAX_CHARS:
-            removed.append(line[1:])
-        elif line.startswith("+") and len("\n".join(added)) < DIFF_MAX_CHARS:
-            added.append(line[1:])
-        if len("\n".join(removed)) >= DIFF_MAX_CHARS and len("\n".join(added)) >= DIFF_MAX_CHARS:
-            break
-    return (
-        "ALTE FASSUNG (entfernte Stellen):\n"
-        + "\n".join(removed)[:DIFF_MAX_CHARS]
-        + "\n\nNEUE FASSUNG (hinzugekommene Stellen):\n"
-        + "\n".join(added)[:DIFF_MAX_CHARS]
-    )
 
 
 async def _summarize(reg: dict, old: str, new: str) -> str:
@@ -160,7 +136,9 @@ def run(language: str = "de", use_llm: bool = True) -> dict:
                 errors.append({"reg_key": key, "error": f"LLM-Zusammenfassung: {e}"})
                 traceback.print_exc()
         changed.append(entry)
-        if use_llm and pflichten_an and (old_text or "").strip():
+        # Spec 6.4: nur Regulierungen, die schon Schritte im Katalog haben.
+        if (use_llm and pflichten_an and (old_text or "").strip()
+                and pflichten_db.schritte_fuer(key, "de")):
             _pflichten_vorschlaege(key, old_text, res["text"], run_id, entry, errors,
                                    vorschlaege)
 

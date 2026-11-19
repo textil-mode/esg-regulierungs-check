@@ -87,10 +87,16 @@ KONTO_ID = db.create_user(KONTO, PW)
 with db._conn() as _c:
     _c.execute("UPDATE users SET approved = 1")
 db.set_admin(ERNANNT_ID, True)
-try:
-    db.upsert_company(KONTO_ID, {"name": FIRMA, "employees": 120})
-except Exception as exc:  # noqa: BLE001 — Profil ist nur Kulisse fuer Block F
-    print(f"(Profil nicht angelegt: {exc})")
+db.upsert_company(KONTO_ID, {"name": FIRMA, "employees": 120})
+assert (db.get_company(KONTO_ID) or {}).get("name") == FIRMA, "Profil fehlt"
+
+# Eine Regulierung ohne (aktive) Schritte (Watchdog darf dafuer nichts vorschlagen).
+# Deaktivieren statt loeschen: init_db saet geloeschte Startschritte neu.
+OHNE = "AbwV55"
+with db._conn() as _c:
+    _c.execute("UPDATE pflicht_schritte SET aktiv = 0 WHERE reg_key = ?", (OHNE,))
+# Zweite Regulierung fuer Startbestand-Randfaelle (nicht EUDR, nicht CSRD).
+ZWEIT = "AbwV38"
 
 EUDR = [s["id"] for s in pdb.schritte_fuer("EUDR", "de")]
 assert len(EUDR) >= 2, "Startbestand fehlt"
@@ -314,12 +320,29 @@ def block_i() -> None:
         check("I an Stamm-Admin", empf == STAMM, empf)
         check("I Zeile EUDR: 2 Vorschläge", "EUDR: 2 Vorschläge" in text, text)
         check("I CSRD ohne Vorschlag fehlt", "CSRD" not in text)
-        check("I Link", "https://test.example/admin/pflichten/vorschlaege" in text, text)
+        check("I Link mit Pfad-Praefix",
+              "https://test.example/esg/admin/pflichten/vorschlaege" in text, text)
+        check("I Betreff Plural", "2 neue KI-Vorschläge" in betreff, betreff)
     nachher = _eins("SELECT COUNT(*) FROM mail_log WHERE purpose = 'pflichten_vorschlag'")
     check("I mail_log", nachher == vorher + 1)
     gesendet.clear()
     pv.benachrichtige_admin({"EUDR": 0}, versand=versand)
     check("I nichts zu melden -> keine Mail", gesendet == [])
+
+    gesendet.clear()
+    pv.benachrichtige_admin({"EUDR": 1}, versand=versand)
+    check("I Singular", gesendet and "1 neuer KI-Vorschlag" in gesendet[0][1]
+          and "EUDR: 1 Vorschlag\n" in gesendet[0][2], str(gesendet))
+    gesendet.clear()
+    pv.benachrichtige_admin({"EUDR": 0}, versand=versand, fehler=["CSRD: Timeout", "SBTi: x"])
+    check("I 0 Vorschlaege mit Fehlern: Mail",
+          len(gesendet) == 1 and "keine neuen Vorschläge, 2 Fehler" in gesendet[0][1]
+          and "CSRD: Timeout" in gesendet[0][2] and "EUDR" not in gesendet[0][2],
+          str(gesendet))
+    gesendet.clear()
+    pv.benachrichtige_admin({"EUDR": 3}, versand=versand, fehler=["CSRD: Timeout"])
+    check("I Vorschlaege und 1 Fehler", gesendet and
+          "3 neue KI-Vorschläge, 1 Fehler" in gesendet[0][1], str(gesendet))
 
     def kaputt(empfaenger, betreff, text):
         raise RuntimeError("SMTP weg")
@@ -334,7 +357,7 @@ def block_j() -> None:
     aufrufe = {"vorschlag": [], "admin": []}
 
     def fake_fetch(reg, *, language="de", force=False):
-        if reg["key"] in ("EUDR", "CSRD"):
+        if reg["key"] in ("EUDR", "CSRD", OHNE):
             return {"text": f"neu {reg['key']}", "version_new": True, "previous_hash": "h0",
                     "text_hash": "h1"}
         return {"text": "gleich", "version_new": False}
@@ -358,7 +381,8 @@ def block_j() -> None:
     try:
         res = watchdog.run(use_llm=False)
         check("J ohne LLM: Aenderungen erkannt",
-              sorted(e["reg_key"] for e in res["changed"]) == ["CSRD", "EUDR"], str(res["changed"]))
+              sorted(e["reg_key"] for e in res["changed"]) == sorted(["CSRD", "EUDR", OHNE]),
+              str(res["changed"]))
         check("J ohne LLM: keine Vorschlaege, keine Mail",
               aufrufe["vorschlag"] == [] and aufrufe["admin"] == [])
         check("J ohne LLM: keine Fehler", res["errors"] == [], str(res["errors"]))
@@ -369,7 +393,7 @@ def block_j() -> None:
         check("J alter/neuer Text, Lauf-ID", eudr[1] == "alt EUDR" and eudr[2] == "neu EUDR"
               and eudr[3] == str(res["run_id"]), str(eudr))
         check("J Fehler im Lauf, kein Abbruch",
-              any(e["reg_key"] == "CSRD" for e in res["errors"]) and len(res["changed"]) == 2,
+              any(e["reg_key"] == "CSRD" for e in res["errors"]) and len(res["changed"]) == 3,
               str(res["errors"]))
         check("J Admin-Mail mit Anzahl", aufrufe["admin"] == [{"EUDR": 2}], str(aufrufe["admin"]))
         check("J Zusammenfassung bleibt", all(e["summary"] == "Zusammenfassung"
@@ -427,6 +451,8 @@ def block_k() -> None:
 
     async def fake_start(reg_key, ask=None, **kw):
         gesehen.append(reg_key)
+        if reg_key == "CSRD":
+            raise pv.VorschlagFehler("Antwort kaputt")
         return [1] if reg_key == "EUDR" else []
 
     alt_sv = pv.startbestand_vorschlaege
@@ -441,11 +467,98 @@ def block_k() -> None:
           f"{sorted(gesehen)[:5]} …")
     check("K eine Mail am Ende", len(mails) == 1 and "EUDR: 1 Vorschlag" in mails[0],
           str(mails))
+    check("K Fehler unter 'Nicht bearbeitet'", bool(mails) and "Nicht bearbeitet" in mails[0]
+          and "CSRD" in mails[0] and "Antwort kaputt" in mails[0], str(mails))
+
+
+def block_l() -> None:
+    print("\n--- L  Typen aus der KI-Antwort ---")
+    s = pdb.schritt(EUDR[2])
+    alt_daten = s["texte"]["de"]["daten"]
+    antwort = {"aenderungen": [
+        {"art": "aendern", "schritt_id": EUDR[2],
+         "nachher": {"daten": ["Geodaten", "Menge"]}, "beleg": "Art. 9"},
+    ]}
+    ids = run(pv.vorschlaege_aus_aenderung("EUDR", "a", "b", fake_ask(antwort)))
+    check("L Liste in daten -> verbunden", len(ids) == 1 and
+          pdb.vorschlag(ids[0])["nachher"]["texte"]["de"]["daten"] == "Geodaten; Menge",
+          str(ids and pdb.vorschlag(ids[0])["nachher"]))
+    check("L Liste in daten war Aenderung", alt_daten != "Geodaten; Menge")
+    vorher = _offen()
+    verworfen: list[str] = []
+    antwort = {"aenderungen": [
+        {"art": "aendern", "schritt_id": EUDR[2], "nachher": {"titel": {"de": "x"}},
+         "beleg": "Art. 9"},
+        {"art": "aendern", "schritt_id": True, "nachher": {"rolle": "gf"}, "beleg": "Art. 9"},
+        {"art": "aendern", "schritt_id": 3.7, "nachher": {"rolle": "gf"}, "beleg": "Art. 9"},
+        {"art": "aendern", "schritt_id": EUDR[2], "nachher": {"rolle": "gf"},
+         "beleg": {"text": "Art. 9"}},
+        {"art": "aendern", "schritt_id": EUDR[2], "nachher": {"rolle": "gf"},
+         "beleg": "Art. 9", "begruendung": 42},
+    ]}
+    ids = run(pv.vorschlaege_aus_aenderung("EUDR", "a", "b", fake_ask(antwort),
+                                           verworfen=verworfen))
+    check("L dict-Titel, True/3.7-Id, dict-Beleg, Zahl-Begruendung verworfen",
+          ids == [] and _offen() == vorher and len(verworfen) == 5, f"{ids} {verworfen}")
+    antwort = {"aenderungen": [{"art": "aendern", "schritt_id": str(EUDR[2]),
+                                "nachher": {"beschreibung": "Neu beschrieben"},
+                                "beleg": ["Art. 9", "Abs. 2"]}]}
+    ids = run(pv.vorschlaege_aus_aenderung("EUDR", "a", "b", fake_ask(antwort)))
+    check("L Ziffern-String als Id, Beleg-Liste verbunden", len(ids) == 1
+          and pdb.vorschlag(ids[0])["beleg"] == "Art. 9; Abs. 2", str(ids))
+
+
+def block_m() -> None:
+    print("\n--- M  Startbestand: Beleg und Bestaetigung ---")
+    schritte = [x for x in pdb.schritte_fuer(ZWEIT, "de") if not x["geprueft_am"]]
+    check("M ungepruefte Schritte", len(schritte) >= 2, str(len(schritte)))
+    a, b = schritte[0], schritte[1]
+    andere = "finanzen" if a["rolle"] != "finanzen" else "gf"
+    antwort = {"schritte": [
+        {"schritt_id": a["id"], "rolle": andere, "frist_typ": a["frist_typ"],
+         "frist_wert": a["frist_wert"], "daten": a["daten"], "beleg": ""},
+        {"schritt_id": b["id"], "rolle": b["rolle"], "frist_typ": b["frist_typ"],
+         "frist_wert": b["frist_wert"], "daten": b["daten"], "beleg": "§ 1"},
+    ]}
+    alt = pv.fetcher.fetch_law_text
+    pv.fetcher.fetch_law_text = lambda reg, **kw: {"text": "§ 1 Anwendungsbereich"}
+    verworfen: list[str] = []
+    try:
+        vorher = _offen()
+        ids = run(pv.startbestand_vorschlaege(ZWEIT, fake_ask(antwort), verworfen=verworfen))
+    finally:
+        pv.fetcher.fetch_law_text = alt
+    check("M Aenderung ohne Beleg verworfen, Bestaetigung ohne Vorschlag",
+          ids == [] and _offen() == vorher, str(ids))
+    check("M beide gezaehlt", len(verworfen) == 2, str(verworfen))
+
+
+def block_n() -> None:
+    print("\n--- N  Uebersetzung schlaegt fehl ---")
+
+    async def ask(system, user):
+        PROMPTS.append((system, user))
+        if system == pv.SYSTEM_UEBERSETZUNG:
+            return "kaputt"
+        return json.dumps({"aenderungen": [{
+            "art": "aendern", "schritt_id": EUDR[3],
+            "nachher": {"titel": "Titel ohne Uebersetzung"},
+            "beleg": "Art. 4", "begruendung": "B" * 3000}]})
+    ids = run(pv.vorschlaege_aus_aenderung("EUDR", "a", "b", ask))
+    check("N Vorschlag trotzdem angelegt", len(ids) == 1, str(ids))
+    if ids:
+        v = pdb.vorschlag(ids[0])
+        t = v["nachher"]["texte"]
+        check("N fremde Sprachen = deutscher Text", sorted(t) == sorted(pdb.SPRACHEN)
+              and t["fr"]["titel"] == "Titel ohne Uebersetzung")
+        check("N Warnhinweis ueberlebt Kuerzung",
+              "Übersetzung fehlgeschlagen" in v["begruendung"]
+              and len(v["begruendung"]) <= pv.BEGRUENDUNG_MAX + 300, str(len(v["begruendung"])))
 
 
 def main() -> int:
     for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-                  block_i, block_j, block_k):
+                  block_i, block_j, block_k, block_l, block_m, block_n):
         try:
             block()
         except Exception as exc:  # noqa: BLE001

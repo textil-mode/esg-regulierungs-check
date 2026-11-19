@@ -53,7 +53,7 @@ from check_links import HEADERS, TIMEOUT, Result, check, collect  # noqa: E402
 # Nutzervorgabe 12.10.2026: Mail an Michael Schuckert. Bewusst eine eigene
 # Angabe statt `app.ADMIN_EMAILS` — der Cron soll die Flask-App nicht laden.
 EMPFAENGER = os.getenv("LINKCHECK_MAIL_TO", "mschuckert@textil-mode.de")
-ADMIN_PFAD = "/esg/admin/regulierungs-status"
+ADMIN_PFAD = f"{mailer.APP_PFAD}/admin/regulierungs-status"
 GII = "https://www.gesetze-im-internet.de/"
 
 
@@ -392,8 +392,7 @@ def mail_lebenszeichen(lauf: dict) -> tuple[str, str]:
 
 
 def _admin_link() -> str:
-    basis = (os.environ.get("PUBLIC_BASE_URL") or "").rstrip("/")
-    return f"{basis}{ADMIN_PFAD}" if basis else ADMIN_PFAD
+    return mailer.oeffentlicher_link(ADMIN_PFAD)
 
 
 def _senden(betreff: str, text: str, versand=None) -> None:

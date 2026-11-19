@@ -22,7 +22,6 @@ import os
 import threading
 from datetime import date
 from typing import Awaitable, Callable
-from urllib.parse import urlsplit
 
 import db
 import fetcher
@@ -65,6 +64,39 @@ def _json(antwort: str) -> dict:
 
 def _text(wert) -> str:
     return "" if wert is None else str(wert).strip()
+
+
+class _Ungueltig(Exception):
+    """Ein Wert aus der KI-Antwort hat einen unbrauchbaren Typ."""
+
+
+def _textwert(wert, feld: str) -> str:
+    """Freitext aus der KI: str; Liste von str -> '; '-verbunden; None -> ''; sonst ungueltig."""
+    if wert is None:
+        return ""
+    if isinstance(wert, str):
+        return wert.strip()
+    if isinstance(wert, list) and all(isinstance(x, str) for x in wert):
+        return "; ".join(x.strip() for x in wert if x.strip())
+    raise _Ungueltig(f"{feld}: unbrauchbarer Typ {type(wert).__name__}")
+
+
+def _skalar(wert, feld: str) -> str:
+    """Schrittfeld (rolle, frist, link, quelle, sortierung): str oder int (kein bool)."""
+    if isinstance(wert, str):
+        return wert.strip()
+    if isinstance(wert, int) and not isinstance(wert, bool):
+        return str(wert)
+    raise _Ungueltig(f"{feld}: unbrauchbarer Typ {type(wert).__name__}")
+
+
+def _schritt_id(wert) -> int | None:
+    """Nur int (kein bool) oder Ziffern-String."""
+    if isinstance(wert, int) and not isinstance(wert, bool):
+        return wert
+    if isinstance(wert, str) and wert.strip().isdigit():
+        return int(wert.strip())
+    return None
 
 
 def _reg(reg_key: str) -> dict:
@@ -122,8 +154,8 @@ async def uebersetzen(texte_de: dict, ask: Ask | None = None) -> dict[str, dict]
 
 # ---------- Pruefen und Anlegen ----------
 
-def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date,
-                      *, leer_erlaubt: bool = False) -> dict | str:
+def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date
+                      ) -> dict | str:
     """KI-Aenderung -> `{art, schritt, felder, texte_de}` oder Grund fuer Verwerfen.
 
     Prueft mit `pflichten_db.pruefe_felder` (Frist-Typ und -Wert gemeinsam,
@@ -133,9 +165,8 @@ def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date
         return f"unbekannte Art {art!r}"
     schritt = None
     if art != "neu":
-        try:
-            sid = int(schritt_id)
-        except (TypeError, ValueError):
+        sid = _schritt_id(schritt_id)
+        if sid is None:
             return f"{art} ohne gueltige schritt_id ({schritt_id!r})"
         schritt = pdb.schritt(sid)
         if not schritt or schritt["reg_key"] != reg_key:
@@ -144,8 +175,11 @@ def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date
         return {"art": art, "schritt": schritt, "felder": {}, "texte_de": {}}
 
     roh = roh if isinstance(roh, dict) else {}
-    felder = {k: _text(roh[k]) for k in pdb.SCHRITT_FELDER if roh.get(k) is not None}
-    texte_de = {f: _text(roh[f]) for f in pdb.TEXTFELDER if roh.get(f) is not None}
+    try:
+        felder = {k: _skalar(roh[k], k) for k in pdb.SCHRITT_FELDER if roh.get(k) is not None}
+        texte_de = {f: _textwert(roh[f], f) for f in pdb.TEXTFELDER if roh.get(f) is not None}
+    except _Ungueltig as exc:
+        return str(exc)
     if "rolle" in felder:
         felder["rolle"] = felder["rolle"].lower()
     if felder.get("frist_typ") == "keine":
@@ -167,7 +201,7 @@ def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date
         texte_de = {f: t for f, t in texte_de.items() if t != _text(alt_de.get(f))}
         if "titel" in texte_de and not texte_de["titel"]:
             return "Titel darf nicht leer werden"
-        if not felder and not texte_de and not leer_erlaubt:
+        if not felder and not texte_de:
             return f"keine Aenderung an Schritt {schritt['id']}"
     return {"art": art, "schritt": schritt, "felder": felder, "texte_de": texte_de}
 
@@ -175,12 +209,14 @@ def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date
 async def _anlegen(reg_key: str, geprueft: dict, ausloeser: str, *, ausloeser_ref: str,
                    beleg: str, begruendung: str, ask: Ask | None) -> int:
     texte: dict[str, dict] = {}
+    begruendung = begruendung.strip()[:BEGRUENDUNG_MAX]
     if geprueft["texte_de"]:
         try:
             fremd = await uebersetzen(geprueft["texte_de"], ask)
         except Exception as exc:  # noqa: BLE001 — Vorschlag nicht verlieren; Admin prueft
             log.warning("Uebersetzung fuer %s fehlgeschlagen: %s", reg_key, exc)
             fremd = {lang: dict(geprueft["texte_de"]) for lang in ZIELSPRACHEN}
+            # Nach dem Kuerzen anhaengen, damit der Hinweis nie abgeschnitten wird.
             begruendung = (begruendung + " [Übersetzung fehlgeschlagen: die fremden Sprachen "
                            "enthalten den deutschen Text, bitte vor der Freigabe korrigieren.]")
         texte = {"de": dict(geprueft["texte_de"]), **fremd}
@@ -191,7 +227,7 @@ async def _anlegen(reg_key: str, geprueft: dict, ausloeser: str, *, ausloeser_re
     return pdb.neuer_vorschlag(
         reg_key, geprueft["art"], ausloeser, nachher,
         schritt_id=schritt["id"] if schritt else None, ausloeser_ref=ausloeser_ref,
-        beleg=beleg[:BELEG_MAX], begruendung=begruendung.strip()[:BEGRUENDUNG_MAX],
+        beleg=beleg[:BELEG_MAX], begruendung=begruendung.strip(),
     )
 
 
@@ -250,15 +286,13 @@ async def vorschlaege_aus_aenderung(reg_key: str, alter_text: str, neuer_text: s
     Unbrauchbare Gesamtantwort -> `VorschlagFehler` (nichts angelegt). Einzelne
     ungueltige Aenderungen werden verworfen; der Grund landet in `verworfen`.
     """
-    from watchdog import _diff_excerpt  # spaeter Import: watchdog importiert dieses Modul
-
     today = today or date.today()
     reg = _reg(reg_key)
     schritte = pdb.schritte_fuer(reg_key, "de", nur_aktiv=True)
     user = (
         f"Regulierung: {reg.get('full_name') or reg['name']} ({reg_key})\n\n"
         f"AKTUELLE SCHRITTE (eine JSON-Zeile je Schritt):\n{_katalog_text(schritte)}\n\n"
-        f"{_diff_excerpt(alter_text, neuer_text)}\n\n"
+        f"{lawparse.diff_auszug(alter_text, neuer_text)}\n\n"
         "Welche Schritte muessen wegen dieser Aenderung neu angelegt, geaendert oder "
         "gestrichen werden?"
     )
@@ -272,18 +306,22 @@ async def vorschlaege_aus_aenderung(reg_key: str, alter_text: str, neuer_text: s
         if not isinstance(a, dict):
             _verwerfen(verworfen, reg_key, "Eintrag ist kein Objekt")
             continue
-        beleg = _text(a.get("beleg"))
+        try:
+            beleg = _textwert(a.get("beleg"), "beleg")
+            begruendung = _textwert(a.get("begruendung"), "begruendung")
+            art = _skalar(a.get("art"), "art") if a.get("art") is not None else ""
+        except _Ungueltig as exc:
+            _verwerfen(verworfen, reg_key, str(exc))
+            continue
         if not beleg:
             _verwerfen(verworfen, reg_key, "ohne Beleg aus dem Gesetzestext")
             continue
-        geprueft = _pruefe_aenderung(reg_key, _text(a.get("art")), a.get("schritt_id"),
-                                     a.get("nachher"), today)
+        geprueft = _pruefe_aenderung(reg_key, art, a.get("schritt_id"), a.get("nachher"), today)
         if isinstance(geprueft, str):
             _verwerfen(verworfen, reg_key, geprueft)
             continue
         ids.append(await _anlegen(reg_key, geprueft, "watchdog", ausloeser_ref=ausloeser_ref,
-                                  beleg=beleg, begruendung=_text(a.get("begruendung")),
-                                  ask=ask))
+                                  beleg=beleg, begruendung=begruendung, ask=ask))
     return ids
 
 
@@ -305,11 +343,12 @@ _STARTBESTAND_FELDER = ("rolle", "frist_typ", "frist_wert", "daten")
 async def startbestand_vorschlaege(reg_key: str, ask: Ask | None = None, *,
                                    verworfen: list | None = None,
                                    today: date | None = None) -> list[int]:
-    """Je ungepruefter Schritt (`geprueft_am IS NULL`) ein `aendern`-Vorschlag.
+    """Je ungepruefter Schritt (`geprueft_am IS NULL`) hoechstens ein `aendern`-Vorschlag.
 
-    `ausloeser='startbestand'`. Bestaetigt die KI den Schritt unveraendert, ist
-    `nachher` leer — die Freigabe setzt dann nur `geprueft_am`. Schritte mit
-    schon offenem Startbestand-Vorschlag werden uebersprungen (kein Doppel).
+    `ausloeser='startbestand'`. Nur echte, belegte Aenderungen: bestaetigt die
+    KI den Schritt unveraendert oder fehlt der Beleg, entsteht kein Vorschlag
+    (gezaehlt in `verworfen`). Schritte mit schon offenem Startbestand-Vorschlag
+    werden uebersprungen (kein Doppel).
     """
     today = today or date.today()
     reg = _reg(reg_key)
@@ -341,35 +380,49 @@ async def startbestand_vorschlaege(reg_key: str, ask: Ask | None = None, *,
         if not isinstance(a, dict):
             _verwerfen(verworfen, reg_key, "Eintrag ist kein Objekt")
             continue
-        try:
-            sid = int(a.get("schritt_id"))
-        except (TypeError, ValueError):
-            sid = None
+        sid = _schritt_id(a.get("schritt_id"))
         if sid not in ungeprueft or sid in erledigt:
             _verwerfen(verworfen, reg_key, f"Schritt {a.get('schritt_id')!r} nicht zu pruefen")
             continue
         roh = {k: a[k] for k in _STARTBESTAND_FELDER if k in a}
-        geprueft = _pruefe_aenderung(reg_key, "aendern", sid, roh, today, leer_erlaubt=True)
+        erledigt.add(sid)
+        geprueft = _pruefe_aenderung(reg_key, "aendern", sid, roh, today)
         if isinstance(geprueft, str):
             _verwerfen(verworfen, reg_key, geprueft)
             continue
-        begruendung = _text(a.get("begruendung"))
-        if not geprueft["felder"] and not geprueft["texte_de"]:
-            begruendung = (begruendung + " (Schritt bestätigt, keine Änderung)").strip()
-        erledigt.add(sid)
+        try:
+            beleg = _textwert(a.get("beleg"), "beleg")
+            begruendung = _textwert(a.get("begruendung"), "begruendung")
+        except _Ungueltig as exc:
+            _verwerfen(verworfen, reg_key, str(exc))
+            continue
+        if not beleg:
+            _verwerfen(verworfen, reg_key, f"Schritt {sid}: Aenderung ohne Beleg")
+            continue
         ids.append(await _anlegen(reg_key, geprueft, "startbestand", ausloeser_ref="",
-                                  beleg=_text(a.get("beleg")), begruendung=begruendung,
-                                  ask=ask))
+                                  beleg=beleg, begruendung=begruendung, ask=ask))
     return ids
 
 
 # ---------- Admin-Mail ----------
 
+VORSCHLAEGE_PFAD = f"{mailer.APP_PFAD}/admin/pflichten/vorschlaege"
+
+
 def _link_vorschlaege() -> str:
-    teile = urlsplit((os.getenv("PUBLIC_BASE_URL") or "").strip())
-    basis = (f"{teile.scheme}://{teile.netloc}"
-             if teile.scheme in ("http", "https") and teile.netloc else "")
-    return basis + "/admin/pflichten/vorschlaege"
+    return mailer.oeffentlicher_link(VORSCHLAEGE_PFAD)
+
+
+def _betreff(gesamt: int, n_fehler: int) -> str:
+    if gesamt == 0:
+        teil = "keine neuen Vorschläge"
+    elif gesamt == 1:
+        teil = "1 neuer KI-Vorschlag"
+    else:
+        teil = f"{gesamt} neue KI-Vorschläge"
+    if n_fehler:
+        teil += f", {n_fehler} Fehler"
+    return f"Pflichten-Plan: {teil}" + (" zur Freigabe" if gesamt else "")
 
 
 def benachrichtige_admin(anzahl: dict[str, int], versand=mailer.send, *,
@@ -386,9 +439,13 @@ def benachrichtige_admin(anzahl: dict[str, int], versand=mailer.send, *,
     if not zeilen and not fehler:
         return
     gesamt = sum(n for n in anzahl.values() if n > 0)
-    betreff = f"Pflichten-Plan: {gesamt} neue KI-Vorschläge zur Freigabe"
-    text = ("Guten Tag,\n\ndie KI hat Vorschläge für den Pflichten-Katalog erstellt. "
-            "Sichtbar werden sie erst nach Ihrer Freigabe.\n\n")
+    betreff = _betreff(gesamt, len(fehler))
+    if gesamt:
+        text = ("Guten Tag,\n\ndie KI hat Vorschläge für den Pflichten-Katalog erstellt. "
+                "Sichtbar werden sie erst nach Ihrer Freigabe.\n\n")
+    else:
+        text = ("Guten Tag,\n\ndie KI-Prüfung des Pflichten-Katalogs hat keine neuen "
+                "Vorschläge erstellt; einiges konnte nicht bearbeitet werden.\n\n")
     if zeilen:
         text += "\n".join(zeilen) + "\n\n"
     if fehler:
