@@ -18,7 +18,9 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import unicodedata
 from datetime import date
+from urllib.parse import urlsplit
 
 import db
 import i18n
@@ -343,8 +345,9 @@ def setze_erledigt(user_id: int, schritt_id: int, periode: str, erledigt: bool, 
 
 
 def setze_zustaendig(user_id: int, schritt_id: int, text: str) -> None:
-    """Freitext 'Zustaendig', getrimmt und auf 120 Zeichen gekuerzt; leer = NULL."""
-    wert = (text or "").strip()[:ZUSTAENDIG_MAX].strip() or None
+    """Freitext 'Zustaendig': ohne Steuerzeichen, getrimmt, auf 120 Zeichen gekuerzt;
+    leer = NULL."""
+    wert = saeubern(text).strip()[:ZUSTAENDIG_MAX].strip() or None
     with db._conn() as c:
         c.execute(
             "INSERT INTO nutzer_schritte (user_id, schritt_id, zustaendig) VALUES (?, ?, ?)"
@@ -383,6 +386,55 @@ FRIST_TYPEN = ("relativ", "fest", "jaehrlich", "keine")
 SCHRITT_FELDER = ("rolle", "frist_typ", "frist_wert", "link", "quelle", "sortierung")
 VORSCHLAG_ARTEN = ("neu", "aendern", "deaktivieren")
 AUSLOESER = ("watchdog", "anwendungsbeginn", "startbestand", "hand")
+SORTIERUNG_MAX = 100_000
+# Serverseitige Obergrenzen (Zeichen); `zustaendig` hat eigene (ZUSTAENDIG_MAX).
+TEXT_MAX = {"titel": 300, "beschreibung": 4000, "daten": 2000, "quelle": 500, "link": 2000}
+MEHRZEILIG = ("beschreibung", "daten")
+
+
+def ist_steuerzeichen(z: str) -> bool:
+    """Steuerzeichen (Kategorie Cc ausser Tab) sowie U+2028/U+2029.
+
+    U+0085 gehoert zu Cc. Nachsichtige Parser trennen an all diesen Zeichen
+    Zeilen (Kalender, Mailprogramme) — deshalb raus aus gespeicherten Texten.
+    """
+    return (unicodedata.category(z) == "Cc" and z != "\t") or z in ("\u2028", "\u2029")
+
+
+def saeubern(text, mehrzeilig: bool = False) -> str:
+    """Steuerzeichen entfernen. Einzeilig werden Zeilenumbrueche zu Leerzeichen;
+    mehrzeilig (Beschreibung, Daten) bleiben sie als `\\n` erhalten."""
+    s = str(text or "").replace("\r\n", "\n").replace("\r", "\n")
+    if not mehrzeilig:
+        s = s.replace("\n", " ")
+    return "".join(z for z in s if z == "\n" or not ist_steuerzeichen(z))
+
+
+def pruefe_texte(texte: dict, sprache: str = "") -> list[str]:
+    """Laengen von titel/beschreibung/daten einer Sprachfassung; Rueckgabe: Fehlertexte."""
+    fehler = []
+    for f in TEXTFELDER:
+        n = len(str((texte or {}).get(f) or ""))
+        if n > TEXT_MAX[f]:
+            wo = f"{f} ({sprache})" if sprache else f
+            fehler.append(f"{wo} zu lang: {n} Zeichen, höchstens {TEXT_MAX[f]}")
+    return fehler
+
+
+def _pruefe_link(link: str) -> list[str]:
+    if len(link) > TEXT_MAX["link"]:
+        return [f"Link zu lang: {len(link)} Zeichen, höchstens {TEXT_MAX['link']}"]
+    if any(z.isspace() or ist_steuerzeichen(z) for z in link):
+        return ["Link darf keine Leer- oder Steuerzeichen enthalten"]
+    try:
+        teile = urlsplit(link)
+    except ValueError:
+        return ["Link ist keine gültige Adresse"]
+    if teile.scheme.lower() not in ("http", "https"):
+        return ["Link muss mit http:// oder https:// beginnen"]
+    if not teile.netloc:
+        return ["Link braucht einen Host (z. B. https://example.org/…)"]
+    return []
 
 
 def pruefe_felder(felder: dict, today) -> list[str]:
@@ -406,14 +458,21 @@ def pruefe_felder(felder: dict, today) -> list[str]:
         probe = pflichten.frist_fuer(typ, wert, "01.01.2999", today)
         if probe["art"] == "keine":
             fehler.append(f"Frist-Wert {wert!r} passt nicht zum Typ {typ!r}")
-    link = (felder.get("link") or "").strip()
-    if link and not link.lower().startswith(("http://", "https://")):
-        fehler.append("Link muss mit http:// oder https:// beginnen")
+    link = str(felder.get("link") or "").strip()
+    if link:
+        fehler += _pruefe_link(link)
+    quelle = str(felder.get("quelle") or "")
+    if len(quelle) > TEXT_MAX["quelle"]:
+        fehler.append(f"Quelle zu lang: {len(quelle)} Zeichen, höchstens {TEXT_MAX['quelle']}")
     if "sortierung" in felder:
         try:
-            int(felder["sortierung"])
+            zahl = int(felder["sortierung"])
         except (TypeError, ValueError):
             fehler.append("Sortierung muss eine Zahl sein")
+        else:
+            # Obergrenze: SQLite nimmt hoechstens 64 Bit; groesser gaebe beim Freigeben 500.
+            if not 0 <= zahl <= SORTIERUNG_MAX:
+                fehler.append(f"Sortierung muss zwischen 0 und {SORTIERUNG_MAX} liegen")
     return fehler
 
 
@@ -501,7 +560,8 @@ def _schreibe_texte(c: sqlite3.Connection, sid: int, texte: dict) -> None:
     for lang, felder in texte.items():
         if lang not in SPRACHEN:
             continue
-        felder = {f: str(felder[f] or "") for f in TEXTFELDER if f in (felder or {})}
+        felder = {f: saeubern(felder[f], f in MEHRZEILIG)
+                  for f in TEXTFELDER if f in (felder or {})}
         if not felder:
             continue
         c.execute("INSERT OR IGNORE INTO pflicht_schritt_texte (schritt_id, sprache)"
@@ -590,6 +650,11 @@ def freigeben_mit_grund(vid: int, admin_email: str, aenderungen: dict | None,
             probe.setdefault("frist_typ", alt.get("frist_typ"))
             probe.setdefault("frist_wert", alt.get("frist_wert"))
         fehler = pruefe_felder(probe, today) if v["art"] != "deaktivieren" else []
+        if v["art"] != "deaktivieren":
+            for lang, t in (daten.get("texte") or {}).items():
+                if lang in SPRACHEN:
+                    fehler += pruefe_texte({f: saeubern(x, f in MEHRZEILIG)
+                                            for f, x in (t or {}).items()}, lang)
         if fehler:
             return abbruch("ungültig: " + "; ".join(fehler))
         if "sortierung" in felder:
@@ -608,6 +673,7 @@ def freigeben_mit_grund(vid: int, admin_email: str, aenderungen: dict | None,
                     " WHERE reg_key = ?", (v["reg_key"],)).fetchone()[0]
             basis = {"rolle": "", "frist_typ": "keine", "frist_wert": "", "link": None,
                      "quelle": None, **felder}
+            basis["quelle"] = saeubern(basis["quelle"]).strip() or None
             if basis["frist_typ"] == "keine":
                 basis["frist_wert"] = ""
             sid = c.execute(
@@ -626,7 +692,7 @@ def freigeben_mit_grund(vid: int, admin_email: str, aenderungen: dict | None,
                     if k in felder:
                         felder[k] = felder[k] or ""
                 if "quelle" in felder:
-                    felder["quelle"] = felder["quelle"] or None
+                    felder["quelle"] = saeubern(felder["quelle"]).strip() or None
             sets = "".join(f"{k} = ?, " for k in felder)
             c.execute(f"UPDATE pflicht_schritte SET {sets}version = version + 1,"
                       " geprueft_am = ? WHERE id = ?", (*felder.values(), tag, sid))

@@ -1350,6 +1350,13 @@ def _lauf_veraltet(zeitpunkt: str | None) -> bool:
 # Die Seiten sind bewusst nur deutsch — sie richten sich an die Pflegenden,
 # nicht an Mitglieder.
 # ---------------------------------------------------------------------------
+# Mengenbremse (`db.take_quota`, Fenster 60 Minuten): jeder Start des Startbestands
+# kostet einen KI-Aufruf je Regulierung plus eine Mail; jede Handpflege mit neuem
+# deutschem Text einen Uebersetzungsaufruf.
+PFLICHTEN_STARTBESTAND_MAX_PER_HOUR = 3          # alle Admins zusammen
+PFLICHTEN_UEBERSETZUNG_MAX_PER_HOUR = 60         # je Admin
+
+
 def _pflichten_admin_lesen():
     # Legacy-Container (`PFLICHTEN_PLAN=aus`): Funktion komplett aus, auch fuer Admins.
     if not pdb.funktion_aktiv():
@@ -1434,6 +1441,16 @@ def admin_pflichten_startbestand():
         return redir
     import pflichten_vorschlag
 
+    # Die Sperre in `starte_startbestand` gilt je Prozess (heute `gunicorn -w 1`);
+    # die Mengenbremse ueber die DB gilt auch bei mehreren Workern.
+    if pflichten_vorschlag.startbestand_laeuft():
+        flash("Die Prüfung des Startbestands läuft bereits.", "error")
+        return redirect(url_for("admin_pflichten"))
+    if not db.take_quota("pflichten_startbestand", "alle",
+                         PFLICHTEN_STARTBESTAND_MAX_PER_HOUR, 60):
+        flash(f"Der Startbestand lässt sich höchstens {PFLICHTEN_STARTBESTAND_MAX_PER_HOUR}-mal "
+              "je Stunde prüfen. Bitte später erneut versuchen.", "error")
+        return redirect(url_for("admin_pflichten"))
     if pflichten_vorschlag.starte_startbestand():
         flash("Die KI prüft den Startbestand im Hintergrund. Die Vorschläge erscheinen nach "
               "und nach unter „Offene Vorschläge“; am Ende kommt eine Mail.", "success")
@@ -1481,8 +1498,11 @@ def _handpflege_speichern(schritt: dict | None, reg_key: str):
         return redirect(url_for("admin_pflichten_vorschlag", vid=vid))
 
     felder = _schritt_felder_aus_form(form)
-    texte_de = {f: (form.get(f) or "").strip() for f in pdb.TEXTFELDER}
-    fehler = pdb.pruefe_felder(felder, _heute())
+    if "quelle" in felder:
+        felder["quelle"] = pdb.saeubern(felder["quelle"]).strip()
+    texte_de = {f: pdb.saeubern(form.get(f), f in pdb.MEHRZEILIG).strip()
+                for f in pdb.TEXTFELDER}
+    fehler = pdb.pruefe_felder(felder, _heute()) + pdb.pruefe_texte(texte_de)
     if not texte_de["titel"]:
         fehler.append("Titel darf nicht leer sein")
     if fehler:
@@ -1494,6 +1514,12 @@ def _handpflege_speichern(schritt: dict | None, reg_key: str):
     if schritt is not None and all(texte_de[f] == (alt_de.get(f) or "") for f in pdb.TEXTFELDER):
         # Deutscher Text unveraendert: vorhandene Uebersetzungen bleiben stehen.
         texte = {}
+    elif not db.take_quota("pflichten_uebersetzung", session.get("user_email") or "",
+                           PFLICHTEN_UEBERSETZUNG_MAX_PER_HOUR, 60):
+        flash(f"Höchstens {PFLICHTEN_UEBERSETZUNG_MAX_PER_HOUR} Übersetzungen je Stunde; die "
+              "deutschen Texte wurden für alle Sprachen übernommen. Bitte vor der Freigabe "
+              "prüfen.", "error")
+        texte = {lang: dict(texte_de) for lang in pdb.SPRACHEN}
     else:
         try:
             texte = _uebersetzungen(texte_de)
@@ -1896,8 +1922,13 @@ def pflicht_gesehen(schritt_id: int):
 
 
 def _ics_text(wert: str) -> str:
-    """TEXT-Wert nach RFC 5545, 3.3.11: Backslash, Semikolon, Komma, Zeilenumbruch."""
-    wert = (wert or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,")
+    """TEXT-Wert nach RFC 5545, 3.3.11: Backslash, Semikolon, Komma, Zeilenumbruch.
+
+    Uebrige Steuerzeichen (ausser Tab) und U+2028/U+2029 fallen weg — auch fuer
+    Altbestand, der vor der Bereinigung beim Speichern in die DB kam.
+    """
+    wert = "".join(z for z in (wert or "") if z in "\r\n" or not pdb.ist_steuerzeichen(z))
+    wert = wert.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,")
     return wert.replace("\r\n", "\\n").replace("\r", "\\n").replace("\n", "\\n")
 
 

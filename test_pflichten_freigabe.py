@@ -17,6 +17,7 @@ Bloecke:
   L  'geaendert' ueber meldung_version (Hand-Freigabe, Abhaken, Startbestand am selben Tag)
   M  Freigabe ohne inhaltliche Aenderung: kein Hinweis, keine meldung_version, keine Version
   N  Bestaetigungs-Vorschlag, vom Admin vor der Freigabe geaendert: normale Aenderung
+  O  Eingabegrenzen (Sortierung, Laengen, Link), Steuerzeichen, Mengenbremse
 """
 from __future__ import annotations
 
@@ -683,9 +684,132 @@ def block_n() -> None:
     check("N Startbestand: kein Hinweis", _hinweise() == 0)
 
 
+def _hand_form(**werte) -> dict:
+    form = {"titel": "Grenztest", "beschreibung": "B", "daten": "D", "rolle": "",
+            "frist_typ": "keine", "frist_wert": "", "link": "", "quelle": "", "sortierung": "5"}
+    form.update(werte)
+    return form
+
+
+def block_o() -> None:
+    print("\n--- O  Eingabegrenzen, Steuerzeichen, Mengenbremse ---")
+    stamm = _client(STAMM_ID, STAMM)
+    pv = pflichten_vorschlag
+
+    # F13 Sortierung 0..100000
+    for wert, ok in (("0", True), ("100000", True), ("100001", False), ("-1", False),
+                     ("1" + "0" * 30, False)):
+        fehler = pdb.pruefe_felder({"sortierung": wert}, HEUTE)
+        check(f"O Sortierung {wert[:12]}: {'gueltig' if ok else 'ungueltig'}",
+              (not fehler) == ok, str(fehler))
+    vid = pdb.neuer_vorschlag("EUDR", "neu", "watchdog", {"sortierung": 10 ** 30,
+                              "texte": {"de": {"titel": "Riesige Sortierung"}}})
+    ok, grund = pdb.freigeben_mit_grund(vid, STAMM, None, HEUTE)
+    check("O Freigabe mit riesiger Sortierung: ungueltig statt 500",
+          ok is False and grund.startswith("ungültig") and pdb.vorschlag(vid)["status"] == "offen",
+          grund)
+    pdb.verwerfen(vid, STAMM, "Test", HEUTE)
+    vor = len(pdb.offene_vorschlaege())
+    r = stamm.post("/admin/pflichten/neu/EUDR", data=_hand_form(sortierung="1" + "0" * 30))
+    check("O Handpflege riesige Sortierung: 400, kein Vorschlag",
+          r.status_code == 400 and len(pdb.offene_vorschlaege()) == vor, str(r.status_code))
+
+    # F14 Laengengrenzen
+    for feld, grenze in (("titel", 300), ("beschreibung", 4000), ("daten", 2000),
+                         ("quelle", 500), ("link", 2000)):
+        zu_lang = ("https://example.org/" + "a" * grenze) if feld == "link" else "x" * (grenze + 1)
+        r = stamm.post("/admin/pflichten/neu/EUDR", data=_hand_form(**{feld: zu_lang}))
+        check(f"O Handpflege {feld} > {grenze}: 400, kein Vorschlag",
+              r.status_code == 400 and len(pdb.offene_vorschlaege()) == vor, str(r.status_code))
+    gerade = _hand_form(titel="t" * 300, beschreibung="b" * 4000, daten="d" * 2000,
+                        quelle="q" * 500)
+    r = stamm.post("/admin/pflichten/neu/EUDR", data=gerade)
+    check("O Handpflege genau an den Grenzen: angenommen",
+          r.status_code in (302, 303) and len(pdb.offene_vorschlaege()) == vor + 1,
+          str(r.status_code))
+    vid = max(o["id"] for o in pdb.offene_vorschlaege())
+    ok, grund = pdb.freigeben_mit_grund(
+        vid, STAMM, {"texte": {"en": {"titel": "e" * 301}}}, HEUTE)
+    check("O Freigabe mit zu langem Fremdtext: ungueltig",
+          ok is False and "titel" in grund and pdb.vorschlag(vid)["status"] == "offen", grund)
+    pdb.verwerfen(vid, STAMM, "Test", HEUTE)
+    geprueft = pv._pruefe_aenderung("EUDR", "neu", None,
+                                    {"titel": "k" * 301, "beschreibung": "B"}, HEUTE)
+    check("O KI-Aenderung mit zu langem Titel verworfen", isinstance(geprueft, str), str(geprueft))
+    geprueft = pv._pruefe_aenderung("EUDR", "neu", None,
+                                    {"titel": "ok", "daten": "d" * 2001}, HEUTE)
+    check("O KI-Aenderung mit zu langen Daten verworfen", isinstance(geprueft, str), str(geprueft))
+
+    # F17 Link
+    for link, ok in (("https://example.org/x", True), ("http://\njavascript:alert(1)", False),
+                     ("http://", False), ("https://example.org/a b", False),
+                     ("ftp://example.org", False), ("https://exa\tmple.org", False)):
+        fehler = pdb.pruefe_felder({"link": link}, HEUTE)
+        check(f"O Link {link!r}: {'gueltig' if ok else 'ungueltig'}", (not fehler) == ok,
+              str(fehler))
+    r = stamm.post("/admin/pflichten/neu/EUDR", data=_hand_form(link="http://\njavascript:alert(1)"))
+    check("O Handpflege Link mit Zeilenumbruch: 400", r.status_code == 400, str(r.status_code))
+
+    # F15 Steuerzeichen in Katalogtexten
+    vid = pdb.neuer_vorschlag("EUDR", "neu", "hand", {
+        "quelle": "Q\x0buelle\u2028",
+        "texte": {"de": {"titel": "Ti\x0btel\u2028X\x85", "beschreibung": "Z1\nZ2\x0b\u2029",
+                         "daten": "D\x00a\x1cten"}}})
+    ok, grund = pdb.freigeben_mit_grund(vid, STAMM, None, HEUTE)
+    s = pdb.schritt(pdb.vorschlag(vid)["schritt_id"]) if ok else {}
+    de = (s.get("texte") or {}).get("de", {})
+    check("O Steuerzeichen: Titel bereinigt", de.get("titel") == "TitelX", repr(de.get("titel")))
+    check("O Steuerzeichen: Zeilenumbruch in Beschreibung bleibt, Rest weg",
+          de.get("beschreibung") == "Z1\nZ2", repr(de.get("beschreibung")))
+    check("O Steuerzeichen: Daten bereinigt", de.get("daten") == "Daten", repr(de.get("daten")))
+    check("O Steuerzeichen: Quelle bereinigt", s.get("quelle") == "Quelle", repr(s.get("quelle")))
+
+    # F16 Mengenbremse
+    _sql("DELETE FROM login_attempts WHERE scope LIKE 'pflichten_%'")
+    gestartet = []
+    alt_start, alt_laeuft = pv.starte_startbestand, pv.startbestand_laeuft
+    pv.starte_startbestand = lambda **kw: gestartet.append(1) or True
+    pv.startbestand_laeuft = lambda: True
+    try:
+        stamm.post("/admin/pflichten/startbestand")
+        check("O Startbestand laeuft schon: kein Start, kein Kontingent verbraucht",
+              not gestartet and _eins("SELECT COUNT(*) FROM login_attempts WHERE scope ="
+                                      " 'pflichten_startbestand'") == 0)
+        pv.startbestand_laeuft = lambda: False
+        for _ in range(4):
+            stamm.post("/admin/pflichten/startbestand")
+        check("O Startbestand: hoechstens 3 Starts je Stunde", len(gestartet) == 3,
+              str(len(gestartet)))
+    finally:
+        pv.starte_startbestand, pv.startbestand_laeuft = alt_start, alt_laeuft
+
+    aufrufe = []
+    alt_ueb = pv.uebersetzen
+
+    async def zaehlend(texte_de, ask=None):
+        aufrufe.append(1)
+        return await alt_ueb(texte_de, ask)
+
+    pv.uebersetzen = zaehlend
+    alt_max = flaskapp.PFLICHTEN_UEBERSETZUNG_MAX_PER_HOUR
+    flaskapp.PFLICHTEN_UEBERSETZUNG_MAX_PER_HOUR = 2
+    try:
+        vor = len(pdb.offene_vorschlaege())
+        for i in range(3):
+            stamm.post("/admin/pflichten/neu/EUDR", data=_hand_form(titel=f"Bremse {i}"))
+        check("O Uebersetzung: hoechstens 2 KI-Aufrufe (Grenze im Test)", len(aufrufe) == 2,
+              str(len(aufrufe)))
+        check("O Uebersetzung gebremst: Vorschlag trotzdem angelegt (deutscher Text)",
+              len(pdb.offene_vorschlaege()) == vor + 3)
+    finally:
+        pv.uebersetzen = alt_ueb
+        flaskapp.PFLICHTEN_UEBERSETZUNG_MAX_PER_HOUR = alt_max
+    check("O Standardgrenzen", alt_max == 60 and flaskapp.PFLICHTEN_STARTBESTAND_MAX_PER_HOUR == 3)
+
+
 if __name__ == "__main__":
     for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-                  block_i, block_j, block_k, block_l, block_m, block_n):
+                  block_i, block_j, block_k, block_l, block_m, block_n, block_o):
         try:
             block()
         except Exception as exc:  # noqa: BLE001 — jeden Block melden, nicht abbrechen

@@ -18,6 +18,7 @@ Bloecke:
   J  Env PFLICHTEN_PLAN=aus: 404 auch fuer Admin (auch /admin/pflichten*), Karten aus dem Code
   L  Quelle der ersten Schritte (Karte + Assistent): Schalter aus -> Code, an -> DB
   M  Abbestellen markiert offene Hinweise als gesendet
+  N  Steuerzeichen: "zustaendig" wird bereinigt, .ics laesst keine durch
 """
 from __future__ import annotations
 
@@ -440,9 +441,32 @@ def block_m() -> None:
           _erinnerungen(UID) == 1 and len(pdb.offene_hinweise(ADMIN_ID)) == 1)
 
 
+def block_n() -> None:
+    print("\n--- N  Steuerzeichen ---")
+    sid = EUDR[0]
+    pdb.setze_zustaendig(UID, sid, "Zi\x0bX\u2028Y\x85Z\x00")
+    zustand, _ = pdb.nutzer_zustand(UID)
+    check("N zustaendig ohne Steuerzeichen", zustand[sid]["zustaendig"] == "ZiXYZ",
+          repr(zustand[sid]["zustaendig"]))
+    # Altbestand (vor der Bereinigung gespeichert) und Katalogtext: .ics filtert selbst.
+    _sql("UPDATE nutzer_schritte SET zustaendig = ? WHERE user_id = ? AND schritt_id = ?",
+         ("Alt\x0bA\u2028B\u2029C\x1cD", UID, sid))
+    _sql("UPDATE pflicht_schritt_texte SET beschreibung = ? WHERE schritt_id = ? AND sprache = 'de'",
+         ("Be\x0cschr\u2028eibung", sid))
+    pdb.setze_erledigt(UID, sid, "", False, HEUTE)
+    text = _client(UID, "mitglied@example.org").get("/meine-pflichten.ics").get_data(as_text=True)
+    schlecht = [hex(ord(z)) for z in text if (ord(z) < 0x20 and z not in "\r\n\t")
+                or z in "\x7f\x85\u2028\u2029"]
+    check("N .ics ohne Steuerzeichen", not schlecht, str(schlecht[:10]))
+    check("N .ics enthaelt die bereinigten Texte", "AltABCD" in text.replace("\r\n ", ""),
+          text[:200])
+    check("N _ics_text direkt", flaskapp._ics_text("a\x0bb\u2028c\x85d\te") == "abcd\te",
+          repr(flaskapp._ics_text("a\x0bb\u2028c\x85d\te")))
+
+
 if __name__ == "__main__":
     for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-                  block_i, block_j, block_k, block_l, block_m):
+                  block_i, block_j, block_k, block_l, block_m, block_n):
         block()
     print()
     if _failures:

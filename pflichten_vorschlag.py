@@ -188,7 +188,7 @@ def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date
     if schritt is not None and ("frist_typ" in probe) != ("frist_wert" in probe):
         probe.setdefault("frist_typ", schritt.get("frist_typ"))
         probe.setdefault("frist_wert", schritt.get("frist_wert"))
-    fehler = pdb.pruefe_felder(probe, today)
+    fehler = pdb.pruefe_felder(probe, today) + pdb.pruefe_texte(texte_de)
     if fehler:
         return "; ".join(fehler)
 

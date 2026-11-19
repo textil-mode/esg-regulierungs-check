@@ -975,6 +975,17 @@ Löst die festen „Ersten Schritte“ aus `regulations.FIRST_STEPS_BY_REG_KEY` 
   und `/admin/pflichten/neu/<reg_key>` (Handpflege, Übersetzung per KI),
   `/admin/pflichten/vorschlaege` + `/admin/pflichten/vorschlag/<id>` (freigeben /
   verwerfen), `/admin/pflichten/export.json`.
+- **Eingabegrenzen (serverseitig, Handpflege, Freigabe und KI gleich):** Titel 300,
+  Beschreibung 4000, Daten 2000, Quelle 500, Link 2000 Zeichen (`pflichten_db.TEXT_MAX`),
+  „zuständig“ 120; Sortierung 0–100000; Link per `urlsplit`: Schema http/https, Host
+  nötig, keine Leer-/Steuerzeichen. Zu lang/ungültig: Handpflege 400, Freigabe
+  „ungültig“, KI-Änderung verworfen. Steuerzeichen (Cc außer Tab, U+2028/U+2029)
+  entfernt `pflichten_db.saeubern` beim Speichern von „zuständig“ und Katalogtexten
+  (Zeilenumbrüche bleiben nur in Beschreibung/Daten); `_ics_text` filtert zusätzlich.
+- **Mengenbremse** (`db.take_quota`, 60 Minuten): Startbestand höchstens 3 Starts je
+  Stunde (alle Admins), KI-Übersetzung in der Handpflege 60 je Stunde je Admin
+  (darüber deutscher Text in allen Sprachen, mit Hinweis). Die Lauf-Sperre des
+  Startbestands gilt nur je Prozess (`gunicorn -w 1`).
 - **Freigabe-Ablauf:** Die KI entwirft nur. Jeder Vorschlag (`ausloeser` =
   `watchdog`, `startbestand`, `hand` …) bleibt `offen`, bis ein Stamm-Admin ihn
   freigibt (atomar, `BEGIN IMMEDIATE`, Doppelklick ändert nichts) oder verwirft.
