@@ -160,6 +160,10 @@ def _migrate_users(c: sqlite3.Connection) -> None:
         c.execute("ALTER TABLE users ADD COLUMN test_expires_at TEXT")
     if "locked" not in cols:
         c.execute("ALTER TABLE users ADD COLUMN locked INTEGER NOT NULL DEFAULT 0")
+    # Pflichten-Plan (seit 19.11.2026): Erinnerungs-Mails abbestellbar.
+    # Default 1 = Bestandskonten bekommen sie, bis sie abbestellen.
+    if "erinnerungen" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN erinnerungen INTEGER NOT NULL DEFAULT 1")
 
 
 def _migrate_analysis_cache(c: sqlite3.Connection) -> None:
@@ -295,6 +299,11 @@ def init_db() -> None:
         )
         _migrate_companies(c)
         _migrate_users(c)
+        # Pflichten-Plan: Schema + Startbestand aus den ersten Schritten.
+        # Spaeter Import, damit `import db` allein keinen Kreisimport ausloest.
+        import pflichten_db
+        pflichten_db.init_schema(c)
+        pflichten_db.seed_aus_code(c)
         # Altlasten der Login-Bremse wegraeumen (idempotent).
         _prune(c)
         _prune_mail_log(c)
@@ -734,14 +743,21 @@ def _delete_account_rows(c: sqlite3.Connection, user_id: int, email: str,
     - `mail_log`: dort steht die Adresse als Text. Ohne diese Zeile ueberlebte
       sie die Loeschung — die Datenschutzerklaerung verspricht aber, dass beim
       Loeschen alles geht (Art. 17 DSGVO, Befund M4 vom 24.09.2026).
-    - `users`: `companies`, `analyses`, `password_resets`, `reset_codes` haengen
-      per ON DELETE CASCADE daran.
+    - `users`: `companies`, `analyses`, `password_resets`, `reset_codes` und die
+      Pflichten-Plan-Tabellen `nutzer_pflichten`, `nutzer_schritte`,
+      `nutzer_erledigt`, `pflicht_erinnerungen` haengen per ON DELETE CASCADE daran.
+    - `pflicht_hinweise`: ohne Fremdschluessel, wird hier per user_id geloescht.
     """
     mail = (email or "").strip().lower()
     prefix = mail + "|"
     c.execute("DELETE FROM login_attempts WHERE subject = ? OR substr(subject, 1, ?) = ?",
               (mail, len(prefix), prefix))
     c.execute("DELETE FROM mail_log WHERE lower(recipient) = ?", (mail,))
+    # Pflichten-Plan: Hinweise haengen ohne Fremdschluessel am Konto. Bei
+    # `nur_offen` nur, wenn das Konto auch wirklich geloescht wird.
+    c.execute("DELETE FROM pflicht_hinweise WHERE user_id = ? AND (? = 0 OR user_id IN"
+              " (SELECT id FROM users WHERE approved = 0))",
+              (user_id, 1 if nur_offen else 0))
     if nur_offen:
         c.execute("DELETE FROM users WHERE id = ? AND approved = 0", (user_id,))
     else:

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{# Katalogpflege des Pflichten-Plans. Nur deutsch: richtet sich an die Pflegenden. #}
+{% block content %}
+<div class="section">
+{% if formular is none %}
+  <h2 style="margin-top:0;">Pflichten-Plan: Katalog</h2>
+  <p class="pf-hint">Jede Änderung läuft als Vorschlag und wird erst mit der Freigabe sichtbar.
+    {% if not darf_schreiben %}Sie sehen diese Seite lesend; Pflege und Freigabe sind den Haupt-Admins vorbehalten.{% endif %}</p>
+
+  <div class="run-box pf-kopf">
+    <div>
+      <strong>Für Mitglieder:</strong> {{ "eingeschaltet" if aktiv else "aus (nur Admins sehen „Meine Pflichten“)" }}
+      {% if darf_schreiben %}
+      <form method="post" action="{{ url_for('admin_pflichten_schalter') }}" class="pf-inline">
+        <input type="hidden" name="aktiv" value="{{ '0' if aktiv else '1' }}">
+        <button type="submit" class="btn-secondary">{{ "Ausschalten" if aktiv else "Einschalten" }}</button>
+      </form>
+      {% endif %}
+    </div>
+    <div>
+      <a href="{{ url_for('admin_pflichten_vorschlaege') }}">Offene Vorschläge: {{ offen }}</a>
+      · <a href="{{ url_for('admin_pflichten_export') }}">Katalog als JSON exportieren</a>
+    </div>
+    {% if darf_schreiben %}
+    <div>
+      <strong>Ungeprüfte Schritte:</strong> {{ ungeprueft }}
+      {% if startbestand_laeuft %}
+      · Die KI prüft den Startbestand gerade (Mail am Ende).
+      {% elif ungeprueft %}
+      <form method="post" action="{{ url_for('admin_pflichten_startbestand') }}" class="pf-inline">
+        <button type="submit" class="btn-secondary">Startbestand ergänzen lassen</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% for reg in katalog %}
+  <details class="pf-reg" {% if reg.schritte %}open{% endif %}>
+    <summary><strong>{{ reg.name }}</strong> <code>{{ reg.key }}</code> · {{ reg.schritte|length }} Schritte</summary>
+    {% if reg.schritte %}
+    <table class="pf-tabelle">
+      <thead><tr><th>#</th><th>Titel</th><th>Rolle</th><th>Frist</th><th>Version</th><th>geprüft</th><th></th></tr></thead>
+      <tbody>
+      {% for s in reg.schritte %}
+        <tr class="{{ '' if s.aktiv else 'pf-inaktiv' }}">
+          <td>{{ s.sortierung }}</td>
+          <td>{{ s.titel }}{% if not s.aktiv %} <em>(deaktiviert)</em>{% endif %}</td>
+          <td>{{ s.rolle or "–" }}</td>
+          <td>{{ s.frist_typ }}{% if s.frist_wert %} <code>{{ s.frist_wert }}</code>{% endif %}</td>
+          <td>{{ s.version }}</td>
+          <td>{{ datum(s.geprueft_am) if s.geprueft_am else "–" }}</td>
+          <td><a href="{{ url_for('admin_pflichten_schritt', sid=s.id) }}">{{ "Bearbeiten" if darf_schreiben else "Ansehen" }}</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="pf-hint">Noch keine Schritte.</p>
+    {% endif %}
+    {% if darf_schreiben %}<p><a href="{{ url_for('admin_pflichten_neu', reg_key=reg.key) }}">+ Schritt vorschlagen</a></p>{% endif %}
+  </details>
+  {% endfor %}
+
+{% else %}
+  <p><a href="{{ url_for('admin_pflichten') }}">← Katalog</a></p>
+  <h2 style="margin-top:0;">{{ reg_name }}: {{ "Schritt bearbeiten" if schritt else "Neuer Schritt" }}</h2>
+  {% if schritt %}<p class="pf-hint">Version {{ schritt.version }}{% if schritt.geprueft_am %} · geprüft {{ datum(schritt.geprueft_am) }}{% endif %}{% if not schritt.aktiv %} · <strong>deaktiviert</strong>{% endif %}</p>{% endif %}
+  <p class="pf-hint">Nur die deutschen Texte. Speichern erzeugt einen Vorschlag; die übrigen fünf Sprachen werden übersetzt und erscheinen dort zur Prüfung vor der Freigabe.</p>
+
+  <form method="post" class="pf-form">
+    <fieldset {% if not darf_schreiben %}disabled{% endif %}>
+    <label>Titel <input type="text" name="titel" value="{{ formular.titel }}" required maxlength="300"></label>
+    <label>Beschreibung <textarea name="beschreibung" rows="3">{{ formular.beschreibung }}</textarea></label>
+    <label>Benötigte Daten <textarea name="daten" rows="2">{{ formular.daten }}</textarea></label>
+    <div class="pf-zeile">
+      <label>Rolle
+        <select name="rolle">
+          <option value="" {% if not formular.rolle %}selected{% endif %}>–</option>
+          {% for r in rollen %}<option value="{{ r }}" {% if formular.rolle == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Frist-Typ
+        <select name="frist_typ">
+          {% for ft in frist_typen %}<option value="{{ ft }}" {% if formular.frist_typ == ft %}selected{% endif %}>{{ ft }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Frist-Wert <input type="text" name="frist_wert" value="{{ formular.frist_wert }}" placeholder="-6m · 31.12.2027 · 31.05."></label>
+      <label>Sortierung <input type="number" name="sortierung" value="{{ formular.sortierung }}"></label>
+    </div>
+    <label>Link (http/https) <input type="url" name="link" value="{{ formular.link }}"></label>
+    <label>Quelle <input type="text" name="quelle" value="{{ formular.quelle }}"></label>
+    <p class="pf-hint">Frist-Werte: relativ <code>-6m</code>, <code>-30d</code>, <code>+0d</code> (zum Anwendungsbeginn); fest <code>31.12.2027</code>; jährlich <code>31.05.</code>; keine: leer.</p>
+    {% if darf_schreiben %}
+    <button type="submit">Als Vorschlag speichern</button>
+    {% endif %}
+    </fieldset>
+  </form>
+  {% if darf_schreiben and schritt and schritt.aktiv %}
+  <form method="post" class="pf-inline" style="margin-top:12px;">
+    <input type="hidden" name="deaktivieren" value="1">
+    <button type="submit" class="btn-secondary">Deaktivieren vorschlagen</button>
+  </form>
+  {% endif %}
+{% endif %}
+</div>
+
+<style>
+  .pf-hint { font-size:13px; color:#5A5A5A; max-width:760px; }
+  .pf-kopf { display:flex; flex-wrap:wrap; gap:12px 32px; justify-content:space-between; align-items:center; }
+  .pf-inline { display:inline; margin-left:8px; }
+  .pf-reg { margin:10px 0; border-top:1px solid var(--tm-line); padding-top:8px; }
+  .pf-reg summary { cursor:pointer; }
+  .pf-tabelle { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  .pf-tabelle th, .pf-tabelle td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--tm-line); vertical-align:top; }
+  .pf-inaktiv td { color:#8A8A8A; }
+  .pf-form label { display:block; margin:8px 0; font-size:14px; }
+  .pf-form input[type=text], .pf-form input[type=url], .pf-form textarea { width:100%; max-width:760px; }
+  .pf-form fieldset { border:0; padding:0; margin:0; }
+  .pf-zeile { display:flex; flex-wrap:wrap; gap:16px; }
+  .pf-zeile label { display:inline-block; }
+</style>
+{% endblock %}

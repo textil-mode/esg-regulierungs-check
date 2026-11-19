@@ -60,6 +60,16 @@ python app.py
 5. **Cache:** Bei unveraendertem Profil werden gespeicherte Ergebnisse beim zweiten Klick
    instant angezeigt (kein LLM-Call).
 
+## Pflichten-Plan („Meine Pflichten“)
+
+Aus dem Pruefergebnis entsteht je einschlaegiger Regulierung eine Liste von Schritten
+mit Frist zum Abhaken (mit Feld „zustaendig“, Rollenfilter und Kalenderexport). Ein
+taeglicher Lauf (`python pflichten_erinnerung.py`, `--probe` zum Ansehen ohne Versand)
+verschickt Erinnerungen 30 und 7 Tage vor einer Frist und eine Monatsuebersicht. Den
+Katalog pflegen die Haupt-Admins unter `/admin/pflichten`; KI-Vorschlaege werden erst
+nach Freigabe sichtbar. Die Funktion ist per Schalter `pflichten_plan_aktiv` (Standard
+aus) bzw. Env `PFLICHTEN_PLAN=aus` abschaltbar. Details in `CLAUDE.md`.
+
 ## Datenbank
 
 Eine SQLite-Datei (`data/esg.db`) mit Tabellen:
