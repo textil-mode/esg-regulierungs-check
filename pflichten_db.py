@@ -239,3 +239,91 @@ def schritt(schritt_id: int) -> dict | None:
         out = dict(row)
         out["texte"] = _texte(c, [schritt_id]).get(schritt_id, {})
     return out
+
+
+# ---------- Nutzerzustand ----------
+
+ZUSTAENDIG_MAX = 120
+_PLAN_JA = ("ja", "moeglich")
+
+
+def sync_pflichten(user_id: int, aktuelle: dict[str, str], today) -> None:
+    """Gleicht `nutzer_pflichten` mit dem letzten Pruefergebnis ab.
+
+    `ja`/`moeglich`: Zeile anlegen oder `entfallen_am` zuruecksetzen;
+    `nein`: `entfallen_am = today`, falls noch leer; `error` (und alles
+    Unbekannte): Zustand bleibt, wie er ist.
+    """
+    tag = today.isoformat()[:10]
+    with db._conn() as c:
+        for reg_key, applies in aktuelle.items():
+            if applies in _PLAN_JA:
+                c.execute(
+                    "INSERT INTO nutzer_pflichten (user_id, reg_key, erste_feststellung,"
+                    " entfallen_am) VALUES (?, ?, ?, NULL)"
+                    " ON CONFLICT(user_id, reg_key) DO UPDATE SET entfallen_am = NULL",
+                    (user_id, reg_key, tag),
+                )
+            elif applies == "nein":
+                c.execute(
+                    "UPDATE nutzer_pflichten SET entfallen_am = ?"
+                    " WHERE user_id = ? AND reg_key = ? AND entfallen_am IS NULL",
+                    (tag, user_id, reg_key),
+                )
+
+
+def nutzer_pflichten(user_id: int) -> list[dict]:
+    with db._conn() as c:
+        return [dict(r) for r in c.execute(
+            "SELECT * FROM nutzer_pflichten WHERE user_id = ? ORDER BY reg_key", (user_id,))]
+
+
+def setze_erledigt(user_id: int, schritt_id: int, periode: str, erledigt: bool, today) -> None:
+    """Haekchen setzen (Datum `today`) oder entfernen; `periode` '' oder 'YYYY'."""
+    with db._conn() as c:
+        if erledigt:
+            c.execute(
+                "INSERT INTO nutzer_erledigt (user_id, schritt_id, periode, erledigt_am)"
+                " VALUES (?, ?, ?, ?) ON CONFLICT(user_id, schritt_id, periode)"
+                " DO UPDATE SET erledigt_am = excluded.erledigt_am",
+                (user_id, schritt_id, periode or "", today.isoformat()[:10]),
+            )
+        else:
+            c.execute(
+                "DELETE FROM nutzer_erledigt WHERE user_id = ? AND schritt_id = ?"
+                " AND periode = ?", (user_id, schritt_id, periode or ""))
+
+
+def setze_zustaendig(user_id: int, schritt_id: int, text: str) -> None:
+    """Freitext 'Zustaendig', getrimmt und auf 120 Zeichen gekuerzt; leer = NULL."""
+    wert = (text or "").strip()[:ZUSTAENDIG_MAX].strip() or None
+    with db._conn() as c:
+        c.execute(
+            "INSERT INTO nutzer_schritte (user_id, schritt_id, zustaendig) VALUES (?, ?, ?)"
+            " ON CONFLICT(user_id, schritt_id) DO UPDATE SET zustaendig = excluded.zustaendig",
+            (user_id, schritt_id, wert),
+        )
+
+
+def markiere_gesehen(user_id: int, schritt_id: int, version: int) -> None:
+    with db._conn() as c:
+        c.execute(
+            "INSERT INTO nutzer_schritte (user_id, schritt_id, gesehen_version) VALUES (?, ?, ?)"
+            " ON CONFLICT(user_id, schritt_id) DO UPDATE SET"
+            " gesehen_version = excluded.gesehen_version",
+            (user_id, schritt_id, version),
+        )
+
+
+def nutzer_zustand(user_id: int) -> tuple[dict[int, dict], dict[int, dict[str, str]]]:
+    """(`nutzer_schritte` je schritt_id, {schritt_id: {periode: erledigt_am}})."""
+    with db._conn() as c:
+        schritte = {r["schritt_id"]: dict(r) for r in c.execute(
+            "SELECT * FROM nutzer_schritte WHERE user_id = ?", (user_id,))}
+        erledigt: dict[int, dict[str, str]] = {}
+        for r in c.execute(
+            "SELECT schritt_id, periode, erledigt_am FROM nutzer_erledigt WHERE user_id = ?",
+            (user_id,),
+        ):
+            erledigt.setdefault(r["schritt_id"], {})[r["periode"]] = r["erledigt_am"]
+    return schritte, erledigt

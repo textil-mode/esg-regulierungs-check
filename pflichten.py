@@ -80,3 +80,102 @@ def frist_fuer(frist_typ: str, frist_wert: str, gilt_ab: str, today: date) -> di
         return _keine()
     except Exception:
         return _keine()
+
+
+# ---------- Plan je Konto ----------
+
+ROLLEN = ["gf", "einkauf", "personal", "logistik", "produkt", "nachhaltigkeit", "finanzen"]
+
+
+def _geaendert(schritt: dict, erledigt_am: str | None, gesehen: int | None) -> bool:
+    if not erledigt_am or not schritt.get("geaendert_am"):
+        return False
+    return (str(schritt["geaendert_am"]) > str(erledigt_am)
+            and (gesehen or 0) < int(schritt.get("version") or 1))
+
+
+def _schritt_im_plan(s: dict, gilt_ab: str, today: date, zustand: dict,
+                     erledigungen: dict[str, str]) -> dict:
+    frist = frist_fuer(s.get("frist_typ"), s.get("frist_wert"), gilt_ab, today)
+    jaehrlich = (s.get("frist_typ") or "").strip() == "jaehrlich"
+    periode = frist["periode"] if jaehrlich else ""
+    erledigt_am = erledigungen.get(periode)
+    erledigt = erledigt_am is not None
+    verlauf = []
+    if jaehrlich:
+        verlauf = [{"periode": p, "erledigt_am": d}
+                   for p, d in sorted(erledigungen.items(), reverse=True)
+                   if p and p != periode]
+    return {
+        "id": s["id"], "titel": s.get("titel", ""), "beschreibung": s.get("beschreibung", ""),
+        "daten": s.get("daten", ""), "rolle": s.get("rolle", ""), "link": s.get("link"),
+        "quelle": s.get("quelle"), "geprueft_am": s.get("geprueft_am"),
+        "frist": frist,
+        "ueberfaellig": (frist["art"] == "datum" and frist["datum"] < today and not erledigt),
+        "erledigt": erledigt, "erledigt_am": erledigt_am,
+        "zustaendig": zustand.get("zustaendig"),
+        "geaendert": erledigt and _geaendert(s, erledigt_am, zustand.get("gesehen_version")),
+        "verlauf": verlauf,
+    }
+
+
+def plan_fuer(user_id: int, lang: str, today: date) -> dict:
+    """Plan 'Meine Pflichten' eines Kontos aus dem letzten Pruefergebnis.
+
+    Gleicht vorher `nutzer_pflichten` per `sync_pflichten` ab. Fristen werden
+    bei jedem Aufruf neu berechnet (aktuelles Profil, `deadline_for`).
+    """
+    import db
+    import deadlines
+    import pflichten_db as pdb
+    import regulations as regs
+
+    if isinstance(today, datetime):
+        today = today.date()
+    company = db.get_company(user_id)
+    profil = company or {}
+    analyse = db.latest_analysis(user_id)
+    plan = {"grundlage": analyse["created_at"] if analyse else None,
+            "hat_profil": company is not None, "pflichten": []}
+    if not analyse:
+        return plan
+
+    karten = {k["key"]: k for k in (analyse.get("result") or [])
+              if isinstance(k, dict) and k.get("key")}
+    pdb.sync_pflichten(user_id, {k: v.get("applies") for k, v in karten.items()}, today)
+    zustaende, erledigt = pdb.nutzer_zustand(user_id)
+    namen = {r["key"]: r.get("name", r["key"]) for r in regs.REGULATIONS}
+
+    for zeile in pdb.nutzer_pflichten(user_id):
+        reg_key = zeile["reg_key"]
+        gilt_ab = ""
+        if company is not None:
+            info = deadlines.deadline_for(reg_key, profil, today)
+            gilt_ab = (info or {}).get("gilt_ab") or ""
+        schritte = [
+            _schritt_im_plan(s, gilt_ab, today, zustaende.get(s["id"], {}),
+                             erledigt.get(s["id"], {}))
+            for s in pdb.schritte_fuer(reg_key, lang)
+        ]
+        offene_daten = [s["frist"]["datum"] for s in schritte
+                        if not s["erledigt"] and s["frist"]["art"] == "datum"]
+        plan["pflichten"].append({
+            "reg_key": reg_key,
+            "name": (karten.get(reg_key) or {}).get("name") or namen.get(reg_key, reg_key),
+            "gilt_ab": gilt_ab,
+            "entfaellt": zeile["entfallen_am"] is not None,
+            "entfallen_am": zeile["entfallen_am"],
+            "erledigt": sum(1 for s in schritte if s["erledigt"]),
+            "gesamt": len(schritte),
+            "naechste_frist": min(offene_daten) if offene_daten else None,
+            "schritte": schritte,
+        })
+
+    plan["pflichten"].sort(key=lambda p: (
+        p["entfaellt"],
+        not any(s["ueberfaellig"] for s in p["schritte"]),
+        p["naechste_frist"] is None,
+        p["naechste_frist"] or date.max,
+        p["name"].casefold(),
+    ))
+    return plan
