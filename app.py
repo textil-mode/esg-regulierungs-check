@@ -338,6 +338,7 @@ def _inject_globals():
         # Den Zugang regeln weiterhin die Routen, nicht diese Anzeige.
         is_admin=_is_admin(),
         pflichten_sichtbar=bool(session.get("user_id")) and _pflichten_sichtbar(),
+        pflichten_funktion=pdb.funktion_aktiv(),
         LANGUAGES=LANGUAGES,
         BRANCH_LABELS=BRANCH_LABELS,
         SITE_TYPE_LABELS=SITE_TYPE_LABELS,
@@ -1472,6 +1473,14 @@ def _handpflege_speichern(schritt: dict | None, reg_key: str):
             flash("Übersetzung fehlgeschlagen; die deutschen Texte wurden für alle Sprachen "
                   "übernommen. Bitte vor der Freigabe prüfen.", "error")
             texte = {lang: dict(texte_de) for lang in pdb.SPRACHEN}
+    if schritt is not None:
+        # Nur was vom aktuellen Stand abweicht; sonst ueberschriebe ein spaeter
+        # freigegebener Vorschlag Felder, die inzwischen ein anderer geaendert hat.
+        felder = {k: x for k, x in felder.items() if x != _wert_text(schritt.get(k))}
+        if not felder and not texte:
+            flash("Keine Änderung gegenüber dem aktuellen Stand; kein Vorschlag angelegt.",
+                  "error")
+            return redirect(url_for("admin_pflichten_schritt", sid=schritt["id"]))
     nachher = {**felder}
     if texte:
         nachher["texte"] = texte
@@ -1520,6 +1529,36 @@ def admin_pflichten_vorschlaege():
     )
 
 
+def _wert_text(wert) -> str:
+    return "" if wert is None else str(wert)
+
+
+def _formtext(wert) -> str:
+    """Formularwert vergleichbar machen: Zeilenenden vereinheitlichen, trimmen."""
+    return (wert or "").replace("\r\n", "\n").strip()
+
+
+def _vorschlag_bezug(v: dict) -> tuple[dict, dict, dict]:
+    """(aktueller Schritt, Bezugswerte je Feld, Bezugstexte je Sprache/Feld).
+
+    Bezug = vorgeschlagener Wert, wo der Vorschlag ein Feld nennt, sonst der
+    AKTUELLE Stand des Schritts (nicht `vorher_json`): ein zwischenzeitlich
+    freigegebener anderer Vorschlag darf nicht zurueckgedreht werden.
+    """
+    aktuell = (pdb.schritt(v["schritt_id"]) if v["schritt_id"] and v["art"] != "neu"
+               else None) or {}
+    nachher = v["nachher"] or {}
+    werte = {k: _wert_text(nachher[k]) if k in nachher else _wert_text(aktuell.get(k))
+             for k in pdb.SCHRITT_FELDER}
+    texte = {}
+    for lang in pdb.SPRACHEN:
+        neu_t = (nachher.get("texte") or {}).get(lang) or {}
+        alt_t = (aktuell.get("texte") or {}).get(lang) or {}
+        texte[lang] = {f: _wert_text(neu_t[f]) if f in neu_t else _wert_text(alt_t.get(f))
+                       for f in pdb.TEXTFELDER}
+    return aktuell, werte, texte
+
+
 @app.route("/admin/pflichten/vorschlag/<int:vid>")
 def admin_pflichten_vorschlag(vid: int):
     redir = _pflichten_admin_lesen()
@@ -1528,27 +1567,29 @@ def admin_pflichten_vorschlag(vid: int):
     v = pdb.vorschlag(vid)
     if not v:
         abort(404)
-    vorher = v["vorher"] or {}
+    aktuell, werte, bezug_texte = _vorschlag_bezug(v)
     nachher = v["nachher"] or {}
     felder = []
     for k in pdb.SCHRITT_FELDER:
-        alt = "" if vorher.get(k) is None else str(vorher.get(k))
-        neu = str(nachher[k]) if k in nachher and nachher[k] is not None else (
-            "" if k in nachher else alt)
-        felder.append({"name": k, "vorher": alt, "nachher": neu, "geaendert": alt != neu})
+        alt = _wert_text(aktuell.get(k))
+        felder.append({"name": k, "vorher": alt, "nachher": werte[k],
+                       "vorgeschlagen": k in nachher, "geaendert": alt != werte[k]})
     texte = []
     for lang in pdb.SPRACHEN:
-        alt_t = (vorher.get("texte") or {}).get(lang, {})
-        neu_t = (nachher.get("texte") or {}).get(lang, {})
+        alt_t = (aktuell.get("texte") or {}).get(lang) or {}
         for f in pdb.TEXTFELDER:
-            alt = alt_t.get(f) or ""
-            neu = neu_t[f] if f in neu_t else alt
-            texte.append({"lang": lang, "name": f, "vorher": alt, "nachher": neu or "",
-                          "geaendert": alt != (neu or "")})
+            alt = _wert_text(alt_t.get(f))
+            texte.append({"lang": lang, "name": f, "vorher": alt,
+                          "nachher": bezug_texte[lang][f],
+                          "geaendert": alt != bezug_texte[lang][f]})
+    # Seit dem Vorschlag wurde der Schritt anderweitig geaendert?
+    veraltet = (v["status"] == "offen" and v["art"] != "neu" and bool(aktuell)
+                and (v["vorher"] or {}).get("version") != aktuell.get("version"))
     return render_template(
         "admin_pflichten_vorschlag.html", v=v, liste=None, felder=felder, texte=texte,
         namen=_reg_namen(), darf_schreiben=_is_stamm_admin() and v["status"] == "offen",
         rollen=pflichten.ROLLEN, frist_typen=pdb.FRIST_TYPEN, datum=_datum_text,
+        veraltet=veraltet, aktuell=aktuell,
     )
 
 
@@ -1562,27 +1603,35 @@ def admin_pflichten_freigeben(vid: int):
         abort(404)
     aenderungen: dict = {}
     if v["art"] != "deaktivieren":
-        aenderungen = _schritt_felder_aus_form(request.form)
+        # Nur tatsaechlich im Formular geaenderte Werte weitergeben (Bezug: Vorschlag,
+        # sonst aktueller Stand) — unveraenderte Felder bleiben unberuehrt.
+        # Bezug ist der beim Laden angezeigte Wert (`alt__<feld>`): so dreht auch
+        # ein vor einer anderen Freigabe geoeffnetes Formular nichts zurueck.
+        _, werte, bezug_texte = _vorschlag_bezug(v)
+        form = request.form
+        for k, x in _schritt_felder_aus_form(form).items():
+            if x != _formtext(form.get("alt__" + k, werte[k])):
+                aenderungen[k] = x
         texte: dict = {}
         for lang in pdb.SPRACHEN:
             for f in pdb.TEXTFELDER:
                 schluessel = f"{f}_{lang}"
-                if schluessel in request.form:
-                    texte.setdefault(lang, {})[f] = request.form[schluessel].strip()
+                if schluessel in form:
+                    x = _formtext(form[schluessel])
+                    if x != _formtext(form.get("alt__" + schluessel, bezug_texte[lang][f])):
+                        texte.setdefault(lang, {})[f] = x
         if texte:
             aenderungen["texte"] = texte
-        fehler = pdb.pruefe_felder(
-            {**{k: v["nachher"][k] for k in pdb.SCHRITT_FELDER if k in v["nachher"]},
-             **{k: x for k, x in aenderungen.items() if k != "texte"}}, _heute())
-        if fehler:
-            for f in fehler:
-                flash(f, "error")
-            return redirect(url_for("admin_pflichten_vorschlag", vid=vid))
-    if pdb.freigeben(vid, session.get("user_email") or "", aenderungen or None, _heute()):
+    ok, grund = pdb.freigeben_mit_grund(vid, session.get("user_email") or "",
+                                        aenderungen or None, _heute())
+    if ok:
         flash("Vorschlag freigegeben.", "success")
-    else:
-        flash("Vorschlag war nicht mehr offen oder ungültig; nichts geändert.", "error")
-    return redirect(url_for("admin_pflichten_vorschlaege"))
+        return redirect(url_for("admin_pflichten_vorschlaege"))
+    if grund == pdb.NICHT_OFFEN:
+        flash("Vorschlag ist nicht mehr offen; nichts geändert.", "error")
+        return redirect(url_for("admin_pflichten_vorschlaege"))
+    flash(f"Nicht freigegeben, {grund}. Nichts geändert.", "error")
+    return redirect(url_for("admin_pflichten_vorschlag", vid=vid))
 
 
 @app.route("/admin/pflichten/vorschlag/<int:vid>/verwerfen", methods=["POST"])

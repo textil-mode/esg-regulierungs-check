@@ -470,43 +470,82 @@ _HINWEIS_TEXT = {"neu": "Neuer Schritt", "aendern": "Schritt geaendert",
                  "deaktivieren": "Schritt entfaellt"}
 
 
+NICHT_OFFEN = "nicht mehr offen"
+
+
+def _link_normalisieren(link):
+    """Leerzeichen weg, Schema klein (`HTTPS://` -> `https://`); leer -> None."""
+    link = (link or "").strip()
+    if not link:
+        return None
+    teil = link.split(":", 1)
+    return teil[0].lower() + ":" + teil[1] if len(teil) == 2 else link
+
+
 def freigeben(vid: int, admin_email: str, aenderungen: dict | None, today) -> bool:
+    """Wendet einen offenen Vorschlag an; Kurzform von `freigeben_mit_grund`."""
+    return freigeben_mit_grund(vid, admin_email, aenderungen, today)[0]
+
+
+def freigeben_mit_grund(vid: int, admin_email: str, aenderungen: dict | None,
+                        today) -> tuple[bool, str]:
     """Wendet einen offenen Vorschlag an — atomar und hoechstens einmal.
 
     Alles laeuft in einer Transaktion (`BEGIN IMMEDIATE`), der Status wird
     darin geprueft: ein zweiter Aufruf (Doppelklick, zweiter Tab) liefert
-    `False` und aendert nichts. Ungueltige Felder oder ein verschwundener
-    Schritt ebenso (`False`, Rollback).
+    `(False, NICHT_OFFEN)` und aendert nichts. Ungueltige Felder, ein leerer
+    deutscher Titel oder ein verschwundener Schritt liefern `(False,
+    "ungueltig: <Grund>")`, ebenfalls mit Rollback. Erfolg: `(True, "")`.
     """
     tag = today.isoformat()[:10]
     c = db._conn()
     c.isolation_level = None  # Transaktion selbst steuern
+
+    def abbruch(grund: str) -> tuple[bool, str]:
+        c.execute("ROLLBACK")
+        return False, grund
+
     try:
         c.execute("BEGIN IMMEDIATE")
         row = c.execute("SELECT * FROM pflicht_vorschlaege WHERE id = ? AND status = 'offen'",
                         (vid,)).fetchone()
         if not row:
-            c.execute("ROLLBACK")
-            return False
+            return abbruch(NICHT_OFFEN)
         v = _vorschlag_dict(row)
+        alt = None
+        if v["art"] != "neu":
+            alt = _schritt_snapshot(c, v["schritt_id"])
+            if alt is None:
+                return abbruch("ungültig: Schritt existiert nicht mehr")
         daten = _zusammenfuehren(v["nachher"], aenderungen)
         felder = {k: daten[k] for k in SCHRITT_FELDER if k in daten}
         # Frist-Typ und -Wert nur gemeinsam pruefen: fehlt einer, gilt der
         # aktuelle des Schritts (sonst rutschte z. B. ein neuer Wert ungeprueft durch).
         probe = dict(felder)
-        if v["art"] != "neu" and ("frist_typ" in probe) != ("frist_wert" in probe):
-            alt = _schritt_snapshot(c, v["schritt_id"]) or {}
+        if alt is not None and ("frist_typ" in probe) != ("frist_wert" in probe):
             probe.setdefault("frist_typ", alt.get("frist_typ"))
             probe.setdefault("frist_wert", alt.get("frist_wert"))
-        if pruefe_felder(probe, today):
-            c.execute("ROLLBACK")
-            return False
+        fehler = pruefe_felder(probe, today) if v["art"] != "deaktivieren" else []
+        if fehler:
+            return abbruch("ungültig: " + "; ".join(fehler))
         if "sortierung" in felder:
             felder["sortierung"] = int(felder["sortierung"])
+        if "link" in felder:
+            felder["link"] = _link_normalisieren(felder["link"])
+        endtyp = felder.get("frist_typ") or (alt or {}).get("frist_typ") or "keine"
+        if endtyp == "keine" and ("frist_typ" in felder or "frist_wert" in felder):
+            felder["frist_wert"] = ""  # 'keine' hat nie einen Wert
 
         if v["art"] == "neu":
+            if "sortierung" not in felder:
+                # ohne Angabe ans Ende der Regulierung
+                felder["sortierung"] = c.execute(
+                    "SELECT COALESCE(MAX(sortierung), 0) + 1 FROM pflicht_schritte"
+                    " WHERE reg_key = ?", (v["reg_key"],)).fetchone()[0]
             basis = {"rolle": "", "frist_typ": "keine", "frist_wert": "", "link": None,
-                     "quelle": None, "sortierung": 0, **felder}
+                     "quelle": None, **felder}
+            if basis["frist_typ"] == "keine":
+                basis["frist_wert"] = ""
             sid = c.execute(
                 "INSERT INTO pflicht_schritte (reg_key, sortierung, rolle, frist_typ,"
                 " frist_wert, link, quelle, aktiv, version, geprueft_am)"
@@ -516,23 +555,24 @@ def freigeben(vid: int, admin_email: str, aenderungen: dict | None, today) -> bo
             ).lastrowid
         else:
             sid = v["schritt_id"]
-            if _schritt_snapshot(c, sid) is None:
-                c.execute("ROLLBACK")
-                return False
             if v["art"] == "deaktivieren":
                 felder = {"aktiv": 0}
             else:
                 for k in ("rolle", "frist_wert"):
                     if k in felder:
                         felder[k] = felder[k] or ""
-                for k in ("link", "quelle"):
-                    if k in felder:
-                        felder[k] = felder[k] or None
+                if "quelle" in felder:
+                    felder["quelle"] = felder["quelle"] or None
             sets = "".join(f"{k} = ?, " for k in felder)
             c.execute(f"UPDATE pflicht_schritte SET {sets}version = version + 1,"
                       " geprueft_am = ? WHERE id = ?", (*felder.values(), tag, sid))
         if v["art"] != "deaktivieren":
             _schreibe_texte(c, sid, daten.get("texte") or {})
+
+        stand = _schritt_snapshot(c, sid)
+        if v["art"] != "deaktivieren" and not (
+                (stand["texte"].get("de") or {}).get("titel") or "").strip():
+            return abbruch("ungültig: deutscher Titel ist leer")
 
         # Schalter in derselben Verbindung lesen (keine zweite waehrend der Sperre).
         schalter = c.execute("SELECT wert FROM pflicht_einstellungen"
@@ -541,8 +581,8 @@ def freigeben(vid: int, admin_email: str, aenderungen: dict | None, today) -> bo
                   and schalter is not None and schalter[0] == "1")
         if melden:
             c.execute("UPDATE pflicht_schritte SET geaendert_am = ? WHERE id = ?", (tag, sid))
+            stand = _schritt_snapshot(c, sid)
 
-        stand = _schritt_snapshot(c, sid)
         c.execute(
             "INSERT INTO pflicht_schritt_versionen (schritt_id, version, inhalt_json,"
             " geaendert_am, geaendert_von, vorschlag_id) VALUES (?, ?, ?, ?, ?, ?)",
@@ -564,7 +604,7 @@ def freigeben(vid: int, admin_email: str, aenderungen: dict | None, today) -> bo
             (sid, tag, admin_email, vid),
         )
         c.execute("COMMIT")
-        return True
+        return True, ""
     except Exception:
         if c.in_transaction:
             c.execute("ROLLBACK")

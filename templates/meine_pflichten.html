@@ -119,7 +119,7 @@
           {% if s.daten %}<div class="pf-text"><strong>{{ t("pflichten_daten", lang) }}:</strong> {{ s.daten }}</div>{% endif %}
           {% if s.quelle or s.link or s.geprueft_am %}
           <div class="pf-meta">
-            {% if s.link and (s.link.startswith("https://") or s.link.startswith("http://")) %}
+            {% if s.link and (s.link.lower().startswith("https://") or s.link.lower().startswith("http://")) %}
             {{ t("pflichten_quelle", lang) }}: <a href="{{ s.link }}" target="_blank" rel="noopener noreferrer">{{ s.quelle or s.link }} ↗</a>
             {% elif s.quelle %}
             {{ t("pflichten_quelle", lang) }}: {{ s.quelle }}

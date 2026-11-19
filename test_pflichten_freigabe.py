@@ -21,6 +21,7 @@ import json
 import os
 import sys
 from datetime import date
+from html.parser import HTMLParser
 from pathlib import Path
 
 BASE = Path(__file__).parent
@@ -344,9 +345,9 @@ def block_i() -> None:
     # Validierung
     def _abgelehnt(label: str, data: dict) -> None:
         vor = {o["id"] for o in pdb.offene_vorschlaege()}
-        stamm.post(f"/admin/pflichten/schritt/{EUDR[0]}", data={**form, **data})
+        r = stamm.post(f"/admin/pflichten/schritt/{EUDR[0]}", data={**form, **data})
         neu = [o for o in pdb.offene_vorschlaege() if o["id"] not in vor]
-        check(f"I abgelehnt: {label}", not neu)
+        check(f"I abgelehnt: {label}", not neu and r.status_code == 400, str(r.status_code))
 
     _abgelehnt("Rolle unbekannt", {"rolle": "chef"})
     _abgelehnt("Frist-Typ unbekannt", {"frist_typ": "bald"})
@@ -368,9 +369,153 @@ def block_i() -> None:
           mitglied.get("/admin/pflichten/export.json").status_code in (302, 303))
 
 
+class _FormLeser(HTMLParser):
+    """Liest die Felder des Freigabe-Formulars so, wie ein Browser sie senden wuerde."""
+
+    def __init__(self, action: str):
+        super().__init__()
+        self.action, self.drin, self.daten = action, False, {}
+        self._select = self._textarea = None
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "form":
+            self.drin = a.get("action", "").endswith(self.action)
+        elif not self.drin:
+            return
+        elif tag == "input" and a.get("name"):
+            self.daten[a["name"]] = a.get("value") or ""
+        elif tag == "select":
+            self._select = a.get("name")
+            self.daten.setdefault(self._select, "")
+        elif tag == "option" and self._select and "selected" in a:
+            self.daten[self._select] = a.get("value") or ""
+        elif tag == "textarea":
+            self._textarea = a.get("name")
+            self.daten[self._textarea] = ""
+
+    def handle_endtag(self, tag):
+        if tag == "form":
+            self.drin = False
+        elif tag == "select":
+            self._select = None
+        elif tag == "textarea":
+            self._textarea = None
+
+    def handle_data(self, data):
+        if self._textarea:
+            self.daten[self._textarea] += data
+
+
+def _formular(client, vid: int) -> dict:
+    leser = _FormLeser(f"/admin/pflichten/vorschlag/{vid}/freigeben")
+    leser.feed(client.get(f"/admin/pflichten/vorschlag/{vid}").get_data(as_text=True))
+    return leser.daten
+
+
+def block_j() -> None:
+    print("\n--- J  Korrekturrunde 1: verlorene Aenderung, leerer Titel ---")
+    stamm = _client(STAMM_ID, STAMM)
+    sid = EUDR[2]
+    _sql("UPDATE pflicht_schritte SET rolle = '', quelle = NULL WHERE id = ?", (sid,))
+    a = pdb.neuer_vorschlag("EUDR", "aendern", "hand", {"rolle": "gf"}, schritt_id=sid)
+    b = pdb.neuer_vorschlag("EUDR", "aendern", "hand", {"quelle": "Leitfaden 2027"},
+                            schritt_id=sid)
+    form_b_alt = _formular(stamm, b)            # B geoeffnet, bevor A freigegeben wird
+    stamm.post(f"/admin/pflichten/vorschlag/{a}/freigeben", data=_formular(stamm, a))
+    check("J A freigegeben, Rolle gf", pdb.schritt(sid)["rolle"] == "gf")
+    html = stamm.get(f"/admin/pflichten/vorschlag/{b}").get_data(as_text=True)
+    check("J Warnung: Schritt seit Vorschlag geaendert", "seit diesem Vorschlag geändert" in html)
+    form_b_neu = _formular(stamm, b)
+    check("J Seite B zeigt aktuelle Rolle", form_b_neu.get("rolle") == "gf",
+          repr(form_b_neu.get("rolle")))
+    r = stamm.post(f"/admin/pflichten/vorschlag/{b}/freigeben", data=form_b_alt)
+    s = pdb.schritt(sid)
+    check("J B (altes Formular) freigegeben", r.status_code in (302, 303)
+          and pdb.vorschlag(b)["status"] == "freigegeben")
+    check("J Rolle bleibt gf", s["rolle"] == "gf", repr(s["rolle"]))
+    check("J Quelle aktualisiert", s["quelle"] == "Leitfaden 2027", repr(s["quelle"]))
+
+    # Frisches Formular ohne Eingriff: nur das vorgeschlagene Feld aendert sich.
+    c = pdb.neuer_vorschlag("EUDR", "aendern", "hand", {"sortierung": 7}, schritt_id=sid)
+    stamm.post(f"/admin/pflichten/vorschlag/{c}/freigeben", data=_formular(stamm, c))
+    s = pdb.schritt(sid)
+    check("J frisches Formular: nur Sortierung", s["sortierung"] == 7 and s["rolle"] == "gf"
+          and s["quelle"] == "Leitfaden 2027")
+
+    # Handpflege legt nur abweichende Felder in `nachher`.
+    vor = {o["id"] for o in pdb.offene_vorschlaege()}
+    de = s["texte"]["de"]
+    stamm.post(f"/admin/pflichten/schritt/{sid}", data={
+        "titel": de["titel"], "beschreibung": de["beschreibung"], "daten": de["daten"],
+        "rolle": "gf", "frist_typ": s["frist_typ"], "frist_wert": s["frist_wert"],
+        "link": s["link"] or "", "quelle": "Neue Quelle", "sortierung": str(s["sortierung"])})
+    neu = [o for o in pdb.offene_vorschlaege() if o["id"] not in vor]
+    check("J Handpflege: nur geaenderte Felder", len(neu) == 1
+          and neu[0]["nachher"] == {"quelle": "Neue Quelle"}, repr(neu and neu[0]["nachher"]))
+    if neu:
+        pdb.verwerfen(neu[0]["id"], STAMM, "Test", HEUTE)
+
+    # Leerer deutscher Titel: nie freigebbar (aendern per Formular, neu per Vorschlag).
+    d = pdb.neuer_vorschlag("EUDR", "aendern", "hand", {"rolle": "einkauf"}, schritt_id=sid)
+    form = {**_formular(stamm, d), "titel_de": "  "}
+    r = stamm.post(f"/admin/pflichten/vorschlag/{d}/freigeben", data=form)
+    check("J leerer Titel (aendern): offen, Schritt unveraendert",
+          pdb.vorschlag(d)["status"] == "offen" and pdb.schritt(sid)["rolle"] == "gf"
+          and pdb.schritt(sid)["texte"]["de"]["titel"] == de["titel"])
+    check("J leerer Titel: zurueck auf die Vorschlagsseite",
+          r.headers.get("Location", "").endswith(f"/admin/pflichten/vorschlag/{d}"))
+    html = stamm.get(f"/admin/pflichten/vorschlag/{d}").get_data(as_text=True)
+    check("J Meldung nennt den Grund", "ungültig" in html and "Titel" in html)
+    anzahl = _eins("SELECT COUNT(*) FROM pflicht_schritte")
+    e = pdb.neuer_vorschlag("EUDR", "neu", "hand", {"texte": {"de": {"titel": ""}}})
+    r = stamm.post(f"/admin/pflichten/vorschlag/{e}/freigeben", data=_formular(stamm, e))
+    check("J leerer Titel (neu): offen, kein Schritt angelegt",
+          pdb.vorschlag(e)["status"] == "offen"
+          and _eins("SELECT COUNT(*) FROM pflicht_schritte") == anzahl)
+    ok, grund = pdb.freigeben_mit_grund(e, STAMM, None, HEUTE)
+    check("J Grund leerer Titel", not ok and grund.startswith("ungültig") and "Titel" in grund,
+          grund)
+    pdb.verwerfen(d, STAMM, "Test", HEUTE)
+    pdb.verwerfen(e, STAMM, "Test", HEUTE)
+    ok, grund = pdb.freigeben_mit_grund(e, STAMM, None, HEUTE)
+    check("J Grund nicht mehr offen", not ok and grund == pdb.NICHT_OFFEN, grund)
+
+
+def block_k() -> None:
+    print("\n--- K  Kleinigkeiten: Frist keine, Sortierung, Link, Menue ---")
+    sid = EUDR[2]
+    v = pdb.neuer_vorschlag("EUDR", "aendern", "hand",
+                            {"frist_typ": "keine", "frist_wert": "-6m"}, schritt_id=sid)
+    check("K freigeben", pdb.freigeben(v, STAMM, None, HEUTE) is True)
+    s = pdb.schritt(sid)
+    check("K Frist keine -> Wert leer", s["frist_typ"] == "keine" and s["frist_wert"] == "",
+          repr(s["frist_wert"]))
+    hoechste = _eins("SELECT MAX(sortierung) FROM pflicht_schritte WHERE reg_key = 'EUDR'")
+    v = pdb.neuer_vorschlag("EUDR", "neu", "hand", {"link": "HTTPS://Example.org/Pfad",
+                            "texte": {"de": {"titel": "Ans Ende"}}})
+    check("K neu ohne Sortierung freigegeben", pdb.freigeben(v, STAMM, None, HEUTE) is True)
+    s = pdb.schritt(pdb.vorschlag(v)["schritt_id"])
+    check("K neu ans Ende", s["sortierung"] == hoechste + 1, f"{s['sortierung']} vs {hoechste}")
+    check("K Link-Schema klein", s["link"] == "https://Example.org/Pfad", s["link"])
+
+    html = _client(STAMM_ID, STAMM).get("/passwort-aendern").get_data(as_text=True)
+    check("K Menue: Link fuer Admin", 'href="/admin/pflichten"' in html)
+    html = _client(ERNANNT_ID, ERNANNT).get("/passwort-aendern").get_data(as_text=True)
+    check("K Menue: Link fuer ernannten Admin", 'href="/admin/pflichten"' in html)
+    html = _client(UID, MITGLIED).get("/passwort-aendern").get_data(as_text=True)
+    check("K Menue: kein Link fuer Mitglied", "/admin/pflichten" not in html)
+    os.environ["PFLICHTEN_PLAN"] = "aus"
+    try:
+        html = _client(STAMM_ID, STAMM).get("/passwort-aendern").get_data(as_text=True)
+        check("K Menue: kein Link bei PFLICHTEN_PLAN=aus", "/admin/pflichten" not in html)
+    finally:
+        os.environ.pop("PFLICHTEN_PLAN", None)
+
+
 if __name__ == "__main__":
     for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-                  block_i):
+                  block_i, block_j, block_k):
         try:
             block()
         except Exception as exc:  # noqa: BLE001 — jeden Block melden, nicht abbrechen

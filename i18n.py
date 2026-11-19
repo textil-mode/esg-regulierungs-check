@@ -2186,6 +2186,10 @@ UI: dict[str, dict[str, str]] = {
         "de": "Regulierungs-Status", "en": "Regulation status", "es": "Estado de las regulaciones",
         "fr": "État des réglementations", "it": "Stato dei regolamenti", "zh": "法规状态",
     },
+    "admin_pflichten_title": {
+        "de": "Pflichten-Katalog", "en": "Obligations catalogue", "es": "Catálogo de obligaciones",
+        "fr": "Catalogue des obligations", "it": "Catalogo degli obblighi", "zh": "义务目录",
+    },
     "admin_regstatus_hint": {
         "de": "Gesetzesstand je Regulierung, letzter Watchdog-Lauf und erkannte Textänderungen. "
               "Vorschläge sind KI-generiert und ändern nichts automatisch.",

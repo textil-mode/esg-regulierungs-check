@@ -42,13 +42,14 @@
     {% if v.grund %} · Grund: {{ v.grund }}{% endif %}
     {% if v.schritt_id %} · <a href="{{ url_for('admin_pflichten_schritt', sid=v.schritt_id) }}">Schritt {{ v.schritt_id }}</a>{% endif %}
   </p>
+  {% if veraltet %}<div class="flash flash-error">Der Schritt wurde seit diesem Vorschlag geändert (Version {{ (v.vorher or {}).version }} → {{ aktuell.version }}). Nicht vorgeschlagene Felder zeigen den aktuellen Stand; bitte vor der Freigabe prüfen.</div>{% endif %}
   {% if v.beleg %}<div class="run-box"><strong>Beleg:</strong><div class="pf-text">{{ v.beleg }}</div></div>{% endif %}
   {% if v.begruendung %}<div class="run-box"><strong>Begründung:</strong><div class="pf-text">{{ v.begruendung }}</div></div>{% endif %}
 
   <form method="post" action="{{ url_for('admin_pflichten_freigeben', vid=v.id) }}">
   {% if v.art != "deaktivieren" %}
     <table class="pf-tabelle pf-vergleich">
-      <thead><tr><th>Feld</th><th>Vorher</th><th>Nachher{% if darf_schreiben %} (editierbar){% endif %}</th></tr></thead>
+      <thead><tr><th>Feld</th><th>Aktuell</th><th>Nachher{% if darf_schreiben %} (editierbar){% endif %}</th></tr></thead>
       <tbody>
       {% for f in felder %}
         <tr class="{{ 'pf-geaendert' if f.geaendert }}">
@@ -56,6 +57,8 @@
           <td>{{ f.vorher or "–" }}</td>
           <td>
           {% if darf_schreiben %}
+            {# Stand beim Laden: nur Felder, die davon abweichen, gehen als Aenderung mit. #}
+            <input type="hidden" name="alt__{{ f.name }}" value="{{ f.nachher }}">
             {% if f.name == "rolle" %}
               <select name="rolle"><option value="">–</option>
                 {% for r in rollen %}<option value="{{ r }}" {% if f.nachher == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
@@ -77,6 +80,7 @@
           <td class="pf-text">{{ x.vorher or "–" }}</td>
           <td>
           {% if darf_schreiben %}
+            <input type="hidden" name="alt__{{ x.name }}_{{ x.lang }}" value="{{ x.nachher }}">
             <textarea name="{{ x.name }}_{{ x.lang }}" rows="{{ 1 if x.name == 'titel' else 2 }}">{{ x.nachher }}</textarea>
           {% else %}<span class="pf-text">{{ x.nachher or "–" }}</span>{% endif %}
           </td>
