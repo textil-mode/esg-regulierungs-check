@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{# Vorschlaege zum Pflichten-Katalog: Liste und Einzelansicht. Nur deutsch (Pflegeseite). #}
+{% set ART = {"neu": "Neuer Schritt", "aendern": "Änderung", "deaktivieren": "Deaktivieren"} %}
+{% set AUSLOESER = {"watchdog": "Gesetzestext geändert", "anwendungsbeginn": "Anwendungsbeginn geändert",
+                    "startbestand": "Startbestand", "hand": "Handpflege"} %}
+{% block content %}
+<div class="section">
+  <p><a href="{{ url_for('admin_pflichten') }}">← Katalog</a>
+    {% if v %} · <a href="{{ url_for('admin_pflichten_vorschlaege') }}">Offene Vorschläge</a>{% endif %}</p>
+
+{% if v is none %}
+  <h2 style="margin-top:0;">Offene Vorschläge ({{ liste|length }})</h2>
+  {% if not liste %}
+  <p class="pf-hint">Keine offenen Vorschläge.</p>
+  {% else %}
+  <table class="pf-tabelle">
+    <thead><tr><th>Regulierung</th><th>Art</th><th>Auslöser</th><th>Schritt</th><th>erstellt</th><th></th></tr></thead>
+    <tbody>
+    {% for o in liste %}
+      {% set titel = ((o.nachher.texte or {}).de or {}).titel or (((o.vorher or {}).texte or {}).de or {}).titel %}
+      <tr>
+        <td>{{ namen.get(o.reg_key, o.reg_key) }}</td>
+        <td>{{ ART.get(o.art, o.art) }}</td>
+        <td>{{ AUSLOESER.get(o.ausloeser, o.ausloeser) }}</td>
+        <td>{{ titel or "–" }}</td>
+        <td>{{ datum(o.erstellt_am) }}</td>
+        <td><a href="{{ url_for('admin_pflichten_vorschlag', vid=o.id) }}">Prüfen</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+{% else %}
+  <h2 style="margin-top:0;">{{ namen.get(v.reg_key, v.reg_key) }}: {{ ART.get(v.art, v.art) }}</h2>
+  <p class="pf-hint">
+    Auslöser: {{ AUSLOESER.get(v.ausloeser, v.ausloeser) }}{% if v.ausloeser_ref %} ({{ v.ausloeser_ref }}){% endif %}
+    · erstellt {{ datum(v.erstellt_am) }}
+    · Status: <strong>{{ v.status }}</strong>
+    {% if v.entschieden_am %} am {{ datum(v.entschieden_am) }} von {{ v.entschieden_von }}{% endif %}
+    {% if v.grund %} · Grund: {{ v.grund }}{% endif %}
+    {% if v.schritt_id %} · <a href="{{ url_for('admin_pflichten_schritt', sid=v.schritt_id) }}">Schritt {{ v.schritt_id }}</a>{% endif %}
+  </p>
+  {% if v.beleg %}<div class="run-box"><strong>Beleg:</strong><div class="pf-text">{{ v.beleg }}</div></div>{% endif %}
+  {% if v.begruendung %}<div class="run-box"><strong>Begründung:</strong><div class="pf-text">{{ v.begruendung }}</div></div>{% endif %}
+
+  <form method="post" action="{{ url_for('admin_pflichten_freigeben', vid=v.id) }}">
+  {% if v.art != "deaktivieren" %}
+    <table class="pf-tabelle pf-vergleich">
+      <thead><tr><th>Feld</th><th>Vorher</th><th>Nachher{% if darf_schreiben %} (editierbar){% endif %}</th></tr></thead>
+      <tbody>
+      {% for f in felder %}
+        <tr class="{{ 'pf-geaendert' if f.geaendert }}">
+          <td><code>{{ f.name }}</code></td>
+          <td>{{ f.vorher or "–" }}</td>
+          <td>
+          {% if darf_schreiben %}
+            {% if f.name == "rolle" %}
+              <select name="rolle"><option value="">–</option>
+                {% for r in rollen %}<option value="{{ r }}" {% if f.nachher == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+              </select>
+            {% elif f.name == "frist_typ" %}
+              <select name="frist_typ">
+                {% for ft in frist_typen %}<option value="{{ ft }}" {% if f.nachher == ft %}selected{% endif %}>{{ ft }}</option>{% endfor %}
+              </select>
+            {% else %}
+              <input type="text" name="{{ f.name }}" value="{{ f.nachher }}">
+            {% endif %}
+          {% else %}{{ f.nachher or "–" }}{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      {% for x in texte %}
+        <tr class="{{ 'pf-geaendert' if x.geaendert }}">
+          <td><code>{{ x.lang }}</code> {{ x.name }}</td>
+          <td class="pf-text">{{ x.vorher or "–" }}</td>
+          <td>
+          {% if darf_schreiben %}
+            <textarea name="{{ x.name }}_{{ x.lang }}" rows="{{ 1 if x.name == 'titel' else 2 }}">{{ x.nachher }}</textarea>
+          {% else %}<span class="pf-text">{{ x.nachher or "–" }}</span>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Der Schritt wird deaktiviert und verschwindet aus allen Plänen. Häkchen bleiben gespeichert.</p>
+  {% endif %}
+  {% if darf_schreiben %}
+    <button type="submit">Freigeben</button>
+  {% endif %}
+  </form>
+
+  {% if darf_schreiben %}
+  <form method="post" action="{{ url_for('admin_pflichten_verwerfen', vid=v.id) }}" style="margin-top:14px;">
+    <label>Grund (optional) <input type="text" name="grund" maxlength="1000"></label>
+    <button type="submit" class="btn-secondary">Verwerfen</button>
+  </form>
+  {% endif %}
+{% endif %}
+</div>
+
+<style>
+  .pf-hint { font-size:13px; color:#5A5A5A; max-width:760px; }
+  .pf-text { white-space:pre-line; }
+  .pf-tabelle { width:100%; border-collapse:collapse; font-size:13px; margin:10px 0; }
+  .pf-tabelle th, .pf-tabelle td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--tm-line); vertical-align:top; }
+  .pf-vergleich td:nth-child(2), .pf-vergleich td:nth-child(3) { width:42%; }
+  .pf-vergleich textarea, .pf-vergleich input[type=text] { width:100%; }
+  .pf-geaendert td { background:#FFF7E0; }
+</style>
+{% endblock %}

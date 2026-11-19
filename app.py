@@ -1340,6 +1340,276 @@ def _lauf_veraltet(zeitpunkt: str | None) -> bool:
     return datetime.utcnow() - stand > timedelta(days=LAUF_VERALTET_TAGE)
 
 
+# ---------------------------------------------------------------------------
+# Pflichten-Plan: Katalogpflege, Vorschlaege und Freigabe (Admin)
+#
+# Lesen: alle Admins (`_is_admin`). Schreiben (Schalter, Handpflege,
+# Freigeben, Verwerfen): nur Stamm-Admins aus `ADMIN_EMAILS`, sonst 403.
+# Die Seiten sind bewusst nur deutsch — sie richten sich an die Pflegenden,
+# nicht an Mitglieder.
+# ---------------------------------------------------------------------------
+def _pflichten_admin_lesen():
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _is_admin():
+        return redirect(url_for("dashboard"))
+    return None
+
+
+def _pflichten_admin_schreiben():
+    redir = _pflichten_admin_lesen()
+    if redir:
+        return redir
+    if not _is_stamm_admin():
+        abort(403)
+    return None
+
+
+def _reg_namen() -> dict[str, str]:
+    return {r["key"]: r["name"] for r in REGULATIONS}
+
+
+def _schritt_felder_aus_form(form, suffix: str = "") -> dict:
+    """Schrittfelder aus einem Formular, getrimmt; nur vorhandene Felder."""
+    felder = {}
+    for k in pdb.SCHRITT_FELDER:
+        if k + suffix in form:
+            felder[k] = (form.get(k + suffix) or "").strip()
+    return felder
+
+
+def _uebersetzungen(texte_de: dict) -> dict[str, dict]:
+    """Alle sechs Sprachfassungen; fremde ueber `pflichten_vorschlag.uebersetzen`."""
+    import asyncio
+
+    import pflichten_vorschlag
+
+    fremd = asyncio.run(pflichten_vorschlag.uebersetzen(texte_de))
+    texte = {"de": dict(texte_de)}
+    for lang in pdb.SPRACHEN:
+        if lang != "de":
+            texte[lang] = {f: (fremd.get(lang) or {}).get(f, "") for f in pdb.TEXTFELDER}
+    return texte
+
+
+@app.route("/admin/pflichten")
+def admin_pflichten():
+    redir = _pflichten_admin_lesen()
+    if redir:
+        return redir
+    namen = _reg_namen()
+    katalog = []
+    for reg in REGULATIONS:
+        schritte = pdb.schritte_fuer(reg["key"], "de", nur_aktiv=False)
+        katalog.append({"key": reg["key"], "name": reg["name"], "schritte": schritte})
+    return render_template(
+        "admin_pflichten.html", katalog=katalog, namen=namen,
+        aktiv=pdb.einstellung("pflichten_plan_aktiv", "0") == "1",
+        offen=len(pdb.offene_vorschlaege()), darf_schreiben=_is_stamm_admin(),
+        datum=_datum_text, rollen=pflichten.ROLLEN, frist_typen=pdb.FRIST_TYPEN,
+        formular=None,
+    )
+
+
+@app.route("/admin/pflichten/schalter", methods=["POST"])
+def admin_pflichten_schalter():
+    redir = _pflichten_admin_schreiben()
+    if redir:
+        return redir
+    aktiv = request.form.get("aktiv") == "1"
+    pdb.setze_einstellung("pflichten_plan_aktiv", "1" if aktiv else "0")
+    flash("Pflichten-Plan für Mitglieder eingeschaltet." if aktiv
+          else "Pflichten-Plan für Mitglieder ausgeschaltet (nur Admins sehen ihn).", "success")
+    return redirect(url_for("admin_pflichten"))
+
+
+def _handpflege_formular(schritt: dict | None, reg_key: str, werte: dict | None = None):
+    de = ((schritt or {}).get("texte") or {}).get("de", {})
+    basis = {
+        "titel": de.get("titel", ""), "beschreibung": de.get("beschreibung", ""),
+        "daten": de.get("daten", ""),
+        **{k: ("" if (schritt or {}).get(k) is None else str(schritt[k]))
+           for k in pdb.SCHRITT_FELDER},
+    }
+    if schritt is None:
+        basis["frist_typ"] = "keine"
+        basis["sortierung"] = str(len(pdb.schritte_fuer(reg_key, "de", nur_aktiv=False)) + 1)
+    basis.update(werte or {})
+    return render_template(
+        "admin_pflichten.html", formular=basis, schritt=schritt, reg_key=reg_key,
+        reg_name=_reg_namen().get(reg_key, reg_key), rollen=pflichten.ROLLEN,
+        frist_typen=pdb.FRIST_TYPEN, darf_schreiben=_is_stamm_admin(), datum=_datum_text,
+    )
+
+
+def _handpflege_speichern(schritt: dict | None, reg_key: str):
+    form = request.form
+    if form.get("deaktivieren") == "1" and schritt is not None:
+        vid = pdb.neuer_vorschlag(reg_key, "deaktivieren", "hand", {},
+                                  schritt_id=schritt["id"], begruendung="Handpflege")
+        return redirect(url_for("admin_pflichten_vorschlag", vid=vid))
+
+    felder = _schritt_felder_aus_form(form)
+    texte_de = {f: (form.get(f) or "").strip() for f in pdb.TEXTFELDER}
+    fehler = pdb.pruefe_felder(felder, _heute())
+    if not texte_de["titel"]:
+        fehler.append("Titel darf nicht leer sein")
+    if fehler:
+        for f in fehler:
+            flash(f, "error")
+        return _handpflege_formular(schritt, reg_key, {**felder, **texte_de}), 400
+
+    alt_de = ((schritt or {}).get("texte") or {}).get("de", {})
+    if schritt is not None and all(texte_de[f] == (alt_de.get(f) or "") for f in pdb.TEXTFELDER):
+        # Deutscher Text unveraendert: vorhandene Uebersetzungen bleiben stehen.
+        texte = {}
+    else:
+        try:
+            texte = _uebersetzungen(texte_de)
+        except Exception as exc:  # noqa: BLE001 — Uebersetzung darf die Pflege nicht blockieren
+            app.logger.warning("Uebersetzung fuer Handpflege fehlgeschlagen: %s", exc)
+            flash("Übersetzung fehlgeschlagen; die deutschen Texte wurden für alle Sprachen "
+                  "übernommen. Bitte vor der Freigabe prüfen.", "error")
+            texte = {lang: dict(texte_de) for lang in pdb.SPRACHEN}
+    nachher = {**felder}
+    if texte:
+        nachher["texte"] = texte
+    vid = pdb.neuer_vorschlag(
+        reg_key, "aendern" if schritt else "neu", "hand", nachher,
+        schritt_id=schritt["id"] if schritt else None, begruendung="Handpflege",
+    )
+    return redirect(url_for("admin_pflichten_vorschlag", vid=vid))
+
+
+@app.route("/admin/pflichten/schritt/<int:sid>", methods=["GET", "POST"])
+def admin_pflichten_schritt(sid: int):
+    redir = (_pflichten_admin_schreiben() if request.method == "POST"
+             else _pflichten_admin_lesen())
+    if redir:
+        return redir
+    schritt = pdb.schritt(sid)
+    if not schritt:
+        abort(404)
+    if request.method == "POST":
+        return _handpflege_speichern(schritt, schritt["reg_key"])
+    return _handpflege_formular(schritt, schritt["reg_key"])
+
+
+@app.route("/admin/pflichten/neu/<reg_key>", methods=["GET", "POST"])
+def admin_pflichten_neu(reg_key: str):
+    redir = (_pflichten_admin_schreiben() if request.method == "POST"
+             else _pflichten_admin_lesen())
+    if redir:
+        return redir
+    if reg_key not in _reg_namen():
+        abort(404)
+    if request.method == "POST":
+        return _handpflege_speichern(None, reg_key)
+    return _handpflege_formular(None, reg_key)
+
+
+@app.route("/admin/pflichten/vorschlaege")
+def admin_pflichten_vorschlaege():
+    redir = _pflichten_admin_lesen()
+    if redir:
+        return redir
+    return render_template(
+        "admin_pflichten_vorschlag.html", liste=pdb.offene_vorschlaege(), v=None,
+        namen=_reg_namen(), darf_schreiben=_is_stamm_admin(), datum=_datum_text,
+    )
+
+
+@app.route("/admin/pflichten/vorschlag/<int:vid>")
+def admin_pflichten_vorschlag(vid: int):
+    redir = _pflichten_admin_lesen()
+    if redir:
+        return redir
+    v = pdb.vorschlag(vid)
+    if not v:
+        abort(404)
+    vorher = v["vorher"] or {}
+    nachher = v["nachher"] or {}
+    felder = []
+    for k in pdb.SCHRITT_FELDER:
+        alt = "" if vorher.get(k) is None else str(vorher.get(k))
+        neu = str(nachher[k]) if k in nachher and nachher[k] is not None else (
+            "" if k in nachher else alt)
+        felder.append({"name": k, "vorher": alt, "nachher": neu, "geaendert": alt != neu})
+    texte = []
+    for lang in pdb.SPRACHEN:
+        alt_t = (vorher.get("texte") or {}).get(lang, {})
+        neu_t = (nachher.get("texte") or {}).get(lang, {})
+        for f in pdb.TEXTFELDER:
+            alt = alt_t.get(f) or ""
+            neu = neu_t[f] if f in neu_t else alt
+            texte.append({"lang": lang, "name": f, "vorher": alt, "nachher": neu or "",
+                          "geaendert": alt != (neu or "")})
+    return render_template(
+        "admin_pflichten_vorschlag.html", v=v, liste=None, felder=felder, texte=texte,
+        namen=_reg_namen(), darf_schreiben=_is_stamm_admin() and v["status"] == "offen",
+        rollen=pflichten.ROLLEN, frist_typen=pdb.FRIST_TYPEN, datum=_datum_text,
+    )
+
+
+@app.route("/admin/pflichten/vorschlag/<int:vid>/freigeben", methods=["POST"])
+def admin_pflichten_freigeben(vid: int):
+    redir = _pflichten_admin_schreiben()
+    if redir:
+        return redir
+    v = pdb.vorschlag(vid)
+    if not v:
+        abort(404)
+    aenderungen: dict = {}
+    if v["art"] != "deaktivieren":
+        aenderungen = _schritt_felder_aus_form(request.form)
+        texte: dict = {}
+        for lang in pdb.SPRACHEN:
+            for f in pdb.TEXTFELDER:
+                schluessel = f"{f}_{lang}"
+                if schluessel in request.form:
+                    texte.setdefault(lang, {})[f] = request.form[schluessel].strip()
+        if texte:
+            aenderungen["texte"] = texte
+        fehler = pdb.pruefe_felder(
+            {**{k: v["nachher"][k] for k in pdb.SCHRITT_FELDER if k in v["nachher"]},
+             **{k: x for k, x in aenderungen.items() if k != "texte"}}, _heute())
+        if fehler:
+            for f in fehler:
+                flash(f, "error")
+            return redirect(url_for("admin_pflichten_vorschlag", vid=vid))
+    if pdb.freigeben(vid, session.get("user_email") or "", aenderungen or None, _heute()):
+        flash("Vorschlag freigegeben.", "success")
+    else:
+        flash("Vorschlag war nicht mehr offen oder ungültig; nichts geändert.", "error")
+    return redirect(url_for("admin_pflichten_vorschlaege"))
+
+
+@app.route("/admin/pflichten/vorschlag/<int:vid>/verwerfen", methods=["POST"])
+def admin_pflichten_verwerfen(vid: int):
+    redir = _pflichten_admin_schreiben()
+    if redir:
+        return redir
+    if pdb.verwerfen(vid, session.get("user_email") or "",
+                     (request.form.get("grund") or "")[:1000], _heute()):
+        flash("Vorschlag verworfen.", "success")
+    else:
+        flash("Vorschlag war nicht mehr offen; nichts geändert.", "error")
+    return redirect(url_for("admin_pflichten_vorschlaege"))
+
+
+@app.route("/admin/pflichten/export.json")
+def admin_pflichten_export():
+    redir = _pflichten_admin_lesen()
+    if redir:
+        return redir
+    return Response(
+        json.dumps(pdb.katalog_export(), ensure_ascii=False, indent=2),
+        mimetype="application/json",
+        headers={"Content-Disposition": "attachment; filename=pflichten-katalog.json"},
+    )
+
+
 @app.route("/set-language", methods=["POST"])
 def set_language():
     lang = request.form.get("language", "de")

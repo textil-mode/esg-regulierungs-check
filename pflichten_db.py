@@ -15,8 +15,10 @@ Importreihenfolge: `db` importiert dieses Modul erst innerhalb von
 """
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
+from datetime import date
 
 import db
 import i18n
@@ -336,3 +338,258 @@ def nutzer_zustand(user_id: int) -> tuple[dict[int, dict], dict[int, dict[str, s
         ):
             erledigt.setdefault(r["schritt_id"], {})[r["periode"]] = r["erledigt_am"]
     return schritte, erledigt
+
+
+# ---------- Vorschlaege und Freigabe ----------
+
+FRIST_TYPEN = ("relativ", "fest", "jaehrlich", "keine")
+SCHRITT_FELDER = ("rolle", "frist_typ", "frist_wert", "link", "quelle", "sortierung")
+VORSCHLAG_ARTEN = ("neu", "aendern", "deaktivieren")
+AUSLOESER = ("watchdog", "anwendungsbeginn", "startbestand", "hand")
+
+
+def pruefe_felder(felder: dict, today) -> list[str]:
+    """Prueft Schrittfelder (Admin-Eingabe oder KI-Vorschlag); Rueckgabe: Fehlertexte.
+
+    Nur vorhandene Felder werden geprueft (fehlend = unveraendert). Der
+    Frist-Wert wird gegen `pflichten.frist_fuer` gehalten: stuft der ihn als
+    `keine` ein, obwohl der Typ etwas anderes sagt, ist er unbrauchbar.
+    """
+    import pflichten
+
+    fehler = []
+    if "rolle" in felder and (felder["rolle"] or "") not in ("", *pflichten.ROLLEN):
+        fehler.append(f"Unbekannte Rolle: {felder['rolle']!r}")
+    typ = felder.get("frist_typ")
+    if "frist_typ" in felder and typ not in FRIST_TYPEN:
+        fehler.append(f"Unbekannter Frist-Typ: {typ!r}")
+    elif typ and typ != "keine":
+        wert = felder.get("frist_wert") or ""
+        # Anker weit in der Zukunft, damit 'relativ' nicht als 'laufend' gilt.
+        probe = pflichten.frist_fuer(typ, wert, "01.01.2999", today)
+        if probe["art"] == "keine":
+            fehler.append(f"Frist-Wert {wert!r} passt nicht zum Typ {typ!r}")
+    link = (felder.get("link") or "").strip()
+    if link and not link.lower().startswith(("http://", "https://")):
+        fehler.append("Link muss mit http:// oder https:// beginnen")
+    if "sortierung" in felder:
+        try:
+            int(felder["sortierung"])
+        except (TypeError, ValueError):
+            fehler.append("Sortierung muss eine Zahl sein")
+    return fehler
+
+
+def _schritt_snapshot(c: sqlite3.Connection, schritt_id: int) -> dict | None:
+    row = c.execute("SELECT * FROM pflicht_schritte WHERE id = ?", (schritt_id,)).fetchone()
+    if not row:
+        return None
+    out = {f: row[f] for f in (*SCHRITT_FELDER, "reg_key", "aktiv", "version")}
+    out["texte"] = _texte(c, [schritt_id]).get(schritt_id, {})
+    return out
+
+
+def neuer_vorschlag(reg_key: str, art: str, ausloeser: str, nachher: dict, *,
+                    schritt_id: int | None = None, ausloeser_ref: str = "",
+                    beleg: str = "", begruendung: str = "") -> int:
+    """Legt einen offenen Vorschlag an; `vorher_json` = aktueller Stand des Schritts."""
+    if art not in VORSCHLAG_ARTEN:
+        raise ValueError(f"unbekannte Art: {art!r}")
+    if ausloeser not in AUSLOESER:
+        raise ValueError(f"unbekannter Ausloeser: {ausloeser!r}")
+    if art != "neu" and schritt_id is None:
+        raise ValueError("aendern/deaktivieren braucht schritt_id")
+    with db._conn() as c:
+        vorher = None
+        if art != "neu":
+            vorher = _schritt_snapshot(c, schritt_id)
+            if vorher is None or vorher["reg_key"] != reg_key:
+                raise ValueError(f"Schritt {schritt_id} gehoert nicht zu {reg_key}")
+        cur = c.execute(
+            "INSERT INTO pflicht_vorschlaege (reg_key, schritt_id, art, ausloeser,"
+            " ausloeser_ref, vorher_json, nachher_json, beleg, begruendung, status,"
+            " erstellt_am) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'offen', ?)",
+            (reg_key, None if art == "neu" else schritt_id, art, ausloeser, ausloeser_ref,
+             json.dumps(vorher, ensure_ascii=False) if vorher is not None else None,
+             json.dumps(nachher or {}, ensure_ascii=False), beleg, begruendung,
+             date.today().isoformat()),
+        )
+        return cur.lastrowid
+
+
+def _vorschlag_dict(row: sqlite3.Row) -> dict:
+    out = dict(row)
+    out["vorher"] = json.loads(row["vorher_json"]) if row["vorher_json"] else None
+    out["nachher"] = json.loads(row["nachher_json"]) if row["nachher_json"] else {}
+    return out
+
+
+def offene_vorschlaege() -> list[dict]:
+    with db._conn() as c:
+        return [_vorschlag_dict(r) for r in c.execute(
+            "SELECT * FROM pflicht_vorschlaege WHERE status = 'offen'"
+            " ORDER BY reg_key, erstellt_am, id")]
+
+
+def vorschlag(vid: int) -> dict | None:
+    with db._conn() as c:
+        row = c.execute("SELECT * FROM pflicht_vorschlaege WHERE id = ?", (vid,)).fetchone()
+    return _vorschlag_dict(row) if row else None
+
+
+def _zusammenfuehren(nachher: dict, aenderungen: dict | None) -> dict:
+    """`aenderungen` ueberschreibt `nachher`; Texte je Sprache und Feld."""
+    out = {k: v for k, v in (nachher or {}).items() if k != "texte"}
+    texte = {lang: dict(f or {}) for lang, f in ((nachher or {}).get("texte") or {}).items()}
+    for k, v in (aenderungen or {}).items():
+        if k == "texte":
+            for lang, felder in (v or {}).items():
+                texte.setdefault(lang, {}).update(felder or {})
+        else:
+            out[k] = v
+    if texte:
+        out["texte"] = texte
+    return out
+
+
+def _schreibe_texte(c: sqlite3.Connection, sid: int, texte: dict) -> None:
+    for lang, felder in texte.items():
+        if lang not in SPRACHEN:
+            continue
+        felder = {f: str(felder[f] or "") for f in TEXTFELDER if f in (felder or {})}
+        if not felder:
+            continue
+        c.execute("INSERT OR IGNORE INTO pflicht_schritt_texte (schritt_id, sprache)"
+                  " VALUES (?, ?)", (sid, lang))
+        sets = ", ".join(f"{f} = ?" for f in felder)
+        c.execute(f"UPDATE pflicht_schritt_texte SET {sets} WHERE schritt_id = ? AND sprache = ?",
+                  (*felder.values(), sid, lang))
+
+
+_HINWEIS_TEXT = {"neu": "Neuer Schritt", "aendern": "Schritt geaendert",
+                 "deaktivieren": "Schritt entfaellt"}
+
+
+def freigeben(vid: int, admin_email: str, aenderungen: dict | None, today) -> bool:
+    """Wendet einen offenen Vorschlag an — atomar und hoechstens einmal.
+
+    Alles laeuft in einer Transaktion (`BEGIN IMMEDIATE`), der Status wird
+    darin geprueft: ein zweiter Aufruf (Doppelklick, zweiter Tab) liefert
+    `False` und aendert nichts. Ungueltige Felder oder ein verschwundener
+    Schritt ebenso (`False`, Rollback).
+    """
+    tag = today.isoformat()[:10]
+    c = db._conn()
+    c.isolation_level = None  # Transaktion selbst steuern
+    try:
+        c.execute("BEGIN IMMEDIATE")
+        row = c.execute("SELECT * FROM pflicht_vorschlaege WHERE id = ? AND status = 'offen'",
+                        (vid,)).fetchone()
+        if not row:
+            c.execute("ROLLBACK")
+            return False
+        v = _vorschlag_dict(row)
+        daten = _zusammenfuehren(v["nachher"], aenderungen)
+        felder = {k: daten[k] for k in SCHRITT_FELDER if k in daten}
+        # Frist-Typ und -Wert nur gemeinsam pruefen: fehlt einer, gilt der
+        # aktuelle des Schritts (sonst rutschte z. B. ein neuer Wert ungeprueft durch).
+        probe = dict(felder)
+        if v["art"] != "neu" and ("frist_typ" in probe) != ("frist_wert" in probe):
+            alt = _schritt_snapshot(c, v["schritt_id"]) or {}
+            probe.setdefault("frist_typ", alt.get("frist_typ"))
+            probe.setdefault("frist_wert", alt.get("frist_wert"))
+        if pruefe_felder(probe, today):
+            c.execute("ROLLBACK")
+            return False
+        if "sortierung" in felder:
+            felder["sortierung"] = int(felder["sortierung"])
+
+        if v["art"] == "neu":
+            basis = {"rolle": "", "frist_typ": "keine", "frist_wert": "", "link": None,
+                     "quelle": None, "sortierung": 0, **felder}
+            sid = c.execute(
+                "INSERT INTO pflicht_schritte (reg_key, sortierung, rolle, frist_typ,"
+                " frist_wert, link, quelle, aktiv, version, geprueft_am)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?)",
+                (v["reg_key"], basis["sortierung"], basis["rolle"] or "", basis["frist_typ"],
+                 basis["frist_wert"] or "", basis["link"] or None, basis["quelle"] or None, tag),
+            ).lastrowid
+        else:
+            sid = v["schritt_id"]
+            if _schritt_snapshot(c, sid) is None:
+                c.execute("ROLLBACK")
+                return False
+            if v["art"] == "deaktivieren":
+                felder = {"aktiv": 0}
+            else:
+                for k in ("rolle", "frist_wert"):
+                    if k in felder:
+                        felder[k] = felder[k] or ""
+                for k in ("link", "quelle"):
+                    if k in felder:
+                        felder[k] = felder[k] or None
+            sets = "".join(f"{k} = ?, " for k in felder)
+            c.execute(f"UPDATE pflicht_schritte SET {sets}version = version + 1,"
+                      " geprueft_am = ? WHERE id = ?", (*felder.values(), tag, sid))
+        if v["art"] != "deaktivieren":
+            _schreibe_texte(c, sid, daten.get("texte") or {})
+
+        # Schalter in derselben Verbindung lesen (keine zweite waehrend der Sperre).
+        schalter = c.execute("SELECT wert FROM pflicht_einstellungen"
+                             " WHERE schluessel = 'pflichten_plan_aktiv'").fetchone()
+        melden = (v["ausloeser"] != "startbestand"
+                  and schalter is not None and schalter[0] == "1")
+        if melden:
+            c.execute("UPDATE pflicht_schritte SET geaendert_am = ? WHERE id = ?", (tag, sid))
+
+        stand = _schritt_snapshot(c, sid)
+        c.execute(
+            "INSERT INTO pflicht_schritt_versionen (schritt_id, version, inhalt_json,"
+            " geaendert_am, geaendert_von, vorschlag_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (sid, stand["version"], json.dumps(stand, ensure_ascii=False), tag,
+             admin_email, vid),
+        )
+        if melden:
+            titel = (stand["texte"].get("de") or {}).get("titel", "")
+            c.execute(
+                "INSERT INTO pflicht_hinweise (user_id, reg_key, art, text_de, erstellt_am)"
+                " SELECT user_id, ?, 'inhalt', ?, ? FROM nutzer_pflichten"
+                " WHERE reg_key = ? AND entfallen_am IS NULL",
+                (v["reg_key"], f"{v['reg_key']}: {_HINWEIS_TEXT[v['art']]}: {titel}", tag,
+                 v["reg_key"]),
+            )
+        c.execute(
+            "UPDATE pflicht_vorschlaege SET status = 'freigegeben', schritt_id = ?,"
+            " entschieden_am = ?, entschieden_von = ? WHERE id = ?",
+            (sid, tag, admin_email, vid),
+        )
+        c.execute("COMMIT")
+        return True
+    except Exception:
+        if c.in_transaction:
+            c.execute("ROLLBACK")
+        raise
+    finally:
+        c.close()
+
+
+def verwerfen(vid: int, admin_email: str, grund: str, today) -> bool:
+    """Nur aus `offen`; der Schritt bleibt, wie er ist."""
+    with db._conn() as c:
+        cur = c.execute(
+            "UPDATE pflicht_vorschlaege SET status = 'verworfen', entschieden_am = ?,"
+            " entschieden_von = ?, grund = ? WHERE id = ? AND status = 'offen'",
+            (today.isoformat()[:10], admin_email, (grund or "").strip(), vid),
+        )
+        return cur.rowcount == 1
+
+
+def katalog_export() -> dict:
+    """Alle Schritte (auch deaktivierte) mit allen Texten, fuer den JSON-Download."""
+    with db._conn() as c:
+        rows = [dict(r) for r in c.execute(
+            "SELECT * FROM pflicht_schritte ORDER BY reg_key, sortierung, id")]
+        texte = _texte(c, [r["id"] for r in rows])
+    for r in rows:
+        r["texte"] = texte.get(r["id"], {})
+    return {"exportiert_am": date.today().isoformat(), "schritte": rows}
