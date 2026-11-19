@@ -5,7 +5,7 @@ Ausfuehren:  ./.venv/Scripts/python.exe test_pflichten_frist.py
 from __future__ import annotations
 
 import sys
-from datetime import date
+from datetime import date, datetime
 
 from pflichten import frist_fuer
 
@@ -44,6 +44,14 @@ case("fest kaputt", ("fest", "99.99.2027", "", TODAY), "keine")
 case("jaehrlich kaputt", ("jaehrlich", "xx", "", TODAY), "keine")
 case("unbekannter Typ", ("foo", "", "", TODAY), "keine")
 case("relativ Anker kaputt", ("relativ", "-6m", "kaputt", TODAY), "keine")
+case("datetime als today (relativ)", ("relativ", "-6m", "30.06.2027", datetime(2026, 11, 19, 8, 0)), "datum", date(2026, 12, 30))
+case("datetime als today (jaehrlich)", ("jaehrlich", "31.05.", "", datetime(2026, 11, 19, 8, 0)), "datum", date(2027, 5, 31), "2027")
+case("positiver Versatz, Datum in Zukunft", ("relativ", "+3m", "01.10.2026", TODAY), "datum", date(2027, 1, 1))
+case("positiver Versatz, Datum vorbei", ("relativ", "+1m", "01.10.2026", TODAY), "laufend")
+case("negativer Versatz, Anker vorbei", ("relativ", "-6m", "01.10.2026", TODAY), "laufend")
+case("jaehrlich 31.04. unmoeglich", ("jaehrlich", "31.04.", "", TODAY), "keine")
+case("jaehrlich 30.02. unmoeglich", ("jaehrlich", "30.02.", "", TODAY), "keine")
+case("jaehrlich 29.02. Schaltjahr", ("jaehrlich", "29.02.", "", date(2027, 11, 19)), "datum", date(2028, 2, 29), "2028")
 
 if _failures:
     print(f"\n{len(_failures)} FEHLER")

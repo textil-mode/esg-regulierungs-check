@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import calendar
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 _KEINE = {"art": "keine", "datum": None, "periode": ""}
 
@@ -39,6 +39,8 @@ def _stichtag(jahr: int, tag: int, monat: int) -> date:
 def frist_fuer(frist_typ: str, frist_wert: str, gilt_ab: str, today: date) -> dict:
     """Berechnet die Frist einer Pflicht. Wirft nie; ungueltig -> art 'keine'."""
     try:
+        if isinstance(today, datetime):
+            today = today.date()
         typ = (frist_typ or "").strip()
         wert = (frist_wert or "").strip()
         if typ == "fest":
@@ -51,7 +53,7 @@ def frist_fuer(frist_typ: str, frist_wert: str, gilt_ab: str, today: date) -> di
             if not m:
                 return _keine()
             tag, monat = int(m.group(1)), int(m.group(2))
-            if not (1 <= monat <= 12 and 1 <= tag <= 31):
+            if not (1 <= monat <= 12 and 1 <= tag <= calendar.monthrange(2024, monat)[1]):
                 return _keine()
             d = _stichtag(today.year, tag, monat)
             if d < today:
@@ -67,13 +69,13 @@ def frist_fuer(frist_typ: str, frist_wert: str, gilt_ab: str, today: date) -> di
             anker = _tag_monat_jahr(anker_text)
             if anker is None:
                 return _keine()
-            if anker <= today:
-                return {"art": "laufend", "datum": None, "periode": ""}
             n = int(m.group(2)) * (1 if m.group(1) == "+" else -1)
             if m.group(3) == "m":
                 d = _monate_addieren(anker, n)
             else:
                 d = anker + timedelta(days=n)
+            if anker <= today and not (n > 0 and d > today):
+                return {"art": "laufend", "datum": None, "periode": ""}
             return {"art": "datum", "datum": d, "periode": ""}
         return _keine()
     except Exception:
