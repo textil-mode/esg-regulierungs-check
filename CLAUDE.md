@@ -31,7 +31,7 @@
 | **Konto löschen** (eingeloggt, Passwort + Browser-Rückfrage; entfernt users/companies/analyses/password_resets per Kaskade und die Fehlversuche zur E-Mail; `analysis_cache` bleibt, weil anonym und geteilt) | `/konto-loeschen`, `db.delete_user` | ✅ |
 | **Testzugang** (48 h ab der ersten Anmeldung, danach automatisch gesperrt – nicht gelöscht; Kontoart bei der Freischaltung Pflicht und jederzeit wechselbar; eigener Mailtext bei Freischaltung und bei Ablauf) | `db.account_type`, `testzugang.py`, `/admin/konten/<id>/zugang` | ✅ |
 | **Konten entfernen durch den Admin** (eigene Spalte in der Kontenliste, Browser-Rückfrage; Admin-Konten, das eigene Konto und offene Anfragen gesperrt; Nachricht an die Person) | `/admin/konten/<id>/entfernen`, `db.delete_user` | ✅ |
-| **Datenschutzerklärung** der Anwendung (Hosting, Google-Gemini-Übermittlung, Autofill, Löschung) — nur Deutsch, bewusst nicht in `i18n.py` | `/datenschutz`, `templates/datenschutz.html` | ✅ |
+| **Datenschutzerklärung** der Anwendung (Hosting, Google-Gemini-Übermittlung, Autofill, Löschung; seit 19.11.2026 auch Pflichten-Plan und Erinnerungsmails — Freigabe durch die Rechtsabteilung offen) — nur Deutsch, bewusst nicht in `i18n.py` | `/datenschutz`, `templates/datenschutz.html` | ✅ |
 | **Passwort vergessen → Reset-Link per E-Mail** (SMTP mit STARTTLS auf Port 587, Versand im Hintergrund-Thread; Ticket + einmaliger 24h-Token, nur als SHA-256-Hash gespeichert). Ohne `SMTP_*`/`MAIL_FROM` faellt alles auf den Admin-Weg zurueck; Zustellprotokoll auf der Admin-Seite | `app._forgot_password`, `mailer.py`, `/admin/passwort-resets` | ✅ |
 | **Bremse gegen Mail-Fluten** (3 Anfragen je Adresse und 10 je Quell-IP in 60 min, ueber `db.take_quota` in derselben Tabelle wie die Login-Bremse) | `db.RESET_MAIL_*`, `app._forgot_password` | ✅ |
 | Stammdaten-Formular (inkl. Standorte, Produktkategorien, **Rolle in der Wertschoepfungskette**, **Materialien**) | `templates/dashboard.html` | ✅ |
@@ -69,6 +69,8 @@
 | "Passage" auf 280 Zeichen gekappt (+ " …"). Das statische `key_article` wird NICHT mehr vorangestellt — die Begruendungstexte tragen die Fundstelle seit Prompt v5 selbst, sonst stuenden zwei widerspruechliche Angaben da und die Kappung griffe nur auf den halben Text | `views.py` `_shorten_passage`, `_card_html` | ✅ |
 | Fehler-Regulierung als rote ✕-Karte sichtbar | `views.py` `APPLIES_ORDER` + `BADGE_STYLES` | ✅ |
 | i18n (DE / EN / ES / FR / IT / ZH) | `i18n.py` | ✅ |
+| **Pflichten-Plan „Meine Pflichten“** (Schritte je einschlägiger Regulierung mit Frist, Häkchen, Feld „zuständig“, Rollenfilter, Kalenderexport `.ics`; Erinnerungsmails 30/7 Tage vorher + Monatsübersicht; abbestellbar) — siehe eigenen Abschnitt. **Schalter `pflichten_plan_aktiv` steht auf aus** (nur Admins sehen die Seite) | `pflichten.py`, `pflichten_db.py`, `/meine-pflichten`, `templates/meine_pflichten.html` | 🟡 gebaut, nicht freigegeben |
+| **Pflichten-Katalog pflegen** (Handpflege, KI-Vorschläge aus Watchdog und Startbestand, Freigabe nur durch Stamm-Admins, Versionen, Export) | `pflichten_vorschlag.py`, `/admin/pflichten*`, `templates/admin_pflichten*.html` | 🟡 gebaut, Startbestand noch nicht freigegeben |
 | **Regulierungs-Assistent** (Chat unten rechts, nur angemeldet; Knopf "Nachfragen" je Ergebniskarte; Spracheingabe) — siehe eigenen Abschnitt | `assistent.py`, `static/assistent.js`, `/api/assistent`, `/api/assistent/sprache` | ✅ |
 
 ---
@@ -921,6 +923,75 @@ Chat unten rechts für angemeldete, freigeschaltete Konten. Vorbild: der go-text
   ohne Schalter 2 Threads nach `import app`, mit Schalter 1.
 - Tests: `test_assistent.py` (56 Prüfungen, Modell und Netz als Attrappe, eigene DB).
 
+### Pflichten-Plan „Meine Pflichten“ (19.11.2026, Branch `pflichten-plan`)
+
+Aus dem Ergebnis der Prüfung wird je einschlägiger Regulierung (`applies` = `ja`
+oder `moeglich`) eine Liste von Schritten mit Frist, die das Mitglied abhaken kann.
+Löst die festen „Ersten Schritte“ aus `regulations.FIRST_STEPS_BY_REG_KEY` /
+`i18n.FIRST_STEPS` ab. Spec: `docs/superpowers/specs/2026-11-19-pflichten-plan-design.md`.
+
+- **Datenmodell** (`pflichten_db.py`, angelegt in `db.init_db`): Katalog
+  `pflicht_schritte` + `pflicht_schritt_texte` (6 Sprachen) + `pflicht_schritt_versionen`;
+  Vorschläge `pflicht_vorschlaege`; je Konto `nutzer_pflichten` (erste Feststellung,
+  entfallen am, letzter Anwendungsbeginn), `nutzer_schritte` (zuständig, gesehene
+  Version), `nutzer_erledigt` (je Periode), `pflicht_erinnerungen` (Versandvermerke),
+  `pflicht_hinweise`; Einstellungen `pflicht_einstellungen`. Neue Spalte
+  `users.erinnerungen` (Default 1). Nutzertabellen hängen per ON DELETE CASCADE am
+  Konto, `pflicht_hinweise` löscht `db._delete_account_rows` selbst.
+- **Frist-Typen:** `relativ` (`-6m`, `-30d`, `+0d` zum Anwendungsbeginn), `fest`
+  (`31.12.2027`), `jaehrlich` (`31.05.`), `keine`. Gilt die Pflicht schon, ist ein
+  relativer Schritt `laufend` (kein Datum, keine Erinnerung, nie überfällig); ohne
+  Anwendungsbeginn `offen`. Berechnung in `pflichten.frist_fuer` / `plan_fuer`.
+- **Seiten für Mitglieder:** `/meine-pflichten` (Rollenfilter `?rolle=`),
+  `POST /meine-pflichten/<id>/erledigt|zustaendig|gesehen` (nur Schritte aus dem
+  eigenen Plan, sonst 404), `/meine-pflichten.ics`, `POST /konto/erinnerungen`
+  (Schalter auch unter „Passwort ändern“).
+- **Schalter `pflichten_plan_aktiv`** (Tabelle `pflicht_einstellungen`, Standard `0`):
+  aus = Seite nur für Admins, normale Konten bekommen 404, keine Erinnerungen, keine
+  Hinweise. Umschalten auf `/admin/pflichten` (nur Stamm-Admins).
+- **Env `PFLICHTEN_PLAN=aus`** (für den Legacy-Container `esg-regulierungs-check`):
+  Funktion komplett aus, auch für Admins; die Karten zeigen die ersten Schritte wieder
+  aus dem Code; der Watchdog macht keine Pflichten-Vorschläge.
+- **Admin-Seiten** (deutsch, lesen alle Admins, schreiben nur Stamm-Admins aus
+  `ADMIN_EMAILS` = `pflichten_db.STAMM_ADMINS`, sonst 403): `/admin/pflichten`
+  (Katalog, Schalter, Knopf „Startbestand prüfen“), `/admin/pflichten/schritt/<id>`
+  und `/admin/pflichten/neu/<reg_key>` (Handpflege, Übersetzung per KI),
+  `/admin/pflichten/vorschlaege` + `/admin/pflichten/vorschlag/<id>` (freigeben /
+  verwerfen), `/admin/pflichten/export.json`.
+- **Freigabe-Ablauf:** Die KI entwirft nur. Jeder Vorschlag (`ausloeser` =
+  `watchdog`, `startbestand`, `hand` …) bleibt `offen`, bis ein Stamm-Admin ihn
+  freigibt (atomar, `BEGIN IMMEDIATE`, Doppelklick ändert nichts) oder verwirft.
+  Der Watchdog (`watchdog.py`) erzeugt Vorschläge nur aus der deutschen Fassung,
+  nur für Regulierungen mit Katalogschritten, aus dem Diff-Auszug
+  (`lawparse.diff_auszug`); Admin-Mail `purpose='pflichten_vorschlag'`. In keinen
+  Prompt gehen Mitgliederdaten, nur Gesetzestext und Katalog.
+- **Startbestand:** `seed_aus_code` übernimmt die bisherigen ersten Schritte
+  (`herkunft_key`, idempotent, ohne Frist, `geprueft_am` leer). Knopf „Startbestand
+  prüfen“ lässt die KI im Hintergrund je ungeprüftem Schritt einen Vorschlag machen:
+  Änderung nur mit Beleg, sonst ein **Bestätigungs-Vorschlag** mit leerem Inhalt,
+  dessen Freigabe nur `geprueft_am` setzt. Freigaben aus dem Startbestand erzeugen
+  keine Hinweise an Mitglieder und kein „geändert, bitte prüfen“.
+- **Täglicher Lauf** `pflichten_erinnerung.py` (je Konto höchstens eine Mail:
+  Erinnerungen 30/7 Tage vorher, Hinweise, Datumsänderungen, Monatsübersicht im
+  ersten Lauf des Monats; Lebenszeichen an die Stamm-Admins einmal im Monat).
+  Nur bei Funktion an **und** Schalter an. Keine Mails an `approved = 0`,
+  `locked = 1`, `erinnerungen = 0`. Sprache `users.signup_lang`. Protokoll in
+  `mail_log` als `pflichten_erinnerung` bzw. `pflichten_lebenszeichen` (30 Tage).
+  Cron (nur Hauptcontainer, **noch einzurichten**):
+  `30 6 * * * docker exec esg-ki-textil-mode python pflichten_erinnerung.py >> /var/log/esg-pflichten.log 2>&1`
+  Von Hand: `python pflichten_erinnerung.py --probe` (sendet nichts, zeigt nur),
+  `--heute YYYY-MM-DD` setzt den Stichtag.
+- **Links in Mails:** `mailer.oeffentlicher_link(pfad)` mit `mailer.APP_PFAD`.
+- **Datenschutz:** `templates/datenschutz.html` Ziffer 2.8 (Stand 19.11.2026).
+- **Offen:** (1) Freigabe der Texte (Datenschutzerklärung, Mailtexte) durch die
+  Rechtsabteilung; (2) Cron auf dem VPS einrichten; (3) Startbestand prüfen lassen und
+  freigeben — **der Schalter bleibt aus, bis der Startbestand freigegeben ist**;
+  (4) im Legacy-Container `PFLICHTEN_PLAN=aus` setzen.
+- Belege: `test_pflichten_db.py`, `test_pflichten_frist.py`, `test_pflichten_plan.py`,
+  `test_pflichten_ansicht.py`, `test_pflichten_freigabe.py`,
+  `test_pflichten_vorschlag.py`, `test_pflichten_erinnerung.py` (eigene DBs, kein Netz,
+  kein LLM, festes Datum).
+
 ### Ausweichmodelle bei Lastspitzen (28.09.2026)
 
 Anlass: `gemini-3.1-flash-lite` antwortete minutenlang mit `503 high demand`. NFRD
@@ -1021,6 +1092,13 @@ Wenn ein Datum / eine Guideline-URL aktualisiert werden muss → direkt in `regu
 | `linkwaechter.py` | Woechentliche Linkpruefung mit Ersatzsuche und Mail (Cron), Ergebnis in `link_checks` |
 | `test_linkwaechter.py` | Tests dazu (eigene DB `data/esg_linkwaechter_test.db`, kein Netz/KI/Mail) |
 | `test_assistent.py` | Tests zum Assistenten (offline, eigene DB `data/esg_assistent_unit_test.db`) |
+| `pflichten_db.py` | Pflichten-Plan: Schema, Startbestand aus dem Code, Lese-/Schreibzugriffe, Vorschläge freigeben/verwerfen, Schalter `pflichten_plan_aktiv`, `STAMM_ADMINS` |
+| `pflichten.py` | Pflichten-Plan: Fristberechnung (`frist_fuer`) und Plan je Konto (`plan_fuer`) |
+| `pflichten_vorschlag.py` | KI-Vorschläge aus Watchdog und Startbestand, Übersetzungen, Admin-Mail; nur Gesetzestext und Katalog im Prompt |
+| `pflichten_erinnerung.py` | Täglicher Lauf (Cron): Erinnerungen, Hinweise, Monatsübersicht, Lebenszeichen; `--probe`, `--heute` |
+| `templates/meine_pflichten.html` | Seite „Meine Pflichten“ |
+| `templates/admin_pflichten*.html` | Admin-Seiten zum Pflichten-Katalog (Katalog, Handpflege, Vorschläge) |
+| `test_pflichten_*.py` | Tests zum Pflichten-Plan (DB, Frist, Plan, Ansicht, Freigabe, Vorschläge, Erinnerung; eigene DBs, kein Netz/LLM) |
 | `pdfexport.py` | PDF-Export der Ergebnisse (reportlab, textil+mode-CD) |
 | `autofill.py` | KI-Autofill der Stammdaten (Wikipedia/Wikidata/Website + LLM-Extraktion) |
 | `templates/base.html` | Layout, CSS, Logo, Topbar, Footer |
