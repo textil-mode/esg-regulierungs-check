@@ -88,14 +88,20 @@ ROLLEN = ["gf", "einkauf", "personal", "logistik", "produkt", "nachhaltigkeit", 
 
 
 def _geaendert(schritt: dict, erledigt_am: str | None, gesehen: int | None) -> bool:
-    if not erledigt_am or not schritt.get("geaendert_am"):
+    """Abgehakt, danach eine neue Version freigegeben (am selben Tag oder spaeter).
+
+    `setze_erledigt` setzt `gesehen_version` auf die Version beim Abhaken;
+    Versionen ohne `geaendert_am` (Startbestand) zaehlen nie.
+    """
+    geaendert_am = schritt.get("geaendert_am")
+    if not erledigt_am or not geaendert_am:
         return False
-    return (str(schritt["geaendert_am"]) > str(erledigt_am)
-            and (gesehen or 0) < int(schritt.get("version") or 1))
+    return ((gesehen or 0) < int(schritt.get("version") or 1)
+            and str(geaendert_am)[:10] >= str(erledigt_am)[:10])
 
 
 def _schritt_im_plan(s: dict, gilt_ab: str, today: date, zustand: dict,
-                     erledigungen: dict[str, str]) -> dict:
+                     erledigungen: dict[str, str], entfaellt: bool = False) -> dict:
     frist = frist_fuer(s.get("frist_typ"), s.get("frist_wert"), gilt_ab, today)
     jaehrlich = (s.get("frist_typ") or "").strip() == "jaehrlich"
     periode = frist["periode"] if jaehrlich else ""
@@ -111,7 +117,8 @@ def _schritt_im_plan(s: dict, gilt_ab: str, today: date, zustand: dict,
         "daten": s.get("daten", ""), "rolle": s.get("rolle", ""), "link": s.get("link"),
         "quelle": s.get("quelle"), "geprueft_am": s.get("geprueft_am"),
         "frist": frist,
-        "ueberfaellig": (frist["art"] == "datum" and frist["datum"] < today and not erledigt),
+        "ueberfaellig": (not entfaellt and frist["art"] == "datum"
+                         and frist["datum"] < today and not erledigt),
         "erledigt": erledigt, "erledigt_am": erledigt_am,
         "zustaendig": zustand.get("zustaendig"),
         "geaendert": erledigt and _geaendert(s, erledigt_am, zustand.get("gesehen_version")),
@@ -148,22 +155,25 @@ def plan_fuer(user_id: int, lang: str, today: date) -> dict:
 
     for zeile in pdb.nutzer_pflichten(user_id):
         reg_key = zeile["reg_key"]
+        entfaellt = zeile["entfallen_am"] is not None
         gilt_ab = ""
         if company is not None:
             info = deadlines.deadline_for(reg_key, profil, today)
             gilt_ab = (info or {}).get("gilt_ab") or ""
         schritte = [
             _schritt_im_plan(s, gilt_ab, today, zustaende.get(s["id"], {}),
-                             erledigt.get(s["id"], {}))
+                             erledigt.get(s["id"], {}), entfaellt)
             for s in pdb.schritte_fuer(reg_key, lang)
         ]
-        offene_daten = [s["frist"]["datum"] for s in schritte
-                        if not s["erledigt"] and s["frist"]["art"] == "datum"]
+        # Entfallene Pflichten haben keine naechste Frist und nichts Ueberfaelliges.
+        offene_daten = [] if entfaellt else [
+            s["frist"]["datum"] for s in schritte
+            if not s["erledigt"] and s["frist"]["art"] == "datum"]
         plan["pflichten"].append({
             "reg_key": reg_key,
             "name": (karten.get(reg_key) or {}).get("name") or namen.get(reg_key, reg_key),
             "gilt_ab": gilt_ab,
-            "entfaellt": zeile["entfallen_am"] is not None,
+            "entfaellt": entfaellt,
             "entfallen_am": zeile["entfallen_am"],
             "erledigt": sum(1 for s in schritte if s["erledigt"]),
             "gesamt": len(schritte),

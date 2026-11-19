@@ -288,6 +288,15 @@ def setze_erledigt(user_id: int, schritt_id: int, periode: str, erledigt: bool, 
                 " DO UPDATE SET erledigt_am = excluded.erledigt_am",
                 (user_id, schritt_id, periode or "", today.isoformat()[:10]),
             )
+            # Wer abhakt, hat den aktuellen Stand gesehen: "geaendert" erst nach
+            # einer spaeteren Freigabe (neue Version).
+            c.execute(
+                "INSERT INTO nutzer_schritte (user_id, schritt_id, gesehen_version)"
+                " SELECT ?, id, version FROM pflicht_schritte WHERE id = ?"
+                " ON CONFLICT(user_id, schritt_id) DO UPDATE SET"
+                " gesehen_version = excluded.gesehen_version",
+                (user_id, schritt_id),
+            )
         else:
             c.execute(
                 "DELETE FROM nutzer_erledigt WHERE user_id = ? AND schritt_id = ?"

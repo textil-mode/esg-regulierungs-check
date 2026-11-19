@@ -30,6 +30,7 @@ if TEST_DB.exists():
     TEST_DB.unlink()
 
 import db  # noqa: E402
+import deadlines  # noqa: E402
 import pflichten  # noqa: E402
 import pflichten_db as pdb  # noqa: E402
 
@@ -69,7 +70,7 @@ db.upsert_company(UID, {"name": "Lederwaren Test GmbH", "employees": 120,
 
 EUDR = [s["id"] for s in pdb.schritte_fuer("EUDR", "de")]
 CSRD = [s["id"] for s in pdb.schritte_fuer("CSRD", "de")]
-assert len(EUDR) >= 2 and CSRD, "Startbestand fehlt"
+assert len(EUDR) >= 4 and len(CSRD) >= 2, "Startbestand fehlt"
 
 
 def block_a() -> None:
@@ -245,8 +246,102 @@ def block_j() -> None:
           all(not s["erledigt"] for s in eudr["schritte"]))
 
 
+def block_k() -> None:
+    """Fix 1: 'geaendert' am selben Tag; Abhaken nach Aenderung; Startbestand."""
+    uid = db.create_user("geaendert@example.org", "Geheim-Passwort-123")
+    db.save_analysis(uid, _karten(EUDR="ja"))
+    sid = EUDR[2]
+    x = date(2027, 1, 10)
+    # (a) Abhaken an X, dann neue Version mit geaendert_am = X
+    pdb.setze_erledigt(uid, sid, "", True, x)
+    with db._conn() as c:
+        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?"
+                  " WHERE id = ?", (x.isoformat(), sid))
+    s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", x), "EUDR"), sid)
+    check("K (a) Aenderung am Tag des Abhakens -> geaendert", s["geaendert"] is True)
+    # (b) neue Version an X2, dann Abhaken an X2 -> nicht geaendert
+    x2 = date(2027, 1, 11)
+    pdb.setze_erledigt(uid, sid, "", False, x2)
+    with db._conn() as c:
+        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = ?"
+                  " WHERE id = ?", (x2.isoformat(), sid))
+    pdb.setze_erledigt(uid, sid, "", True, x2)
+    s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", x2), "EUDR"), sid)
+    check("K (b) Abhaken nach Aenderung am selben Tag -> nicht geaendert",
+          s["geaendert"] is False and s["erledigt"] is True)
+    # (c) Startbestand: neue Version ohne geaendert_am nach dem Abhaken
+    sid_c = EUDR[3]
+    pdb.setze_erledigt(uid, sid_c, "", True, x)
+    with db._conn() as c:
+        c.execute("UPDATE pflicht_schritte SET version = version + 1, geaendert_am = NULL"
+                  " WHERE id = ?", (sid_c,))
+    s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", x2), "EUDR"), sid_c)
+    check("K (c) Version ohne geaendert_am -> nicht geaendert", s["geaendert"] is False)
+    with db._conn() as c:
+        gesehen = c.execute("SELECT gesehen_version, zustaendig FROM nutzer_schritte"
+                            " WHERE user_id = ? AND schritt_id = ?", (uid, sid)).fetchone()
+        version = c.execute("SELECT version FROM pflicht_schritte WHERE id = ?",
+                            (sid,)).fetchone()[0]
+    check("K setze_erledigt setzt gesehen_version", gesehen["gesehen_version"] == version,
+          f"{gesehen['gesehen_version']} / {version}")
+    pdb.setze_zustaendig(uid, sid, "Einkauf")
+    pdb.setze_erledigt(uid, sid, "", True, x2)
+    with db._conn() as c:
+        z = c.execute("SELECT zustaendig FROM nutzer_schritte WHERE user_id = ? AND schritt_id = ?",
+                      (uid, sid)).fetchone()[0]
+    check("K setze_erledigt laesst zustaendig stehen", z == "Einkauf", str(z))
+
+
+def block_l() -> None:
+    """Fix 2: relative Frist mit Anker aus deadlines.deadline_for."""
+    sid = EUDR[3]
+    _setze_frist(sid, "relativ", "-1m")
+    # Profil 120 Beschaeftigte -> EUDR gilt ab 30.12.2026 (nicht klein)
+    anker = deadlines.deadline_for("EUDR", db.get_company(UID), HEUTE)["gilt_ab"]
+    check("L Anker EUDR 30.12.2026", anker == "30.12.2026", anker)
+    p = _pflicht(pflichten.plan_fuer(UID, "de", HEUTE), "EUDR")
+    s = _schritt(p, sid)
+    check("L gilt_ab der Pflicht", p["gilt_ab"] == "30.12.2026", p["gilt_ab"])
+    check("L relativ -1m -> 30.11.2026",
+          s["frist"] == {"art": "datum", "datum": date(2026, 11, 30), "periode": ""}, str(s["frist"]))
+    s = _schritt(_pflicht(pflichten.plan_fuer(UID, "de", date(2027, 1, 5)), "EUDR"), sid)
+    check("L nach Anwendungsbeginn -> laufend, nie ueberfaellig",
+          s["frist"]["art"] == "laufend" and s["ueberfaellig"] is False, str(s["frist"]))
+    uid = db.create_user("anker-ohne-profil@example.org", "Geheim-Passwort-123")
+    db.save_analysis(uid, _karten(EUDR="ja"))
+    s = _schritt(_pflicht(pflichten.plan_fuer(uid, "de", HEUTE), "EUDR"), sid)
+    check("L ohne Profil -> offen", s["frist"]["art"] == "offen", str(s["frist"]))
+
+
+def block_m() -> None:
+    """Fix 3: entfallene Pflicht ohne Ueberfaelliges und ohne naechste Frist;
+    fehlender Schluessel im Ergebnis laesst den Zustand stehen."""
+    uid = db.create_user("entfaellt@example.org", "Geheim-Passwort-123")
+    db.upsert_company(uid, {"name": "Test", "employees": 120})
+    _setze_frist(CSRD[0], "fest", "01.11.2026")
+    _setze_frist(CSRD[1], "fest", "31.12.2027")
+    db.save_analysis(uid, _karten(CSRD="moeglich"))
+    p = _pflicht(pflichten.plan_fuer(uid, "de", HEUTE), "CSRD")
+    check("M vorher: ueberfaellig und Frist", any(s["ueberfaellig"] for s in p["schritte"])
+          and p["naechste_frist"] == date(2026, 11, 1), str(p["naechste_frist"]))
+    # Schluessel fehlt ganz -> Zustand bleibt (nicht entfallen)
+    db.save_analysis(uid, _karten(EUDR="ja"))
+    p = _pflicht(pflichten.plan_fuer(uid, "de", HEUTE), "CSRD")
+    check("M fehlender Schluessel: bleibt im Plan, nicht entfallen",
+          p is not None and p["entfaellt"] is False)
+    db.save_analysis(uid, _karten(CSRD="nein"))
+    p = _pflicht(pflichten.plan_fuer(uid, "de", HEUTE), "CSRD")
+    check("M entfallen: kein Schritt ueberfaellig",
+          p["entfaellt"] is True and not any(s["ueberfaellig"] for s in p["schritte"]))
+    check("M entfallen: naechste_frist None", p["naechste_frist"] is None, str(p["naechste_frist"]))
+    db.save_analysis(uid, _karten(EUDR="ja"))
+    p2 = _pflicht(pflichten.plan_fuer(uid, "de", date(2026, 12, 3)), "CSRD")
+    check("M fehlender Schluessel: entfallen_am unveraendert",
+          p2["entfaellt"] is True and p2["entfallen_am"] == p["entfallen_am"], str(p2["entfallen_am"]))
+
+
 for block in (block_a, block_b, block_c, block_d, block_e, block_f, block_g, block_h,
-              block_i, block_j):
+              block_i, block_j, block_k, block_l, block_m):
     block()
 
 print()
