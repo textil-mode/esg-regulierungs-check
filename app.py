@@ -1558,6 +1558,7 @@ def admin_pflichten_vorschlaege():
         return redir
     return render_template(
         "admin_pflichten_vorschlag.html", liste=pdb.offene_vorschlaege(), v=None,
+        ist_bestaetigung=pdb.ist_bestaetigung,
         namen=_reg_namen(), darf_schreiben=_is_stamm_admin(), datum=_datum_text,
     )
 
@@ -1625,7 +1626,7 @@ def admin_pflichten_vorschlag(vid: int):
         "admin_pflichten_vorschlag.html", v=v, liste=None, felder=felder, texte=texte,
         namen=_reg_namen(), darf_schreiben=_is_stamm_admin() and v["status"] == "offen",
         rollen=pflichten.ROLLEN, frist_typen=pdb.FRIST_TYPEN, datum=_datum_text,
-        veraltet=veraltet, aktuell=aktuell,
+        veraltet=veraltet, aktuell=aktuell, ist_bestaetigung=pdb.ist_bestaetigung,
     )
 
 

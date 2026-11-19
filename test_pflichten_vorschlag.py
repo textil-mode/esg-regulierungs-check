@@ -238,8 +238,11 @@ def block_f() -> None:
 
 def block_g() -> None:
     print("\n--- G  Startbestand ---")
-    ungeprueft = [s for s in pdb.schritte_fuer("EUDR", "de") if not s["geprueft_am"]]
-    check("G ungepruefte EUDR-Schritte vorhanden", len(ungeprueft) >= 2, str(len(ungeprueft)))
+    # Schritte mit offenem Vorschlag (aus A-E) ueberspringt der Startbestand.
+    offen = {v["schritt_id"] for v in pdb.offene_vorschlaege()}
+    ungeprueft = [s for s in pdb.schritte_fuer("EUDR", "de")
+                  if not s["geprueft_am"] and s["id"] not in offen]
+    check("G ungepruefte EUDR-Schritte vorhanden", len(ungeprueft) >= 1, str(len(ungeprueft)))
     geladen = []
 
     def fake_fetch(reg, *, language="de", force=False):
@@ -253,7 +256,8 @@ def block_g() -> None:
             {"schritt_id": s["id"], "rolle": "einkauf", "frist_typ": "keine", "frist_wert": "",
              "daten": "Geodaten der Erzeugungsflaechen", "beleg": "Art. 9",
              "begruendung": "Art. 9 verlangt Geodaten"} for s in ungeprueft]
-            + [{"schritt_id": FREMD, "rolle": "gf", "beleg": "x"}]}
+            + [{"schritt_id": FREMD, "rolle": "gf", "beleg": "x"}]
+            + [{"schritt_id": sid, "rolle": "gf", "beleg": "x"} for sid in offen if sid]}
         vorher = _offen()
         ids = run(pv.startbestand_vorschlaege("EUDR", fake_ask(antwort)))
         check("G je ungeprueftem Schritt ein Vorschlag", len(ids) == len(ungeprueft),
@@ -518,19 +522,69 @@ def block_m() -> None:
         {"schritt_id": a["id"], "rolle": andere, "frist_typ": a["frist_typ"],
          "frist_wert": a["frist_wert"], "daten": a["daten"], "beleg": ""},
         {"schritt_id": b["id"], "rolle": b["rolle"], "frist_typ": b["frist_typ"],
-         "frist_wert": b["frist_wert"], "daten": b["daten"], "beleg": "§ 1"},
+         "frist_wert": b["frist_wert"], "daten": b["daten"], "beleg": "",
+         "begruendung": "Passt zum Gesetz"},
     ]}
     alt = pv.fetcher.fetch_law_text
     pv.fetcher.fetch_law_text = lambda reg, **kw: {"text": "§ 1 Anwendungsbereich"}
-    verworfen: list[str] = []
-    try:
-        vorher = _offen()
+
+    def lauf() -> tuple[list[int], list[str], str]:
+        verworfen: list[str] = []
         ids = run(pv.startbestand_vorschlaege(ZWEIT, fake_ask(antwort), verworfen=verworfen))
+        letzte = [u for sy, u in PROMPTS if sy == pv.SYSTEM_STARTBESTAND][-1]
+        return ids, verworfen, letzte
+
+    marke = f'"schritt_id": {b["id"]},'
+    try:
+        ids, verworfen, _ = lauf()
+        check("M Aenderung ohne Beleg verworfen", len(verworfen) == 1, str(verworfen))
+        check("M Bestaetigung als Vorschlag", len(ids) == 1, str(ids))
+        if len(ids) != 1:
+            return
+        v = pdb.vorschlag(ids[0])
+        check("M Bestaetigung: aendern, leeres nachher, Schritt b, startbestand",
+              v["art"] == "aendern" and v["nachher"] == {} and v["schritt_id"] == b["id"]
+              and v["ausloeser"] == "startbestand", str(v["nachher"]))
+        check("M Begruendung der KI", "Passt zum Gesetz" in (v["begruendung"] or ""))
+
+        stamm = _client(STAMM_ID, STAMM)
+        html = stamm.get(f"/admin/pflichten/vorschlag/{ids[0]}").get_data(as_text=True)
+        check("M Seite zeigt Bestaetigung", "Bestätigung, keine Änderung" in html)
+        html = stamm.get("/admin/pflichten/vorschlaege").get_data(as_text=True)
+        check("M Liste zeigt Bestaetigung", "Bestätigung, keine Änderung" in html)
+
+        ids2, _, prompt2 = lauf()
+        check("M zweiter Lauf: offener Vorschlag uebersprungen",
+              ids2 == [] and marke not in prompt2, str(ids2))
+
+        # Freigabe: nur geprueft_am, keine Version, kein Hinweis, kein geaendert_am.
+        pdb.setze_einstellung("pflichten_plan_aktiv", "1")
+        with db._conn() as c:
+            c.execute("INSERT OR IGNORE INTO nutzer_pflichten (user_id, reg_key,"
+                      " erste_feststellung) VALUES (?, ?, '2026-11-01')", (KONTO_ID, ZWEIT))
+        vorher = pdb.schritt(b["id"])
+        n_versionen = _eins("SELECT COUNT(*) FROM pflicht_schritt_versionen WHERE schritt_id = ?",
+                            (b["id"],))
+        n_hinweise = _eins("SELECT COUNT(*) FROM pflicht_hinweise")
+        ok = pdb.freigeben(ids[0], STAMM, None, HEUTE)
+        nach = pdb.schritt(b["id"])
+        check("M Freigabe ok", ok is True and pdb.vorschlag(ids[0])["status"] == "freigegeben")
+        check("M geprueft_am = heute", nach["geprueft_am"] == "2026-11-19", str(nach["geprueft_am"]))
+        check("M Version unveraendert", nach["version"] == vorher["version"])
+        check("M kein Versionseintrag", _eins(
+            "SELECT COUNT(*) FROM pflicht_schritt_versionen WHERE schritt_id = ?",
+            (b["id"],)) == n_versionen)
+        check("M geaendert_am unveraendert", nach["geaendert_am"] == vorher["geaendert_am"])
+        check("M kein Hinweis", _eins("SELECT COUNT(*) FROM pflicht_hinweise") == n_hinweise)
+        check("M Texte/Felder unveraendert", nach["texte"] == vorher["texte"]
+              and nach["rolle"] == vorher["rolle"])
+        pdb.setze_einstellung("pflichten_plan_aktiv", "0")
+
+        ids3, _, prompt3 = lauf()
+        check("M dritter Lauf: geprueft uebersprungen", ids3 == [] and marke not in prompt3,
+              str(ids3))
     finally:
         pv.fetcher.fetch_law_text = alt
-    check("M Aenderung ohne Beleg verworfen, Bestaetigung ohne Vorschlag",
-          ids == [] and _offen() == vorher, str(ids))
-    check("M beide gezaehlt", len(verworfen) == 2, str(verworfen))
 
 
 def block_n() -> None:

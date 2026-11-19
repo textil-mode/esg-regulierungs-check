@@ -154,8 +154,8 @@ async def uebersetzen(texte_de: dict, ask: Ask | None = None) -> dict[str, dict]
 
 # ---------- Pruefen und Anlegen ----------
 
-def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date
-                      ) -> dict | str:
+def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date,
+                      *, leer_erlaubt: bool = False) -> dict | str:
     """KI-Aenderung -> `{art, schritt, felder, texte_de}` oder Grund fuer Verwerfen.
 
     Prueft mit `pflichten_db.pruefe_felder` (Frist-Typ und -Wert gemeinsam,
@@ -201,7 +201,7 @@ def _pruefe_aenderung(reg_key: str, art: str, schritt_id, roh: dict, today: date
         texte_de = {f: t for f, t in texte_de.items() if t != _text(alt_de.get(f))}
         if "titel" in texte_de and not texte_de["titel"]:
             return "Titel darf nicht leer werden"
-        if not felder and not texte_de:
+        if not felder and not texte_de and not leer_erlaubt:
             return f"keine Aenderung an Schritt {schritt['id']}"
     return {"art": art, "schritt": schritt, "felder": felder, "texte_de": texte_de}
 
@@ -345,15 +345,16 @@ async def startbestand_vorschlaege(reg_key: str, ask: Ask | None = None, *,
                                    today: date | None = None) -> list[int]:
     """Je ungepruefter Schritt (`geprueft_am IS NULL`) hoechstens ein `aendern`-Vorschlag.
 
-    `ausloeser='startbestand'`. Nur echte, belegte Aenderungen: bestaetigt die
-    KI den Schritt unveraendert oder fehlt der Beleg, entsteht kein Vorschlag
-    (gezaehlt in `verworfen`). Schritte mit schon offenem Startbestand-Vorschlag
+    `ausloeser='startbestand'`. Eine Aenderung braucht einen Beleg (sonst
+    verworfen, gezaehlt in `verworfen`). Bestaetigt die KI den Schritt
+    unveraendert, entsteht ein Bestaetigungs-Vorschlag mit leerem `nachher`
+    (Beleg optional); seine Freigabe setzt nur `geprueft_am`. Schritte mit
+    offenem Vorschlag (gleich welcher Herkunft) oder gesetztem `geprueft_am`
     werden uebersprungen (kein Doppel).
     """
     today = today or date.today()
     reg = _reg(reg_key)
-    offen = {v["schritt_id"] for v in pdb.offene_vorschlaege()
-             if v["ausloeser"] == "startbestand" and v["reg_key"] == reg_key}
+    offen = {v["schritt_id"] for v in pdb.offene_vorschlaege() if v["reg_key"] == reg_key}
     ungeprueft = {s["id"]: s for s in pdb.schritte_fuer(reg_key, "de", nur_aktiv=True)
                   if not s.get("geprueft_am") and s["id"] not in offen}
     if not ungeprueft:
@@ -386,7 +387,7 @@ async def startbestand_vorschlaege(reg_key: str, ask: Ask | None = None, *,
             continue
         roh = {k: a[k] for k in _STARTBESTAND_FELDER if k in a}
         erledigt.add(sid)
-        geprueft = _pruefe_aenderung(reg_key, "aendern", sid, roh, today)
+        geprueft = _pruefe_aenderung(reg_key, "aendern", sid, roh, today, leer_erlaubt=True)
         if isinstance(geprueft, str):
             _verwerfen(verworfen, reg_key, geprueft)
             continue
@@ -396,7 +397,8 @@ async def startbestand_vorschlaege(reg_key: str, ask: Ask | None = None, *,
         except _Ungueltig as exc:
             _verwerfen(verworfen, reg_key, str(exc))
             continue
-        if not beleg:
+        bestaetigung = not geprueft["felder"] and not geprueft["texte_de"]
+        if not beleg and not bestaetigung:
             _verwerfen(verworfen, reg_key, f"Schritt {sid}: Aenderung ohne Beleg")
             continue
         ids.append(await _anlegen(reg_key, geprueft, "startbestand", ausloeser_ref="",

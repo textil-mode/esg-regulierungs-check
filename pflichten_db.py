@@ -422,6 +422,14 @@ def neuer_vorschlag(reg_key: str, art: str, ausloeser: str, nachher: dict, *,
         return cur.lastrowid
 
 
+def ist_bestaetigung(v: dict) -> bool:
+    """`aendern` ohne Inhalt: bestaetigt den Schritt unveraendert (Startbestand)."""
+    nachher = v.get("nachher") or {}
+    return (v.get("art") == "aendern"
+            and not any(k in nachher for k in SCHRITT_FELDER)
+            and not any(f for f in (nachher.get("texte") or {}).values()))
+
+
 def _vorschlag_dict(row: sqlite3.Row) -> dict:
     out = dict(row)
     out["vorher"] = json.loads(row["vorher_json"]) if row["vorher_json"] else None
@@ -523,6 +531,16 @@ def freigeben_mit_grund(vid: int, admin_email: str, aenderungen: dict | None,
             if alt is None:
                 return abbruch("ungültig: Schritt existiert nicht mehr")
         daten = _zusammenfuehren(v["nachher"], aenderungen)
+        if ist_bestaetigung({"art": v["art"], "nachher": daten}):
+            # Bestaetigung ohne Aenderung: nur geprueft_am — keine Version,
+            # kein Versionseintrag, kein geaendert_am, kein Hinweis.
+            c.execute("UPDATE pflicht_schritte SET geprueft_am = ? WHERE id = ?",
+                      (tag, v["schritt_id"]))
+            c.execute(
+                "UPDATE pflicht_vorschlaege SET status = 'freigegeben', entschieden_am = ?,"
+                " entschieden_von = ? WHERE id = ?", (tag, admin_email, vid))
+            c.execute("COMMIT")
+            return True, ""
         felder = {k: daten[k] for k in SCHRITT_FELDER if k in daten}
         # Frist-Typ und -Wert nur gemeinsam pruefen: fehlt einer, gilt der
         # aktuelle des Schritts (sonst rutschte z. B. ein neuer Wert ungeprueft durch).
