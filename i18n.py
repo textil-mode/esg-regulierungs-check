@@ -2716,6 +2716,170 @@ UI: dict[str, dict[str, str]] = {
         "it": "Domande sul suo risultato?",
         "zh": "对结果有疑问？",
     },
+    # ---------- Pflichten-Plan: Ansicht "Meine Pflichten" ----------
+    "nav_pflichten": {
+        "de": "Meine Pflichten", "en": "My obligations", "es": "Mis obligaciones",
+        "fr": "Mes obligations", "it": "I miei obblighi", "zh": "我的义务",
+    },
+    "pflichten_titel": {
+        "de": "Meine Pflichten", "en": "My obligations", "es": "Mis obligaciones",
+        "fr": "Mes obligations", "it": "I miei obblighi", "zh": "我的义务",
+    },
+    "pflichten_grundlage": {
+        "de": "Grundlage: Prüfung vom {datum} · {anzahl} Pflichten · {faellig} Schritte fällig in 90 Tagen",
+        "en": "Based on: check of {datum} · {anzahl} obligations · {faellig} steps due within 90 days",
+        "es": "Base: verificación del {datum} · {anzahl} obligaciones · {faellig} pasos con vencimiento en 90 días",
+        "fr": "Base : vérification du {datum} · {anzahl} obligations · {faellig} étapes à échéance dans 90 jours",
+        "it": "Base: verifica del {datum} · {anzahl} obblighi · {faellig} passi in scadenza entro 90 giorni",
+        "zh": "依据：{datum} 的检查 · {anzahl} 项义务 · {faellig} 个步骤将在 90 天内到期",
+    },
+    "pflichten_ohne_pruefung": {
+        "de": "Für Ihr Konto liegt noch keine Prüfung vor. Führen Sie zuerst den Check durch; danach entsteht hier Ihr Pflichten-Plan.",
+        "en": "There is no check for your account yet. Please run the check first; your obligations plan will then appear here.",
+        "es": "Todavía no hay ninguna verificación para su cuenta. Realice primero la verificación; después aparecerá aquí su plan de obligaciones.",
+        "fr": "Aucune vérification n’existe encore pour votre compte. Effectuez d’abord la vérification ; votre plan d’obligations apparaîtra ensuite ici.",
+        "it": "Per il suo account non è ancora disponibile alcuna verifica. Esegua prima la verifica; qui comparirà poi il suo piano degli obblighi.",
+        "zh": "您的账户尚无检查结果。请先进行检查，之后您的义务计划将显示在此处。",
+    },
+    "pflichten_gilt_ab": {
+        "de": "gilt für Sie ab {datum}", "en": "applies to you from {datum}",
+        "es": "se le aplica a partir del {datum}", "fr": "s’applique à vous à partir du {datum}",
+        "it": "si applica a lei dal {datum}", "zh": "自 {datum} 起对您适用",
+    },
+    "pflichten_laufend": {
+        "de": "laufend (Pflicht gilt bereits)", "en": "ongoing (obligation already applies)",
+        "es": "continuo (la obligación ya se aplica)", "fr": "en continu (l’obligation s’applique déjà)",
+        "it": "continuativo (l’obbligo si applica già)", "zh": "持续进行（义务已生效）",
+    },
+    "pflichten_offen": {
+        "de": "Termin offen (Anwendungsbeginn noch nicht bestimmt)",
+        "en": "date open (start of application not yet determined)",
+        "es": "fecha abierta (inicio de aplicación aún no determinado)",
+        "fr": "date ouverte (début d’application pas encore déterminé)",
+        "it": "data aperta (inizio dell’applicazione non ancora determinato)",
+        "zh": "日期待定（适用开始日期尚未确定）",
+    },
+    "pflichten_ueberfaellig": {
+        "de": "überfällig", "en": "overdue", "es": "vencido",
+        "fr": "en retard", "it": "scaduto", "zh": "已逾期",
+    },
+    "pflichten_bis": {
+        "de": "bis {datum}", "en": "by {datum}", "es": "hasta el {datum}",
+        "fr": "d’ici le {datum}", "it": "entro il {datum}", "zh": "截止 {datum}",
+    },
+    "pflichten_daten": {
+        "de": "Benötigte Daten", "en": "Data needed", "es": "Datos necesarios",
+        "fr": "Données nécessaires", "it": "Dati necessari", "zh": "所需数据",
+    },
+    "pflichten_zustaendig": {
+        "de": "Zuständig", "en": "Responsible", "es": "Responsable",
+        "fr": "Responsable", "it": "Responsabile", "zh": "负责人",
+    },
+    "pflichten_geprueft": {
+        "de": "geprüft am {datum}", "en": "reviewed on {datum}", "es": "revisado el {datum}",
+        "fr": "vérifié le {datum}", "it": "verificato il {datum}", "zh": "审核于 {datum}",
+    },
+    "pflichten_geaendert": {
+        "de": "geändert am {datum}, bitte prüfen", "en": "changed on {datum}, please review",
+        "es": "modificado el {datum}, revíselo", "fr": "modifié le {datum}, veuillez vérifier",
+        "it": "modificato il {datum}, la preghiamo di verificare", "zh": "已于 {datum} 更改，请核查",
+    },
+    "pflichten_entfaellt": {
+        "de": "Entfällt nach neuer Prüfung", "en": "No longer applicable after new check",
+        "es": "Ya no aplicable tras la nueva verificación",
+        "fr": "Ne s’applique plus après la nouvelle vérification",
+        "it": "Non più applicabile dopo la nuova verifica", "zh": "新检查后不再适用",
+    },
+    "pflichten_ics": {
+        "de": "Kalender (.ics)", "en": "Calendar (.ics)", "es": "Calendario (.ics)",
+        "fr": "Calendrier (.ics)", "it": "Calendario (.ics)", "zh": "日历 (.ics)",
+    },
+    "pflichten_erinnerungen_an": {
+        "de": "Erinnerungen per E-Mail: an", "en": "Email reminders: on",
+        "es": "Recordatorios por correo: activados", "fr": "Rappels par e-mail : activés",
+        "it": "Promemoria via e-mail: attivi", "zh": "电子邮件提醒：开启",
+    },
+    "pflichten_erinnerungen_aus": {
+        "de": "Erinnerungen per E-Mail: aus", "en": "Email reminders: off",
+        "es": "Recordatorios por correo: desactivados", "fr": "Rappels par e-mail : désactivés",
+        "it": "Promemoria via e-mail: disattivati", "zh": "电子邮件提醒：关闭",
+    },
+    "pflichten_filter_alle": {
+        "de": "Alle Bereiche", "en": "All departments", "es": "Todos los departamentos",
+        "fr": "Tous les services", "it": "Tutti i reparti", "zh": "所有部门",
+    },
+    "pflichten_haftung": {
+        "de": "Die Schritte sind eine Arbeitshilfe zur Orientierung und keine Rechtsberatung. Sie wurden mit Unterstützung einer künstlichen Intelligenz erstellt und von textil+mode geprüft; das Prüfdatum steht am jeweiligen Schritt.",
+        "en": "The steps are a working aid for orientation and do not constitute legal advice. They were drafted with the help of an artificial intelligence and reviewed by textil+mode; the review date is shown with each step.",
+        "es": "Los pasos son una ayuda de trabajo para orientarse y no constituyen asesoramiento jurídico. Se elaboraron con ayuda de una inteligencia artificial y fueron revisados por textil+mode; la fecha de revisión figura en cada paso.",
+        "fr": "Les étapes sont une aide de travail pour s’orienter et ne constituent pas un conseil juridique. Elles ont été rédigées avec l’aide d’une intelligence artificielle et vérifiées par textil+mode ; la date de vérification figure à chaque étape.",
+        "it": "I passi sono un supporto di lavoro per orientarsi e non costituiscono consulenza legale. Sono stati redatti con l’aiuto di un’intelligenza artificiale e verificati da textil+mode; la data di verifica è indicata per ciascun passo.",
+        "zh": "这些步骤是供参考的工作辅助，不构成法律咨询。它们在人工智能的辅助下编写，并经 textil+mode 审核；审核日期标注在各步骤旁。",
+    },
+    "pflichten_fortschritt": {
+        "de": "{erledigt} von {gesamt} erledigt", "en": "{erledigt} of {gesamt} done",
+        "es": "{erledigt} de {gesamt} hechos", "fr": "{erledigt} sur {gesamt} effectuées",
+        "it": "{erledigt} di {gesamt} completati", "zh": "已完成 {erledigt}/{gesamt}",
+    },
+    "pflichten_quelle": {
+        "de": "Quelle", "en": "Source", "es": "Fuente", "fr": "Source", "it": "Fonte", "zh": "来源",
+    },
+    "pflichten_verlauf": {
+        "de": "{periode} erledigt am {datum}", "en": "{periode} done on {datum}",
+        "es": "{periode} hecho el {datum}", "fr": "{periode} effectuée le {datum}",
+        "it": "{periode} completato il {datum}", "zh": "{periode} 年于 {datum} 完成",
+    },
+    "pflichten_gesehen": {
+        "de": "Gesehen", "en": "Seen", "es": "Visto", "fr": "Vu", "it": "Visto", "zh": "已查看",
+    },
+    "pflichten_speichern": {
+        "de": "Speichern", "en": "Save", "es": "Guardar", "fr": "Enregistrer", "it": "Salva", "zh": "保存",
+    },
+    "pflichten_abhaken": {
+        "de": "Als erledigt markieren", "en": "Mark as done", "es": "Marcar como hecho",
+        "fr": "Marquer comme effectuée", "it": "Segna come completato", "zh": "标记为已完成",
+    },
+    "pflichten_zuruecknehmen": {
+        "de": "Als offen markieren", "en": "Mark as open", "es": "Marcar como pendiente",
+        "fr": "Marquer comme ouverte", "it": "Segna come aperto", "zh": "标记为未完成",
+    },
+    "pflichten_seit": {
+        "de": "seit {datum}", "en": "since {datum}", "es": "desde el {datum}",
+        "fr": "depuis le {datum}", "it": "dal {datum}", "zh": "自 {datum} 起",
+    },
+    "pflichten_keine_schritte": {
+        "de": "Für diese Auswahl gibt es keine Schritte.", "en": "There are no steps for this selection.",
+        "es": "No hay pasos para esta selección.", "fr": "Aucune étape pour cette sélection.",
+        "it": "Non ci sono passi per questa selezione.", "zh": "此筛选条件下没有步骤。",
+    },
+    "rolle_gf": {
+        "de": "Geschäftsführung", "en": "Management", "es": "Dirección",
+        "fr": "Direction", "it": "Direzione", "zh": "管理层",
+    },
+    "rolle_einkauf": {
+        "de": "Einkauf", "en": "Purchasing", "es": "Compras",
+        "fr": "Achats", "it": "Acquisti", "zh": "采购",
+    },
+    "rolle_personal": {
+        "de": "Personal", "en": "Human resources", "es": "Recursos humanos",
+        "fr": "Ressources humaines", "it": "Risorse umane", "zh": "人力资源",
+    },
+    "rolle_logistik": {
+        "de": "Logistik", "en": "Logistics", "es": "Logística",
+        "fr": "Logistique", "it": "Logistica", "zh": "物流",
+    },
+    "rolle_produkt": {
+        "de": "Produktentwicklung", "en": "Product development", "es": "Desarrollo de producto",
+        "fr": "Développement produit", "it": "Sviluppo prodotto", "zh": "产品开发",
+    },
+    "rolle_nachhaltigkeit": {
+        "de": "Nachhaltigkeit", "en": "Sustainability", "es": "Sostenibilidad",
+        "fr": "Développement durable", "it": "Sostenibilità", "zh": "可持续发展",
+    },
+    "rolle_finanzen": {
+        "de": "Finanzen", "en": "Finance", "es": "Finanzas",
+        "fr": "Finances", "it": "Finanze", "zh": "财务",
+    },
 }
 
 

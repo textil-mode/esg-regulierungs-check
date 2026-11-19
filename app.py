@@ -11,7 +11,7 @@ import os
 import queue
 import secrets
 import threading
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -23,6 +23,7 @@ load_dotenv(override=True)
 from flask import (  # noqa: E402
     Flask,
     Response,
+    abort,
     flash,
     has_request_context,
     redirect,
@@ -36,6 +37,8 @@ from flask.sessions import SecureCookieSessionInterface
 
 import assistent
 import db
+import pflichten
+import pflichten_db as pdb
 import testzugang
 import mailer
 from i18n import (
@@ -334,6 +337,7 @@ def _inject_globals():
         # sonst einen Admin ohne Menuepunkte (oder umgekehrt tote Links).
         # Den Zugang regeln weiterhin die Routen, nicht diese Anzeige.
         is_admin=_is_admin(),
+        pflichten_sichtbar=bool(session.get("user_id")) and _pflichten_sichtbar(),
         LANGUAGES=LANGUAGES,
         BRANCH_LABELS=BRANCH_LABELS,
         SITE_TYPE_LABELS=SITE_TYPE_LABELS,
@@ -878,7 +882,7 @@ def change_password():
             flash(t("ok_pw_changed", lang), "success")
             return redirect(url_for("dashboard"))
 
-    return render_template("password_change.html")
+    return render_template("password_change.html", erinnerungen=_erinnerungen_an(_uid()))
 
 
 @app.route("/konto-loeschen", methods=["POST"])
@@ -1367,6 +1371,252 @@ def privacy():
     abdeckt. Das Impressum verweist dagegen unveraendert auf textil-mode.de.
     """
     return render_template("datenschutz.html")
+
+
+# ---------------------------------------------------------------------------
+# Pflichten-Plan: "Meine Pflichten", Kalenderexport, Erinnerungsschalter
+# ---------------------------------------------------------------------------
+def _heute() -> date:
+    """Heutiges Datum; eigene Funktion, damit Tests ein festes Datum setzen koennen."""
+    return date.today()
+
+
+def _pflichten_sichtbar() -> bool:
+    """Funktion an (Env) und Schalter in der DB an — sonst nur fuer Admins."""
+    if not pdb.funktion_aktiv():
+        return False
+    return pdb.einstellung("pflichten_plan_aktiv", "0") == "1" or _is_admin()
+
+
+def _pflichten_zugang():
+    """Login + Sichtbarkeit; Umleitung zur Anmeldung oder 404."""
+    redir = _require_login()
+    if redir:
+        return redir
+    if not _pflichten_sichtbar():
+        abort(404)
+    return None
+
+
+def _datum_text(wert) -> str:
+    """date oder ISO-Text ('2026-11-19…') -> '19.11.2026'; sonst unveraendert."""
+    if isinstance(wert, date):
+        return wert.strftime("%d.%m.%Y")
+    text = str(wert or "")
+    try:
+        return datetime.strptime(text[:10], "%Y-%m-%d").strftime("%d.%m.%Y")
+    except ValueError:
+        return text
+
+
+def _rolle_param(wert: str | None) -> str:
+    wert = (wert or "").strip()
+    return wert if wert in pflichten.ROLLEN else ""
+
+
+def _plan_gefiltert(uid: int, lang: str, heute: date, rolle: str) -> dict:
+    """Plan mit Rollenfilter: Schritte anderer Rollen fallen weg, leere Pflichten auch."""
+    plan = pflichten.plan_fuer(uid, lang, heute)
+    if rolle:
+        behalten = []
+        for p in plan["pflichten"]:
+            schritte = [s for s in p["schritte"] if s["rolle"] == rolle]
+            if not schritte:
+                continue
+            offen = [s["frist"]["datum"] for s in schritte
+                     if not s["erledigt"] and s["frist"]["art"] == "datum"]
+            behalten.append({**p, "schritte": schritte,
+                             "erledigt": sum(1 for s in schritte if s["erledigt"]),
+                             "gesamt": len(schritte),
+                             "naechste_frist": None if p["entfaellt"] or not offen
+                             else min(offen)})
+        plan["pflichten"] = behalten
+    return plan
+
+
+def _eigener_schritt(uid: int, schritt_id: int, heute: date) -> dict:
+    """Schritt aus dem eigenen Plan (aktiv, Pflicht nicht entfallen) — sonst 404.
+
+    Die Periode eines jaehrlichen Schritts kommt aus dieser Berechnung, nie
+    aus dem Formular.
+    """
+    plan = pflichten.plan_fuer(uid, _lang(), heute)
+    for p in plan["pflichten"]:
+        if p["entfaellt"]:
+            continue
+        for s in p["schritte"]:
+            if s["id"] == schritt_id:
+                return {**s, "reg_key": p["reg_key"]}
+    abort(404)
+
+
+def _zurueck_zur_liste(reg_key: str = ""):
+    rolle = _rolle_param(request.form.get("rolle"))
+    ziel = url_for("meine_pflichten", rolle=rolle or None)
+    if reg_key:
+        ziel += f"#p-{reg_key}"
+    return redirect(ziel)
+
+
+def _erinnerungen_an(uid: int) -> bool:
+    with db._conn() as c:
+        row = c.execute("SELECT erinnerungen FROM users WHERE id = ?", (uid,)).fetchone()
+    return bool(row and row["erinnerungen"])
+
+
+@app.route("/meine-pflichten")
+def meine_pflichten():
+    zugang = _pflichten_zugang()
+    if zugang:
+        return zugang
+    uid = _uid()
+    lang = _lang()
+    heute = _heute()
+    rolle = _rolle_param(request.args.get("rolle"))
+    plan = _plan_gefiltert(uid, lang, heute, rolle)
+
+    aktiv = [p for p in plan["pflichten"] if not p["entfaellt"]]
+    entfallen = [p for p in plan["pflichten"] if p["entfaellt"]]
+    # "geaendert am": nur fuer die (seltenen) markierten Schritte nachlesen.
+    for p in aktiv:
+        for s in p["schritte"]:
+            if s["geaendert"]:
+                s["geaendert_am"] = (pdb.schritt(s["id"]) or {}).get("geaendert_am")
+    grenze = heute + timedelta(days=90)
+    faellig = sum(1 for p in aktiv for s in p["schritte"]
+                  if not s["erledigt"] and s["frist"]["art"] == "datum"
+                  and s["frist"]["datum"] <= grenze)
+    return render_template(
+        "meine_pflichten.html",
+        plan=plan, aktiv=aktiv, entfallen=entfallen, rolle=rolle,
+        rollen=pflichten.ROLLEN, faellig=faellig, heute=heute,
+        datum=_datum_text, erinnerungen=_erinnerungen_an(uid),
+    )
+
+
+@app.route("/meine-pflichten/<int:schritt_id>/erledigt", methods=["POST"])
+def pflicht_erledigt(schritt_id: int):
+    zugang = _pflichten_zugang()
+    if zugang:
+        return zugang
+    heute = _heute()
+    s = _eigener_schritt(_uid(), schritt_id, heute)
+    pdb.setze_erledigt(_uid(), schritt_id, s["frist"]["periode"],
+                       request.form.get("erledigt") == "1", heute)
+    return _zurueck_zur_liste(s["reg_key"])
+
+
+@app.route("/meine-pflichten/<int:schritt_id>/zustaendig", methods=["POST"])
+def pflicht_zustaendig(schritt_id: int):
+    zugang = _pflichten_zugang()
+    if zugang:
+        return zugang
+    s = _eigener_schritt(_uid(), schritt_id, _heute())
+    pdb.setze_zustaendig(_uid(), schritt_id, request.form.get("zustaendig", ""))
+    return _zurueck_zur_liste(s["reg_key"])
+
+
+@app.route("/meine-pflichten/<int:schritt_id>/gesehen", methods=["POST"])
+def pflicht_gesehen(schritt_id: int):
+    zugang = _pflichten_zugang()
+    if zugang:
+        return zugang
+    s = _eigener_schritt(_uid(), schritt_id, _heute())
+    aktuell = pdb.schritt(schritt_id)
+    if not aktuell:
+        abort(404)
+    pdb.markiere_gesehen(_uid(), schritt_id, int(aktuell["version"] or 1))
+    return _zurueck_zur_liste(s["reg_key"])
+
+
+def _ics_text(wert: str) -> str:
+    """TEXT-Wert nach RFC 5545, 3.3.11: Backslash, Semikolon, Komma, Zeilenumbruch."""
+    wert = (wert or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,")
+    return wert.replace("\r\n", "\\n").replace("\r", "\\n").replace("\n", "\\n")
+
+
+def _ics_falten(zeile: str) -> str:
+    """Faltet eine Inhaltszeile auf hoechstens 75 Oktette (RFC 5545, 3.1).
+
+    Getrennt wird nur zwischen ganzen Zeichen, damit kein UTF-8-Zeichen
+    zerbricht; Folgezeilen beginnen mit einem Leerzeichen (zaehlt mit).
+    """
+    teile, aktuell, laenge, grenze = [], "", 0, 75
+    for zeichen in zeile:
+        n = len(zeichen.encode("utf-8"))
+        if laenge + n > grenze:
+            teile.append(aktuell)
+            aktuell, laenge, grenze = " ", 1, 75
+        aktuell += zeichen
+        laenge += n
+    teile.append(aktuell)
+    return "\r\n".join(teile)
+
+
+@app.route("/meine-pflichten.ics")
+def meine_pflichten_ics():
+    zugang = _pflichten_zugang()
+    if zugang:
+        return zugang
+    uid = _uid()
+    lang = _lang()
+    heute = _heute()
+    plan = _plan_gefiltert(uid, lang, heute, _rolle_param(request.args.get("rolle")))
+    stempel = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    seite = (_public_origin() or request.host_url.rstrip("/")) + url_for("meine_pflichten")
+
+    zeilen = [
+        "BEGIN:VCALENDAR", "VERSION:2.0",
+        "PRODID:-//textil+mode//ESG-Regulierungs-Check//DE",
+        "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+        "X-WR-CALNAME:" + _ics_text(t("pflichten_titel", lang)),
+    ]
+    for p in plan["pflichten"]:
+        if p["entfaellt"]:
+            continue
+        for s in p["schritte"]:
+            if s["erledigt"] or s["frist"]["art"] != "datum":
+                continue
+            tag = s["frist"]["datum"]
+            beschreibung = [s["beschreibung"]]
+            if s["daten"]:
+                beschreibung.append(f'{t("pflichten_daten", lang)}: {s["daten"]}')
+            if s["zustaendig"]:
+                beschreibung.append(f'{t("pflichten_zustaendig", lang)}: {s["zustaendig"]}')
+            beschreibung.append(seite)
+            zeilen += [
+                "BEGIN:VEVENT",
+                f"UID:pflicht-{uid}-{s['id']}-{tag.strftime('%Y%m%d')}@ki-textil-mode.de",
+                f"DTSTAMP:{stempel}",
+                f"DTSTART;VALUE=DATE:{tag.strftime('%Y%m%d')}",
+                f"DTEND;VALUE=DATE:{(tag + timedelta(days=1)).strftime('%Y%m%d')}",
+                "SUMMARY:" + _ics_text(f"{p['name']}: {s['titel']}"),
+                "DESCRIPTION:" + _ics_text("\n".join(b for b in beschreibung if b)),
+                "URL:" + seite,
+                "TRANSP:TRANSPARENT",
+                "END:VEVENT",
+            ]
+    zeilen.append("END:VCALENDAR")
+    rumpf = "\r\n".join(_ics_falten(z) for z in zeilen) + "\r\n"
+    return Response(
+        rumpf.encode("utf-8"), mimetype="text/calendar",
+        headers={"Content-Disposition": 'attachment; filename="meine-pflichten.ics"',
+                 "Cache-Control": "no-store"},
+    )
+
+
+@app.route("/konto/erinnerungen", methods=["POST"])
+def konto_erinnerungen():
+    redir = _require_login()
+    if redir:
+        return redir
+    an = 1 if request.form.get("an") == "1" else 0
+    with db._conn() as c:
+        c.execute("UPDATE users SET erinnerungen = ? WHERE id = ?", (an, _uid()))
+    ziel = request.form.get("zurueck")
+    if ziel == "pflichten" and _pflichten_sichtbar():
+        return redirect(url_for("meine_pflichten"))
+    return redirect(url_for("change_password"))
 
 
 # ---------------------------------------------------------------------------

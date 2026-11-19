@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .pf-kopf { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 18px; }
+  .pf-kopf h2 { margin-bottom: 4px; }
+  .pf-werkzeuge { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .pf-werkzeuge form { margin: 0; }
+  .pf-werkzeuge .btn { padding: 6px 14px; font-size: 13.5px; }
+  .pf-werkzeuge select { width: auto; min-height: 34px; font-size: 13.5px; }
+  .pf-grundlage { color: var(--tm-muted); font-size: 14px; }
+  .pf-haftung { background: var(--tm-box); border-left: 3px solid var(--tm-navy); padding: 10px 14px; font-size: 13.5px; margin: 14px 0 18px; }
+  .pf-pflicht { border: 1px solid var(--tm-line); margin-bottom: 10px; }
+  .pf-pflicht > summary { cursor: pointer; padding: 11px 14px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; list-style-position: inside; }
+  .pf-pflicht > summary:focus-visible { outline: 2px solid var(--tm-link); outline-offset: 2px; }
+  .pf-pflicht[open] > summary { border-bottom: 1px solid var(--tm-line); background: var(--tm-box); }
+  .pf-name { font-weight: 700; color: var(--tm-navy); }
+  .pf-gilt { color: var(--tm-muted); font-weight: 400; }
+  .pf-stand { font-size: 13.5px; color: var(--tm-muted); }
+  .pf-schritte { list-style: none; padding: 4px 14px 8px; }
+  .pf-schritt { display: grid; grid-template-columns: 34px 1fr; gap: 0 10px; padding: 10px 0; border-bottom: 1px solid var(--tm-line); }
+  .pf-schritt:last-child { border-bottom: 0; }
+  .pf-haken { margin: 0; }
+  .pf-haken button { width: 28px; height: 28px; border: 1px solid var(--tm-navy); border-radius: 4px; background: #FFFFFF; color: var(--tm-navy); font: 700 17px/1 Arial, Helvetica, sans-serif; cursor: pointer; }
+  .pf-haken button[aria-pressed="true"] { background: var(--tm-navy); color: #FFFFFF; }
+  .pf-titel { font-weight: 700; }
+  .pf-schritt.is-erledigt .pf-titel { color: var(--tm-muted); text-decoration: line-through; }
+  .pf-meta { font-size: 13.5px; color: var(--tm-muted); margin-top: 2px; }
+  .pf-frist-ueber { color: var(--tm-red); font-weight: 700; }
+  .pf-marke { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 3px; margin-left: 4px; }
+  .pf-marke-ueber { background: var(--tm-red); color: #FFFFFF; }
+  .pf-marke-geaendert { background: var(--tm-orange); color: var(--tm-navy); }
+  .pf-text { font-size: 14px; margin-top: 4px; }
+  .pf-zustaendig { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+  .pf-zustaendig label { margin: 0; font-size: 13.5px; }
+  .pf-zustaendig input[type="text"] { max-width: 260px; padding: 4px 8px; min-height: 30px; font-size: 13.5px; }
+  .pf-zustaendig .btn, .pf-gesehen .btn { padding: 3px 12px; font-size: 13px; }
+  .pf-gesehen { display: inline; margin-left: 6px; }
+  .pf-entfallen > summary { color: var(--tm-muted); }
+  .pf-leer { color: var(--tm-muted); }
+</style>
+
+<div class="section">
+  <div class="pf-kopf">
+    <div>
+      <h2>{{ t("pflichten_titel", lang) }}</h2>
+      {% if plan.grundlage %}
+      <div class="pf-grundlage">{{ t("pflichten_grundlage", lang).format(datum=datum(plan.grundlage), anzahl=aktiv|length, faellig=faellig) }}</div>
+      {% endif %}
+    </div>
+    <div class="pf-werkzeuge">
+      {% if plan.grundlage %}
+      <form method="get" action="{{ url_for('meine_pflichten') }}">
+        <select name="rolle" aria-label="{{ t('pflichten_filter_alle', lang) }}" onchange="this.form.submit()">
+          <option value="">{{ t("pflichten_filter_alle", lang) }}</option>
+          {% for r in rollen %}
+          <option value="{{ r }}" {{ 'selected' if r == rolle else '' }}>{{ t("rolle_" ~ r, lang) }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button type="submit" class="btn btn-secondary">OK</button></noscript>
+      </form>
+      <a class="btn btn-secondary" href="{{ url_for('meine_pflichten_ics', rolle=rolle or None) }}">{{ t("pflichten_ics", lang) }}</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('konto_erinnerungen') }}">
+        <input type="hidden" name="an" value="{{ '0' if erinnerungen else '1' }}">
+        <input type="hidden" name="zurueck" value="pflichten">
+        <button type="submit" class="btn btn-secondary" aria-pressed="{{ 'true' if erinnerungen else 'false' }}">{{ t("pflichten_erinnerungen_an" if erinnerungen else "pflichten_erinnerungen_aus", lang) }}</button>
+      </form>
+    </div>
+  </div>
+
+  <p class="pf-haftung">{{ t("pflichten_haftung", lang) }}</p>
+
+  {% if not plan.grundlage %}
+  <p>{{ t("pflichten_ohne_pruefung", lang) }}</p>
+  <p><a class="btn btn-primary" href="{{ url_for('dashboard') }}">{{ t("nav_check", lang) }}</a></p>
+  {% else %}
+
+  {% if not aktiv and not entfallen %}
+  <p class="pf-leer">{{ t("pflichten_keine_schritte", lang) }}</p>
+  {% endif %}
+
+  {% for p in aktiv %}
+  {% set hat_ueber = p.schritte | selectattr("ueberfaellig") | list %}
+  <details class="pf-pflicht" id="p-{{ p.reg_key }}" {{ 'open' if loop.first or hat_ueber else '' }}>
+    <summary>
+      <span class="pf-name">{{ p.name }}{% if p.gilt_ab %} <span class="pf-gilt">– {{ t("pflichten_gilt_ab", lang).format(datum=p.gilt_ab) }}</span>{% endif %}</span>
+      <span class="pf-stand">{{ t("pflichten_fortschritt", lang).format(erledigt=p.erledigt, gesamt=p.gesamt) }}{% if hat_ueber %} <span class="pf-marke pf-marke-ueber">{{ t("pflichten_ueberfaellig", lang) }}</span>{% endif %}</span>
+    </summary>
+    <ul class="pf-schritte">
+      {% for s in p.schritte %}
+      <li class="pf-schritt{{ ' is-erledigt' if s.erledigt else '' }}" id="s-{{ s.id }}" data-frist="{{ s.frist.art }}">
+        <form method="post" class="pf-haken" action="{{ url_for('pflicht_erledigt', schritt_id=s.id) }}">
+          <input type="hidden" name="erledigt" value="{{ '0' if s.erledigt else '1' }}">
+          <input type="hidden" name="rolle" value="{{ rolle }}">
+          <button type="submit" aria-pressed="{{ 'true' if s.erledigt else 'false' }}"
+                  title="{{ t('pflichten_zuruecknehmen' if s.erledigt else 'pflichten_abhaken', lang) }}"
+                  aria-label="{{ t('pflichten_zuruecknehmen' if s.erledigt else 'pflichten_abhaken', lang) }}: {{ s.titel }}">{{ '✓' if s.erledigt else '' }}</button>
+        </form>
+        <div>
+          <div class="pf-titel">{{ s.titel }}</div>
+          <div class="pf-meta">
+            {% if s.frist.art == "datum" %}
+            <span class="{{ 'pf-frist-ueber' if s.ueberfaellig else '' }}">{{ t("pflichten_bis", lang).format(datum=datum(s.frist.datum)) }}</span>{% if s.ueberfaellig %}<span class="pf-marke pf-marke-ueber">{{ t("pflichten_ueberfaellig", lang) }}</span>{% endif %}
+            {% elif s.frist.art == "laufend" %}
+            <span>{{ t("pflichten_laufend", lang) }}</span>
+            {% elif s.frist.art == "offen" %}
+            <span>{{ t("pflichten_offen", lang) }}</span>
+            {% endif %}
+            {% if s.rolle %} · {{ t("rolle_" ~ s.rolle, lang) }}{% endif %}
+            {% if s.geaendert %}
+            <span class="pf-marke pf-marke-geaendert">{{ t("pflichten_geaendert", lang).format(datum=datum(s.geaendert_am)) }}</span>
+            <form method="post" class="pf-gesehen" action="{{ url_for('pflicht_gesehen', schritt_id=s.id) }}">
+              <input type="hidden" name="rolle" value="{{ rolle }}">
+              <button type="submit" class="btn btn-secondary">{{ t("pflichten_gesehen", lang) }}</button>
+            </form>
+            {% endif %}
+          </div>
+          {% if s.beschreibung %}<div class="pf-text">{{ s.beschreibung }}</div>{% endif %}
+          {% if s.daten %}<div class="pf-text"><strong>{{ t("pflichten_daten", lang) }}:</strong> {{ s.daten }}</div>{% endif %}
+          {% if s.quelle or s.link or s.geprueft_am %}
+          <div class="pf-meta">
+            {% if s.link and (s.link.startswith("https://") or s.link.startswith("http://")) %}
+            {{ t("pflichten_quelle", lang) }}: <a href="{{ s.link }}" target="_blank" rel="noopener noreferrer">{{ s.quelle or s.link }} ↗</a>
+            {% elif s.quelle %}
+            {{ t("pflichten_quelle", lang) }}: {{ s.quelle }}
+            {% endif %}
+            {% if s.geprueft_am %}{% if s.quelle or s.link %} · {% endif %}{{ t("pflichten_geprueft", lang).format(datum=datum(s.geprueft_am)) }}{% endif %}
+          </div>
+          {% endif %}
+          {% for v in s.verlauf %}
+          <div class="pf-meta">{{ t("pflichten_verlauf", lang).format(periode=v.periode, datum=datum(v.erledigt_am)) }}</div>
+          {% endfor %}
+          <form method="post" class="pf-zustaendig" action="{{ url_for('pflicht_zustaendig', schritt_id=s.id) }}">
+            <label for="z-{{ s.id }}">{{ t("pflichten_zustaendig", lang) }}:</label>
+            <input type="text" id="z-{{ s.id }}" name="zustaendig" maxlength="120" value="{{ s.zustaendig or '' }}" placeholder=" ">
+            <input type="hidden" name="rolle" value="{{ rolle }}">
+            <button type="submit" class="btn btn-secondary">{{ t("pflichten_speichern", lang) }}</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endfor %}
+
+  {% if entfallen %}
+  <details class="pf-pflicht pf-entfallen">
+    <summary><span class="pf-name">{{ t("pflichten_entfaellt", lang) }} ({{ entfallen|length }})</span></summary>
+    <ul class="pf-schritte">
+      {% for p in entfallen %}
+      <li class="pf-schritt" style="grid-template-columns:1fr;">
+        <div>
+          <div class="pf-titel">{{ p.name }}</div>
+          <div class="pf-meta">{% if p.entfallen_am %}{{ t("pflichten_seit", lang).format(datum=datum(p.entfallen_am)) }} · {% endif %}{{ t("pflichten_fortschritt", lang).format(erledigt=p.erledigt, gesamt=p.gesamt) }}</div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+
+  {% endif %}
+</div>
+
+<script>
+  // Nach dem Speichern zurueck an die Stelle: die angesprungene Pflicht aufklappen.
+  (function () {
+    var ziel = location.hash && document.getElementById(location.hash.slice(1));
+    if (ziel && ziel.tagName === "DETAILS") { ziel.open = true; }
+  })();
+</script>
+{% endblock %}

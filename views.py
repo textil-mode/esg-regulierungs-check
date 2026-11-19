@@ -204,8 +204,17 @@ def _deadline_html(reg_key: str, profile: dict, language: str, suffix: str = "")
 
 
 def _steps_html(reg_key: str, language: str) -> str:
-    """Aufklappbarer Block 'Erste Schritte' inkl. weiterfuehrender Leitlinie."""
-    steps = [t_first_step(key, language) for key in first_steps_for(reg_key)]
+    """Aufklappbarer Block 'Erste Schritte' inkl. weiterfuehrender Leitlinie.
+
+    Mit Pflichten-Plan ist die Datenbank die einzige Quelle (aktive Schritte,
+    nur der Titel); im Legacy-Container (`PFLICHTEN_PLAN=aus`) weiter der Code.
+    """
+    import pflichten_db  # spaet: pflichten_db zieht db nach
+
+    if pflichten_db.funktion_aktiv():
+        steps = [s["titel"] for s in pflichten_db.schritte_fuer(reg_key, language)]
+    else:
+        steps = [t_first_step(key, language) for key in first_steps_for(reg_key)]
     steps = [s for s in steps if s]
     if not steps:
         return ""
