@@ -50,9 +50,9 @@ import httpx
 import fetcher
 import lawparse
 from deadlines import deadline_for
-from i18n import t
+from i18n import t, t_first_step
 from llm import _LANG_NAMES, _PROFILE_LABELS, _render_field
-from regulations import (REGULATIONS, application_for,
+from regulations import (REGULATIONS, application_for, first_steps_for,
                          guidelines_for)
 
 # ---------------------------------------------------------------------------
@@ -329,11 +329,7 @@ _catalog_cache: tuple[str, str] | None = None   # (Datum, Text)
 def catalog_text(today: date | None = None) -> str:
     """Der Katalog als Text — taeglich neu, weil sich der Status (gilt ab/in Kraft) mit dem Datum aendert."""
     global _catalog_cache
-    import pflichten_db  # spaet: pflichten_db zieht db nach
-
-    # Schluessel mit Schalterstand: legt ein Admin den Pflichten-Plan um, wechselt
-    # die Quelle der ersten Schritte sofort (nicht erst am naechsten Tag).
-    day = (today or date.today()).isoformat() + ("|plan" if pflichten_db.plan_aktiv() else "")
+    day = (today or date.today()).isoformat()
     if _catalog_cache and _catalog_cache[0] == day:
         return _catalog_cache[1]
     blocks = []
@@ -350,7 +346,8 @@ def catalog_text(today: date | None = None) -> str:
         lines.append(f"Anwendungskriterien: {reg['criteria']}")
         if reg.get("key_article"):
             lines.append(f"Kernvorschrift: {reg['key_article']}")
-        steps = pflichten_db.erste_schritte_titel(reg["key"], "de")
+        steps = [t_first_step(k, "de") for k in first_steps_for(reg["key"])]
+        steps = [s for s in steps if s]
         if steps:
             lines.append("Erste Schritte: " + " | ".join(steps))
         guides = guidelines_for(reg["key"])

@@ -397,16 +397,6 @@ pruefe(zustand(dauer_id)["locked"] == 1,
 pruefe(len(versandt) == 1, f"und dabei genau eine Nachricht verschickt ({len(versandt)})")
 
 # ---------------------------------------------------------------------------
-# Anmeldelink in der Ablauf-Nachricht: die App haengt unter /esg
-# (PrefixMiddleware). Ohne den Pfad fuehrte der Link live auf 404
-# (https://ki-textil-mode.de/login, Befund 19.11.2026).
-_, _, ablauftext = testzugang.nachricht({"signup_lang": "de"})
-pruefe(f"{BASIS}{mailer.APP_PFAD}/login" in ablauftext,
-       f"Ablauf-Nachricht verlinkt {BASIS}{mailer.APP_PFAD}/login")
-pruefe(f"{BASIS}/login" not in ablauftext,
-       "… und nicht die Adresse ohne App-Pfad")
-
-# ---------------------------------------------------------------------------
 ruhe()
 print("\n" + "=" * 62)
 if fehler:

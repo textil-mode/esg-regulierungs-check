@@ -366,16 +366,10 @@
       <nav class="site-nav">
         <a href="{{ url_for('dashboard') }}" class="{{ 'is-current' if request.endpoint == 'dashboard' }}">{{ t("nav_check", lang) }}</a>
         <a href="{{ url_for('regulations_list') }}" class="{{ 'is-current' if request.endpoint == 'regulations_list' }}">{{ t("btn_regulations_list", lang) }}</a>
-        {% if pflichten_sichtbar %}
-        <a href="{{ url_for('meine_pflichten') }}" class="{{ 'is-current' if request.endpoint == 'meine_pflichten' }}">{{ t("nav_pflichten", lang) }}</a>
-        {% endif %}
         {% if is_admin %}
         <a href="{{ url_for('admin_accounts') }}" class="{{ 'is-current' if request.endpoint == 'admin_accounts' }}">{{ t("admin_accounts_title", lang) }}</a>
         <a href="{{ url_for('admin_resets') }}" class="{{ 'is-current' if request.endpoint == 'admin_resets' }}">{{ t("admin_resets_title", lang) }}</a>
         <a href="{{ url_for('admin_reg_status') }}" class="{{ 'is-current' if request.endpoint == 'admin_reg_status' }}">{{ t("admin_regstatus_title", lang) }}</a>
-        {% if pflichten_funktion %}
-        <a href="{{ url_for('admin_pflichten') }}" class="{{ 'is-current' if (request.endpoint or '').startswith('admin_pflichten') }}">{{ t("admin_pflichten_title", lang) }}</a>
-        {% endif %}
         {% endif %}
         <a href="{{ url_for('change_password') }}" class="{{ 'is-current' if request.endpoint == 'change_password' }}">{{ t("pw_change_title", lang) }}</a>
         <a href="{{ url_for('logout') }}">{{ t("btn_logout", lang) }}</a>

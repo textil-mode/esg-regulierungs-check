@@ -50,17 +50,6 @@ TIMEOUT_SEC = 15.0
 STANDARD_PORT = 587
 STANDARD_ANZEIGENAME = "ESG-Regulierungs-Check"
 
-# Pfad, unter dem die App hinter nginx haengt (PrefixMiddleware, X-Script-Name).
-# `PUBLIC_BASE_URL` ist nur Schema + Host; Links in Hintergrund-Mails (ohne
-# Anfrage, also ohne url_for) bauen sich daraus + APP_PFAD + Seitenpfad.
-APP_PFAD = "/esg"
-
-
-def oeffentlicher_link(pfad: str) -> str:
-    """`PUBLIC_BASE_URL` + `pfad` (pfad inkl. APP_PFAD); ohne Basis nur der Pfad."""
-    basis = (os.environ.get("PUBLIC_BASE_URL") or "").rstrip("/")
-    return f"{basis}{pfad}" if basis else pfad
-
 
 class MailError(RuntimeError):
     """Versand nicht möglich (nicht konfiguriert, Netz-, Anmelde- oder SMTP-Fehler)."""

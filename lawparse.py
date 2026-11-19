@@ -19,7 +19,6 @@ damit das LLM die Fundstelle sauber zitieren kann.
 """
 from __future__ import annotations
 
-import difflib
 import re
 
 # ---------------------------------------------------------------------------
@@ -338,35 +337,3 @@ def build_context(reg: dict, law_text: str, guidelines: list[dict] | None,
         parts.append(law_part)
     parts.extend(g_blocks)
     return "\n".join(parts)[:max_chars]
-
-
-# ---------- Diff zweier Fassungen (Watchdog, Pflichten-Vorschlaege) ----------
-
-# Wieviel Diff-Umgebung das LLM je Fassung sieht. Bewusst knapp: eine
-# Konsolidierung aendert oft hunderte Zeilen, und der Vorschlag soll nur die
-# Richtung angeben, nicht den Rechtsakt nacherzaehlen.
-DIFF_MAX_CHARS = 15_000
-
-
-def diff_auszug(old: str, new: str) -> str:
-    """Unified Diff, auf DIFF_MAX_CHARS je Fassung begrenzt."""
-    old_lines = (old or "").splitlines()
-    new_lines = (new or "").splitlines()
-    diff = difflib.unified_diff(old_lines, new_lines, lineterm="", n=2)
-    removed: list[str] = []
-    added: list[str] = []
-    for line in diff:
-        if line.startswith("---") or line.startswith("+++") or line.startswith("@@"):
-            continue
-        if line.startswith("-") and len("\n".join(removed)) < DIFF_MAX_CHARS:
-            removed.append(line[1:])
-        elif line.startswith("+") and len("\n".join(added)) < DIFF_MAX_CHARS:
-            added.append(line[1:])
-        if len("\n".join(removed)) >= DIFF_MAX_CHARS and len("\n".join(added)) >= DIFF_MAX_CHARS:
-            break
-    return (
-        "ALTE FASSUNG (entfernte Stellen):\n"
-        + "\n".join(removed)[:DIFF_MAX_CHARS]
-        + "\n\nNEUE FASSUNG (hinzugekommene Stellen):\n"
-        + "\n".join(added)[:DIFF_MAX_CHARS]
-    )
