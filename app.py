@@ -1473,6 +1473,13 @@ def _handpflege_speichern(schritt: dict | None, reg_key: str):
             flash("Übersetzung fehlgeschlagen; die deutschen Texte wurden für alle Sprachen "
                   "übernommen. Bitte vor der Freigabe prüfen.", "error")
             texte = {lang: dict(texte_de) for lang in pdb.SPRACHEN}
+        if schritt is not None:
+            # Nur die Textfelder, deren deutscher Wert sich aendert — in allen
+            # Sprachen dieselben. Sonst setzte die Freigabe eines zweiten
+            # Vorschlags die uebrigen Felder auf den alten Stand zurueck.
+            geaendert = [f for f in pdb.TEXTFELDER if texte_de[f] != (alt_de.get(f) or "")]
+            texte = {lang: {f: (t or {}).get(f, "") for f in geaendert}
+                     for lang, t in texte.items()}
     if schritt is not None:
         # Nur was vom aktuellen Stand abweicht; sonst ueberschriebe ein spaeter
         # freigegebener Vorschlag Felder, die inzwischen ein anderer geaendert hat.
@@ -1550,6 +1557,9 @@ def _vorschlag_bezug(v: dict) -> tuple[dict, dict, dict]:
     nachher = v["nachher"] or {}
     werte = {k: _wert_text(nachher[k]) if k in nachher else _wert_text(aktuell.get(k))
              for k in pdb.SCHRITT_FELDER}
+    # Ohne vorgeschlagenen oder aktuellen Frist-Typ gilt 'keine' (so steht es
+    # auch im Auswahlfeld; ein KI-Vorschlag 'neu' kann den Typ weglassen).
+    werte["frist_typ"] = werte["frist_typ"] or "keine"
     texte = {}
     for lang in pdb.SPRACHEN:
         neu_t = (nachher.get("texte") or {}).get(lang) or {}

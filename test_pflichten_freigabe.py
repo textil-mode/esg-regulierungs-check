@@ -387,9 +387,14 @@ class _FormLeser(HTMLParser):
             self.daten[a["name"]] = a.get("value") or ""
         elif tag == "select":
             self._select = a.get("name")
-            self.daten.setdefault(self._select, "")
-        elif tag == "option" and self._select and "selected" in a:
-            self.daten[self._select] = a.get("value") or ""
+            self._gewaehlt = False
+            self._erste = None
+        elif tag == "option" and self._select:
+            if self._erste is None:
+                self._erste = a.get("value") or ""
+            if "selected" in a:
+                self.daten[self._select] = a.get("value") or ""
+                self._gewaehlt = True
         elif tag == "textarea":
             self._textarea = a.get("name")
             self.daten[self._textarea] = ""
@@ -398,6 +403,9 @@ class _FormLeser(HTMLParser):
         if tag == "form":
             self.drin = False
         elif tag == "select":
+            # Wie ein Browser: ohne `selected` wird die erste Option gesendet.
+            if self._select and not self._gewaehlt and self._erste is not None:
+                self.daten[self._select] = self._erste
             self._select = None
         elif tag == "textarea":
             self._textarea = None
@@ -456,6 +464,35 @@ def block_j() -> None:
     if neu:
         pdb.verwerfen(neu[0]["id"], STAMM, "Test", HEUTE)
 
+    # Handpflege A aendert nur den Titel, B nur die Beschreibung; beide vor jeder
+    # Freigabe angelegt. Nach beiden Freigaben muessen beide Aenderungen stehen.
+    basis = {"daten": de["daten"], "rolle": "gf", "frist_typ": s["frist_typ"],
+             "frist_wert": s["frist_wert"], "link": s["link"] or "",
+             "quelle": s["quelle"] or "", "sortierung": str(s["sortierung"])}
+    vor = {o["id"] for o in pdb.offene_vorschlaege()}
+    stamm.post(f"/admin/pflichten/schritt/{sid}", data={
+        **basis, "titel": "Titel aus A", "beschreibung": de["beschreibung"]})
+    stamm.post(f"/admin/pflichten/schritt/{sid}", data={
+        **basis, "titel": de["titel"], "beschreibung": "Beschreibung aus B"})
+    neu = sorted(o["id"] for o in pdb.offene_vorschlaege() if o["id"] not in vor)
+    check("J Text A/B: zwei Vorschlaege", len(neu) == 2, str(neu))
+    if len(neu) == 2:
+        va, vb = (pdb.vorschlag(x) for x in neu)
+        check("J Text A/B: nachher nur das geaenderte Textfeld",
+              all(set(t) == {"titel"} for t in va["nachher"]["texte"].values())
+              and all(set(t) == {"beschreibung"} for t in vb["nachher"]["texte"].values())
+              and len(va["nachher"]["texte"]) == len(pdb.SPRACHEN))
+        stamm.post(f"/admin/pflichten/vorschlag/{va['id']}/freigeben",
+                   data=_formular(stamm, va["id"]))
+        stamm.post(f"/admin/pflichten/vorschlag/{vb['id']}/freigeben",
+                   data=_formular(stamm, vb["id"]))
+        t = pdb.schritt(sid)["texte"]
+        check("J Text A/B: beide Aenderungen bleiben",
+              t["de"]["titel"] == "Titel aus A" and t["de"]["beschreibung"] == "Beschreibung aus B"
+              and t["fr"]["titel"] == "Titel aus A"
+              and t["fr"]["beschreibung"] == "Beschreibung aus B", repr(t["de"]))
+        de = t["de"]
+
     # Leerer deutscher Titel: nie freigebbar (aendern per Formular, neu per Vorschlag).
     d = pdb.neuer_vorschlag("EUDR", "aendern", "hand", {"rolle": "einkauf"}, schritt_id=sid)
     form = {**_formular(stamm, d), "titel_de": "  "}
@@ -468,7 +505,10 @@ def block_j() -> None:
     html = stamm.get(f"/admin/pflichten/vorschlag/{d}").get_data(as_text=True)
     check("J Meldung nennt den Grund", "ungültig" in html and "Titel" in html)
     anzahl = _eins("SELECT COUNT(*) FROM pflicht_schritte")
-    e = pdb.neuer_vorschlag("EUDR", "neu", "hand", {"texte": {"de": {"titel": ""}}})
+    # Frist-Typ und Sortierung ausdruecklich gesetzt: sonst koennte die Ablehnung
+    # an Frist oder Sortierung haengen statt am leeren Titel.
+    e = pdb.neuer_vorschlag("EUDR", "neu", "hand", {"frist_typ": "keine", "sortierung": 1,
+                            "texte": {"de": {"titel": ""}}})
     r = stamm.post(f"/admin/pflichten/vorschlag/{e}/freigeben", data=_formular(stamm, e))
     check("J leerer Titel (neu): offen, kein Schritt angelegt",
           pdb.vorschlag(e)["status"] == "offen"
@@ -480,6 +520,16 @@ def block_j() -> None:
     pdb.verwerfen(e, STAMM, "Test", HEUTE)
     ok, grund = pdb.freigeben_mit_grund(e, STAMM, None, HEUTE)
     check("J Grund nicht mehr offen", not ok and grund == pdb.NICHT_OFFEN, grund)
+
+    # KI-Vorschlag 'neu' ohne Frist-Typ: Auswahl steht auf 'keine', Freigabe gelingt.
+    f = pdb.neuer_vorschlag("EUDR", "neu", "watchdog", {"texte": {"de": {"titel": "Ohne Frist"}}})
+    form = _formular(stamm, f)
+    check("J neu ohne Frist-Typ: Auswahl 'keine'", form.get("frist_typ") == "keine",
+          repr(form.get("frist_typ")))
+    stamm.post(f"/admin/pflichten/vorschlag/{f}/freigeben", data=form)
+    v = pdb.vorschlag(f)
+    check("J neu ohne Frist-Typ: freigegeben, Typ keine", v["status"] == "freigegeben"
+          and pdb.schritt(v["schritt_id"])["frist_typ"] == "keine", v["status"])
 
 
 def block_k() -> None:
