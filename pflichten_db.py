@@ -656,3 +656,73 @@ def katalog_export() -> dict:
     for r in rows:
         r["texte"] = texte.get(r["id"], {})
     return {"exportiert_am": date.today().isoformat(), "schritte": rows}
+
+
+# ---------- Taeglicher Lauf (pflichten_erinnerung.py) ----------
+
+# Marker "Monatsuebersicht verschickt" liegt in `pflicht_erinnerungen` mit
+# schritt_id 0 (kein echter Schritt; der Fremdschluessel haengt nur am Konto),
+# art 'monat' und frist 'YYYY-MM'. So gilt dieselbe Kaskade bei Kontoloeschung.
+MONATS_MARKER = (0, "monat")
+
+
+def erinnerungs_konten() -> list[dict]:
+    """Konten, die Post bekommen duerfen: freigeschaltet, nicht gesperrt, Erinnerungen an."""
+    with db._conn() as c:
+        return [dict(r) for r in c.execute(
+            "SELECT id, email, signup_lang FROM users"
+            " WHERE approved = 1 AND locked = 0 AND erinnerungen = 1 ORDER BY id")]
+
+
+def erinnerung_vorhanden(user_id: int, schritt_id: int, art: str, frist: str) -> bool:
+    with db._conn() as c:
+        return c.execute(
+            "SELECT 1 FROM pflicht_erinnerungen WHERE user_id = ? AND schritt_id = ?"
+            " AND art = ? AND frist = ?", (user_id, schritt_id, art, frist)).fetchone() is not None
+
+
+def merke_erinnerungen(user_id: int, eintraege: list[tuple[int, str, str]], zeit: str) -> None:
+    """Protokolliert verschickte Erinnerungen `(schritt_id, art, frist)`."""
+    with db._conn() as c:
+        c.executemany(
+            "INSERT OR IGNORE INTO pflicht_erinnerungen (user_id, schritt_id, art, frist,"
+            " gesendet_am) VALUES (?, ?, ?, ?, ?)",
+            [(user_id, sid, art, frist, zeit) for sid, art, frist in eintraege])
+
+
+def neuer_hinweis(user_id: int, reg_key: str, art: str, text_de: str, today) -> int:
+    with db._conn() as c:
+        return c.execute(
+            "INSERT INTO pflicht_hinweise (user_id, reg_key, art, text_de, erstellt_am)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (user_id, reg_key, art, text_de, today.isoformat()[:10])).lastrowid
+
+
+def offene_hinweise(user_id: int) -> list[dict]:
+    """Noch nicht verschickte Hinweise eines Kontos, aelteste zuerst."""
+    with db._conn() as c:
+        return [dict(r) for r in c.execute(
+            "SELECT * FROM pflicht_hinweise WHERE user_id = ? AND gesendet_am IS NULL"
+            " ORDER BY id", (user_id,))]
+
+
+def hinweise_gesendet(ids: list[int], zeit: str) -> None:
+    if not ids:
+        return
+    with db._conn() as c:
+        c.executemany("UPDATE pflicht_hinweise SET gesendet_am = ? WHERE id = ?",
+                      [(zeit, i) for i in ids])
+
+
+def setze_letzter_gilt_ab(user_id: int, reg_key: str, wert: str) -> None:
+    with db._conn() as c:
+        c.execute("UPDATE nutzer_pflichten SET letzter_gilt_ab = ?"
+                  " WHERE user_id = ? AND reg_key = ?", (wert, user_id, reg_key))
+
+
+def mail_zaehlen(purpose: str, seit_iso: str) -> dict[str, int]:
+    """`mail_log`-Eintraege eines Zwecks seit `seit_iso`, je Status."""
+    with db._conn() as c:
+        return {r["status"]: r["n"] for r in c.execute(
+            "SELECT status, COUNT(*) AS n FROM mail_log WHERE purpose = ? AND logged_at >= ?"
+            " GROUP BY status", (purpose, seit_iso))}
